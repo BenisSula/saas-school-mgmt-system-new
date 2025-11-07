@@ -1,0 +1,7 @@
+#!/bin/sh
+
+npx lint-staged || exit 1
+
+npm run test --prefix backend || exit 1
+npm run test --prefix frontend || exit 1
+

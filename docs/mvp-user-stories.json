@@ -1,0 +1,65 @@
+{
+  "stories": [
+    {
+      "priority": 1,
+      "module": "Auth_RBAC",
+      "user_story": "As a SuperAdmin, I want to invite tenant admins so that tenant onboarding is controlled.",
+      "acceptance_tests": [
+        "Invitation email sent with secure token scoped to tenant schema",
+        "Password policy enforced on first login",
+        "Role-based dashboard routing validated via integration tests"
+      ]
+    },
+    {
+      "priority": 2,
+      "module": "MultiTenant",
+      "user_story": "As an Admin, I want automated schema creation so that each tenant stays isolated.",
+      "acceptance_tests": [
+        "Provisioning job creates schema and seed data",
+        "Cross-tenant access blocked in unit/integration tests",
+        "Resource quotas monitored with alerts"
+      ]
+    },
+    {
+      "priority": 3,
+      "module": "Attendance",
+      "user_story": "As a Teacher, I want to record attendance per class session so that records stay accurate.",
+      "acceptance_tests": [
+        "Roster pre-populated and saved transactionally",
+        "Absent reason required and validated",
+        "Attendance analytics update within SLA"
+      ]
+    },
+    {
+      "priority": 4,
+      "module": "Examinations",
+      "user_story": "As a Teacher, I want to schedule exams and publish grades so that students stay informed.",
+      "acceptance_tests": [
+        "Prevent overlapping schedules",
+        "Email notifications triggered on publish",
+        "Students see grades only after publish flag"
+      ]
+    },
+    {
+      "priority": 5,
+      "module": "Fees",
+      "user_story": "As an Admin, I want to generate invoices and collect payments so that finances remain transparent.",
+      "acceptance_tests": [
+        "Invoice creation supports recurring fees",
+        "Payment webhook updates ledger idempotently",
+        "Receipts issued automatically on success"
+      ]
+    },
+    {
+      "priority": 6,
+      "module": "Branding",
+      "user_story": "As an Admin, I want to customize tenant branding so that the portal matches school identity.",
+      "acceptance_tests": [
+        "Theme preview renders tenant-specific colors/logo",
+        "Accessibility checks enforce contrast ratios",
+        "CDN cache invalidated after publish"
+      ]
+    }
+  ]
+}
+

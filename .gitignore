@@ -1,0 +1,15 @@
+node_modules/
+dist/
+build/
+.turbo/
+.DS_Store
+*.log
+.env
+.env.local
+.env.development
+.env.production
+coverage/
+backend/dist/
+frontend/dist/
+.husky/_/
+
