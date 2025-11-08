@@ -12,5 +12,4 @@ coverage/
 backend/dist/
 frontend/dist/
 .husky/_/
-.env.example
 

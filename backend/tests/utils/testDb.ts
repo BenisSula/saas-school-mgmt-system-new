@@ -5,7 +5,8 @@ import { runMigrations } from '../../src/db/runMigrations';
 
 export async function createTestPool(): Promise<{ pool: Pool }> {
   const db = newDb({
-    autoCreateForeignKeyIndices: true
+    autoCreateForeignKeyIndices: true,
+    noAstCoverageCheck: true
   });
 
   db.registerExtension('uuid-ossp', (schema) => {
