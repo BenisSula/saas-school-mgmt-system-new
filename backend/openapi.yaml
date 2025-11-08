@@ -1,0 +1,206 @@
+openapi: 3.0.3
+info:
+  title: SaaS School Management API
+  version: 0.4.0
+servers:
+  - url: http://localhost:3001
+paths:
+  /students:
+    get:
+      summary: List students
+      responses:
+        '200':
+          description: Students for the current tenant
+    post:
+      summary: Create student
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentInput'
+      responses:
+        '201':
+          description: Student created
+  /students/{id}:
+    get:
+      summary: Get student
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Student
+        '404':
+          description: Not found
+    put:
+      summary: Update student
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentInput'
+      responses:
+        '200':
+          description: Student updated
+    delete:
+      summary: Delete student
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '204':
+          description: Deleted
+  /teachers:
+    get:
+      summary: List teachers
+      responses:
+        '200':
+          description: Teachers for tenant
+    post:
+      summary: Create teacher
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeacherInput'
+      responses:
+        '201':
+          description: Teacher created
+  /teachers/{id}:
+    put:
+      summary: Update teacher
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeacherInput'
+      responses:
+        '200':
+          description: Teacher updated
+    delete:
+      summary: Delete teacher
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '204':
+          description: Deleted
+  /branding:
+    get:
+      summary: Get branding
+      responses:
+        '200':
+          description: Branding config
+    put:
+      summary: Upsert branding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrandingInput'
+      responses:
+        '200':
+          description: Branding updated
+  /school:
+    get:
+      summary: Get school profile
+      responses:
+        '200':
+          description: School record
+    put:
+      summary: Upsert school profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SchoolInput'
+      responses:
+        '200':
+          description: School updated
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    StudentInput:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        classId:
+          type: string
+        admissionNumber:
+          type: string
+        parentContacts:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              relationship:
+                type: string
+              phone:
+                type: string
+      required:
+        - firstName
+        - lastName
+    TeacherInput:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        subjects:
+          type: array
+          items:
+            type: string
+        assignedClasses:
+          type: array
+          items:
+            type: string
+      required:
+        - name
+        - email
+    BrandingInput:
+      type: object
+      properties:
+        logoUrl:
+          type: string
+        primaryColor:
+          type: string
+        secondaryColor:
+          type: string
+        themeFlags:
+          type: object
+          additionalProperties:
+            type: boolean
+    SchoolInput:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: object
+          additionalProperties: true
+      required:
+        - name
+

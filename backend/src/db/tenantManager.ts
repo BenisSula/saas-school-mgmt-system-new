@@ -72,11 +72,12 @@ export async function seedTenant(pool: Pool, schemaName: string): Promise<void> 
   const client = await pool.connect();
   try {
     assertValidSchemaName(schemaName);
+    await client.query(`SET search_path TO ${schemaName}, public`);
     await client.query(
       `
-        INSERT INTO ${schemaName}.branding_settings (theme, logo_url, primary_color)
-        VALUES ('default', NULL, '#1d4ed8')
-        ON CONFLICT (theme) DO NOTHING
+        INSERT INTO branding_settings (id, logo_url, primary_color, secondary_color, theme_flags)
+        VALUES (uuid_generate_v4(), NULL, '#1d4ed8', '#0f172a', '{}'::jsonb)
+        ON CONFLICT (id) DO NOTHING
       `
     );
   } finally {

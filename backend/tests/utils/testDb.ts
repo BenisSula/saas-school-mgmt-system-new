@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { DataType, newDb } from 'pg-mem';
 import type { Pool } from 'pg';
 import { runMigrations } from '../../src/db/runMigrations';
+import { runTenantMigrations } from '../../src/db/tenantManager';
 
 export async function createTestPool(): Promise<{ pool: Pool }> {
   const db = newDb({
@@ -21,6 +22,8 @@ export async function createTestPool(): Promise<{ pool: Pool }> {
   const pool = new MemPool() as unknown as Pool;
 
   await runMigrations(pool);
+  await pool.query('CREATE SCHEMA tenant_alpha');
+  await runTenantMigrations(pool, 'tenant_alpha');
 
   return { pool };
 }

@@ -1,10 +1,10 @@
 # SaaS School Management System
 
-Monorepo scaffold for the SaaS School Management Portal. Phase 1 delivered project scaffolding; Phase 2 adds secure authentication, JWT sessions, and role-based access control across Student/Teacher/Admin/SuperAdmin personas. Phase 3 introduces schema-per-tenant onboarding, migrations, and request-scoped tenant resolution.
+Monorepo scaffold for the SaaS School Management Portal. Phase 1 delivered project scaffolding; Phase 2 adds secure authentication, JWT sessions, and role-based access control across Student/Teacher/Admin/SuperAdmin personas. Phase 3 introduces schema-per-tenant onboarding, migrations, and request-scoped tenant resolution. Phase 4 layers on tenant-aware CRUD services for students, teachers, branding, and school profile.
 
 ## Project Structure
 
-- `backend/` – Express + TypeScript API with auth routes, RBAC middleware, Postgres connection helper, tenant onboarding utilities, and database migrations.
+- `backend/` – Express + TypeScript API with auth routes, RBAC middleware, Postgres connection helper, tenant onboarding utilities, tenant CRUD services, and database migrations.
 - `frontend/` – Vite + React + TypeScript app with Tailwind CSS, layout/component stubs, and smoke test.
 - `docs/` – Discovery phase documentation and user stories.
 - `.github/workflows/ci.yml` – CI pipeline that runs linting and tests for both apps.
@@ -63,12 +63,13 @@ Services:
 | Command | Description |
 |---------|-------------|
 | `npm run lint --prefix backend` | Lints backend TypeScript files. |
-| `npm run test --prefix backend` | Runs backend unit tests (Jest + ts-jest). |
+| `npm run test --prefix backend` | Runs backend Jest suites (auth, tenant, CRUD routes). |
 | `npm run lint --prefix frontend` | Lints frontend using ESLint + React plugins. |
 | `npm run test --prefix frontend` | Runs frontend tests (Vitest + Testing Library). |
 | `npm run migrate --prefix backend` | Applies shared Postgres migrations (shared and tenant templates). |
 | `npm run format:write --prefix backend` | Formats backend files with Prettier. |
 | `npm run format:write --prefix frontend` | Formats frontend files with Prettier. |
+| `docker compose up --build` | Local Postgres + backend + frontend stack. |
 
 ## Husky & Lint-Staged
 
@@ -105,6 +106,18 @@ npm run prepare
 - `POST /auth/request-email-verification` / `POST /auth/verify-email` – Email verification stubs (tokens logged).
 - Protected resources call `authenticate` middleware and `requirePermission` to enforce centralized permissions (`config/permissions.ts`). Tokens embed `tenant_id` to guarantee isolation.
 
+- Minimal OpenAPI document: `backend/openapi.yaml`
+
+## Core CRUD APIs (Phase 4)
+
+- `GET/POST/PUT/DELETE /students`
+- `GET/POST/PUT/DELETE /teachers`
+- `GET/PUT /branding`
+- `GET/PUT /school`
+- Validation powered by Zod (`studentValidator`, `teacherValidator`, `brandingValidator`, `schoolValidator`).
+- Business logic isolated in `services/` modules; controllers stay thin.
+- Jest coverage in `studentRoutes.test.ts` and `teacherBrandingRoutes.test.ts`.
+
 ## Testing
 
 ```bash
@@ -122,6 +135,6 @@ CI replicates these commands for pull requests.
 - Integrate real email/SMS providers for verification & reset flows.
 - Flesh out frontend routing and state management.
 - Add tenant onboarding automation (`POST /tenants`) and schema provisioning.
-- Extend tests to cover attendance, exams, fee modules, and end-to-end auth flows.
+- Extend CRUD coverage to attendance, exams, fee modules, and add end-to-end auth flows.
 - Implement automated tenant backups and retention policies per schema.
 
