@@ -1,12 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import {
-  api,
-  AttendanceAggregate,
-  FeeAggregate,
-  GradeAggregate
-} from '../lib/api';
-import { Button } from '../components/Button';
-import { Table } from '../components/Table';
+import { api, type AttendanceAggregate, type FeeAggregate, type GradeAggregate } from '../lib/api';
+import { Button } from '../components/ui/Button';
+import { Table } from '../components/ui/Table';
+import { Input } from '../components/ui/Input';
+import { DatePicker } from '../components/ui/DatePicker';
+import { Select } from '../components/ui/Select';
 
 function downloadJson(filename: string, data: unknown) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -31,6 +29,7 @@ function AdminReportsPage() {
   const [feeData, setFeeData] = useState<FeeAggregate[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [statusType, setStatusType] = useState<'info' | 'error'>('info');
 
   const attendanceColumns = useMemo(
     () => [
@@ -72,8 +71,10 @@ function AdminReportsPage() {
         classId: attendanceFilters.classId || undefined
       });
       setAttendanceData(data);
+      setStatusType('info');
     } catch (error) {
       setMessage((error as Error).message);
+      setStatusType('error');
     } finally {
       setLoading(false);
     }
@@ -82,6 +83,7 @@ function AdminReportsPage() {
   async function runGradeReport() {
     if (!examId) {
       setMessage('Provide an exam ID to fetch grade distribution.');
+      setStatusType('error');
       return;
     }
     try {
@@ -89,8 +91,10 @@ function AdminReportsPage() {
       setMessage(null);
       const data = await api.getGradeReport(examId);
       setGradeData(data);
+      setStatusType('info');
     } catch (error) {
       setMessage((error as Error).message);
+      setStatusType('error');
     } finally {
       setLoading(false);
     }
@@ -102,8 +106,10 @@ function AdminReportsPage() {
       setMessage(null);
       const data = await api.getFeeReport(feeStatus || undefined);
       setFeeData(data);
+      setStatusType('info');
     } catch (error) {
       setMessage((error as Error).message);
+      setStatusType('error');
     } finally {
       setLoading(false);
     }
@@ -112,28 +118,40 @@ function AdminReportsPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold text-white">Reports & Exports</h1>
+        <h1 className="text-2xl font-semibold">Reports & Exports</h1>
         <p className="text-sm text-slate-300">
           Run cross-cutting reports across attendance, exams, and finance for the current tenant.
         </p>
       </header>
 
-      {message && <div className="rounded bg-slate-800 p-3 text-sm text-slate-100">{message}</div>}
+      {message ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`rounded-md px-4 py-3 text-sm ${
+            statusType === 'error'
+              ? 'border border-red-500 bg-red-500/10 text-red-200'
+              : 'border border-[var(--brand-border)] bg-slate-900/70 text-slate-100'
+          }`}
+        >
+          {message}
+        </div>
+      ) : null}
 
-      <section className="rounded-lg border border-slate-800 bg-slate-900/80 p-6">
+      <section className="rounded-lg border border-[var(--brand-border)] bg-slate-900/60 p-6 shadow-lg">
         <header className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-white">Attendance summary</h2>
+            <h2 className="text-xl font-semibold">Attendance summary</h2>
             <p className="text-sm text-slate-400">
               Aggregated attendance counts grouped by date, status, and class.
             </p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={runAttendanceReport} disabled={loading}>
+            <Button onClick={runAttendanceReport} loading={loading}>
               Run report
             </Button>
             <Button
-              variant="secondary"
+              variant="outline"
               onClick={() => downloadJson('attendance-report.json', attendanceData)}
               disabled={attendanceData.length === 0}
             >
@@ -142,27 +160,23 @@ function AdminReportsPage() {
           </div>
         </header>
         <div className="grid gap-4 sm:grid-cols-4">
-          <input
-            type="date"
-            className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-white"
-            placeholder="From date"
+          <DatePicker
+            label="From"
             value={attendanceFilters.from}
             onChange={(event) =>
               setAttendanceFilters((state) => ({ ...state, from: event.target.value }))
             }
           />
-          <input
-            type="date"
-            className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-white"
-            placeholder="To date"
+          <DatePicker
+            label="To"
             value={attendanceFilters.to}
             onChange={(event) =>
               setAttendanceFilters((state) => ({ ...state, to: event.target.value }))
             }
           />
-          <input
-            className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-white"
-            placeholder="Class ID"
+          <Input
+            label="Class ID"
+            placeholder="e.g. grade-10"
             value={attendanceFilters.classId}
             onChange={(event) =>
               setAttendanceFilters((state) => ({ ...state, classId: event.target.value }))
@@ -170,24 +184,24 @@ function AdminReportsPage() {
           />
         </div>
         <div className="mt-4">
-          <Table columns={attendanceColumns} data={attendanceData} />
+          <Table columns={attendanceColumns} data={attendanceData} caption="Attendance summary" />
         </div>
       </section>
 
-      <section className="rounded-lg border border-slate-800 bg-slate-900/80 p-6">
+      <section className="rounded-lg border border-[var(--brand-border)] bg-slate-900/60 p-6 shadow-lg">
         <header className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-white">Exam grade distribution</h2>
+            <h2 className="text-xl font-semibold">Exam grade distribution</h2>
             <p className="text-sm text-slate-400">
               Visualise grade distribution per subject for a selected exam.
             </p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={runGradeReport} disabled={loading}>
+            <Button onClick={runGradeReport} loading={loading}>
               Run report
             </Button>
             <Button
-              variant="secondary"
+              variant="outline"
               onClick={() => downloadJson('grades-report.json', gradeData)}
               disabled={gradeData.length === 0}
             >
@@ -196,9 +210,9 @@ function AdminReportsPage() {
           </div>
         </header>
         <div className="grid gap-4 sm:grid-cols-2">
-          <input
-            className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-white"
-            placeholder="Exam ID"
+          <Input
+            label="Exam ID"
+            placeholder="exam-123"
             value={examId}
             onChange={(event) => setExamId(event.target.value)}
           />
@@ -207,24 +221,24 @@ function AdminReportsPage() {
           </p>
         </div>
         <div className="mt-4">
-          <Table columns={gradeColumns} data={gradeData} />
+          <Table columns={gradeColumns} data={gradeData} caption="Grade distribution" />
         </div>
       </section>
 
-      <section className="rounded-lg border border-slate-800 bg-slate-900/80 p-6">
+      <section className="rounded-lg border border-[var(--brand-border)] bg-slate-900/60 p-6 shadow-lg">
         <header className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-white">Fee reconciliation</h2>
+            <h2 className="text-xl font-semibold">Fee reconciliation</h2>
             <p className="text-sm text-slate-400">
               Track outstanding invoices and payments processed by the payment gateway.
             </p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={runFeeReport} disabled={loading}>
+            <Button onClick={runFeeReport} loading={loading}>
               Run report
             </Button>
             <Button
-              variant="secondary"
+              variant="outline"
               onClick={() => downloadJson('fees-report.json', feeData)}
               disabled={feeData.length === 0}
             >
@@ -233,21 +247,22 @@ function AdminReportsPage() {
           </div>
         </header>
         <div className="grid gap-4 sm:grid-cols-3">
-          <select
-            className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-white"
+          <Select
+            label="Invoice status"
             value={feeStatus}
             onChange={(event) => setFeeStatus(event.target.value)}
-          >
-            <option value="">All statuses</option>
-            <option value="pending">Pending</option>
-            <option value="partial">Partial</option>
-            <option value="paid">Paid</option>
-            <option value="overdue">Overdue</option>
-            <option value="refunded">Refunded</option>
-          </select>
+            options={[
+              { label: 'All statuses', value: '' },
+              { label: 'Pending', value: 'pending' },
+              { label: 'Partial', value: 'partial' },
+              { label: 'Paid', value: 'paid' },
+              { label: 'Overdue', value: 'overdue' },
+              { label: 'Refunded', value: 'refunded' }
+            ]}
+          />
         </div>
         <div className="mt-4">
-          <Table columns={feeColumns} data={feeData} />
+          <Table columns={feeColumns} data={feeData} caption="Fee summary" />
         </div>
       </section>
     </div>
@@ -255,5 +270,4 @@ function AdminReportsPage() {
 }
 
 export default AdminReportsPage;
-
 

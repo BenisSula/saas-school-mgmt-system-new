@@ -6,8 +6,9 @@ import AdminRoleManagementPage from './pages/AdminRoleManagementPage';
 import StudentFeesPage from './pages/StudentFeesPage';
 import TeacherGradeEntryPage from './pages/TeacherGradeEntryPage';
 import StudentResultsPage from './pages/StudentResultsPage';
-import MainLayout from './layouts/MainLayout';
-import { Button } from './components/Button';
+import { Navbar } from './components/ui/Navbar';
+import { Sidebar } from './components/ui/Sidebar';
+import type { NavLink } from './components/ui/Navbar';
 
 type ViewKey =
   | 'home'
@@ -20,6 +21,7 @@ type ViewKey =
 
 function App() {
   const [view, setView] = useState<ViewKey>('home');
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
 
   const activePage = useMemo(() => {
     switch (view) {
@@ -40,52 +42,80 @@ function App() {
     }
   }, [view]);
 
+  const navLinks: NavLink[] = useMemo(
+    () => [
+      { label: 'Landing', onSelect: () => setView('home'), isActive: view === 'home' },
+      {
+        label: 'Admin configuration',
+        onSelect: () => setView('admin-config'),
+        isActive: view === 'admin-config'
+      },
+      {
+        label: 'Reports',
+        onSelect: () => setView('admin-reports'),
+        isActive: view === 'admin-reports'
+      },
+      {
+        label: 'RBAC manager',
+        onSelect: () => setView('admin-roles'),
+        isActive: view === 'admin-roles'
+      },
+      {
+        label: 'Teacher grade entry',
+        onSelect: () => setView('teacher-grades'),
+        isActive: view === 'teacher-grades'
+      },
+      {
+        label: 'Student results',
+        onSelect: () => setView('student-results'),
+        isActive: view === 'student-results'
+      },
+      { label: 'Student fees', onSelect: () => setView('fees'), isActive: view === 'fees' }
+    ],
+    [view]
+  );
+
+  const isAdminView = view !== 'home';
+
   return (
-    <MainLayout>
-      <div className="flex flex-wrap items-center gap-3 border-b border-slate-800 pb-6">
-        <Button variant={view === 'home' ? 'primary' : 'secondary'} onClick={() => setView('home')}>
-          Landing
-        </Button>
-        <Button
-          variant={view === 'admin-config' ? 'primary' : 'secondary'}
-          onClick={() => setView('admin-config')}
+    <div className="min-h-screen bg-[var(--brand-surface, #0f172a)] text-[var(--brand-surface-contrast,#f1f5f9)] transition-colors">
+      <Navbar
+        brandName="SaaS School Portal"
+        links={navLinks}
+        onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
+        sidebarOpen={sidebarOpen}
+      />
+
+      <div className="relative mx-auto flex max-w-6xl">
+        <div
+          className={`fixed inset-0 z-30 bg-slate-950/70 backdrop-blur-sm transition-opacity sm:hidden ${
+            sidebarOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+          }`}
+          aria-hidden={!sidebarOpen}
+          onClick={() => setSidebarOpen(false)}
+        />
+        <aside
+          className={`fixed inset-y-0 left-0 z-40 w-72 transform transition-transform sm:static sm:h-auto sm:w-64 sm:translate-x-0 ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'
+          }`}
         >
-          Admin configuration
-        </Button>
-        <Button
-          variant={view === 'admin-reports' ? 'primary' : 'secondary'}
-          onClick={() => setView('admin-reports')}
-        >
-          Reports
-        </Button>
-        <Button
-          variant={view === 'admin-roles' ? 'primary' : 'secondary'}
-          onClick={() => setView('admin-roles')}
-        >
-          RBAC manager
-        </Button>
-        <Button
-          variant={view === 'teacher-grades' ? 'primary' : 'secondary'}
-          onClick={() => setView('teacher-grades')}
-        >
-          Teacher grade entry
-        </Button>
-        <Button
-          variant={view === 'student-results' ? 'primary' : 'secondary'}
-          onClick={() => setView('student-results')}
-        >
-          Student results
-        </Button>
-        <Button variant={view === 'fees' ? 'primary' : 'secondary'} onClick={() => setView('fees')}>
-          Student fees
-        </Button>
+          <Sidebar links={navLinks} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        </aside>
+        <main className="relative z-10 flex-1 px-4 py-6 sm:px-8">
+          {isAdminView ? <div className="space-y-6">{activePage}</div> : activePage}
+        </main>
       </div>
 
-      <div className="pt-6">{activePage}</div>
-    </MainLayout>
+      {!isAdminView ? null : (
+        <footer className="border-t border-[var(--brand-border)] bg-[var(--brand-surface)]/90 py-6 text-center text-xs text-slate-400">
+          <div className="mx-auto max-w-6xl px-4">
+            Built for responsive multi-tenant schools · Keyboard accessible · Powered by schema isolation
+          </div>
+        </footer>
+      )}
+    </div>
   );
 }
 
 export default App;
-
 

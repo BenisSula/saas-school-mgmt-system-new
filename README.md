@@ -144,6 +144,7 @@ npm run prepare
   - React admin hub at `/frontend/src/App.tsx` with live pages: `AdminConfigurationPage`, `AdminReportsPage`, `AdminRoleManagementPage`
   - Vitest coverage in `adminConfig.test.tsx`, `adminReports.test.tsx`, and `adminRoles.test.tsx`
   - New backend integration tests: `configRoutes.test.ts`, `reportRoutes.test.ts`, `userRoutes.test.ts`
+  - Reusable Tailwind component library in `frontend/src/components/ui/` covering Button, Input, Select, DatePicker, Modal, Table, Navbar, Sidebar, and a `BrandProvider` that hydrates CSS variables from tenant branding. Component usage examples live in `frontend/src/components/ui/examples/ExamplesGallery.tsx`.
 
 ## Testing
 
@@ -164,4 +165,5 @@ CI replicates these commands for pull requests.
 - Add tenant onboarding automation (`POST /tenants`) and schema provisioning CLI.
 - Integrate live exam data sources, teacher-class permissions, and production payment providers.
 - Implement automated tenant backups, retention policies, and observability dashboards.
+- Expand the UI component gallery into Storybook with visual regression coverage and contrast/keyboard audits.
 

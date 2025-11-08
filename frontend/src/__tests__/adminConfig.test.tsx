@@ -99,13 +99,13 @@ describe('AdminConfigurationPage', () => {
     );
 
     // Create term
-    fireEvent.change(screen.getByPlaceholderText('Term name'), {
+    fireEvent.change(screen.getByLabelText('Term name'), {
       target: { value: 'Winter Term' }
     });
-    fireEvent.change(screen.getByPlaceholderText('Start date'), {
+    fireEvent.change(screen.getByLabelText('Start date'), {
       target: { value: '2025-01-10' }
     });
-    fireEvent.change(screen.getByPlaceholderText('End date'), {
+    fireEvent.change(screen.getByLabelText('End date'), {
       target: { value: '2025-04-01' }
     });
 
@@ -114,10 +114,10 @@ describe('AdminConfigurationPage', () => {
     await waitFor(() => expect(screen.getByText('Winter Term')).toBeInTheDocument());
 
     // Create class
-    fireEvent.change(screen.getByPlaceholderText('Class name'), {
+    fireEvent.change(screen.getByLabelText('Class name'), {
       target: { value: 'Grade 9' }
     });
-    fireEvent.change(screen.getByPlaceholderText('Description'), {
+    fireEvent.change(screen.getByLabelText('Description'), {
       target: { value: 'Lower senior' }
     });
     fireEvent.click(screen.getByRole('button', { name: /Add class/i }));
@@ -125,7 +125,7 @@ describe('AdminConfigurationPage', () => {
     await waitFor(() => expect(screen.getByText('Grade 9')).toBeInTheDocument());
 
     // Save branding
-    fireEvent.change(screen.getByPlaceholderText('#1d4ed8'), {
+    fireEvent.change(screen.getByLabelText('Primary color'), {
       target: { value: '#abcdef' }
     });
     fireEvent.click(screen.getByRole('button', { name: /Save branding/i }));

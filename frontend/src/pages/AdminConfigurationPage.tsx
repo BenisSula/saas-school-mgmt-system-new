@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { api, AcademicTerm, BrandingConfig, SchoolClass } from '../lib/api';
-import { Button } from '../components/Button';
-import { Table } from '../components/Table';
+import { api, type AcademicTerm, type BrandingConfig, type SchoolClass } from '../lib/api';
+import { Button } from '../components/ui/Button';
+import { Table } from '../components/ui/Table';
+import { Input } from '../components/ui/Input';
+import { Select } from '../components/ui/Select';
+import { DatePicker } from '../components/ui/DatePicker';
 
 interface BrandingFormState {
   logoUrl: string;
@@ -25,6 +28,7 @@ function AdminConfigurationPage() {
   const [classForm, setClassForm] = useState({ name: '', description: '' });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [statusType, setStatusType] = useState<'info' | 'error'>('info');
 
   useEffect(() => {
     let isMounted = true;
@@ -49,6 +53,7 @@ function AdminConfigurationPage() {
         setClasses(classesResponse);
       } catch (error) {
         setMessage((error as Error).message);
+        setStatusType('error');
       }
     })();
     return () => {
@@ -108,8 +113,10 @@ function AdminConfigurationPage() {
       };
       await api.updateBranding(payload);
       setMessage('Branding saved.');
+      setStatusType('info');
     } catch (error) {
       setMessage((error as Error).message);
+      setStatusType('error');
     } finally {
       setLoading(false);
     }
@@ -124,8 +131,10 @@ function AdminConfigurationPage() {
       setTerms((current) => [created, ...current]);
       setTermForm({ name: '', startsOn: '', endsOn: '' });
       setMessage('Academic term recorded.');
+      setStatusType('info');
     } catch (error) {
       setMessage((error as Error).message);
+      setStatusType('error');
     } finally {
       setLoading(false);
     }
@@ -140,8 +149,10 @@ function AdminConfigurationPage() {
       setClasses((current) => [created, ...current]);
       setClassForm({ name: '', description: '' });
       setMessage('Class saved.');
+      setStatusType('info');
     } catch (error) {
       setMessage((error as Error).message);
+      setStatusType('error');
     } finally {
       setLoading(false);
     }
@@ -150,159 +161,156 @@ function AdminConfigurationPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-white">Tenant Configuration</h1>
+        <h1 className="text-2xl font-semibold">Tenant Configuration</h1>
         <p className="text-sm text-slate-300">
           Manage branding, academic terms, and classes for the active tenant.
         </p>
       </div>
 
-      {message && <div className="rounded bg-slate-800 p-3 text-sm text-slate-100">{message}</div>}
+      {message ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`rounded-md px-4 py-3 text-sm ${
+            statusType === 'error'
+              ? 'border border-red-500 bg-red-500/10 text-red-200'
+              : 'border border-[var(--brand-border)] bg-slate-900/70 text-slate-100'
+          }`}
+        >
+          {message}
+        </div>
+      ) : null}
 
-      <section className="rounded-lg border border-slate-800 bg-slate-900/80 p-6">
+      <section className="rounded-lg border border-[var(--brand-border)] bg-slate-900/60 p-6 shadow-lg">
         <header className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-white">Branding</h2>
+            <h2 className="text-xl font-semibold">Branding</h2>
             <p className="text-sm text-slate-400">
               Update logos, colors, and feature flags. Changes apply across all tenant pages.
             </p>
           </div>
-          <Button onClick={handleBrandingSave} disabled={loading}>
+          <Button onClick={handleBrandingSave} loading={loading}>
             Save branding
           </Button>
         </header>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="flex flex-col space-y-1 text-sm text-slate-300">
-            Logo URL
-            <input
-              className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-white"
-              placeholder="https://cdn.school/logo.svg"
-              value={branding.logoUrl}
-              onChange={(event) =>
-                setBranding((state) => ({ ...state, logoUrl: event.target.value }))
-              }
-            />
-          </label>
-          <label className="flex flex-col space-y-1 text-sm text-slate-300">
-            Primary color
-            <input
-              className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-white"
-              value={branding.primaryColor}
-              onChange={(event) =>
-                setBranding((state) => ({ ...state, primaryColor: event.target.value }))
-              }
-              placeholder="#1d4ed8"
-            />
-          </label>
-          <label className="flex flex-col space-y-1 text-sm text-slate-300">
-            Secondary color
-            <input
-              className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-white"
-              value={branding.secondaryColor}
-              onChange={(event) =>
-                setBranding((state) => ({ ...state, secondaryColor: event.target.value }))
-              }
-              placeholder="#0f172a"
-            />
-          </label>
-          <label className="flex flex-col space-y-1 text-sm text-slate-300">
-            Dark mode
-            <select
-              className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-white"
-              value={branding.themeFlags.darkMode ? 'enabled' : 'disabled'}
-              onChange={(event) =>
-                setBranding((state) => ({
-                  ...state,
-                  themeFlags: { ...state.themeFlags, darkMode: event.target.value === 'enabled' }
-                }))
-              }
-            >
-              <option value="enabled">Enabled</option>
-              <option value="disabled">Disabled</option>
-            </select>
-          </label>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Input
+            label="Logo URL"
+            placeholder="https://cdn.school/logo.svg"
+            value={branding.logoUrl}
+            onChange={(event) =>
+              setBranding((state) => ({ ...state, logoUrl: event.target.value }))
+            }
+          />
+          <Input
+            label="Primary color"
+            placeholder="#1d4ed8"
+            value={branding.primaryColor}
+            onChange={(event) =>
+              setBranding((state) => ({ ...state, primaryColor: event.target.value }))
+            }
+          />
+          <Input
+            label="Secondary color"
+            placeholder="#0f172a"
+            value={branding.secondaryColor}
+            onChange={(event) =>
+              setBranding((state) => ({ ...state, secondaryColor: event.target.value }))
+            }
+          />
+          <Select
+            label="Dark mode"
+            value={branding.themeFlags.darkMode ? 'enabled' : 'disabled'}
+            onChange={(event) =>
+              setBranding((state) => ({
+                ...state,
+                themeFlags: { ...state.themeFlags, darkMode: event.target.value === 'enabled' }
+              }))
+            }
+            options={[
+              { label: 'Enabled', value: 'enabled' },
+              { label: 'Disabled', value: 'disabled' }
+            ]}
+          />
         </div>
 
         <div className="mt-6">
-          <Table columns={brandingColumns} data={brandingData} />
+          <Table columns={brandingColumns} data={brandingData} caption="Branding overview" />
         </div>
       </section>
 
-      <section className="rounded-lg border border-slate-800 bg-slate-900/80 p-6">
+      <section className="rounded-lg border border-[var(--brand-border)] bg-slate-900/60 p-6 shadow-lg">
         <header className="mb-4">
-          <h2 className="text-xl font-semibold text-white">Academic terms</h2>
+          <h2 className="text-xl font-semibold">Academic terms</h2>
           <p className="text-sm text-slate-400">
             Define school calendar segments for reporting, attendance, and exams.
           </p>
         </header>
         <form className="grid gap-4 sm:grid-cols-4" onSubmit={handleCreateTerm}>
-          <input
-            className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-white"
-            placeholder="Term name"
+          <Input
+            label="Term name"
+            placeholder="e.g. Spring 2025"
             required
             value={termForm.name}
             onChange={(event) => setTermForm((state) => ({ ...state, name: event.target.value }))}
           />
-          <input
-            type="date"
-            className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-white"
-            placeholder="Start date"
+          <DatePicker
+            label="Start date"
             required
             value={termForm.startsOn}
             onChange={(event) =>
               setTermForm((state) => ({ ...state, startsOn: event.target.value }))
             }
           />
-          <input
-            type="date"
-            className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-white"
-            placeholder="End date"
+          <DatePicker
+            label="End date"
             required
             value={termForm.endsOn}
             onChange={(event) =>
               setTermForm((state) => ({ ...state, endsOn: event.target.value }))
             }
           />
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" loading={loading} className="self-end">
             Add term
           </Button>
         </form>
         <div className="mt-4">
-          <Table columns={termColumns} data={terms} />
+          <Table columns={termColumns} data={terms} caption="Academic terms" />
         </div>
       </section>
 
-      <section className="rounded-lg border border-slate-800 bg-slate-900/80 p-6">
+      <section className="rounded-lg border border-[var(--brand-border)] bg-slate-900/60 p-6 shadow-lg">
         <header className="mb-4">
-          <h2 className="text-xl font-semibold text-white">Classes</h2>
+          <h2 className="text-xl font-semibold">Classes</h2>
           <p className="text-sm text-slate-400">
             Manage class groupings used throughout attendance, results, and invoicing.
           </p>
         </header>
         <form className="grid gap-4 sm:grid-cols-3" onSubmit={handleCreateClass}>
-          <input
-            className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-white"
-            placeholder="Class name"
+          <Input
+            label="Class name"
+            placeholder="Grade 9"
             required
             value={classForm.name}
             onChange={(event) =>
               setClassForm((state) => ({ ...state, name: event.target.value }))
             }
           />
-          <input
-            className="rounded border border-slate-700 bg-slate-950 px-3 py-2 text-white"
-            placeholder="Description"
+          <Input
+            label="Description"
+            placeholder="Lower senior"
             value={classForm.description}
             onChange={(event) =>
               setClassForm((state) => ({ ...state, description: event.target.value }))
             }
           />
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" loading={loading} className="self-end">
             Add class
           </Button>
         </form>
         <div className="mt-4">
-          <Table columns={classColumns} data={classes} />
+          <Table columns={classColumns} data={classes} caption="Classes" />
         </div>
       </section>
     </div>
@@ -310,5 +318,4 @@ function AdminConfigurationPage() {
 }
 
 export default AdminConfigurationPage;
-
 
