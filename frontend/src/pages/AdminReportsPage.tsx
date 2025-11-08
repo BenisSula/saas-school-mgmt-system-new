@@ -5,6 +5,8 @@ import { Table } from '../components/ui/Table';
 import { Input } from '../components/ui/Input';
 import { DatePicker } from '../components/ui/DatePicker';
 import { Select } from '../components/ui/Select';
+import { StatusBanner } from '../components/ui/StatusBanner';
+import { useAsyncFeedback } from '../hooks/useAsyncFeedback';
 
 function downloadJson(filename: string, data: unknown) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -27,9 +29,8 @@ function AdminReportsPage() {
   const [attendanceData, setAttendanceData] = useState<AttendanceAggregate[]>([]);
   const [gradeData, setGradeData] = useState<GradeAggregate[]>([]);
   const [feeData, setFeeData] = useState<FeeAggregate[]>([]);
-  const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [statusType, setStatusType] = useState<'info' | 'error'>('info');
+  const { status, message, setInfo, setSuccess, setError, clear } = useAsyncFeedback();
 
   const attendanceColumns = useMemo(
     () => [
@@ -64,17 +65,20 @@ function AdminReportsPage() {
   async function runAttendanceReport() {
     try {
       setLoading(true);
-      setMessage(null);
+      clear();
       const data = await api.getAttendanceReport({
         from: attendanceFilters.from || undefined,
         to: attendanceFilters.to || undefined,
         classId: attendanceFilters.classId || undefined
       });
       setAttendanceData(data);
-      setStatusType('info');
+      if (data.length === 0) {
+        setInfo('No attendance records match the selected filters.');
+      } else {
+        setSuccess('Attendance report updated.');
+      }
     } catch (error) {
-      setMessage((error as Error).message);
-      setStatusType('error');
+      setError((error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -82,19 +86,21 @@ function AdminReportsPage() {
 
   async function runGradeReport() {
     if (!examId) {
-      setMessage('Provide an exam ID to fetch grade distribution.');
-      setStatusType('error');
+      setInfo('Provide an exam ID to fetch grade distribution.');
       return;
     }
     try {
       setLoading(true);
-      setMessage(null);
+      clear();
       const data = await api.getGradeReport(examId);
       setGradeData(data);
-      setStatusType('info');
+      if (data.length === 0) {
+        setInfo('No grade data available for this exam.');
+      } else {
+        setSuccess('Grade report updated.');
+      }
     } catch (error) {
-      setMessage((error as Error).message);
-      setStatusType('error');
+      setError((error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -103,13 +109,16 @@ function AdminReportsPage() {
   async function runFeeReport() {
     try {
       setLoading(true);
-      setMessage(null);
+      clear();
       const data = await api.getFeeReport(feeStatus || undefined);
       setFeeData(data);
-      setStatusType('info');
+      if (data.length === 0) {
+        setInfo('No invoices matched the selected status.');
+      } else {
+        setSuccess('Fee report updated.');
+      }
     } catch (error) {
-      setMessage((error as Error).message);
-      setStatusType('error');
+      setError((error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -124,19 +133,7 @@ function AdminReportsPage() {
         </p>
       </header>
 
-      {message ? (
-        <div
-          role="status"
-          aria-live="polite"
-          className={`rounded-md px-4 py-3 text-sm ${
-            statusType === 'error'
-              ? 'border border-red-500 bg-red-500/10 text-red-200'
-              : 'border border-[var(--brand-border)] bg-slate-900/70 text-slate-100'
-          }`}
-        >
-          {message}
-        </div>
-      ) : null}
+      {message ? <StatusBanner status={status} message={message} onDismiss={clear} /> : null}
 
       <section className="rounded-lg border border-[var(--brand-border)] bg-slate-900/60 p-6 shadow-lg">
         <header className="mb-4 flex items-center justify-between">

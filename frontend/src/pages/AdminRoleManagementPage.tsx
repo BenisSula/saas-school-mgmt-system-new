@@ -3,25 +3,27 @@ import { api, type TenantUser } from '../lib/api';
 import { Table } from '../components/ui/Table';
 import { Button } from '../components/ui/Button';
 import { Select } from '../components/ui/Select';
+import { StatusBanner } from '../components/ui/StatusBanner';
+import { useAsyncFeedback } from '../hooks/useAsyncFeedback';
 
 const ROLES: TenantUser['role'][] = ['student', 'teacher', 'admin', 'superadmin'];
 
 function AdminRoleManagementPage() {
   const [users, setUsers] = useState<TenantUser[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [statusType, setStatusType] = useState<'info' | 'error'>('info');
+  const { status, message, setInfo, setSuccess, setError, clear } = useAsyncFeedback();
 
   async function loadUsers() {
     try {
       setLoading(true);
-      setMessage(null);
+      clear();
       const data = await api.listUsers();
       setUsers(data);
-      setStatusType('info');
+      if (data.length === 0) {
+        setInfo('No users found for this tenant.');
+      }
     } catch (error) {
-      setMessage((error as Error).message);
-      setStatusType('error');
+      setError((error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -57,16 +59,14 @@ function AdminRoleManagementPage() {
           const nextRole = event.target.value as TenantUser['role'];
           try {
             setLoading(true);
-            setMessage(null);
+            clear();
             const updated = await api.updateUserRole(user.id, nextRole);
             setUsers((current) =>
               current.map((entry) => (entry.id === user.id ? { ...entry, role: updated.role } : entry))
             );
-            setMessage(`Role updated for ${user.email}`);
-            setStatusType('info');
+            setSuccess(`Role updated for ${user.email}`);
           } catch (error) {
-            setMessage((error as Error).message);
-            setStatusType('error');
+            setError((error as Error).message);
           } finally {
             setLoading(false);
           }
@@ -89,19 +89,7 @@ function AdminRoleManagementPage() {
         </Button>
       </header>
 
-      {message ? (
-        <div
-          role="status"
-          aria-live="polite"
-          className={`rounded-md px-4 py-3 text-sm ${
-            statusType === 'error'
-              ? 'border border-red-500 bg-red-500/10 text-red-200'
-              : 'border border-[var(--brand-border)] bg-slate-900/70 text-slate-100'
-          }`}
-        >
-          {message}
-        </div>
-      ) : null}
+      {message ? <StatusBanner status={status} message={message} onDismiss={clear} /> : null}
 
       <Table columns={columns} data={rows} caption="Tenant user roles" />
     </div>

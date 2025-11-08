@@ -5,6 +5,8 @@ import { Table } from '../components/ui/Table';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { DatePicker } from '../components/ui/DatePicker';
+import { StatusBanner } from '../components/ui/StatusBanner';
+import { useAsyncFeedback } from '../hooks/useAsyncFeedback';
 
 interface BrandingFormState {
   logoUrl: string;
@@ -27,8 +29,7 @@ function AdminConfigurationPage() {
   const [termForm, setTermForm] = useState({ name: '', startsOn: '', endsOn: '' });
   const [classForm, setClassForm] = useState({ name: '', description: '' });
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [statusType, setStatusType] = useState<'info' | 'error'>('info');
+  const { status, message, setSuccess, setError, clear } = useAsyncFeedback();
 
   useEffect(() => {
     let isMounted = true;
@@ -52,8 +53,7 @@ function AdminConfigurationPage() {
         setTerms(termsResponse);
         setClasses(classesResponse);
       } catch (error) {
-        setMessage((error as Error).message);
-        setStatusType('error');
+        setError((error as Error).message);
       }
     })();
     return () => {
@@ -104,7 +104,7 @@ function AdminConfigurationPage() {
   async function handleBrandingSave() {
     try {
       setLoading(true);
-      setMessage(null);
+      clear();
       const payload: Partial<BrandingConfig> = {
         logo_url: branding.logoUrl,
         primary_color: branding.primaryColor,
@@ -112,11 +112,9 @@ function AdminConfigurationPage() {
         theme_flags: branding.themeFlags
       };
       await api.updateBranding(payload);
-      setMessage('Branding saved.');
-      setStatusType('info');
+      setSuccess('Branding saved.');
     } catch (error) {
-      setMessage((error as Error).message);
-      setStatusType('error');
+      setError((error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -126,15 +124,13 @@ function AdminConfigurationPage() {
     event.preventDefault();
     try {
       setLoading(true);
-      setMessage(null);
+      clear();
       const created = await api.createTerm(termForm);
       setTerms((current) => [created, ...current]);
       setTermForm({ name: '', startsOn: '', endsOn: '' });
-      setMessage('Academic term recorded.');
-      setStatusType('info');
+      setSuccess('Academic term recorded.');
     } catch (error) {
-      setMessage((error as Error).message);
-      setStatusType('error');
+      setError((error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -144,15 +140,13 @@ function AdminConfigurationPage() {
     event.preventDefault();
     try {
       setLoading(true);
-      setMessage(null);
+      clear();
       const created = await api.createClass(classForm);
       setClasses((current) => [created, ...current]);
       setClassForm({ name: '', description: '' });
-      setMessage('Class saved.');
-      setStatusType('info');
+      setSuccess('Class saved.');
     } catch (error) {
-      setMessage((error as Error).message);
-      setStatusType('error');
+      setError((error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -167,19 +161,7 @@ function AdminConfigurationPage() {
         </p>
       </div>
 
-      {message ? (
-        <div
-          role="status"
-          aria-live="polite"
-          className={`rounded-md px-4 py-3 text-sm ${
-            statusType === 'error'
-              ? 'border border-red-500 bg-red-500/10 text-red-200'
-              : 'border border-[var(--brand-border)] bg-slate-900/70 text-slate-100'
-          }`}
-        >
-          {message}
-        </div>
-      ) : null}
+      {message ? <StatusBanner status={status} message={message} onDismiss={clear} /> : null}
 
       <section className="rounded-lg border border-[var(--brand-border)] bg-slate-900/60 p-6 shadow-lg">
         <header className="mb-4 flex items-center justify-between">

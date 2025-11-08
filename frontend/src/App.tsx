@@ -9,6 +9,7 @@ import StudentResultsPage from './pages/StudentResultsPage';
 import { Navbar } from './components/ui/Navbar';
 import { Sidebar } from './components/ui/Sidebar';
 import type { NavLink } from './components/ui/Navbar';
+import { useResponsiveSidebar } from './hooks/useResponsiveSidebar';
 
 type ViewKey =
   | 'home'
@@ -21,7 +22,7 @@ type ViewKey =
 
 function App() {
   const [view, setView] = useState<ViewKey>('home');
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+  const { isOpen, toggle, close, shouldShowOverlay } = useResponsiveSidebar();
 
   const activePage = useMemo(() => {
     switch (view) {
@@ -82,24 +83,24 @@ function App() {
       <Navbar
         brandName="SaaS School Portal"
         links={navLinks}
-        onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
-        sidebarOpen={sidebarOpen}
+        onToggleSidebar={toggle}
+        sidebarOpen={isOpen}
       />
 
       <div className="relative mx-auto flex max-w-6xl">
         <div
           className={`fixed inset-0 z-30 bg-slate-950/70 backdrop-blur-sm transition-opacity sm:hidden ${
-            sidebarOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+            shouldShowOverlay ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
           }`}
-          aria-hidden={!sidebarOpen}
-          onClick={() => setSidebarOpen(false)}
+          aria-hidden={!shouldShowOverlay}
+          onClick={close}
         />
         <aside
           className={`fixed inset-y-0 left-0 z-40 w-72 transform transition-transform sm:static sm:h-auto sm:w-64 sm:translate-x-0 ${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'
+            isOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'
           }`}
         >
-          <Sidebar links={navLinks} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+          <Sidebar links={navLinks} open={isOpen} onClose={close} />
         </aside>
         <main className="relative z-10 flex-1 px-4 py-6 sm:px-8">
           {isAdminView ? <div className="space-y-6">{activePage}</div> : activePage}
