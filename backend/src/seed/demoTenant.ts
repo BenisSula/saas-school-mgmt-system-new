@@ -1,7 +1,7 @@
 import argon2 from 'argon2';
 import crypto from 'crypto';
 import type { Pool } from 'pg';
-import { createTenant, withTenantSearchPath } from '../db/tenantManager';
+import { createTenant, runTenantMigrations, withTenantSearchPath } from '../db/tenantManager';
 
 const DEMO_SCHEMA = process.env.DEMO_TENANT_SCHEMA ?? 'tenant_demo_academy';
 const DEMO_SCHOOL_NAME = process.env.DEMO_SCHOOL_NAME ?? 'Demo Academy';
@@ -39,7 +39,9 @@ async function ensureTenant(pool: Pool): Promise<{ id: string }> {
   );
 
   if ((existing.rowCount ?? 0) > 0) {
-    return { id: existing.rows[0].id };
+    const tenantId = existing.rows[0].id;
+    await runTenantMigrations(pool, DEMO_SCHEMA);
+    return { id: tenantId };
   }
 
   return createTenant(

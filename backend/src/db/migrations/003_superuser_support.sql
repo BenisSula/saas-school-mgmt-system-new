@@ -15,7 +15,12 @@ ON CONFLICT (name) DO UPDATE
   SET description = EXCLUDED.description;
 
 ALTER TABLE shared.users
-  ADD CONSTRAINT shared_users_role_fk FOREIGN KEY (role) REFERENCES shared.roles(name) ON UPDATE CASCADE;
+  DROP CONSTRAINT IF EXISTS shared_users_role_fk;
+
+ALTER TABLE shared.users
+  ADD CONSTRAINT shared_users_role_fk FOREIGN KEY (role)
+    REFERENCES shared.roles(name)
+    ON UPDATE CASCADE;
 
 CREATE TABLE IF NOT EXISTS shared.schools (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

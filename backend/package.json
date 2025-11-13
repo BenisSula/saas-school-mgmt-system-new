@@ -16,7 +16,8 @@
     "demo:seed": "ts-node src/scripts/seedDemo.ts",
     "seed:superuser": "ts-node src/scripts/seedSuperUserSetup.ts",
     "simulate:phase5": "ts-node src/scripts/simulatePhase5Interactions.ts",
-    "simulate:phase6": "ts-node src/scripts/simulatePhase6Validation.ts"
+    "simulate:phase6": "ts-node src/scripts/simulatePhase6Validation.ts",
+    "export:credentials": "ts-node src/scripts/exportCredentials.ts"
   },
   "keywords": [],
   "author": "",
