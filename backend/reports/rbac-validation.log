@@ -1,0 +1,2 @@
+[PASS] ADMIN DELETE DELETE /superuser/schools/:id expected=403 actual=403 message="Admin cannot delete schools outside their scope"
+[PASS] SUPERADMIN GET GET /students expected=200 actual=200 message="Superuser can list students for any tenant"

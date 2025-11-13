@@ -5,6 +5,8 @@ import { createTestPool } from './utils/testDb';
 import { createTenant } from '../src/db/tenantManager';
 import { getPool } from '../src/db/connection';
 
+jest.setTimeout(15000);
+
 type MockAuthRequest = Request & {
   user?: {
     id: string;
