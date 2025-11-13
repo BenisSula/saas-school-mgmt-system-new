@@ -29,6 +29,8 @@ export interface AuditLogEntry {
   entityType: AuditEntityType;
   entityId?: string | null;
   details?: Record<string, unknown>;
+  actorRole?: string | null;
+  target?: string | null;
 }
 
 export interface AuditLogFilter {
@@ -55,8 +57,18 @@ export async function recordAuditLog(
   try {
     await client.query(
       `
-        INSERT INTO ${schema}.audit_logs (id, user_id, action, entity_type, entity_id, details, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6::jsonb, NOW())
+        INSERT INTO ${schema}.audit_logs (
+          id,
+          user_id,
+          action,
+          entity_type,
+          entity_id,
+          actor_role,
+          target,
+          details,
+          created_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, NOW())
       `,
       [
         id,
@@ -64,6 +76,8 @@ export async function recordAuditLog(
         entry.action,
         entry.entityType,
         entry.entityId ?? null,
+        entry.actorRole ?? null,
+        entry.target ?? null,
         JSON.stringify(entry.details ?? {})
       ]
     );
@@ -91,8 +105,18 @@ export async function recordSharedAuditLog(entry: AuditLogEntry): Promise<void> 
   const pool = getPool();
   await pool.query(
     `
-      INSERT INTO shared.audit_logs (id, user_id, action, entity_type, entity_id, details, created_at)
-      VALUES ($1, $2, $3, $4, $5, $6::jsonb, NOW())
+      INSERT INTO shared.audit_logs (
+        id,
+        user_id,
+        action,
+        entity_type,
+        entity_id,
+        actor_role,
+        target,
+        details,
+        created_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, NOW())
     `,
     [
       crypto.randomUUID(),
@@ -100,6 +124,8 @@ export async function recordSharedAuditLog(entry: AuditLogEntry): Promise<void> 
       entry.action,
       entry.entityType,
       entry.entityId ?? null,
+      entry.actorRole ?? null,
+      entry.target ?? null,
       JSON.stringify(entry.details ?? {})
     ]
   );

@@ -490,9 +490,12 @@ export async function createAdminForSchool(
         full_name,
         phone,
         school_id,
+        created_by,
+        status,
+        audit_log_enabled,
         is_teaching_staff
       )
-      VALUES ($1, $2, 'admin', $3, TRUE, $4, $5, $6, $7, FALSE)
+      VALUES ($1, $2, 'admin', $3, TRUE, $4, $5, $6, $7, $8, 'active', TRUE, FALSE)
       RETURNING id, email, role, tenant_id, created_at, username, full_name
     `,
     [
@@ -502,7 +505,8 @@ export async function createAdminForSchool(
       normalizedUsername,
       input.fullName,
       input.phone ?? null,
-      schoolId
+      schoolId,
+      actorId ?? null
     ]
   );
 

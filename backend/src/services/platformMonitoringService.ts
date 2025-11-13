@@ -20,6 +20,8 @@ export interface PlatformUserSummary {
   schoolName: string | null;
   registrationCode: string | null;
   isVerified: boolean;
+  status: string | null;
+  auditLogEnabled: boolean;
   createdAt: string;
 }
 
@@ -192,6 +194,8 @@ export async function listAllPlatformUsers(): Promise<PlatformUserSummary[]> {
         u.role,
         u.tenant_id,
         u.is_verified,
+        u.status,
+        u.audit_log_enabled,
         u.created_at,
         t.name AS tenant_name,
         s.id AS school_id,
@@ -216,6 +220,8 @@ export async function listAllPlatformUsers(): Promise<PlatformUserSummary[]> {
     schoolName: row.school_name ?? null,
     registrationCode: row.registration_code ?? null,
     isVerified: row.is_verified,
+    status: row.status ?? null,
+    auditLogEnabled: Boolean(row.audit_log_enabled),
     createdAt: row.created_at
   }));
 }

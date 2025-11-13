@@ -85,7 +85,10 @@ async function ensureUser(
         SET password_hash = $1,
             role = $2,
             tenant_id = $3,
-            is_verified = TRUE
+            is_verified = TRUE,
+            status = 'active',
+            audit_log_enabled = TRUE,
+            updated_at = NOW()
         WHERE id = $4
       `,
       [passwordHash, role, tenantId, userId]
@@ -96,10 +99,21 @@ async function ensureUser(
   const userId = preferredId ?? crypto.randomUUID();
   await pool.query(
     `
-      INSERT INTO shared.users (id, email, password_hash, role, tenant_id, is_verified)
-      VALUES ($1, $2, $3, $4, $5, TRUE)
+      INSERT INTO shared.users (
+        id,
+        email,
+        password_hash,
+        role,
+        tenant_id,
+        is_verified,
+        created_at,
+        status,
+        audit_log_enabled,
+        is_teaching_staff
+      )
+      VALUES ($1, $2, $3, $4, $5, TRUE, NOW(), 'active', TRUE, $6)
     `,
-    [userId, normalisedEmail, passwordHash, role, tenantId]
+    [userId, normalisedEmail, passwordHash, role, tenantId, role === 'teacher']
   );
   return userId;
 }

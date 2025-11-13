@@ -131,6 +131,7 @@ describe('platformMonitoringService', () => {
     expect(notificationResult.rows[0].recipient_user_id).toBe(adminUserId);
     expect(notificationResult.rows[0].title).toBe('System maintenance');
     expect(notificationResult.rows[0].message).toBe('Platform will be offline at midnight');
+    expect(notificationResult.rows[0].target_roles).toEqual(['admin']);
 
     const auditResult = await pool.query(`SELECT action FROM shared.audit_logs`);
     expect(auditResult.rows.some((row) => row.action === 'ADMIN_NOTIFICATION_SENT')).toBe(true);
@@ -145,5 +146,7 @@ describe('platformMonitoringService', () => {
     expect(adminRecord?.tenantName).toBe('Test School');
     expect(adminRecord?.username).toBeNull();
     expect(adminRecord?.schoolName).toBeNull();
+    expect(adminRecord?.status).toBe('inactive');
+    expect(adminRecord?.auditLogEnabled).toBe(false);
   });
 });
