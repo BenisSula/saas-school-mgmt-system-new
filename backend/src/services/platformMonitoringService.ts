@@ -11,9 +11,14 @@ export interface SessionContext {
 export interface PlatformUserSummary {
   id: string;
   email: string;
+  username: string | null;
+  fullName: string | null;
   role: string;
   tenantId: string | null;
   tenantName: string | null;
+  schoolId: string | null;
+  schoolName: string | null;
+  registrationCode: string | null;
   isVerified: boolean;
   createdAt: string;
 }
@@ -21,7 +26,9 @@ export interface PlatformUserSummary {
 export interface AdminNotificationInput {
   tenantId?: string | null;
   title: string;
-  body: string;
+  message: string;
+  targetRole?: string;
+  targetRoles?: string[];
   metadata?: Record<string, unknown>;
   actorId?: string | null;
 }
@@ -180,13 +187,19 @@ export async function listAllPlatformUsers(): Promise<PlatformUserSummary[]> {
       SELECT
         u.id,
         u.email,
+        u.username,
+        u.full_name,
         u.role,
         u.tenant_id,
         u.is_verified,
         u.created_at,
-        t.name AS tenant_name
+        t.name AS tenant_name,
+        s.id AS school_id,
+        s.name AS school_name,
+        s.registration_code
       FROM shared.users u
       LEFT JOIN shared.tenants t ON t.id = u.tenant_id
+      LEFT JOIN shared.schools s ON s.id = u.school_id
       ORDER BY u.created_at DESC
     `
   );
@@ -194,9 +207,14 @@ export async function listAllPlatformUsers(): Promise<PlatformUserSummary[]> {
   return result.rows.map((row) => ({
     id: row.id,
     email: row.email,
+    username: row.username ?? null,
+    fullName: row.full_name ?? null,
     role: row.role,
     tenantId: row.tenant_id,
     tenantName: row.tenant_name ?? null,
+    schoolId: row.school_id ?? null,
+    schoolName: row.school_name ?? null,
+    registrationCode: row.registration_code ?? null,
     isVerified: row.is_verified,
     createdAt: row.created_at
   }));
@@ -205,31 +223,42 @@ export async function listAllPlatformUsers(): Promise<PlatformUserSummary[]> {
 export async function sendNotificationToAdmins({
   tenantId,
   title,
-  body,
+  message,
+  targetRole = 'admin',
+  targetRoles,
   metadata,
   actorId
 }: AdminNotificationInput): Promise<{ sentCount: number; notificationIds: string[] }> {
-  if (!title?.trim() || !body?.trim()) {
-    throw new Error('Notification title and body are required');
+  if (!title?.trim() || !message?.trim()) {
+    throw new Error('Notification title and message are required');
   }
 
   const pool = getPool();
-  const values: Array<string | null> = [];
-  let whereClause = `WHERE role = 'admin'`;
+  const effectiveRoles = Array.from(
+    new Set(
+      (targetRoles && targetRoles.length > 0 ? targetRoles : [targetRole])
+        .map((roleValue) => roleValue?.trim())
+        .filter((roleValue): roleValue is string => Boolean(roleValue))
+    )
+  );
 
-  if (tenantId) {
-    whereClause += ` AND tenant_id = $1`;
-    values.push(tenantId);
+  if (effectiveRoles.length === 0) {
+    throw new Error('At least one target role is required for notifications');
   }
+
+  const rolePlaceholders = effectiveRoles.map((_, index) => `$${index + 1}`).join(', ');
+  const params: Array<string | null> = [...effectiveRoles];
+  const tenantParamIndex = params.push(tenantId ?? null);
 
   const recipientsResult = await pool.query(
     `
       SELECT id, tenant_id
       FROM shared.users
-      ${whereClause}
+      WHERE role IN (${rolePlaceholders})
+        AND ($${tenantParamIndex}::uuid IS NULL OR tenant_id = $${tenantParamIndex}::uuid)
       ORDER BY created_at DESC
     `,
-    values
+    params
   );
 
   if (recipientsResult.rowCount === 0) {
@@ -246,19 +275,24 @@ export async function sendNotificationToAdmins({
           id,
           tenant_id,
           recipient_user_id,
+          target_role,
+          target_roles,
           title,
-          body,
+          message,
+          status,
           metadata,
           sent_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6::jsonb, NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, 'sent', $8::jsonb, NOW())
       `,
       [
         notificationId,
         recipient.tenant_id,
         recipient.id,
+        effectiveRoles.length === 1 ? effectiveRoles[0] : null,
+        effectiveRoles,
         title.trim(),
-        body.trim(),
+        message.trim(),
         JSON.stringify(metadata ?? {})
       ]
     );
@@ -272,6 +306,8 @@ export async function sendNotificationToAdmins({
     details: {
       tenantId: tenantId ?? 'all',
       title,
+      message,
+      targetRoles: effectiveRoles,
       recipients: recipientsResult.rowCount
     }
   });

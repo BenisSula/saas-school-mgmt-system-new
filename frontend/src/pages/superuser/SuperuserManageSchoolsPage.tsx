@@ -20,6 +20,10 @@ type FormMode = 'create' | 'edit';
 interface SchoolFormState {
   id?: string;
   name: string;
+  address: string;
+  contactPhone: string;
+  contactEmail: string;
+  registrationCode: string;
   domain: string;
   subscriptionType: SubscriptionTier;
   billingEmail: string;
@@ -30,10 +34,17 @@ interface AdminFormState {
   schoolId: string;
   email: string;
   password: string;
+  username: string;
+  fullName: string;
+  phone: string;
 }
 
 const defaultFormState: SchoolFormState = {
   name: '',
+  address: '',
+  contactPhone: '',
+  contactEmail: '',
+  registrationCode: '',
   domain: '',
   subscriptionType: 'trial',
   billingEmail: '',
@@ -63,7 +74,10 @@ export function SuperuserManageSchoolsPage() {
   const [adminFormState, setAdminFormState] = useState<AdminFormState>({
     schoolId: '',
     email: '',
-    password: ''
+    password: '',
+    username: '',
+    fullName: '',
+    phone: ''
   });
   const {
     status: feedbackStatus,
@@ -102,6 +116,10 @@ export function SuperuserManageSchoolsPage() {
     setFormState({
       id: school.id,
       name: school.name,
+      address: school.address ?? '',
+      contactPhone: school.contactPhone ?? '',
+      contactEmail: school.contactEmail ?? '',
+      registrationCode: school.registrationCode ?? '',
       domain: school.domain ?? '',
       subscriptionType: school.subscriptionType,
       billingEmail: school.billingEmail ?? '',
@@ -114,7 +132,10 @@ export function SuperuserManageSchoolsPage() {
     setAdminFormState({
       schoolId: school.id,
       email: '',
-      password: ''
+      password: '',
+      username: '',
+      fullName: '',
+      phone: ''
     });
     setShowAdminModal(true);
   };
@@ -124,6 +145,10 @@ export function SuperuserManageSchoolsPage() {
       if (formMode === 'create') {
         await api.superuser.createSchool({
           name: formState.name,
+          address: formState.address,
+          contactPhone: formState.contactPhone,
+          contactEmail: formState.contactEmail,
+          registrationCode: formState.registrationCode,
           domain: formState.domain || undefined,
           subscriptionType: formState.subscriptionType,
           billingEmail: formState.billingEmail || undefined
@@ -132,6 +157,10 @@ export function SuperuserManageSchoolsPage() {
       } else if (formState.id) {
         await api.superuser.updateSchool(formState.id, {
           name: formState.name,
+          address: formState.address || undefined,
+          contactPhone: formState.contactPhone || undefined,
+          contactEmail: formState.contactEmail || undefined,
+          registrationCode: formState.registrationCode || undefined,
           domain: formState.domain || null,
           subscriptionType: formState.subscriptionType,
           billingEmail: formState.billingEmail || null,
@@ -164,7 +193,10 @@ export function SuperuserManageSchoolsPage() {
     try {
       await api.superuser.createSchoolAdmin(adminFormState.schoolId, {
         email: adminFormState.email,
-        password: adminFormState.password
+        password: adminFormState.password,
+        username: adminFormState.username,
+        fullName: adminFormState.fullName,
+        phone: adminFormState.phone || undefined
       });
       toast.success('Admin user created');
       setShowAdminModal(false);
@@ -195,7 +227,10 @@ export function SuperuserManageSchoolsPage() {
       render: (row) => (
         <div>
           <p className="font-semibold text-[var(--brand-surface-contrast)]">{row.name}</p>
-          {row.domain ? <p className="text-xs text-[var(--brand-muted)]">{row.domain}</p> : null}
+          <p className="text-xs text-[var(--brand-muted)]">
+            {row.registrationCode ? `${row.registrationCode} • ` : ''}
+            {row.domain ?? 'No domain assigned'}
+          </p>
         </div>
       )
     },
@@ -293,6 +328,39 @@ export function SuperuserManageSchoolsPage() {
             onChange={(event) => setFormState((state) => ({ ...state, name: event.target.value }))}
           />
           <Input
+            label="Address"
+            required
+            value={formState.address}
+            onChange={(event) =>
+              setFormState((state) => ({ ...state, address: event.target.value }))
+            }
+          />
+          <Input
+            label="Contact phone"
+            required
+            value={formState.contactPhone}
+            onChange={(event) =>
+              setFormState((state) => ({ ...state, contactPhone: event.target.value }))
+            }
+          />
+          <Input
+            label="Contact email"
+            type="email"
+            required
+            value={formState.contactEmail}
+            onChange={(event) =>
+              setFormState((state) => ({ ...state, contactEmail: event.target.value }))
+            }
+          />
+          <Input
+            label="Registration code"
+            required
+            value={formState.registrationCode}
+            onChange={(event) =>
+              setFormState((state) => ({ ...state, registrationCode: event.target.value }))
+            }
+          />
+          <Input
             label="Domain"
             placeholder="school.example.com"
             value={formState.domain}
@@ -363,6 +431,29 @@ export function SuperuserManageSchoolsPage() {
             value={adminFormState.email}
             onChange={(event) =>
               setAdminFormState((state) => ({ ...state, email: event.target.value }))
+            }
+          />
+          <Input
+            label="Username"
+            required
+            value={adminFormState.username}
+            onChange={(event) =>
+              setAdminFormState((state) => ({ ...state, username: event.target.value }))
+            }
+          />
+          <Input
+            label="Full name"
+            required
+            value={adminFormState.fullName}
+            onChange={(event) =>
+              setAdminFormState((state) => ({ ...state, fullName: event.target.value }))
+            }
+          />
+          <Input
+            label="Contact phone"
+            value={adminFormState.phone}
+            onChange={(event) =>
+              setAdminFormState((state) => ({ ...state, phone: event.target.value }))
             }
           />
           <Input

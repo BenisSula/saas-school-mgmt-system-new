@@ -59,7 +59,7 @@ export function SuperuserOverviewPage() {
       {
         title: 'Total users',
         value: overview.totals.users,
-        description: `${overview.roleDistribution.admins} admins • ${overview.roleDistribution.teachers} teachers • ${overview.roleDistribution.students} students`
+        description: `${overview.roleDistribution.admins} admins • ${overview.roleDistribution.hods} HODs • ${overview.roleDistribution.teachers} teachers • ${overview.roleDistribution.students} students`
       },
       {
         title: 'Pending approvals',

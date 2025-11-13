@@ -116,7 +116,7 @@ describe('platformMonitoringService', () => {
     const response = await sendNotificationToAdmins({
       tenantId,
       title: 'System maintenance',
-      body: 'Platform will be offline at midnight',
+      message: 'Platform will be offline at midnight',
       actorId: superUserId
     });
 
@@ -124,12 +124,13 @@ describe('platformMonitoringService', () => {
     expect(response.notificationIds).toHaveLength(1);
 
     const notificationResult = await pool.query(
-      `SELECT tenant_id, recipient_user_id, title, body FROM shared.notifications`
+      `SELECT tenant_id, recipient_user_id, title, message, target_roles FROM shared.notifications`
     );
     expect(notificationResult.rowCount).toBe(1);
     expect(notificationResult.rows[0].tenant_id).toBe(tenantId);
     expect(notificationResult.rows[0].recipient_user_id).toBe(adminUserId);
     expect(notificationResult.rows[0].title).toBe('System maintenance');
+    expect(notificationResult.rows[0].message).toBe('Platform will be offline at midnight');
 
     const auditResult = await pool.query(`SELECT action FROM shared.audit_logs`);
     expect(auditResult.rows.some((row) => row.action === 'ADMIN_NOTIFICATION_SENT')).toBe(true);
@@ -142,5 +143,7 @@ describe('platformMonitoringService', () => {
     const adminRecord = users.find((user) => user.role === 'admin');
     expect(adminRecord?.tenantId).toBe(tenantId);
     expect(adminRecord?.tenantName).toBe('Test School');
+    expect(adminRecord?.username).toBeNull();
+    expect(adminRecord?.schoolName).toBeNull();
   });
 });

@@ -15,6 +15,7 @@ const overview: PlatformOverview = {
   },
   roleDistribution: {
     admins: 20,
+    hods: 12,
     teachers: 80,
     students: 150
   },

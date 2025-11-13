@@ -207,6 +207,7 @@ describe('Dashboard routing', () => {
       },
       roleDistribution: {
         admins: 20,
+        hods: 30,
         teachers: 80,
         students: 150
       },

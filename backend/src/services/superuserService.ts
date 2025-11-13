@@ -1,4 +1,5 @@
 import argon2 from 'argon2';
+import crypto from 'crypto';
 import { getPool } from '../db/connection';
 import {
   createSchemaSlug,
@@ -14,6 +15,10 @@ type TenantStatus = 'active' | 'suspended' | 'deleted';
 
 export interface CreateSchoolInput {
   name: string;
+  address: string;
+  contactPhone: string;
+  contactEmail: string;
+  registrationCode: string;
   domain?: string;
   subscriptionType?: SubscriptionType;
   billingEmail?: string | null;
@@ -25,12 +30,18 @@ export interface UpdateSchoolInput {
   subscriptionType?: SubscriptionType;
   status?: TenantStatus;
   billingEmail?: string | null;
+  address?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  registrationCode?: string;
 }
 
 export interface CreateAdminInput {
   email: string;
   password: string;
-  name?: string | null;
+  username: string;
+  fullName: string;
+  phone?: string | null;
 }
 
 export async function getPlatformOverview() {
@@ -63,6 +74,7 @@ export async function getPlatformOverview() {
     total_users: string;
     admins: string;
     teachers: string;
+    hods: string;
     students: string;
     pending: string;
   }>(
@@ -70,6 +82,7 @@ export async function getPlatformOverview() {
       SELECT
         COUNT(*)::text AS total_users,
         COUNT(*) FILTER (WHERE role = 'admin')::text AS admins,
+        COUNT(*) FILTER (WHERE role = 'hod')::text AS hods,
         COUNT(*) FILTER (WHERE role = 'teacher')::text AS teachers,
         COUNT(*) FILTER (WHERE role = 'student')::text AS students,
         COUNT(*) FILTER (WHERE is_verified = FALSE)::text AS pending
@@ -116,6 +129,7 @@ export async function getPlatformOverview() {
     },
     roleDistribution: {
       admins: Number(userCounts.rows[0]?.admins ?? 0),
+      hods: Number(userCounts.rows[0]?.hods ?? 0),
       teachers: Number(userCounts.rows[0]?.teachers ?? 0),
       students: Number(userCounts.rows[0]?.students ?? 0)
     },
@@ -139,6 +153,11 @@ export async function listSchools() {
     subscription_type: SubscriptionType;
     billing_email: string | null;
     created_at: Date;
+    school_id: string | null;
+    address: string | null;
+    contact_phone: string | null;
+    contact_email: string | null;
+    registration_code: string | null;
     user_count: string | null;
   }>(
     `
@@ -151,8 +170,14 @@ export async function listSchools() {
         t.subscription_type,
         t.billing_email,
         t.created_at,
+        s.id AS school_id,
+        s.address,
+        s.contact_phone,
+        s.contact_email,
+        s.registration_code,
         u.user_count::text
       FROM shared.tenants t
+      LEFT JOIN shared.schools s ON s.tenant_id = t.id
       LEFT JOIN (
         SELECT tenant_id, COUNT(*) AS user_count
         FROM shared.users
@@ -171,6 +196,11 @@ export async function listSchools() {
     subscriptionType: row.subscription_type,
     billingEmail: row.billing_email,
     createdAt: row.created_at,
+    schoolId: row.school_id,
+    address: row.address,
+    contactPhone: row.contact_phone,
+    contactEmail: row.contact_email,
+    registrationCode: row.registration_code,
     userCount: Number(row.user_count ?? 0)
   }));
 }
@@ -178,6 +208,18 @@ export async function listSchools() {
 export async function createSchool(input: CreateSchoolInput, actorId?: string | null) {
   if (!input.name?.trim()) {
     throw new Error('School name is required');
+  }
+  if (!input.address?.trim()) {
+    throw new Error('School address is required');
+  }
+  if (!input.contactPhone?.trim()) {
+    throw new Error('School contact phone is required');
+  }
+  if (!input.contactEmail?.trim()) {
+    throw new Error('School contact email is required');
+  }
+  if (!input.registrationCode?.trim()) {
+    throw new Error('School registration code is required');
   }
   const pool = getPool();
   const schemaName = createSchemaSlug(input.name);
@@ -194,6 +236,40 @@ export async function createSchool(input: CreateSchoolInput, actorId?: string | 
     pool
   );
 
+  const schoolId = crypto.randomUUID();
+  await pool.query(
+    `
+      INSERT INTO shared.schools (
+        id,
+        tenant_id,
+        name,
+        address,
+        contact_phone,
+        contact_email,
+        registration_code,
+        metadata
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
+      ON CONFLICT (tenant_id) DO UPDATE
+        SET name = EXCLUDED.name,
+            address = EXCLUDED.address,
+            contact_phone = EXCLUDED.contact_phone,
+            contact_email = EXCLUDED.contact_email,
+            registration_code = EXCLUDED.registration_code,
+            updated_at = NOW()
+    `,
+    [
+      schoolId,
+      tenant.id,
+      input.name.trim(),
+      input.address.trim(),
+      input.contactPhone.trim(),
+      input.contactEmail.trim(),
+      input.registrationCode.trim(),
+      JSON.stringify({})
+    ]
+  );
+
   await recordSharedAuditLog({
     userId: actorId ?? undefined,
     action: 'SCHOOL_CREATED',
@@ -202,7 +278,8 @@ export async function createSchool(input: CreateSchoolInput, actorId?: string | 
     details: {
       name: input.name,
       schema: schemaName,
-      subscriptionType: input.subscriptionType ?? 'trial'
+      subscriptionType: input.subscriptionType ?? 'trial',
+      registrationCode: input.registrationCode
     }
   });
 
@@ -212,13 +289,15 @@ export async function createSchool(input: CreateSchoolInput, actorId?: string | 
     entityType: 'TENANT',
     entityId: tenant.id,
     details: {
-      name: input.name
+      name: input.name,
+      registrationCode: input.registrationCode
     }
   });
 
   return {
     id: tenant.id,
-    schemaName
+    schemaName,
+    schoolId
   };
 }
 
@@ -252,9 +331,30 @@ export async function updateSchool(
     values.push(updates.billingEmail ? updates.billingEmail.trim().toLowerCase() : null);
   }
 
-  if (fields.length === 0) {
+  const hasSchoolFieldUpdates =
+    updates.address !== undefined ||
+    updates.contactPhone !== undefined ||
+    updates.contactEmail !== undefined ||
+    updates.registrationCode !== undefined;
+
+  if (fields.length === 0 && !hasSchoolFieldUpdates) {
     const existing = await pool.query(
-      `SELECT id, name, domain, status, subscription_type, billing_email FROM shared.tenants WHERE id = $1`,
+      `
+        SELECT
+          t.id,
+          t.name,
+          t.domain,
+          t.status,
+          t.subscription_type,
+          t.billing_email,
+          s.address,
+          s.contact_phone,
+          s.contact_email,
+          s.registration_code
+        FROM shared.tenants t
+        LEFT JOIN shared.schools s ON s.tenant_id = t.id
+        WHERE t.id = $1
+      `,
       [id]
     );
     return existing.rows[0] ?? null;
@@ -269,6 +369,41 @@ export async function updateSchool(
   const result = await pool.query(query, [id, ...values]);
   const updated = result.rows[0] ?? null;
 
+  if (hasSchoolFieldUpdates) {
+    await pool.query(
+      `
+        UPDATE shared.schools
+        SET address = COALESCE($2, address),
+            contact_phone = COALESCE($3, contact_phone),
+            contact_email = COALESCE($4, contact_email),
+            registration_code = COALESCE($5, registration_code),
+            updated_at = NOW()
+        WHERE tenant_id = $1
+      `,
+      [
+        id,
+        updates.address ?? null,
+        updates.contactPhone ?? null,
+        updates.contactEmail ?? null,
+        updates.registrationCode ?? null
+      ]
+    );
+  }
+
+  if (!updated) {
+    return null;
+  }
+
+  const schoolDetails = await pool.query(
+    `
+      SELECT address, contact_phone, contact_email, registration_code
+      FROM shared.schools
+      WHERE tenant_id = $1
+    `,
+    [id]
+  );
+  const schoolRow = schoolDetails.rows[0] ?? {};
+
   if (updated) {
     await recordSharedAuditLog({
       userId: actorId ?? undefined,
@@ -279,7 +414,13 @@ export async function updateSchool(
     });
   }
 
-  return updated;
+  return {
+    ...updated,
+    address: schoolRow.address ?? null,
+    contactPhone: schoolRow.contact_phone ?? null,
+    contactEmail: schoolRow.contact_email ?? null,
+    registrationCode: schoolRow.registration_code ?? null
+  };
 }
 
 export async function softDeleteSchool(id: string, actorId?: string | null) {
@@ -306,11 +447,12 @@ export async function createAdminForSchool(
   input: CreateAdminInput,
   actorId?: string | null
 ) {
-  if (!input.email || !input.password) {
-    throw new Error('Email and password are required');
+  if (!input.email || !input.password || !input.username || !input.fullName) {
+    throw new Error('Email, password, username, and full name are required');
   }
   const pool = getPool();
   const normalizedEmail = input.email.toLowerCase();
+  const normalizedUsername = input.username.toLowerCase();
 
   const duplicateCheck = await pool.query(`SELECT id FROM shared.users WHERE email = $1`, [
     normalizedEmail
@@ -319,17 +461,61 @@ export async function createAdminForSchool(
     throw new Error('Email already in use');
   }
 
+  const duplicateUsername = await pool.query(`SELECT id FROM shared.users WHERE username = $1`, [
+    normalizedUsername
+  ]);
+  if ((duplicateUsername.rowCount ?? 0) > 0) {
+    throw new Error('Username already in use');
+  }
+
+  const schoolResult = await pool.query<{ id: string }>(
+    `SELECT id FROM shared.schools WHERE tenant_id = $1`,
+    [tenantId]
+  );
+  const schoolId = schoolResult.rows[0]?.id ?? null;
+  if (!schoolId) {
+    throw new Error('School profile not found for tenant');
+  }
+
   const passwordHash = await argon2.hash(input.password);
   const result = await pool.query(
     `
-      INSERT INTO shared.users (email, password_hash, role, tenant_id, is_verified)
-      VALUES ($1, $2, 'admin', $3, TRUE)
-      RETURNING id, email, role, tenant_id, created_at
+      INSERT INTO shared.users (
+        email,
+        password_hash,
+        role,
+        tenant_id,
+        is_verified,
+        username,
+        full_name,
+        phone,
+        school_id,
+        is_teaching_staff
+      )
+      VALUES ($1, $2, 'admin', $3, TRUE, $4, $5, $6, $7, FALSE)
+      RETURNING id, email, role, tenant_id, created_at, username, full_name
     `,
-    [normalizedEmail, passwordHash, tenantId]
+    [
+      normalizedEmail,
+      passwordHash,
+      tenantId,
+      normalizedUsername,
+      input.fullName,
+      input.phone ?? null,
+      schoolId
+    ]
   );
 
   const admin = result.rows[0];
+
+  await pool.query(
+    `
+      INSERT INTO shared.user_roles (user_id, role_name, assigned_by)
+      VALUES ($1, 'admin', $2)
+      ON CONFLICT (user_id, role_name) DO NOTHING
+    `,
+    [admin.id, actorId ?? null]
+  );
 
   const tenantSchemaResult = await pool.query<{ schema_name: string }>(
     `SELECT schema_name FROM shared.tenants WHERE id = $1`,
@@ -363,7 +549,7 @@ export async function createAdminForSchool(
   await sendNotificationToAdmins({
     tenantId,
     title: 'Administrator account provisioned',
-    body: `A new administrator account (${admin.email}) has been provisioned for your school.`,
+    message: `A new administrator account (${admin.email}) has been provisioned for your school.`,
     metadata: {
       tenantId,
       adminUserId: admin.id
