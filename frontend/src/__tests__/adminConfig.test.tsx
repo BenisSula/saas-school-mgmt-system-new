@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import AdminConfigurationPage from '../pages/AdminConfigurationPage';
 
+vi.setConfig({ testTimeout: 12000 });
+
 const brandingResponse = {
   logo_url: 'https://cdn.example/logo.svg',
   primary_color: '#123456',

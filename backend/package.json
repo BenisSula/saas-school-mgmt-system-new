@@ -15,7 +15,8 @@
     "migrate": "ts-node src/db/migrate.ts",
     "demo:seed": "ts-node src/scripts/seedDemo.ts",
     "seed:superuser": "ts-node src/scripts/seedSuperUserSetup.ts",
-    "simulate:phase5": "ts-node src/scripts/simulatePhase5Interactions.ts"
+    "simulate:phase5": "ts-node src/scripts/simulatePhase5Interactions.ts",
+    "simulate:phase6": "ts-node src/scripts/simulatePhase6Validation.ts"
   },
   "keywords": [],
   "author": "",
