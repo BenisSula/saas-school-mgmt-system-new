@@ -183,13 +183,11 @@ describe('Dashboard routing', () => {
     const reportsLink = screen.getByRole('button', { name: /Reports \(printable\)/i });
     await user.click(reportsLink);
 
-    await waitFor(() => {
-      const mainHeading = within(screen.getByRole('main')).getByRole('heading', {
-        level: 1,
-        name: /Reports & exports/i
-      });
-      expect(mainHeading).toBeInTheDocument();
+    const reportsHeading = await within(screen.getByRole('main')).findByRole('heading', {
+      level: 1,
+      name: /Reports & exports/i
     });
+    expect(reportsHeading).toBeInTheDocument();
 
     // Ensure only sidebar navigation remains and header does not duplicate links
     expect(screen.getAllByRole('navigation')).toHaveLength(1);

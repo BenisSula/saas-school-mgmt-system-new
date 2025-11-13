@@ -17,6 +17,10 @@ function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
+export function hashTokenValue(token: string): string {
+  return hashToken(token);
+}
+
 export function generateAccessToken(payload: TokenPayload): string {
   const secret: Secret = process.env.JWT_ACCESS_SECRET ?? 'change-me-access';
   const tokenId = crypto.randomUUID();
@@ -78,7 +82,10 @@ export async function storeRefreshToken(
   );
 }
 
-export async function verifyRefreshToken(pool: Pool, token: string): Promise<{
+export async function verifyRefreshToken(
+  pool: Pool,
+  token: string
+): Promise<{
   userId: string;
   tenantId: string;
   email: string;
@@ -117,5 +124,3 @@ export async function revokeRefreshToken(pool: Pool, token: string): Promise<voi
   const tokenHash = hashToken(token);
   await pool.query(`DELETE FROM shared.refresh_tokens WHERE token_hash = $1`, [tokenHash]);
 }
-
-

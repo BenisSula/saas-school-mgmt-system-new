@@ -40,3 +40,17 @@ export const createAdminSchema = z.object({
     .optional()
     .transform((value) => (value === '' ? undefined : value))
 });
+
+export const sendAdminNotificationSchema = z.object({
+  tenantId: z
+    .string()
+    .uuid()
+    .optional()
+    .transform((value) => (value === '' ? undefined : value)),
+  title: z.string().min(1, 'Title is required'),
+  body: z.string().min(1, 'Body is required'),
+  metadata: z
+    .record(z.string(), z.any())
+    .optional()
+    .transform((value) => value ?? undefined)
+});

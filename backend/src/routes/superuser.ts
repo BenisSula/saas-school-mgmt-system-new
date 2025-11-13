@@ -12,8 +12,13 @@ import {
 import {
   createAdminSchema,
   createSchoolSchema,
-  updateSchoolSchema
+  updateSchoolSchema,
+  sendAdminNotificationSchema
 } from '../validators/superuserValidator';
+import {
+  listAllPlatformUsers,
+  sendNotificationToAdmins
+} from '../services/platformMonitoringService';
 
 const router = Router();
 
@@ -43,7 +48,7 @@ router.post('/schools', async (req, res, next) => {
     if (!parsed.success) {
       return res.status(400).json({ message: parsed.error.message });
     }
-    const school = await createSchool(parsed.data);
+    const school = await createSchool(parsed.data, req.user?.id ?? null);
     res.status(201).json(school);
   } catch (error) {
     next(error);
@@ -56,7 +61,7 @@ router.patch('/schools/:id', async (req, res, next) => {
     if (!parsed.success) {
       return res.status(400).json({ message: parsed.error.message });
     }
-    const updated = await updateSchool(req.params.id, parsed.data);
+    const updated = await updateSchool(req.params.id, parsed.data, req.user?.id ?? null);
     if (!updated) {
       return res.status(404).json({ message: 'School not found' });
     }
@@ -68,7 +73,7 @@ router.patch('/schools/:id', async (req, res, next) => {
 
 router.delete('/schools/:id', async (req, res, next) => {
   try {
-    await softDeleteSchool(req.params.id);
+    await softDeleteSchool(req.params.id, req.user?.id ?? null);
     res.status(204).send();
   } catch (error) {
     next(error);
@@ -81,8 +86,33 @@ router.post('/schools/:id/admins', async (req, res, next) => {
     if (!parsed.success) {
       return res.status(400).json({ message: parsed.error.message });
     }
-    const admin = await createAdminForSchool(req.params.id, parsed.data);
+    const admin = await createAdminForSchool(req.params.id, parsed.data, req.user?.id ?? null);
     res.status(201).json(admin);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/users', async (_req, res, next) => {
+  try {
+    const users = await listAllPlatformUsers();
+    res.json(users);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/notifications', async (req, res, next) => {
+  try {
+    const parsed = sendAdminNotificationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: parsed.error.message });
+    }
+    const result = await sendNotificationToAdmins({
+      ...parsed.data,
+      actorId: req.user?.id ?? null
+    });
+    res.status(201).json(result);
   } catch (error) {
     next(error);
   }

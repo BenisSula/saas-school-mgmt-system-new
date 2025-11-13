@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import type { PoolClient } from 'pg';
-import { assertValidSchemaName } from '../db/tenantManager';
+import { getPool } from '../db/connection';
+import { assertValidSchemaName, withTenantSearchPath } from '../db/tenantManager';
 import { logger } from '../lib/logger';
 
 export const AUDIT_ENTITY_TYPES = [
@@ -13,7 +14,11 @@ export const AUDIT_ENTITY_TYPES = [
   'ATTENDANCE',
   'EXAM',
   'GRADE',
-  'ACCESS'
+  'ACCESS',
+  'TENANT',
+  'USER',
+  'USER_SESSION',
+  'NOTIFICATION'
 ] as const;
 
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
@@ -73,6 +78,31 @@ export async function recordAuditLog(
       'Failed to record audit log'
     );
   }
+}
+
+export async function recordTenantAuditLog(schema: string, entry: AuditLogEntry): Promise<void> {
+  const pool = getPool();
+  await withTenantSearchPath(pool, schema, async (client) => {
+    await recordAuditLog(client, schema, entry);
+  });
+}
+
+export async function recordSharedAuditLog(entry: AuditLogEntry): Promise<void> {
+  const pool = getPool();
+  await pool.query(
+    `
+      INSERT INTO shared.audit_logs (id, user_id, action, entity_type, entity_id, details, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6::jsonb, NOW())
+    `,
+    [
+      crypto.randomUUID(),
+      entry.userId ?? null,
+      entry.action,
+      entry.entityType,
+      entry.entityId ?? null,
+      JSON.stringify(entry.details ?? {})
+    ]
+  );
 }
 
 export async function listAuditLogs(

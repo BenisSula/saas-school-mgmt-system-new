@@ -13,7 +13,8 @@
     "format": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
     "format:write": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
     "migrate": "ts-node src/db/migrate.ts",
-    "demo:seed": "ts-node src/scripts/seedDemo.ts"
+    "demo:seed": "ts-node src/scripts/seedDemo.ts",
+    "seed:superuser": "ts-node src/scripts/seedSuperUserSetup.ts"
   },
   "keywords": [],
   "author": "",

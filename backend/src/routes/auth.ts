@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
+import authenticate from '../middleware/authenticate';
 import {
   login,
   refreshToken,
@@ -7,7 +8,8 @@ import {
   requestPasswordReset,
   resetPassword,
   signUp,
-  verifyEmail
+  verifyEmail,
+  logout
 } from '../services/authService';
 
 const router = Router();
@@ -44,7 +46,10 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'email and password are required' });
     }
 
-    const response = await login({ email, password });
+    const response = await login(
+      { email, password },
+      { ip: req.ip, userAgent: req.get('user-agent') ?? null }
+    );
     return res.status(200).json(response);
   } catch (error) {
     return res.status(401).json({ message: (error as Error).message });
@@ -59,7 +64,10 @@ router.post('/refresh', async (req, res) => {
       return res.status(400).json({ message: 'refreshToken is required' });
     }
 
-    const response = await refreshToken(token);
+    const response = await refreshToken(token, {
+      ip: req.ip,
+      userAgent: req.get('user-agent') ?? null
+    });
     return res.status(200).json(response);
   } catch (error) {
     return res.status(401).json({ message: (error as Error).message });
@@ -126,5 +134,20 @@ router.post('/verify-email', async (req, res) => {
   }
 });
 
-export default router;
+router.post('/logout', authenticate, async (req, res) => {
+  try {
+    const { refreshToken: token } = req.body;
+    if (!token) {
+      return res.status(400).json({ message: 'refreshToken is required' });
+    }
+    await logout(req.user!.id, token, {
+      ip: req.ip,
+      userAgent: req.get('user-agent') ?? null
+    });
+    return res.status(200).json({ message: 'Logged out successfully' });
+  } catch (error) {
+    return res.status(400).json({ message: (error as Error).message });
+  }
+});
 
+export default router;

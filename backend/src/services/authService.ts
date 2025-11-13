@@ -12,6 +12,12 @@ import {
   revokeRefreshToken,
   TokenPayload
 } from './tokenService';
+import {
+  recordLoginEvent,
+  recordLogoutEvent,
+  rotateSessionToken,
+  SessionContext
+} from './platformMonitoringService';
 
 const PASSWORD_RESET_TTL = Number(process.env.PASSWORD_RESET_TTL ?? 60 * 30); // 30 minutes
 const EMAIL_VERIFICATION_TTL = Number(process.env.EMAIL_VERIFICATION_TTL ?? 60 * 60 * 24); // 24 hours
@@ -95,7 +101,7 @@ export async function signUp(input: SignUpInput): Promise<AuthResponse> {
   }
 
   const passwordHash = await argon2.hash(input.password);
-  const tenantId = input.role === 'superadmin' ? null : input.tenantId ?? null;
+  const tenantId = input.role === 'superadmin' ? null : (input.tenantId ?? null);
   const userId = crypto.randomUUID();
 
   const result = await pool.query(
@@ -130,7 +136,7 @@ export async function signUp(input: SignUpInput): Promise<AuthResponse> {
   };
 }
 
-export async function login(input: LoginInput): Promise<AuthResponse> {
+export async function login(input: LoginInput, context?: SessionContext): Promise<AuthResponse> {
   const pool = await getDbPool();
   const normalizedEmail = input.email.toLowerCase();
   const user = await findUserByEmail(pool, normalizedEmail);
@@ -149,7 +155,7 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
   const { token: refreshToken, expiresAt } = generateRefreshToken(payload);
   await storeRefreshToken(pool, user.id, refreshToken, expiresAt);
 
-  return {
+  const response: AuthResponse = {
     accessToken,
     refreshToken,
     expiresIn: process.env.ACCESS_TOKEN_TTL ?? '900s',
@@ -161,9 +167,13 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
       isVerified: user.is_verified
     }
   };
+
+  await recordLoginEvent(user.id, refreshToken, context);
+
+  return response;
 }
 
-export async function refreshToken(token: string): Promise<AuthResponse> {
+export async function refreshToken(token: string, context?: SessionContext): Promise<AuthResponse> {
   const pool = await getDbPool();
   const tokenInfo = await verifyRefreshToken(pool, token);
 
@@ -184,6 +194,8 @@ export async function refreshToken(token: string): Promise<AuthResponse> {
   await revokeRefreshToken(pool, token);
   await storeRefreshToken(pool, user.id, newRefreshToken, expiresAt);
 
+  await rotateSessionToken(user.id, token, newRefreshToken, context);
+
   return {
     accessToken,
     refreshToken: newRefreshToken,
@@ -196,6 +208,16 @@ export async function refreshToken(token: string): Promise<AuthResponse> {
       isVerified: user.is_verified
     }
   };
+}
+
+export async function logout(
+  userId: string,
+  refreshTokenValue: string,
+  context?: SessionContext
+): Promise<void> {
+  const pool = await getDbPool();
+  await revokeRefreshToken(pool, refreshTokenValue);
+  await recordLogoutEvent(userId, refreshTokenValue, context);
 }
 
 export async function requestPasswordReset(email: string): Promise<{ token: string }> {
@@ -297,7 +319,9 @@ export async function verifyEmail(token: string): Promise<void> {
   const userId = result.rows[0].user_id;
 
   await pool.query(`UPDATE shared.users SET is_verified = TRUE WHERE id = $1`, [userId]);
-  await pool.query(`DELETE FROM shared.email_verification_tokens WHERE token_hash = $1`, [tokenHash]);
+  await pool.query(`DELETE FROM shared.email_verification_tokens WHERE token_hash = $1`, [
+    tokenHash
+  ]);
 }
 
 export async function createTenant(input: {
@@ -324,4 +348,3 @@ export async function requestEmailVerification(userId: string, email: string): P
   const pool = await getDbPool();
   await createEmailVerificationToken(pool, userId, email.toLowerCase());
 }
-

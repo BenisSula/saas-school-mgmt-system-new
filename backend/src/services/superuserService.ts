@@ -6,6 +6,8 @@ import {
   withTenantSearchPath,
   assertValidSchemaName
 } from '../db/tenantManager';
+import { recordSharedAuditLog, recordTenantAuditLog } from './auditLogService';
+import { sendNotificationToAdmins } from './platformMonitoringService';
 
 type SubscriptionType = 'free' | 'trial' | 'paid';
 type TenantStatus = 'active' | 'suspended' | 'deleted';
@@ -173,7 +175,7 @@ export async function listSchools() {
   }));
 }
 
-export async function createSchool(input: CreateSchoolInput) {
+export async function createSchool(input: CreateSchoolInput, actorId?: string | null) {
   if (!input.name?.trim()) {
     throw new Error('School name is required');
   }
@@ -192,13 +194,39 @@ export async function createSchool(input: CreateSchoolInput) {
     pool
   );
 
+  await recordSharedAuditLog({
+    userId: actorId ?? undefined,
+    action: 'SCHOOL_CREATED',
+    entityType: 'TENANT',
+    entityId: tenant.id,
+    details: {
+      name: input.name,
+      schema: schemaName,
+      subscriptionType: input.subscriptionType ?? 'trial'
+    }
+  });
+
+  await recordTenantAuditLog(schemaName, {
+    userId: actorId ?? undefined,
+    action: 'TENANT_INITIALISED',
+    entityType: 'TENANT',
+    entityId: tenant.id,
+    details: {
+      name: input.name
+    }
+  });
+
   return {
     id: tenant.id,
     schemaName
   };
 }
 
-export async function updateSchool(id: string, updates: UpdateSchoolInput) {
+export async function updateSchool(
+  id: string,
+  updates: UpdateSchoolInput,
+  actorId?: string | null
+) {
   const pool = getPool();
   const fields = [];
   const values: Array<string | SubscriptionType | TenantStatus | null> = [];
@@ -239,10 +267,22 @@ export async function updateSchool(id: string, updates: UpdateSchoolInput) {
     RETURNING id, name, domain, status, subscription_type, billing_email
   `;
   const result = await pool.query(query, [id, ...values]);
-  return result.rows[0] ?? null;
+  const updated = result.rows[0] ?? null;
+
+  if (updated) {
+    await recordSharedAuditLog({
+      userId: actorId ?? undefined,
+      action: 'SCHOOL_UPDATED',
+      entityType: 'TENANT',
+      entityId: id,
+      details: { ...updates }
+    });
+  }
+
+  return updated;
 }
 
-export async function softDeleteSchool(id: string) {
+export async function softDeleteSchool(id: string, actorId?: string | null) {
   const pool = getPool();
   await pool.query(
     `
@@ -252,9 +292,20 @@ export async function softDeleteSchool(id: string) {
     `,
     [id]
   );
+
+  await recordSharedAuditLog({
+    userId: actorId ?? undefined,
+    action: 'SCHOOL_SOFT_DELETED',
+    entityType: 'TENANT',
+    entityId: id
+  });
 }
 
-export async function createAdminForSchool(tenantId: string, input: CreateAdminInput) {
+export async function createAdminForSchool(
+  tenantId: string,
+  input: CreateAdminInput,
+  actorId?: string | null
+) {
   if (!input.email || !input.password) {
     throw new Error('Email and password are required');
   }
@@ -278,5 +329,47 @@ export async function createAdminForSchool(tenantId: string, input: CreateAdminI
     [normalizedEmail, passwordHash, tenantId]
   );
 
-  return result.rows[0];
+  const admin = result.rows[0];
+
+  const tenantSchemaResult = await pool.query<{ schema_name: string }>(
+    `SELECT schema_name FROM shared.tenants WHERE id = $1`,
+    [tenantId]
+  );
+  const schemaName = tenantSchemaResult.rows[0]?.schema_name;
+
+  await recordSharedAuditLog({
+    userId: actorId ?? undefined,
+    action: 'ADMIN_CREATED',
+    entityType: 'USER',
+    entityId: admin.id,
+    details: {
+      tenantId,
+      email: admin.email
+    }
+  });
+
+  if (schemaName) {
+    await recordTenantAuditLog(schemaName, {
+      userId: actorId ?? undefined,
+      action: 'ADMIN_CREATED',
+      entityType: 'USER',
+      entityId: admin.id,
+      details: {
+        email: admin.email
+      }
+    });
+  }
+
+  await sendNotificationToAdmins({
+    tenantId,
+    title: 'Administrator account provisioned',
+    body: `A new administrator account (${admin.email}) has been provisioned for your school.`,
+    metadata: {
+      tenantId,
+      adminUserId: admin.id
+    },
+    actorId: actorId ?? undefined
+  });
+
+  return admin;
 }
