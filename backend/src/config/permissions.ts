@@ -1,4 +1,4 @@
-export type Role = 'student' | 'teacher' | 'admin' | 'superadmin';
+export type Role = 'student' | 'teacher' | 'hod' | 'admin' | 'superadmin';
 
 export type Permission =
   | 'dashboard:view'
@@ -30,6 +30,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'fees:view',
     'students:manage'
   ],
+  hod: ['dashboard:view', 'attendance:view', 'exams:view', 'grades:manage'],
   admin: [
     'dashboard:view',
     'attendance:manage',

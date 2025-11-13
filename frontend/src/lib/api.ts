@@ -623,6 +623,7 @@ export interface PlatformOverview {
   };
   roleDistribution: {
     admins: number;
+    hods: number;
     teachers: number;
     students: number;
   };
@@ -643,6 +644,11 @@ export interface PlatformOverview {
 export interface PlatformSchool {
   id: string;
   name: string;
+  schoolId: string | null;
+  address: string | null;
+  contactPhone: string | null;
+  contactEmail: string | null;
+  registrationCode: string | null;
   domain: string | null;
   schemaName: string;
   status: TenantLifecycleStatus;
@@ -654,19 +660,35 @@ export interface PlatformSchool {
 
 export interface CreateSchoolPayload {
   name: string;
+  address: string;
+  contactPhone: string;
+  contactEmail: string;
+  registrationCode: string;
   domain?: string | null;
   subscriptionType?: SubscriptionTier;
   billingEmail?: string | null;
 }
 
 export type UpdateSchoolPayload = Partial<
-  Pick<CreateSchoolPayload, 'name' | 'domain' | 'subscriptionType' | 'billingEmail'>
+  Pick<
+    CreateSchoolPayload,
+    | 'name'
+    | 'address'
+    | 'contactPhone'
+    | 'contactEmail'
+    | 'registrationCode'
+    | 'domain'
+    | 'subscriptionType'
+    | 'billingEmail'
+  >
 > & { status?: TenantLifecycleStatus };
 
 export interface CreateSchoolAdminPayload {
   email: string;
   password: string;
-  name?: string | null;
+  username: string;
+  fullName: string;
+  phone?: string | null;
 }
 
 function buildQuery(params: Record<string, string | undefined>): string {
