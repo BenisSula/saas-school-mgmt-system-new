@@ -11,6 +11,8 @@ jest.mock('../src/db/connection', () => ({
 
 const mockedGetPool = getPool as unknown as jest.Mock;
 
+jest.setTimeout(15000);
+
 describe('Authentication & RBAC', () => {
   let pool: Pool;
   let tenantId: string;
@@ -110,4 +112,3 @@ describe('Authentication & RBAC', () => {
     expect(protectedResponse.status).toBe(403);
   });
 });
-

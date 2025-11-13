@@ -2,6 +2,8 @@ import { Router } from 'express';
 import authenticate from '../middleware/authenticate';
 import tenantResolver from '../middleware/tenantResolver';
 import { requirePermission } from '../middleware/rbac';
+import { requireSelfOrPermission } from '../middleware/authGuards';
+import { respondTenantContextMissing } from '../lib/friendlyMessages';
 import {
   AttendanceMark,
   getAttendanceSummary,
@@ -32,21 +34,35 @@ router.post('/mark', requirePermission('attendance:manage'), async (req, res, ne
   }
 });
 
-router.get('/:studentId', async (req, res, next) => {
-  try {
-    if (!req.tenantClient || !req.tenant) {
-      return res.status(500).json({ message: 'Tenant context missing' });
+router.get(
+  '/:studentId',
+  requireSelfOrPermission('students:manage', 'studentId'),
+  async (req, res, next) => {
+    try {
+      if (!req.tenantClient || !req.tenant) {
+        return respondTenantContextMissing(res);
+      }
+
+      const history = await getStudentAttendance(
+        req.tenantClient!,
+        req.tenant.schema,
+        req.params.studentId,
+        req.query.from as string | undefined,
+        req.query.to as string | undefined
+      );
+
+      const summary = await getAttendanceSummary(
+        req.tenantClient!,
+        req.tenant.schema,
+        req.params.studentId
+      );
+
+      res.json({ history, summary });
+    } catch (error) {
+      next(error);
     }
-
-    const history = await getStudentAttendance(req.tenantClient!, req.tenant.schema, req.params.studentId, req.query.from as string | undefined, req.query.to as string | undefined);
-
-    const summary = await getAttendanceSummary(req.tenantClient!, req.tenant.schema, req.params.studentId);
-
-    res.json({ history, summary });
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 router.get('/report/class', requirePermission('attendance:manage'), async (req, res, next) => {
   try {
@@ -59,7 +75,12 @@ router.get('/report/class', requirePermission('attendance:manage'), async (req, 
       return res.status(400).json({ message: 'class_id and date are required' });
     }
 
-    const report = await getClassReport(req.tenantClient!, req.tenant.schema, classId as string, date as string);
+    const report = await getClassReport(
+      req.tenantClient!,
+      req.tenant.schema,
+      classId as string,
+      date as string
+    );
     res.json(report);
   } catch (error) {
     next(error);
@@ -67,4 +88,3 @@ router.get('/report/class', requirePermission('attendance:manage'), async (req, 
 });
 
 export default router;
-

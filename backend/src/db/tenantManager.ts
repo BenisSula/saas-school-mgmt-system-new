@@ -10,24 +10,42 @@ export function assertValidSchemaName(schemaName: string): void {
   }
 }
 
+export function createSchemaSlug(name: string): string {
+  return `tenant_${name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')}`;
+}
+
 interface TenantInput {
   name: string;
   domain?: string;
   schemaName: string;
+  subscriptionType?: 'free' | 'trial' | 'paid';
+  status?: 'active' | 'suspended' | 'deleted';
+  billingEmail?: string | null;
 }
 
 export async function createTenantRecord(
   pool: Pool,
-  { name, domain, schemaName }: TenantInput
+  { name, domain, schemaName, subscriptionType, status, billingEmail }: TenantInput
 ): Promise<{ id: string }> {
   const id = crypto.randomUUID();
   const result = await pool.query(
     `
-      INSERT INTO shared.tenants (id, name, domain, schema_name)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO shared.tenants (id, name, domain, schema_name, subscription_type, status, billing_email)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id
     `,
-    [id, name, domain ?? null, schemaName]
+    [
+      id,
+      name,
+      domain ?? null,
+      schemaName,
+      subscriptionType ?? 'trial',
+      status ?? 'active',
+      billingEmail ?? null
+    ]
   );
 
   return { id: result.rows[0].id };
@@ -46,7 +64,12 @@ export async function runTenantMigrations(pool: Pool, schemaName: string): Promi
       .filter((file) => file.endsWith('.sql'))
       .sort();
   } catch (error: unknown) {
-    if (typeof error === 'object' && error !== null && 'code' in error && (error as { code?: string }).code === 'ENOENT') {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code?: string }).code === 'ENOENT'
+    ) {
       return;
     }
     throw error;
@@ -103,10 +126,7 @@ export async function seedTenant(pool: Pool, schemaName: string): Promise<void> 
   }
 }
 
-export async function createTenant(
-  input: TenantInput,
-  poolParam?: Pool
-): Promise<{ id: string }> {
+export async function createTenant(input: TenantInput, poolParam?: Pool): Promise<{ id: string }> {
   const pool = poolParam ?? getPool();
 
   await createTenantSchema(pool, input.schemaName);
@@ -132,4 +152,3 @@ export async function withTenantSearchPath<T>(
     client.release();
   }
 }
-

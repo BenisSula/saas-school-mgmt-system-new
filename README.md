@@ -1,167 +1,181 @@
 # SaaS School Management System
 
-Monorepo scaffold for the SaaS School Management Portal. Phase 1 delivered project scaffolding; Phase 2 adds secure authentication, JWT sessions, and role-based access control across Student/Teacher/Admin/SuperAdmin personas. Phase 3 introduces schema-per-tenant onboarding, migrations, and request-scoped tenant resolution. Phase 4 layers on tenant-aware CRUD services for students, teachers, branding, and school profile. Phase 5 introduces attendance tracking APIs and UI stubs for teachers and students. Phase 6 adds exam scheduling, grade entry, ranking logic, and CSV/PDF export flows for tenant results. Phase 7 introduces fee invoicing and payment tracking with a pluggable provider abstraction plus new fee dashboards. **Phase 8** delivers admin configuration, reporting endpoints, and live React admin tooling (branding, academic calendar, RBAC management, and multi-module reports).
+This monorepo powers the SaaS School Management Portal and tracks the incremental delivery phases (Phase 0 discovery → Phase 9 polish). The backend provides a schema-per-tenant Express API, while the frontend delivers a branded, role-aware React experience backed by reusable UI primitives.
 
-## Project Structure
+---
 
-- `backend/` – Express + TypeScript API with auth routes, RBAC middleware, Postgres connection helper, tenant onboarding utilities, tenant CRUD services, and database migrations.
-- `frontend/` – Vite + React + TypeScript app with Tailwind CSS, layout/component stubs, and smoke test.
-- `docs/` – Discovery phase documentation and user stories.
-- `.github/workflows/ci.yml` – CI pipeline that runs linting and tests for both apps.
+## Monorepo Layout
 
-## Requirements
+| Path | Purpose |
+| ---- | ------- |
+| `backend/` | Express + TypeScript API, RBAC middleware, tenant onboarding, migrations, Jest suites. |
+| `frontend/` | Vite + React + TypeScript client with Tailwind UI kit, BrandProvider theming, Vitest suites, and axe-core checks. |
+| `docs/` | Discovery artifacts, deployment checklist, performance & accessibility audits, security notes. |
+| `.github/workflows/ci.yml` | CI pipeline blueprint (lint + test for backend and frontend). |
 
-- Node.js 20+
-- npm 10+
-- Docker & Docker Compose (for local infra)
+Frontend structure highlights:
 
-## Getting Started (Local)
+- `src/App.tsx` – role-aware shell with responsive navbar + sidebar, nested routing, and lazy-loaded dashboards.
+- `src/layouts/LandingShell.tsx` / `src/layouts/AdminShell.tsx` – separate marketing vs authenticated experiences with appropriate landmarks (`header`/`main`/`footer`).
+- `src/context/AuthContext.tsx` – handles access/refresh tokens, tenant persistence, auto-refresh schedule, and pending-user gating.
+- `src/lib/api.ts` – typed client with sanitised request helpers, token lifecycle management, and tenant-aware headers.
+- `src/components/ui/` – reusable themable primitives (Button, Input, Modal, Table, Navbar, Sidebar, ThemeToggle, BrandProvider, AvatarDropdown, DashboardSkeleton).
+- `src/lib/roleLinks.tsx` – central mapping of persona → sidebar navigation definition.
+- `src/pages/` – dashboards for each persona (admin configuration, reports, RBAC, teacher grades/attendance, student results/fees) plus auth/landing flows.
 
-1. **Install dependencies**
-   ```bash
-   cd backend && npm install
-   cd ../frontend && npm install
-   ```
+---
 
-2. **Copy environment template**
-   ```bash
-   cp .env.example .env
-   ```
-   Adjust values as needed (e.g., database connection string, API base URL).
+## Landing vs Dashboard Shells
 
-3. **Run database migrations (first time)**
-   ```bash
-   npm run migrate --prefix backend
-   ```
+- `LandingShell` wraps all marketing routes (`/`, `/auth/*`), exposes hero anchors for About/Features/Pricing sections, and never mounts dashboard UI.
+- `AdminShell` is rendered only after authentication via `ProtectedRoute`. It wires:
+  - `DashboardHeader` – static brand badge, dynamic page title supplied by `DashboardRouteProvider`, theme toggle, avatar dropdown (profile/settings/logout).
+  - `Sidebar` – collapsible, keyboard accessible, remembers collapse state per user (`localStorage`).
+  - `DashboardSkeleton` fallback around lazy-loaded routes.
+  - `RouteMeta` helper so each route sets its header title/description without duplicating navigation.
+- `getSidebarLinksForRole` ensures each persona sees the correct navigation set:
+  - **Admin/Superadmin:** Dashboard, Users, Configuration, Reports, Fees, Exams, Branding.
+  - **Teacher:** Dashboard, Class Roster, Attendance, Grade Entry, Exams.
+  - **Student:** Dashboard, Attendance, Results, Fees.
 
-4. **Run backend locally**
-   ```bash
-   npm run dev --prefix backend
-   ```
+## Authentication & Admin Approval Flow
 
-5. **Run frontend locally**
-   ```bash
-   npm run dev --prefix frontend
-   ```
-   The frontend points to the backend via `VITE_API_URL` (defaults to `http://localhost:3001`). You can also configure `VITE_TENANT_ID` (default `tenant_alpha`) and `VITE_API_TOKEN` if you want the browser to send a pre-generated bearer token while manual auth flows are still being wired.
+- Public visitors hit `/` (marketing) or `/auth/login|register`.
+- `AuthContext`:
+  - hydrates refresh tokens + tenant ID from storage,
+  - refreshes access tokens on a rolling schedule,
+  - blocks login for users whose `status !== 'active'` (pending, suspended, rejected),
+  - shows “Account pending admin approval” toast/banners when applicable.
+- Landing CTA → Login/Register modal sequence is handled through `/auth/*` routes; successful register returns pending status for teachers/students.
+- Admins/Superadmins manage pending accounts inside the **Users** dashboard tab:
+  - `api.listPendingUsers`, `api.approveUser`, `api.rejectUser` drive the workflow.
+  - UI provides approve/reject buttons with optimistic updates and toasts.
 
-## Docker Compose
+### Auth quick start
 
-Spin up Postgres, backend, and frontend with one command:
+```tsx
+const { login, register, user, logout } = useAuth();
+
+await login({ email, password });           // only succeeds if status === 'active'
+await register({ email, password, role });  // returns pending+toast for teacher/student
+// Pending users can be viewed and approved under /dashboard/users
+```
+
+## Theming & BrandProvider
+
+`frontend/src/components/ui/BrandProvider.tsx` fetches tenant branding (`/configuration/branding`), normalises colour tokens, and writes them to CSS variables (`--brand-*`). The provider also:
+
+- Persists light/dark preference in `localStorage` via `ThemeToggle`.
+- Exposes `useBrand()` hook with tokens, load state, and `refresh()` util.
+- Ensures every UI primitive (buttons, tables, navbar, sidebar) reads brand tokens instead of hard-coding colours.
+
+To override branding per tenant:
+
+```ts
+await api.updateBranding({
+  primary_color: '#2563eb',
+  secondary_color: '#0f172a',
+  theme_flags: { gradients: true }
+});
+await refresh(); // from useBrand()
+```
+
+---
+
+## API Integration Guide
+
+The typed `api` client (in `src/lib/api.ts`) centralises fetch logic, error handling, sanitisation, and retries.
+
+Key helpers:
+
+- `apiFetch` – attaches `Authorization` + `x-tenant-id`, retries once on 401 via refresh token.
+- `setTenant` – validates tenant slug (`^[a-zA-Z0-9_-]+$`) before persisting.
+- `sanitizeText` / `sanitizeIdentifier` (`src/lib/sanitize.ts`) – strip unsafe characters before sending to backend.
+
+Usage pattern:
+
+```ts
+const { history, summary } = await api.getStudentAttendanceHistory(
+  user.id,
+  filters.from,
+  filters.to
+);
+
+await api.bulkUpsertGrades(examId, entries.map((entry) => ({
+  ...entry,
+  studentId: sanitizeIdentifier(entry.studentId)
+})));
+```
+
+When adding new endpoints:
+1. Define Zod schema server-side.
+2. Add typed function to `src/lib/api.ts` (re-use `apiFetch`).
+3. Consume via hooks/pages, sanitising input before send.
+4. Extend Vitest suite or add axe tests if UI changes.
+
+---
+
+## Local Development
+
+| Step | Command |
+| ---- | ------- |
+| Install backend deps | `npm install --prefix backend` |
+| Install frontend deps | `npm install --prefix frontend` |
+| Bootstrap env | `cp .env.example .env` |
+| Run migrations | `npm run migrate --prefix backend` |
+| Start backend | `npm run dev --prefix backend` (port 3001) |
+| Start frontend | `npm run dev --prefix frontend` (port 5173/5175) |
+
+> ℹ️ When the backend boots in `NODE_ENV=development` it now auto-seeds the demo tenant unless `AUTO_SEED_DEMO=false`. You can still run the script manually via `npm run demo:seed --prefix backend` if you prefer explicit control.
+
+### Demo Accounts
+
+After starting the stack you can log in with:
+
+- **SuperUser:** `owner.demo@platform.test` / `OwnerDemo#2025`
+- **Admin:** `admin.demo@academy.test` / `AdminDemo#2025`
+- **Teacher:** `teacher.demo@academy.test` / `TeacherDemo#2025`
+- **Student:** `student.demo@academy.test` / `StudentDemo#2025`
+
+All demo accounts live on the generated tenant and are marked verified, so the dashboards load immediately for UI/UX reviews across roles.
+
+Environment variables of note:
+
+- `VITE_API_BASE_URL` (required) – API origin for the frontend build.
+- `VITE_TENANT_ID` (optional) – default tenant when storage empty.
+- `CORS_ORIGIN` – comma-separated origins backend allows.
+- If you access the Vite dev server from a different host/port (for example `https://localhost:5173` or your LAN IP), add that origin to `CORS_ORIGIN` when starting the backend, or rely on the built-in localhost/127.0.0.1 allowances.
+- JWT secrets, token TTLs, Postgres connection – see `.env.example` for defaults.
+
+### Docker Compose
 
 ```bash
 docker compose up --build
 ```
+Services: Postgres 16 (`db`), hot-reloading backend, Vite dev server.
 
-Services:
-- `db`: Postgres 16 with persistent volume.
-- `backend`: Express API watching for changes (`npm run dev`).
-- `frontend`: Vite dev server exposed on port 5173.
+---
 
-## Scripts
+## Build, QA & CI/CD Readiness
 
-| Command | Description |
-|---------|-------------|
-| `npm run lint --prefix backend` | Lints backend TypeScript files. |
-| `npm run test --prefix backend` | Runs backend Jest suites (auth, tenant, CRUD routes). |
-| `npm run lint --prefix frontend` | Lints frontend using ESLint + React plugins. |
-| `npm run test --prefix frontend` | Runs frontend tests (Vitest + Testing Library). |
-| `npm run migrate --prefix backend` | Applies shared Postgres migrations (shared and tenant templates). |
-| `npm run format:write --prefix backend` | Formats backend files with Prettier. |
-| `npm run format:write --prefix frontend` | Formats frontend files with Prettier. |
-| `docker compose up --build` | Local Postgres + backend + frontend stack. |
+- Frontend build: `npm run build --prefix frontend` (runs `tsc` + `vite build`). Produces `frontend/dist/` ready for static hosting.
+- Backend build: `npm run build --prefix backend` (compiles to `backend/dist/`).
+- Test suites:
+  - Backend: `npm run test --prefix backend` (Jest integration/unit).
+  - Frontend: `pnpm test --filter frontend` or `npm run test --prefix frontend` (Vitest + Testing Library + axe smoke).
+  - Accessibility regression: included in Vitest suite (`src/__tests__/accessibility.test.tsx`).
+  - Manual QA: landing anchors, login/register, admin approvals, role dashboards, sidebar collapse (see `docs/accessibility-report.md` / `docs/performance-report.md`).
+- Pre-commit: Husky + lint-staged auto-run after `npm install` at repo root.
+- Suggested CI stages: install → lint (`npm run lint --prefix ...`) → unit/integration tests → accessibility smoke → `npm run build --prefix frontend` → upload static artefact (optionally run Lighthouse in CI if Chrome available).
 
-## Husky & Lint-Staged
+---
 
-Husky enforces linting and tests before commits. After installing dependencies at the repo root (see below), hooks run automatically.
+## Documentation & Checklists
 
-## Repository Root Tooling
+- `CHANGELOG.md` – running summary of major releases (Phases 0–7+).
+- `docs/deployment-checklist.md` – go-live checklist (envs, builds, back-ups, observability, smoke tests).
+- `docs/security-tests.md` – commands + results for security-oriented testing.
+- `docs/accessibility-report.md` + `docs/performance-report.md` – latest axe/Lighthouse findings and remediation notes.
 
-Install root tooling (Husky, lint-staged, concurrently) and enable Git hooks:
-
-```bash
-npm install
-npm run prepare
-```
-
-## Tenant Bootstrapping (Local)
-
-1. Start Docker Compose to provision Postgres.
-2. Ensure `DATABASE_URL` uses the schema-per-tenant pattern (e.g., `postgres://.../saas_school?schema=tenant_xyz` in future phases).
-3. SuperAdmins can call `POST /tenants` to provision new tenants (creates schema, runs tenant migrations, seeds branding). Use `x-tenant-id` header (or subdomain) with tenant-aware endpoints that require schema context.
-
-## Tenant Management (Phase 3)
-
-- `db/tenantManager.ts` exposes helpers to create tenant schemas, run tenant migrations (`backend/src/db/migrations/tenants`), and seed default data.
-- `middleware/tenantResolver.ts` resolves tenant context from `x-tenant-id` header or host subdomain, attaches `req.tenant`, and scopes queries by adjusting `search_path`.
-- `GET /tenants/current/branding` (requires auth) returns tenant-specific branding data to confirm schema isolation.
-- Tests (`tenantManager.test.ts`) ensure tenant creation, seeding, and cross-tenant isolation.
-
-## Authentication API (Phase 2)
-
-- `POST /auth/signup` – Create user (SuperAdmin or tenant-scoped role). Response contains access + refresh tokens.
-- `POST /auth/login` – Exchange credentials for tokens.
-- `POST /auth/refresh` – Rotate refresh token and mint new access token.
-- `POST /auth/request-password-reset` / `POST /auth/reset-password` – Password recovery flow (tokens logged to console locally).
-- `POST /auth/request-email-verification` / `POST /auth/verify-email` – Email verification stubs (tokens logged).
-- Protected resources call `authenticate` middleware and `requirePermission` to enforce centralized permissions (`config/permissions.ts`). Tokens embed `tenant_id` to guarantee isolation.
-
-- Minimal OpenAPI document: `backend/openapi.yaml`
-
-## Core CRUD APIs (Phase 4)
-
-- `GET/POST/PUT/DELETE /students`
-- `GET/POST/PUT/DELETE /teachers`
-- `GET/PUT /branding`
-- `GET/PUT /school`
-- Validation powered by Zod (`studentValidator`, `teacherValidator`, `brandingValidator`, `schoolValidator`).
-- Business logic isolated in `services/` modules; controllers stay thin.
-- Jest coverage in `studentRoutes.test.ts` and `teacherBrandingRoutes.test.ts`.
-
-- Attendance APIs (Phase 5):
-  - `POST /attendance/mark` (bulk, idempotent)
-  - `GET /attendance/{studentId}` (history + summary)
-  - `GET /attendance/report/class?class_id=&date=`
-  - Teacher UI stub: `TeacherAttendancePage`
-  - Student UI stub: `StudentAttendancePage`
-- Examination module (Phase 6):
-  - `POST /exams`, `POST /exams/{examId}/sessions`
-  - `POST /grades/bulk` with centralized audit logging & grade boundaries
-  - `GET /results/{studentId}?exam_id=` for aggregates, ranking, and grade summaries
-  - `GET /results/{examId}/export?format=csv|pdf` for downloadable result sheets
-  - Frontend stubs: `TeacherGradeEntryPage`, `StudentResultsPage`, `AdminExamConfigPage`
-- Fee management (Phase 7):
-  - `POST /invoices`, `GET /invoices/{studentId}`
-  - `POST /payments` webhook with idempotent persistence and invoice reconciliation
-  - Payment provider abstraction (`services/payments/provider.ts`) for Stripe/Paystack/Mollie drop-ins
-  - Frontend stubs: `StudentFeesPage`, `AdminInvoicePage`
-  - Jest coverage in `feeRoutes.test.ts`
-
-- Admin configuration & reporting (Phase 8):
-  - `GET/PUT /configuration/branding`, `GET/POST /configuration/terms`, `GET/POST /configuration/classes`
-  - `GET /reports/attendance`, `GET /reports/grades?exam_id=`, `GET /reports/fees?status=`
-  - `GET /users`, `PATCH /users/{userId}/role` for tenant RBAC management
-  - React admin hub at `/frontend/src/App.tsx` with live pages: `AdminConfigurationPage`, `AdminReportsPage`, `AdminRoleManagementPage`
-  - Vitest coverage in `adminConfig.test.tsx`, `adminReports.test.tsx`, and `adminRoles.test.tsx`
-  - New backend integration tests: `configRoutes.test.ts`, `reportRoutes.test.ts`, `userRoutes.test.ts`
-
-## Testing
-
-```bash
-# Backend
-npm run test --prefix backend
-
-# Frontend
-npm run test --prefix frontend
-```
-
-CI replicates these commands for pull requests.
-
-## Next Steps
-
-- Integrate real email/SMS providers for verification & reset flows.
-- Flesh out production-ready frontend routing/state (React Router + TanStack Query).
-- Add tenant onboarding automation (`POST /tenants`) and schema provisioning CLI.
-- Integrate live exam data sources, teacher-class permissions, and production payment providers.
-- Implement automated tenant backups, retention policies, and observability dashboards.
+See `CHANGELOG.md` for historical phase milestones and `docs/deployment-checklist.md` before any production deployment.
 

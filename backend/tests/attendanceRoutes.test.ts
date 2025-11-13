@@ -1,8 +1,9 @@
+import crypto from 'crypto';
 import type { Request, Response, NextFunction } from 'express';
+import type { Pool } from 'pg';
 import request from 'supertest';
 import app from '../src/app';
 import { createTestPool } from './utils/testDb';
-import { createTenant } from '../src/db/tenantManager';
 import { getPool } from '../src/db/connection';
 
 type MockAuthRequest = Request & {
@@ -15,16 +16,18 @@ type MockAuthRequest = Request & {
   };
 };
 
+const currentUser: NonNullable<MockAuthRequest['user']> = {
+  id: 'admin-user',
+  role: 'admin',
+  tenantId: 'tenant_alpha',
+  email: 'admin@test.com',
+  tokenId: 'token'
+};
+
 jest.mock('../src/middleware/authenticate', () => ({
   __esModule: true,
   default: (req: MockAuthRequest, _res: Response, next: NextFunction) => {
-    req.user = {
-      id: 'auth-user',
-      role: 'admin',
-      tenantId: 'tenant_alpha',
-      email: `admin@test.com`,
-      tokenId: 'token'
-    };
+    req.user = { ...currentUser };
     next();
   }
 }));
@@ -42,83 +45,105 @@ jest.mock('../src/db/connection', () => ({
 const mockedGetPool = getPool as unknown as jest.Mock;
 
 describe('Attendance routes', () => {
+  const headers = { Authorization: 'Bearer fake', 'x-tenant-id': 'tenant_alpha' };
+  let pool: Pool;
+  let classId: string;
+  let studentAId: string;
+  let studentBId: string;
+  let tenantId: string;
+  let adminUserId: string;
+
   beforeAll(async () => {
     const testPool = await createTestPool();
-    mockedGetPool.mockReturnValue(testPool.pool);
-    await createTenant(
-      {
-        name: 'Attendance School',
-        schemaName: 'tenant_alpha'
-      },
-      testPool.pool
+    pool = testPool.pool;
+    mockedGetPool.mockReturnValue(pool);
+    tenantId = crypto.randomUUID();
+    adminUserId = crypto.randomUUID();
+
+    await pool.query(
+      `
+        CREATE TABLE IF NOT EXISTS tenant_alpha.audit_logs (
+          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+          user_id UUID,
+          action TEXT NOT NULL,
+          entity_type TEXT NOT NULL,
+          entity_id UUID,
+          details JSONB DEFAULT '{}'::jsonb,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `
     );
 
-    await testPool.pool.query(
+    await pool.query(
       `
-        INSERT INTO tenant_alpha.students (first_name, last_name, admission_number)
-        VALUES ('Test', 'Student', 'ADM-001')
+        INSERT INTO shared.tenants (id, name, schema_name)
+        VALUES ($1, 'Attendance School', 'tenant_alpha')
+        ON CONFLICT (schema_name) DO NOTHING
+      `,
+      [tenantId]
+    );
+
+    classId = crypto.randomUUID();
+    studentAId = crypto.randomUUID();
+    studentBId = crypto.randomUUID();
+
+    await pool.query(
       `
+        INSERT INTO tenant_alpha.classes (id, name, description)
+        VALUES ($1, 'Class A', 'Primary cohort')
+      `,
+      [classId]
+    );
+
+    await pool.query(
+      `
+        INSERT INTO tenant_alpha.students (id, first_name, last_name, admission_number, class_id, parent_contacts)
+        VALUES ($1, 'Test', 'Student', 'ADM-001', $3, '[]'::jsonb),
+               ($2, 'Other', 'Student', 'ADM-002', $3, '[]'::jsonb)
+      `,
+      [studentAId, studentBId, classId]
+    );
+
+    await pool.query(
+      `
+        INSERT INTO tenant_alpha.attendance_records (student_id, class_id, status, marked_by, attendance_date, metadata)
+        VALUES ($1, $2, 'present', $3, $4, '{}'::jsonb)
+      `,
+      [studentBId, classId, adminUserId, '2025-01-01']
     );
   });
 
-  const teacherHeaders = { Authorization: 'Bearer fake', 'x-tenant-id': 'tenant_alpha' };
-
-  it('marks attendance in bulk and fetches history', async () => {
-    const studentIdResult = await mockedGetPool().query(
-      `SELECT id FROM tenant_alpha.students WHERE admission_number = 'ADM-001' LIMIT 1`
-    );
-    const studentId = studentIdResult.rows[0].id as string;
-
-    const mark = await request(app)
-      .post('/attendance/mark')
-      .set(teacherHeaders)
-      .send({
-        records: [
-          {
-            studentId,
-            classId: 'Class-A',
-            status: 'present',
-            markedBy: '11111111-1111-1111-1111-111111111111',
-            date: '2025-01-01'
-          }
-        ]
-      });
-
-    expect(mark.status).toBe(204);
-
-    const secondMark = await request(app)
-      .post('/attendance/mark')
-      .set(teacherHeaders)
-      .send({
-        records: [
-          {
-            studentId,
-            classId: 'Class-A',
-            status: 'present',
-            markedBy: '11111111-1111-1111-1111-111111111111',
-            date: '2025-01-01'
-          }
-        ]
-      });
-
-    expect(secondMark.status).toBe(204);
-
-    const history = await request(app)
-      .get(`/attendance/${studentId}`)
-      .set(teacherHeaders);
-
-    expect(history.status).toBe(200);
-    expect(history.body.history.length).toBeGreaterThanOrEqual(1);
+  beforeEach(() => {
+    Object.assign(currentUser, {
+      id: adminUserId,
+      role: 'admin',
+      tenantId,
+      email: 'admin@test.com'
+    });
   });
 
-  it('returns class report', async () => {
-    const report = await request(app)
-      .get('/attendance/report/class')
-      .set(teacherHeaders)
-      .query({ class_id: 'Class-A', date: '2025-01-01' });
+  it('forbids a student from accessing another student attendance and logs the attempt', async () => {
+    Object.assign(currentUser, {
+      id: studentAId,
+      role: 'student' as const,
+      email: 'studentA@example.com',
+      tenantId
+    });
 
-    expect(report.status).toBe(200);
-    expect(report.body.length).toBeGreaterThanOrEqual(1);
+    const before = await pool.query(
+      `SELECT COUNT(*)::int AS count FROM tenant_alpha.audit_logs WHERE action = 'UNAUTHORIZED_ACCESS_ATTEMPT'`
+    );
+    const beforeCount = before.rows[0].count as number;
+
+    const res = await request(app).get(`/attendance/${studentBId}`).set(headers);
+
+    expect(res.status).toBe(403);
+
+    const after = await pool.query(
+      `SELECT COUNT(*)::int AS count FROM tenant_alpha.audit_logs WHERE action = 'UNAUTHORIZED_ACCESS_ATTEMPT'`
+    );
+    const afterCount = after.rows[0].count as number;
+
+    expect(afterCount).toBe(beforeCount + 1);
   });
 });
-

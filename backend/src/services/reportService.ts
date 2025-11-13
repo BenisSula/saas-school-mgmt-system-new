@@ -1,5 +1,11 @@
 import type { PoolClient } from 'pg';
+import PDFDocument from 'pdfkit';
 import { assertValidSchemaName } from '../db/tenantManager';
+import { termReportSchema } from '../validators/subjectValidator';
+import { z } from 'zod';
+
+type TermReportInput = z.infer<typeof termReportSchema>;
+type PdfDoc = InstanceType<typeof PDFDocument>;
 
 interface AttendanceReportFilters {
   from?: string;
@@ -33,11 +39,7 @@ export async function getAttendanceSummary(
   return result.rows;
 }
 
-export async function getGradeDistribution(
-  client: PoolClient,
-  schema: string,
-  examId: string
-) {
+export async function getGradeDistribution(client: PoolClient, schema: string, examId: string) {
   assertValidSchemaName(schema);
   const result = await client.query(
     `
@@ -57,11 +59,7 @@ export async function getGradeDistribution(
   return result.rows;
 }
 
-export async function getFeeOutstanding(
-  client: PoolClient,
-  schema: string,
-  status?: string
-) {
+export async function getFeeOutstanding(client: PoolClient, schema: string, status?: string) {
   assertValidSchemaName(schema);
   const result = await client.query(
     `
@@ -87,4 +85,247 @@ export async function getFeeOutstanding(
   return result.rows;
 }
 
+interface TermReportSummary {
+  student: {
+    id: string;
+    fullName: string;
+    classId: string | null;
+    className: string | null;
+  };
+  term: {
+    id: string;
+    name: string;
+    startsOn: string;
+    endsOn: string;
+  };
+  attendance: {
+    present: number;
+    absent: number;
+    late: number;
+    total: number;
+    percentage: number;
+  };
+  academics: Array<{
+    subject: string;
+    score: number;
+    grade: string | null;
+  }>;
+  fees: {
+    billed: number;
+    paid: number;
+    outstanding: number;
+  };
+}
 
+async function streamToBuffer(doc: PdfDoc): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    doc.on('data', (chunk: Buffer | string) => {
+      chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+    });
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', (error: Error) => reject(error));
+    doc.end();
+  });
+}
+
+async function fetchTermReportSummary(
+  client: PoolClient,
+  schema: string,
+  input: TermReportInput
+): Promise<TermReportSummary> {
+  assertValidSchemaName(schema);
+  const studentResult = await client.query(
+    `
+      SELECT s.*, c.name AS class_name
+      FROM ${schema}.students s
+      LEFT JOIN ${schema}.classes c ON c.id = s.class_id
+      WHERE s.id = $1
+    `,
+    [input.studentId]
+  );
+  if (studentResult.rowCount === 0) {
+    throw new Error('Student not found');
+  }
+  const student = studentResult.rows[0];
+
+  const termResult = await client.query(`SELECT * FROM ${schema}.academic_terms WHERE id = $1`, [
+    input.termId
+  ]);
+  if (termResult.rowCount === 0) {
+    throw new Error('Term not found');
+  }
+  const term = termResult.rows[0];
+
+  const attendanceResult = await client.query(
+    `
+      SELECT status, COUNT(*)::int AS count
+      FROM ${schema}.attendance_records
+      WHERE student_id = $1
+        AND attendance_date BETWEEN $2 AND $3
+      GROUP BY status
+    `,
+    [input.studentId, term.starts_on, term.ends_on]
+  );
+  const attendanceCounts = attendanceResult.rows.reduce(
+    (acc, row) => {
+      acc[row.status as keyof typeof acc] = row.count;
+      acc.total += row.count;
+      return acc;
+    },
+    { present: 0, absent: 0, late: 0, total: 0 }
+  );
+  const attendancePercentage =
+    attendanceCounts.total === 0
+      ? 0
+      : Math.round((attendanceCounts.present / attendanceCounts.total) * 100);
+
+  const academicResult = await client.query(
+    `
+      SELECT g.subject, g.score::float, g.grade
+      FROM ${schema}.grades g
+      JOIN ${schema}.exams e ON e.id = g.exam_id
+      WHERE g.student_id = $1
+        AND e.exam_date BETWEEN $2 AND $3
+      ORDER BY g.subject
+    `,
+    [input.studentId, term.starts_on, term.ends_on]
+  );
+
+  const feesResult = await client.query(
+    `
+      SELECT
+        SUM(amount)::float AS billed,
+        SUM(
+          CASE
+            WHEN status = 'paid' THEN amount
+            WHEN status = 'partial' THEN amount * 0.5
+            ELSE 0
+          END
+        )::float AS paid
+      FROM ${schema}.fee_invoices
+      WHERE student_id = $1
+        AND (due_date IS NULL OR (due_date BETWEEN $2 AND $3))
+    `,
+    [input.studentId, term.starts_on, term.ends_on]
+  );
+  const billed = feesResult.rows[0]?.billed ?? 0;
+  const paid = feesResult.rows[0]?.paid ?? 0;
+
+  return {
+    student: {
+      id: student.id,
+      fullName: `${student.first_name} ${student.last_name}`,
+      classId: student.class_id ?? null,
+      className: student.class_name ?? null
+    },
+    term: {
+      id: term.id,
+      name: term.name,
+      startsOn: term.starts_on.toISOString(),
+      endsOn: term.ends_on.toISOString()
+    },
+    attendance: {
+      present: attendanceCounts.present,
+      absent: attendanceCounts.absent,
+      late: attendanceCounts.late,
+      total: attendanceCounts.total,
+      percentage: attendancePercentage
+    },
+    academics: academicResult.rows.map((row) => ({
+      subject: row.subject,
+      score: row.score,
+      grade: row.grade
+    })),
+    fees: {
+      billed,
+      paid,
+      outstanding: billed - paid
+    }
+  };
+}
+
+function renderReportPdf(summary: TermReportSummary): PdfDoc {
+  const doc = new PDFDocument({ margin: 50 });
+  doc.fontSize(18).text('Term Performance Report', { align: 'center' });
+  doc.moveDown();
+  doc
+    .fontSize(12)
+    .text(`Student: ${summary.student.fullName}`)
+    .text(`Class: ${summary.student.className ?? 'Unassigned'}`)
+    .text(`Term: ${summary.term.name}`)
+    .text(
+      `Dates: ${new Date(summary.term.startsOn).toLocaleDateString()} - ${new Date(
+        summary.term.endsOn
+      ).toLocaleDateString()}`
+    );
+
+  doc.moveDown().fontSize(14).text('Attendance', { underline: true });
+  doc
+    .fontSize(12)
+    .text(`Present: ${summary.attendance.present}`)
+    .text(`Absent: ${summary.attendance.absent}`)
+    .text(`Late: ${summary.attendance.late}`)
+    .text(`Attendance Rate: ${summary.attendance.percentage}%`);
+
+  doc.moveDown().fontSize(14).text('Academic Performance', { underline: true });
+  if (summary.academics.length === 0) {
+    doc.fontSize(12).text('No exam records captured for this term.');
+  } else {
+    summary.academics.forEach((row) => {
+      doc
+        .fontSize(12)
+        .text(`${row.subject}: ${row.score.toFixed(1)}${row.grade ? ` (${row.grade})` : ''}`);
+    });
+  }
+
+  doc.moveDown().fontSize(14).text('Fee Summary', { underline: true });
+  doc
+    .fontSize(12)
+    .text(`Billed: $${summary.fees.billed.toFixed(2)}`)
+    .text(`Paid: $${summary.fees.paid.toFixed(2)}`)
+    .text(`Outstanding: $${summary.fees.outstanding.toFixed(2)}`);
+
+  return doc;
+}
+
+export async function generateTermReport(
+  client: PoolClient,
+  schema: string,
+  input: TermReportInput,
+  generatedBy: string | null
+) {
+  const summary = await fetchTermReportSummary(client, schema, input);
+  const pdfDoc = renderReportPdf(summary);
+  const pdfBuffer = await streamToBuffer(pdfDoc);
+  const pdfPayload = pdfBuffer.toString('base64');
+
+  const result = await client.query(
+    `
+      INSERT INTO ${schema}.term_reports (student_id, term_id, generated_by, summary, pdf)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id
+    `,
+    [summary.student.id, summary.term.id, generatedBy, JSON.stringify(summary), pdfPayload]
+  );
+
+  return {
+    reportId: result.rows[0].id,
+    summary,
+    pdfBuffer
+  };
+}
+
+export async function fetchReportPdf(
+  client: PoolClient,
+  schema: string,
+  reportId: string
+): Promise<Buffer | null> {
+  const result = await client.query(`SELECT pdf FROM ${schema}.term_reports WHERE id = $1`, [
+    reportId
+  ]);
+  if (result.rowCount === 0 || !result.rows[0].pdf) {
+    return null;
+  }
+  return Buffer.from(result.rows[0].pdf as string, 'base64');
+}

@@ -90,3 +90,30 @@ export async function deleteStudent(client: PoolClient, schema: string, id: stri
   await client.query(`DELETE FROM ${tableName(schema)} WHERE id = $1`, [id]);
 }
 
+export async function moveStudentToClass(
+  client: PoolClient,
+  schema: string,
+  id: string,
+  classId: string
+) {
+  const existing = await getStudent(client, schema, id);
+  if (!existing) {
+    return null;
+  }
+
+  const result = await client.query(
+    `
+      UPDATE ${tableName(schema)}
+      SET class_id = $1,
+          updated_at = NOW()
+      WHERE id = $2
+      RETURNING *
+    `,
+    [classId, id]
+  );
+
+  return {
+    previousClassId: existing.class_id as string | null,
+    student: result.rows[0]
+  };
+}

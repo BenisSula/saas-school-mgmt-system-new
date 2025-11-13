@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import Table, { TableColumn } from '../components/Table';
+import { useState } from 'react';
+import Table from '../components/Table';
+import type { TableColumn } from '../components/Table';
 import { Button } from '../components/Button';
 
 type DraftItem = {
@@ -72,7 +73,7 @@ export function AdminInvoicePage() {
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-white">Invoice Items</h2>
             <Button
-              variant="secondary"
+              variant="outline"
               onClick={() => setItems((current) => [...current, { description: '', amount: 0 }])}
             >
               Add Item
@@ -114,10 +115,13 @@ export function AdminInvoicePage() {
         </div>
 
         <div className="flex items-center justify-end gap-3">
-          <Button variant="secondary" onClick={() => setItems([{ description: '', amount: 0 }])}>
+          <Button variant="outline" onClick={() => setItems([{ description: '', amount: 0 }])}>
             Clear
           </Button>
-          <Button onClick={handleSubmit} disabled={!studentId || items.some((item) => !item.description)}>
+          <Button
+            onClick={handleSubmit}
+            disabled={!studentId || items.some((item) => !item.description)}
+          >
             Generate Invoice
           </Button>
         </div>
@@ -125,11 +129,14 @@ export function AdminInvoicePage() {
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-white">Recent Drafts</h2>
-        <Table data={savedInvoices} columns={invoiceColumns} emptyMessage="No invoices generated yet." />
+        <Table
+          data={savedInvoices}
+          columns={invoiceColumns}
+          emptyMessage="No invoices generated yet."
+        />
       </section>
     </div>
   );
 }
 
 export default AdminInvoicePage;
-

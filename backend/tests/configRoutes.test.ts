@@ -78,33 +78,65 @@ describe('Configuration routes', () => {
     expect(branding.body.primary_color).toBe('#1d4ed8');
   });
 
-  it('creates academic terms and classes', async () => {
+  it('creates, updates, lists, and deletes academic terms and classes', async () => {
+    const createdTerms = [];
     for (const termInput of mockTerms) {
-      const term = await request(app)
-        .post('/configuration/terms')
-        .set(headers)
-        .send(termInput);
+      const term = await request(app).post('/configuration/terms').set(headers).send(termInput);
       expect(term.status).toBe(201);
+      expect(term.body.name).toBe(termInput.name);
+      createdTerms.push(term.body);
     }
 
-    const classResponse = await request(app)
-      .post('/configuration/classes')
+    const [firstTerm] = createdTerms;
+    const updatedTerm = await request(app)
+      .put(`/configuration/terms/${firstTerm.id}`)
       .set(headers)
       .send({
-        name: 'Grade 10',
-        description: 'Senior class'
+        name: `${firstTerm.name} Updated`,
+        startsOn: firstTerm.starts_on.slice(0, 10),
+        endsOn: firstTerm.ends_on.slice(0, 10)
       });
+    expect(updatedTerm.status).toBe(200);
+    expect(updatedTerm.body.name).toContain('Updated');
+
+    const listTerms = await request(app).get('/configuration/terms').set(headers);
+    expect(listTerms.status).toBe(200);
+    expect(listTerms.body.length).toBeGreaterThanOrEqual(2);
+
+    const listClassesBefore = await request(app).get('/configuration/classes').set(headers);
+    expect(listClassesBefore.status).toBe(200);
+
+    const classResponse = await request(app).post('/configuration/classes').set(headers).send({
+      name: 'Grade 10',
+      description: 'Senior class'
+    });
 
     expect(classResponse.status).toBe(201);
     expect(classResponse.body.name).toBe('Grade 10');
 
-    const listTerms = await request(app).get('/configuration/terms').set(headers);
-    expect(listTerms.status).toBe(200);
-    expect(listTerms.body.length).toBeGreaterThanOrEqual(1);
+    const updatedClass = await request(app)
+      .put(`/configuration/classes/${classResponse.body.id}`)
+      .set(headers)
+      .send({
+        name: 'Grade 10 Updated',
+        description: 'Senior class updated'
+      });
+    expect(updatedClass.status).toBe(200);
+    expect(updatedClass.body.name).toBe('Grade 10 Updated');
 
-    const listClasses = await request(app).get('/configuration/classes').set(headers);
-    expect(listClasses.status).toBe(200);
-    expect(listClasses.body.length).toBeGreaterThanOrEqual(1);
+    const deleteClassResponse = await request(app)
+      .delete(`/configuration/classes/${classResponse.body.id}`)
+      .set(headers);
+    expect(deleteClassResponse.status).toBe(204);
+
+    const deleteTermResponse = await request(app)
+      .delete(`/configuration/terms/${firstTerm.id}`)
+      .set(headers);
+    expect(deleteTermResponse.status).toBe(204);
+
+    const missingTermDelete = await request(app)
+      .delete(`/configuration/terms/${firstTerm.id}`)
+      .set(headers);
+    expect(missingTermDelete.status).toBe(404);
   });
 });
-

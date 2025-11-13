@@ -30,9 +30,9 @@ describe('AdminReportsPage', () => {
   it('runs attendance report with provided filters', async () => {
     render(<AdminReportsPage />);
 
-    fireEvent.change(screen.getByPlaceholderText('From date'), { target: { value: '2025-01-01' } });
-    fireEvent.change(screen.getByPlaceholderText('To date'), { target: { value: '2025-01-31' } });
-    fireEvent.change(screen.getByPlaceholderText('Class ID'), { target: { value: 'grade-10' } });
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: '2025-01-01' } });
+    fireEvent.change(screen.getByLabelText('To'), { target: { value: '2025-01-31' } });
+    fireEvent.change(screen.getByLabelText('Class ID'), { target: { value: 'grade-10' } });
     const [attendanceRunButton] = screen.getAllByRole('button', { name: /Run report/i });
     fireEvent.click(attendanceRunButton);
 
@@ -50,7 +50,7 @@ describe('AdminReportsPage', () => {
     render(<AdminReportsPage />);
 
     // Grade report requires exam ID
-    fireEvent.change(screen.getByPlaceholderText('Exam ID'), { target: { value: 'exam-123' } });
+    fireEvent.change(screen.getByLabelText('Exam ID'), { target: { value: 'exam-123' } });
     const reportButtons = screen.getAllByRole('button', { name: /Run report/i });
     fireEvent.click(reportButtons[1]);
 
@@ -73,4 +73,3 @@ describe('AdminReportsPage', () => {
     );
   });
 });
-

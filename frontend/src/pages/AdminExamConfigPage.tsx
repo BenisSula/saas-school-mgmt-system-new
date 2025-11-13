@@ -1,5 +1,5 @@
-import React from 'react';
-import Table, { TableColumn } from '../components/Table';
+import Table from '../components/Table';
+import type { TableColumn } from '../components/Table';
 import { Button } from '../components/Button';
 import { DatePicker } from '../components/DatePicker';
 
@@ -65,7 +65,7 @@ export function AdminExamConfigPage() {
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-white">Upcoming Exams</h2>
-          <Button variant="secondary">Import Schedule</Button>
+          <Button variant="outline">Import Schedule</Button>
         </div>
         <Table columns={examColumns} data={upcomingExams} emptyMessage="No exams scheduled yet." />
       </section>
@@ -73,13 +73,16 @@ export function AdminExamConfigPage() {
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-white">Grade Scale</h2>
-          <Button variant="secondary">Edit Scale</Button>
+          <Button variant="outline">Edit Scale</Button>
         </div>
-        <Table columns={scaleColumns} data={defaultScale} emptyMessage="No grade scales configured." />
+        <Table
+          columns={scaleColumns}
+          data={defaultScale}
+          emptyMessage="No grade scales configured."
+        />
       </section>
     </div>
   );
 }
 
 export default AdminExamConfigPage;
-
