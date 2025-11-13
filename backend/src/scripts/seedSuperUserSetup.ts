@@ -12,7 +12,7 @@ import {
   withTenantSearchPath
 } from '../db/tenantManager';
 import { rolePermissions, Role } from '../config/permissions';
-import { recordSharedAuditLog } from '../services/auditLogService';
+import { recordSharedAuditLog, recordTenantAuditLog } from '../services/auditLogService';
 
 type AdminSeed = {
   fullName: string;
@@ -42,6 +42,31 @@ type TeacherSeed = {
   role: 'Classroom Teacher' | 'Subject Teacher';
   username: string;
   password: string;
+};
+
+type ClassStructureSeed = {
+  department: string;
+  gradeLevel: 'Grade 10' | 'Grade 11' | 'Grade 12';
+  sections: string[];
+};
+
+type DepartmentSubjectMap = {
+  core: string[];
+  electives: string[];
+};
+
+type StudentSummary = {
+  role: 'student';
+  email: string;
+  username: string;
+  fullName: string;
+  school: string;
+  registrationCode: string;
+  department: string;
+  className: string;
+  status: string;
+  passwordPlain: string;
+  passwordHash: string;
 };
 
 type DepartmentSeed = {
@@ -578,6 +603,84 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
   ]
 };
 
+const CLASS_STRUCTURE: ClassStructureSeed[] = [
+  { department: 'Science', gradeLevel: 'Grade 10', sections: ['A', 'B', 'C'] },
+  { department: 'Commerce', gradeLevel: 'Grade 11', sections: ['A', 'B', 'C'] },
+  { department: 'Arts', gradeLevel: 'Grade 12', sections: ['A', 'B', 'C'] }
+];
+
+const ACADEMIC_YEAR = '2023-2024';
+
+const DEPARTMENT_SUBJECTS: Record<string, DepartmentSubjectMap> = {
+  Science: {
+    core: ['Mathematics', 'English', 'Religious Study'],
+    electives: ['Chemistry', 'Physics', 'Biology']
+  },
+  Commerce: {
+    core: ['Mathematics', 'English', 'Religious Study'],
+    electives: ['Accounting', 'Commerce', 'Economics']
+  },
+  Arts: {
+    core: ['Mathematics', 'English', 'Religious Study'],
+    electives: ['History', 'Government', 'Literature']
+  }
+};
+
+const FEMALE_FIRST_NAMES = [
+  'Awa',
+  'Fatou',
+  'Jainaba',
+  'Isatou',
+  'Mariama',
+  'Haddy',
+  'Binta',
+  'Kumba',
+  'Saffie',
+  'Ramatoulie',
+  'Aisha',
+  'Sainabou'
+];
+
+const MALE_FIRST_NAMES = [
+  'Ebrima',
+  'Lamin',
+  'Alieu',
+  'Pa Modou',
+  'Ousman',
+  'Abdoulie',
+  'Omar',
+  'Momodou',
+  'Laminou',
+  'Buba',
+  'Musa',
+  'Baboucarr'
+];
+
+const LAST_NAMES = [
+  'Jallow',
+  'Bah',
+  'Ceesay',
+  'Jammeh',
+  'Sanyang',
+  'Njie',
+  'Touray',
+  'Jobe',
+  'Camara',
+  'Sowe',
+  'Darboe',
+  'Bojang',
+  'Faal',
+  'Sanyang'
+];
+
+const SCHOOL_EMAIL_DOMAINS: Record<string, string> = {
+  'NHS-BJL-2025': 'newhorizon.edu.gm',
+  'STP-LMN-2025': 'stpeterslamin.edu.gm',
+  'DJC-CSR-2025': 'daddyjobe.edu.gm'
+};
+
+const teacherCacheBySchool = new Map<string, TeacherContext[]>();
+
 type CredentialSummary = {
   role: Role | 'hod';
   email: string;
@@ -604,11 +707,18 @@ type TeacherSummary = CredentialSummary & {
   isClassTeacher: boolean;
 };
 
+type TeacherContext = {
+  seed: TeacherSeed;
+  account: { id: string; passwordHash: string };
+  departmentId: string;
+};
+
 type SeedSummary = {
   superuser: Omit<CredentialSummary, 'department'>;
   admins: CredentialSummary[];
   hods: CredentialSummary[];
   teachers: TeacherSummary[];
+  students: StudentSummary[];
   departments: DepartmentSummary[];
   notifications: Array<{
     school: string;
@@ -624,6 +734,94 @@ function slugify(input: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)+/g, '');
+}
+
+function randomChoice<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+function randomDateBetween(start: Date, end: Date): string {
+  const startTime = start.getTime();
+  const endTime = end.getTime();
+  const randomTime = startTime + Math.random() * (endTime - startTime);
+  return new Date(randomTime).toISOString().split('T')[0]!;
+}
+
+function gradeDobRange(gradeLevel: 'Grade 10' | 'Grade 11' | 'Grade 12'): {
+  start: Date;
+  end: Date;
+} {
+  switch (gradeLevel) {
+    case 'Grade 10':
+      return {
+        start: new Date('2007-01-01'),
+        end: new Date('2009-12-31')
+      };
+    case 'Grade 11':
+      return {
+        start: new Date('2006-01-01'),
+        end: new Date('2008-12-31')
+      };
+    case 'Grade 12':
+    default:
+      return {
+        start: new Date('2005-01-01'),
+        end: new Date('2007-12-31')
+      };
+  }
+}
+
+function generateEnrollmentDate(): string {
+  return randomDateBetween(new Date('2022-09-01'), new Date('2023-09-01'));
+}
+
+function generateStudentName(gender: 'M' | 'F'): { firstName: string; lastName: string } {
+  const firstName = randomChoice(gender === 'F' ? FEMALE_FIRST_NAMES : MALE_FIRST_NAMES);
+  const lastName = randomChoice(LAST_NAMES);
+  return { firstName, lastName };
+}
+
+function buildStudentIdentifiers(
+  firstName: string,
+  lastName: string,
+  domain: string,
+  usedEmails: Set<string>,
+  usedUsernames: Set<string>
+): { email: string; username: string } {
+  const emailLocalBase = `${slugify(firstName).replace(/-/g, '')}.${slugify(lastName).replace(/-/g, '')}`;
+  let emailCandidate = `${emailLocalBase}@${domain}`.toLowerCase();
+  let emailCounter = 1;
+  while (usedEmails.has(emailCandidate)) {
+    emailCandidate = `${emailLocalBase}${emailCounter}@${domain}`.toLowerCase();
+    emailCounter += 1;
+  }
+  usedEmails.add(emailCandidate);
+
+  const usernameBase = `${slugify(firstName)}-${slugify(lastName)}`.replace(/-+/g, '_');
+  let usernameCandidate = `${usernameBase}_stu`.toLowerCase();
+  let usernameCounter = 1;
+  while (usedUsernames.has(usernameCandidate)) {
+    usernameCandidate = `${usernameBase}_stu${usernameCounter}`.toLowerCase();
+    usernameCounter += 1;
+  }
+  usedUsernames.add(usernameCandidate);
+
+  return { email: emailCandidate, username: usernameCandidate };
+}
+
+function generateAdmissionNumber(
+  registrationCode: string,
+  gradeLevel: string,
+  department: string,
+  section: string,
+  index: number
+): string {
+  const regPrefix = registrationCode.split('-')[0] ?? 'SCH';
+  const gradePart = gradeLevel.replace(/\s+/g, '').toUpperCase();
+  const deptPart = department.slice(0, 3).toUpperCase();
+  const sectionPart = section.toUpperCase();
+  const counter = (index + 1).toString().padStart(3, '0');
+  return `${regPrefix}-${gradePart}-${deptPart}-${sectionPart}-${counter}`;
 }
 
 async function syncRolePermissions(): Promise<void> {
@@ -744,11 +942,16 @@ async function upsertUserAccount(options: {
   createdBy?: string | null;
   status?: string;
   auditLogEnabled?: boolean;
+  gender?: 'M' | 'F';
+  dateOfBirth?: string | null;
+  enrollmentDate?: string | null;
+  metadata?: Record<string, unknown>;
 }): Promise<{ id: string; passwordHash: string }> {
   const pool = getPool();
   const normalizedEmail = options.email.toLowerCase();
   const normalizedUsername = options.username.toLowerCase();
   const passwordHash = await argon2.hash(options.password);
+  const metadata = JSON.stringify(options.metadata ?? {});
 
   const existing = await pool.query<{ id: string }>(
     `SELECT id FROM shared.users WHERE email = $1`,
@@ -773,6 +976,10 @@ async function upsertUserAccount(options: {
             created_by = COALESCE($11, created_by),
             status = COALESCE($12, status),
             audit_log_enabled = COALESCE($13, audit_log_enabled),
+            gender = COALESCE($14, gender),
+            date_of_birth = COALESCE($15, date_of_birth),
+            enrollment_date = COALESCE($16, enrollment_date),
+            metadata = COALESCE($17::jsonb, metadata),
             updated_at = NOW()
         WHERE id = $1
       `,
@@ -789,7 +996,11 @@ async function upsertUserAccount(options: {
         options.isTeachingStaff ?? false,
         options.createdBy ?? null,
         options.status ?? 'active',
-        options.auditLogEnabled ?? false
+        options.auditLogEnabled ?? false,
+        options.gender ?? null,
+        options.dateOfBirth ?? null,
+        options.enrollmentDate ?? null,
+        metadata
       ]
     );
     return { id: userId, passwordHash };
@@ -814,9 +1025,13 @@ async function upsertUserAccount(options: {
         created_by,
         status,
         audit_log_enabled,
-        is_teaching_staff
+        is_teaching_staff,
+        gender,
+        date_of_birth,
+        enrollment_date,
+        metadata
       )
-      VALUES ($1, $2, $3, $4, $5, TRUE, NOW(), $6, $7, $8, $9, $10, $11, $12, $13)
+      VALUES ($1, $2, $3, $4, $5, TRUE, NOW(), $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17::jsonb)
     `,
     [
       userId,
@@ -832,7 +1047,11 @@ async function upsertUserAccount(options: {
       options.createdBy ?? null,
       options.status ?? 'active',
       options.auditLogEnabled ?? false,
-      options.isTeachingStaff ?? false
+      options.isTeachingStaff ?? false,
+      options.gender ?? null,
+      options.dateOfBirth ?? null,
+      options.enrollmentDate ?? null,
+      metadata
     ]
   );
 
@@ -877,6 +1096,98 @@ async function ensureClassRecord(
     `,
     [classId, className, `${school.registrationCode} ${className}`]
   );
+  return classId;
+}
+
+async function ensureDetailedClassRecord(
+  client: PoolClient,
+  options: {
+    className: string;
+    schoolId: string;
+    departmentId: string;
+    gradeLevel: string;
+    section: string;
+    classTeacherId: string | null;
+    capacity: number;
+    academicYear: string;
+    registrationCode: string;
+  }
+): Promise<string> {
+  const existing = await client.query<{ id: string }>(`SELECT id FROM classes WHERE name = $1`, [
+    options.className
+  ]);
+
+  const metadata = {
+    registrationCode: options.registrationCode,
+    departmentId: options.departmentId,
+    gradeLevel: options.gradeLevel,
+    section: options.section
+  };
+
+  if (existing.rowCount > 0) {
+    const classId = existing.rows[0].id;
+    await client.query(
+      `
+        UPDATE classes
+        SET school_id = $2,
+            department_id = $3,
+            grade_level = $4,
+            section = $5,
+            class_teacher_id = $6,
+            capacity = $7,
+            academic_year = $8,
+            metadata = $9::jsonb,
+            updated_at = NOW()
+        WHERE id = $1
+      `,
+      [
+        classId,
+        options.schoolId,
+        options.departmentId,
+        options.gradeLevel,
+        options.section,
+        options.classTeacherId,
+        options.capacity,
+        options.academicYear,
+        JSON.stringify(metadata)
+      ]
+    );
+    return classId;
+  }
+
+  const classId = crypto.randomUUID();
+  await client.query(
+    `
+      INSERT INTO classes (
+        id,
+        name,
+        description,
+        school_id,
+        department_id,
+        grade_level,
+        section,
+        class_teacher_id,
+        capacity,
+        academic_year,
+        metadata
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb)
+    `,
+    [
+      classId,
+      options.className,
+      `${options.gradeLevel} ${options.section} - ${options.registrationCode}`,
+      options.schoolId,
+      options.departmentId,
+      options.gradeLevel,
+      options.section,
+      options.classTeacherId,
+      options.capacity,
+      options.academicYear,
+      JSON.stringify(metadata)
+    ]
+  );
+
   return classId;
 }
 
@@ -1452,7 +1763,609 @@ async function seedTeachers(
     });
   }
 
+  teacherCacheBySchool.set(school.registrationCode, teacherContexts);
   await logTeacherActivities(school, teacherContexts, assignmentRecords);
+}
+
+async function seedStudentsAndEnrollment(
+  school: SchoolSeed,
+  context: { tenantId: string; schemaName: string; schoolId: string; adminId: string },
+  summary: SeedSummary
+): Promise<void> {
+  const pool = getPool();
+  const departmentRows = await pool.query<{ id: string; name: string }>(
+    `SELECT id, name FROM shared.departments WHERE school_id = $1`,
+    [context.schoolId]
+  );
+
+  const departmentMap = new Map<string, string>();
+  for (const row of departmentRows.rows) {
+    departmentMap.set(row.name.toLowerCase(), row.id);
+  }
+
+  const teacherContexts = teacherCacheBySchool.get(school.registrationCode) ?? [];
+  const classTeacherByGrade = new Map<string, TeacherContext>();
+  for (const teacher of teacherContexts) {
+    if (teacher.seed.role === 'Classroom Teacher') {
+      classTeacherByGrade.set(teacher.seed.className, teacher);
+    }
+  }
+
+  const classRecords: Array<{
+    id: string;
+    className: string;
+    gradeLevel: 'Grade 10' | 'Grade 11' | 'Grade 12';
+    departmentName: string;
+    departmentId: string;
+    section: string;
+    classTeacherId: string | null;
+  }> = [];
+
+  await withTenantSearchPath(pool, context.schemaName, async (client) => {
+    await client.query('BEGIN');
+    try {
+      for (const structure of CLASS_STRUCTURE) {
+        const departmentId = departmentMap.get(structure.department.toLowerCase());
+        if (!departmentId) {
+          throw new Error(
+            `Department "${structure.department}" not found for ${school.name} while creating classes`
+          );
+        }
+
+        const classTeacher = classTeacherByGrade.get(structure.gradeLevel) ?? null;
+
+        for (const section of structure.sections) {
+          const className = `${structure.gradeLevel} ${structure.department} ${section}`;
+          const classId = await ensureDetailedClassRecord(client, {
+            className,
+            schoolId: context.schoolId,
+            departmentId,
+            gradeLevel: structure.gradeLevel,
+            section,
+            classTeacherId: classTeacher?.account.id ?? null,
+            capacity: 30,
+            academicYear: ACADEMIC_YEAR,
+            registrationCode: school.registrationCode
+          });
+
+          classRecords.push({
+            id: classId,
+            className,
+            gradeLevel: structure.gradeLevel,
+            departmentName: structure.department,
+            departmentId,
+            section,
+            classTeacherId: classTeacher?.account.id ?? null
+          });
+        }
+      }
+
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    }
+  });
+
+  if (classRecords.length === 0) {
+    return;
+  }
+
+  const usedEmails = new Set<string>();
+  const usedUsernames = new Set<string>();
+
+  for (const classRecord of classRecords) {
+    await seedStudentsForClass({
+      school,
+      context,
+      classRecord,
+      summary,
+      usedEmails,
+      usedUsernames
+    });
+  }
+}
+
+async function resolveClassSubjects(
+  schemaName: string,
+  classRecord: {
+    id: string;
+    className: string;
+    gradeLevel: 'Grade 10' | 'Grade 11' | 'Grade 12';
+    departmentName: string;
+    section: string;
+  },
+  school: SchoolSeed,
+  subjects: string[]
+): Promise<Map<string, string>> {
+  const pool = getPool();
+  const subjectMap = new Map<string, string>();
+  await withTenantSearchPath(pool, schemaName, async (client) => {
+    for (const subject of subjects) {
+      const subjectId = await ensureSubjectRecord(
+        client,
+        subject,
+        classRecord.departmentName,
+        classRecord.className,
+        school.registrationCode
+      );
+      subjectMap.set(subject, subjectId);
+
+      await client.query(
+        `
+          INSERT INTO class_subjects (id, class_id, subject_id, metadata)
+          VALUES ($1, $2, $3, $4::jsonb)
+          ON CONFLICT (class_id, subject_id) DO NOTHING
+        `,
+        [
+          crypto.randomUUID(),
+          classRecord.id,
+          subjectId,
+          JSON.stringify({
+            department: classRecord.departmentName,
+            gradeLevel: classRecord.gradeLevel,
+            section: classRecord.section,
+            registrationCode: school.registrationCode
+          })
+        ]
+      );
+    }
+  });
+  return subjectMap;
+}
+
+async function seedStudentsForClass(options: {
+  school: SchoolSeed;
+  context: { tenantId: string; schemaName: string; schoolId: string; adminId: string };
+  classRecord: {
+    id: string;
+    className: string;
+    gradeLevel: 'Grade 10' | 'Grade 11' | 'Grade 12';
+    departmentName: string;
+    departmentId: string;
+    section: string;
+    classTeacherId: string | null;
+  };
+  summary: SeedSummary;
+  usedEmails: Set<string>;
+  usedUsernames: Set<string>;
+}): Promise<void> {
+  const { school, context, classRecord, summary, usedEmails, usedUsernames } = options;
+  const pool = getPool();
+  const domain = SCHOOL_EMAIL_DOMAINS[school.registrationCode] ?? 'school.edu.gm';
+  const departmentSubjects = DEPARTMENT_SUBJECTS[classRecord.departmentName] ?? {
+    core: [],
+    electives: []
+  };
+  const subjects = [...departmentSubjects.core, ...departmentSubjects.electives];
+  const subjectIdMap = await resolveClassSubjects(
+    context.schemaName,
+    classRecord,
+    school,
+    subjects
+  );
+
+  type GeneratedStudent = {
+    tenantStudentId: string;
+    userId: string;
+    passwordHash: string;
+    passwordPlain: string;
+    fullName: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    username: string;
+    gender: 'M' | 'F';
+    dob: string;
+    enrollmentDate: string;
+    admissionNumber: string;
+    invoice: {
+      id: string;
+      amount: number;
+      balance: number;
+      status: 'paid' | 'partial';
+      dueDate: string;
+    };
+  };
+
+  const studentsBatch: GeneratedStudent[] = [];
+  for (let index = 0; index < 30; index += 1) {
+    const gender: 'M' | 'F' = index % 2 === 0 ? 'F' : 'M';
+    const { firstName, lastName } = generateStudentName(gender);
+    const { email, username } = buildStudentIdentifiers(
+      firstName,
+      lastName,
+      domain,
+      usedEmails,
+      usedUsernames
+    );
+    const fullName = `${firstName} ${lastName}`;
+    const dobRange = gradeDobRange(classRecord.gradeLevel);
+    const dob = randomDateBetween(dobRange.start, dobRange.end);
+    const enrollmentDate = generateEnrollmentDate();
+    const passwordPlain = `Stu${firstName.slice(0, 2).toUpperCase()}${Math.floor(
+      1000 + Math.random() * 9000
+    )}@2025`;
+    const metadata = {
+      department: classRecord.departmentName,
+      gradeLevel: classRecord.gradeLevel,
+      section: classRecord.section,
+      registrationCode: school.registrationCode,
+      className: classRecord.className
+    };
+    const account = await upsertUserAccount({
+      email,
+      username,
+      fullName,
+      password: passwordPlain,
+      role: 'student',
+      tenantId: context.tenantId,
+      schoolId: context.schoolId,
+      departmentId: classRecord.departmentId,
+      phone: null,
+      isTeachingStaff: false,
+      createdBy: context.adminId,
+      status: 'active',
+      auditLogEnabled: true,
+      gender,
+      dateOfBirth: dob,
+      enrollmentDate,
+      metadata
+    });
+
+    await upsertUserRole(account.id, 'student', context.adminId, {
+      department: classRecord.departmentName,
+      className: classRecord.className,
+      registrationCode: school.registrationCode,
+      source: 'seed-phase4'
+    });
+
+    const admissionNumber = generateAdmissionNumber(
+      school.registrationCode,
+      classRecord.gradeLevel,
+      classRecord.departmentName,
+      classRecord.section,
+      index
+    );
+
+    const invoiceStatus: 'paid' | 'partial' = Math.random() < 0.6 ? 'paid' : 'partial';
+    const invoiceBalance = invoiceStatus === 'paid' ? 0 : Number((Math.random() * 2500).toFixed(2));
+    const invoiceDueDate = new Date(enrollmentDate);
+    invoiceDueDate.setDate(invoiceDueDate.getDate() + 30);
+
+    studentsBatch.push({
+      tenantStudentId: crypto.randomUUID(),
+      userId: account.id,
+      passwordHash: account.passwordHash,
+      passwordPlain,
+      fullName,
+      firstName,
+      lastName,
+      email,
+      username,
+      gender,
+      dob,
+      enrollmentDate,
+      admissionNumber,
+      invoice: {
+        id: crypto.randomUUID(),
+        amount: 2500,
+        balance: Number(invoiceBalance.toFixed(2)),
+        status: invoiceStatus,
+        dueDate: invoiceDueDate.toISOString().split('T')[0]!
+      }
+    });
+  }
+
+  await withTenantSearchPath(pool, context.schemaName, async (client) => {
+    await client.query('BEGIN');
+    try {
+      for (const student of studentsBatch) {
+        await client.query(
+          `
+            INSERT INTO students (
+              id,
+              user_id,
+              first_name,
+              last_name,
+              full_name,
+              date_of_birth,
+              class_id,
+              class_uuid,
+              admission_number,
+              school_id,
+              department_id,
+              email,
+              password_hash,
+              enrollment_date,
+              status,
+              metadata,
+              gender
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'active', $15::jsonb, $16)
+            ON CONFLICT (email) DO UPDATE
+              SET full_name = EXCLUDED.full_name,
+                  class_uuid = EXCLUDED.class_uuid,
+                  department_id = EXCLUDED.department_id,
+                  enrollment_date = EXCLUDED.enrollment_date,
+                  metadata = EXCLUDED.metadata,
+                  gender = EXCLUDED.gender,
+                  updated_at = NOW()
+          `,
+          [
+            student.tenantStudentId,
+            student.userId,
+            student.firstName,
+            student.lastName,
+            student.fullName,
+            student.dob,
+            classRecord.className,
+            classRecord.id,
+            student.admissionNumber,
+            context.schoolId,
+            classRecord.departmentId,
+            student.email,
+            student.passwordHash,
+            student.enrollmentDate,
+            JSON.stringify({
+              registrationCode: school.registrationCode,
+              className: classRecord.className,
+              gradeLevel: classRecord.gradeLevel,
+              section: classRecord.section,
+              academicYear: ACADEMIC_YEAR,
+              admissionNumber: student.admissionNumber
+            }),
+            student.gender
+          ]
+        );
+
+        for (const subject of subjects) {
+          const subjectId = subjectIdMap.get(subject);
+          if (!subjectId) {
+            continue;
+          }
+          await client.query(
+            `
+              INSERT INTO student_subjects (
+                id,
+                student_id,
+                subject_id,
+                class_id,
+                academic_year,
+                metadata
+              )
+              VALUES ($1, $2, $3, $4, $5, $6::jsonb)
+              ON CONFLICT (student_id, subject_id, academic_year) DO UPDATE
+                SET metadata = EXCLUDED.metadata
+            `,
+            [
+              crypto.randomUUID(),
+              student.tenantStudentId,
+              subjectId,
+              classRecord.id,
+              ACADEMIC_YEAR,
+              JSON.stringify({
+                department: classRecord.departmentName,
+                gradeLevel: classRecord.gradeLevel,
+                section: classRecord.section,
+                subject
+              })
+            ]
+          );
+        }
+
+        await client.query(
+          `
+            INSERT INTO fee_invoices (
+              id,
+              student_id,
+              amount,
+              status,
+              due_date,
+              balance,
+              academic_year,
+              metadata
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
+            ON CONFLICT (id) DO NOTHING
+          `,
+          [
+            student.invoice.id,
+            student.tenantStudentId,
+            student.invoice.amount,
+            student.invoice.status,
+            student.invoice.dueDate,
+            student.invoice.balance,
+            ACADEMIC_YEAR,
+            JSON.stringify({
+              paymentStatus: student.invoice.status,
+              createdBy: 'seed-phase4'
+            })
+          ]
+        );
+
+        await client.query(
+          `
+            INSERT INTO fee_items (id, invoice_id, description, amount, term, metadata)
+            VALUES ($1, $2, $3, $4, $5, $6::jsonb)
+            ON CONFLICT (id) DO NOTHING
+          `,
+          [
+            crypto.randomUUID(),
+            student.invoice.id,
+            `Tuition Fee ${ACADEMIC_YEAR}`,
+            student.invoice.amount,
+            'Term 1',
+            JSON.stringify({
+              registrationCode: school.registrationCode,
+              className: classRecord.className
+            })
+          ]
+        );
+      }
+
+      if (studentsBatch.length > 0) {
+        const concernStudent = studentsBatch[0];
+        await client.query(
+          `
+            INSERT INTO student_concerns (
+              id,
+              student_id,
+              message,
+              status,
+              metadata
+            )
+            VALUES ($1, $2, $3, 'open', $4::jsonb)
+            ON CONFLICT (id) DO NOTHING
+          `,
+          [
+            crypto.randomUUID(),
+            concernStudent.tenantStudentId,
+            'Requesting timetable clarification for the upcoming term.',
+            JSON.stringify({
+              registrationCode: school.registrationCode,
+              className: classRecord.className,
+              submittedBy: concernStudent.email,
+              source: 'seed-phase4'
+            })
+          ]
+        );
+      }
+
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    }
+  });
+
+  for (const student of studentsBatch) {
+    await pool.query(
+      `
+        INSERT INTO shared.notifications (
+          id,
+          tenant_id,
+          recipient_user_id,
+          target_role,
+          target_roles,
+          title,
+          message,
+          status,
+          metadata,
+          academic_year,
+          sent_at
+        )
+        VALUES ($1, $2, $3, 'student', ARRAY['student'], $4, $5, 'sent', $6::jsonb, $7, NOW())
+      `,
+      [
+        crypto.randomUUID(),
+        context.tenantId,
+        student.userId,
+        `Welcome to ${school.name}`,
+        `Welcome to ${school.name}! Your enrollment for ${ACADEMIC_YEAR} is complete.`,
+        JSON.stringify({
+          registrationCode: school.registrationCode,
+          className: classRecord.className,
+          department: classRecord.departmentName,
+          source: 'seed-phase4'
+        }),
+        ACADEMIC_YEAR
+      ]
+    );
+
+    await recordSharedAuditLog({
+      userId: student.userId,
+      actorRole: 'student',
+      action: 'student_enrolled',
+      entityType: 'ENROLLMENT',
+      entityId: context.schoolId,
+      target: `class_id:${classRecord.id}`,
+      details: {
+        school: school.name,
+        className: classRecord.className,
+        department: classRecord.departmentName,
+        academicYear: ACADEMIC_YEAR,
+        admissionNumber: student.admissionNumber
+      }
+    });
+
+    await recordTenantAuditLog(context.schemaName, {
+      userId: student.userId,
+      actorRole: 'student',
+      action: 'student_enrolled',
+      entityType: 'ENROLLMENT',
+      entityId: classRecord.id,
+      target: `class_id:${classRecord.id}`,
+      details: {
+        school: school.name,
+        className: classRecord.className,
+        department: classRecord.departmentName,
+        academicYear: ACADEMIC_YEAR,
+        admissionNumber: student.admissionNumber
+      }
+    });
+
+    await recordTenantAuditLog(context.schemaName, {
+      userId: student.userId,
+      actorRole: 'student',
+      action: 'subject_assigned',
+      entityType: 'SUBJECT',
+      entityId: classRecord.id,
+      target: `subjects:${subjects.join(',')}`,
+      details: {
+        school: school.name,
+        subjects,
+        className: classRecord.className,
+        department: classRecord.departmentName,
+        academicYear: ACADEMIC_YEAR
+      }
+    });
+
+    await recordTenantAuditLog(context.schemaName, {
+      userId: student.userId,
+      actorRole: 'student',
+      action: 'fee_record_created',
+      entityType: 'INVOICE',
+      entityId: student.invoice.id,
+      target: `invoice:${student.invoice.id}`,
+      details: {
+        amount: student.invoice.amount,
+        balance: student.invoice.balance,
+        status: student.invoice.status,
+        dueDate: student.invoice.dueDate,
+        className: classRecord.className
+      }
+    });
+
+    await recordSharedAuditLog({
+      userId: student.userId,
+      actorRole: 'student',
+      action: 'welcome_notification_sent',
+      entityType: 'NOTIFICATION',
+      entityId: null,
+      target: `class_id:${classRecord.id}`,
+      details: {
+        title: `Welcome to ${school.name}`,
+        academicYear: ACADEMIC_YEAR,
+        department: classRecord.departmentName,
+        section: classRecord.section
+      }
+    });
+
+    summary.students.push({
+      role: 'student',
+      email: student.email,
+      username: student.username,
+      fullName: student.fullName,
+      school: school.name,
+      registrationCode: school.registrationCode,
+      department: classRecord.departmentName,
+      className: classRecord.className,
+      status: 'active',
+      passwordPlain: student.passwordPlain,
+      passwordHash: student.passwordHash
+    });
+  }
 }
 
 async function logTeacherActivities(
@@ -1580,6 +2493,7 @@ async function main() {
     admins: [],
     hods: [],
     teachers: [],
+    students: [],
     departments: [],
     notifications: []
   };
@@ -1594,6 +2508,7 @@ async function main() {
       const context = await ensureSchoolSetup(school, superUserId, summary);
       await seedDepartmentsAndHods(school, context, summary);
       await seedTeachers(school, context, summary);
+      await seedStudentsAndEnrollment(school, context, summary);
       await seedNotifications(
         school,
         { tenantId: context.tenantId, schoolId: context.schoolId },

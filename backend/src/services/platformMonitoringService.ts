@@ -22,7 +22,12 @@ export interface PlatformUserSummary {
   isVerified: boolean;
   status: string | null;
   auditLogEnabled: boolean;
+  isTeachingStaff: boolean;
   createdAt: string;
+  gender: string | null;
+  dateOfBirth: string | null;
+  enrollmentDate: string | null;
+  metadata: Record<string, unknown> | null;
 }
 
 export interface AdminNotificationInput {
@@ -196,7 +201,12 @@ export async function listAllPlatformUsers(): Promise<PlatformUserSummary[]> {
         u.is_verified,
         u.status,
         u.audit_log_enabled,
+        u.is_teaching_staff,
         u.created_at,
+        u.gender,
+        u.date_of_birth,
+        u.enrollment_date,
+        u.metadata,
         t.name AS tenant_name,
         s.id AS school_id,
         s.name AS school_name,
@@ -222,7 +232,14 @@ export async function listAllPlatformUsers(): Promise<PlatformUserSummary[]> {
     isVerified: row.is_verified,
     status: row.status ?? null,
     auditLogEnabled: Boolean(row.audit_log_enabled),
-    createdAt: row.created_at
+    isTeachingStaff: Boolean(row.is_teaching_staff),
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
+    gender: row.gender ?? null,
+    dateOfBirth:
+      row.date_of_birth instanceof Date ? row.date_of_birth.toISOString().split('T')[0] : null,
+    enrollmentDate:
+      row.enrollment_date instanceof Date ? row.enrollment_date.toISOString().split('T')[0] : null,
+    metadata: row.metadata ?? null
   }));
 }
 

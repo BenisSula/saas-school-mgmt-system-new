@@ -14,6 +14,7 @@ export const AUDIT_ENTITY_TYPES = [
   'ATTENDANCE',
   'EXAM',
   'GRADE',
+  'INVOICE',
   'ACCESS',
   'TENANT',
   'USER',

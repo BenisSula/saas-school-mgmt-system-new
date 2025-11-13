@@ -52,11 +52,21 @@ describe('platformMonitoringService', () => {
 
     await pool.query(
       `
-        INSERT INTO shared.users (id, email, password_hash, role, tenant_id, is_verified)
+        INSERT INTO shared.users (
+          id,
+          email,
+          password_hash,
+          role,
+          tenant_id,
+          is_verified,
+          status,
+          audit_log_enabled,
+          is_teaching_staff
+        )
         VALUES
-          ($1, 'owner@test.system', 'hash', 'superadmin', NULL, TRUE),
-          ($2, 'admin@test.school', 'hash', 'admin', $4, TRUE),
-          ($3, 'teacher@test.school', 'hash', 'teacher', $4, TRUE)
+          ($1, 'owner@test.system', 'hash', 'superadmin', NULL, TRUE, 'active', TRUE, FALSE),
+          ($2, 'admin@test.school', 'hash', 'admin', $4, TRUE, 'active', FALSE, FALSE),
+          ($3, 'teacher@test.school', 'hash', 'teacher', $4, TRUE, 'active', TRUE, TRUE)
       `,
       [superUserId, adminUserId, teacherUserId, tenantId]
     );
@@ -146,7 +156,12 @@ describe('platformMonitoringService', () => {
     expect(adminRecord?.tenantName).toBe('Test School');
     expect(adminRecord?.username).toBeNull();
     expect(adminRecord?.schoolName).toBeNull();
-    expect(adminRecord?.status).toBe('inactive');
+    expect(adminRecord?.status).toBe('active');
     expect(adminRecord?.auditLogEnabled).toBe(false);
+    expect(adminRecord?.isTeachingStaff).toBe(false);
+    expect(adminRecord?.gender).toBeNull();
+    expect(adminRecord?.dateOfBirth).toBeNull();
+    expect(adminRecord?.enrollmentDate).toBeNull();
+    expect(adminRecord?.metadata).toEqual({});
   });
 });

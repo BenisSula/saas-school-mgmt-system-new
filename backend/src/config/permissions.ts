@@ -20,38 +20,51 @@ export type Permission =
   | 'settings:classes'
   | 'students:manage'
   | 'students:view_own_class'
+  | 'students:view_self'
   | 'teachers:manage'
   | 'school:manage'
+  | 'department-analytics'
+  | 'reports:view'
+  | 'performance:charts'
   | 'performance:generate'
-  | 'messages:send';
+  | 'messages:send'
+  | 'messages:receive'
+  | 'fees:view_self'
+  | 'profile:view_self'
+  | 'support:raise';
 
 export const rolePermissions: Record<Role, Permission[]> = {
-  student: ['dashboard:view', 'attendance:view', 'exams:view', 'fees:view'],
-  teacher: [
+  student: [
     'dashboard:view',
     'attendance:view',
-    'attendance:mark',
-    'attendance:manage',
     'exams:view',
-    'exams:manage',
+    'fees:view',
+    'fees:view_self',
+    'messages:receive',
+    'students:view_self',
+    'profile:view_self',
+    'support:raise'
+  ],
+  teacher: [
+    'dashboard:view',
+    'attendance:mark',
+    'attendance:view',
     'grades:enter',
     'grades:edit',
-    'grades:manage',
-    'fees:view',
     'performance:generate',
     'messages:send',
+    'messages:receive',
     'students:view_own_class'
   ],
   hod: [
     'dashboard:view',
     'attendance:view',
-    'attendance:manage',
     'exams:view',
-    'exams:manage',
     'grades:manage',
-    'performance:generate',
-    'messages:send',
-    'students:manage'
+    'department-analytics',
+    'reports:view',
+    'performance:charts',
+    'messages:send'
   ],
   admin: [
     'dashboard:view',
@@ -69,8 +82,10 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'students:manage',
     'students:view_own_class',
     'teachers:manage',
+    'reports:view',
     'performance:generate',
     'messages:send',
+    'messages:receive',
     'school:manage'
   ],
   superadmin: [
@@ -90,8 +105,10 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'students:manage',
     'students:view_own_class',
     'teachers:manage',
+    'reports:view',
     'performance:generate',
     'messages:send',
+    'messages:receive',
     'school:manage'
   ]
 };

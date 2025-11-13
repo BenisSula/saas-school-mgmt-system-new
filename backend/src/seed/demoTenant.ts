@@ -88,10 +88,11 @@ async function ensureUser(
             is_verified = TRUE,
             status = 'active',
             audit_log_enabled = TRUE,
+            metadata = COALESCE(metadata, $5::jsonb),
             updated_at = NOW()
         WHERE id = $4
       `,
-      [passwordHash, role, tenantId, userId]
+      [passwordHash, role, tenantId, userId, JSON.stringify({ source: 'demo-seed' })]
     );
     return userId;
   }
@@ -109,11 +110,23 @@ async function ensureUser(
         created_at,
         status,
         audit_log_enabled,
-        is_teaching_staff
+        is_teaching_staff,
+        gender,
+        date_of_birth,
+        enrollment_date,
+        metadata
       )
-      VALUES ($1, $2, $3, $4, $5, TRUE, NOW(), 'active', TRUE, $6)
+      VALUES ($1, $2, $3, $4, $5, TRUE, NOW(), 'active', TRUE, $6, NULL, NULL, NULL, $7::jsonb)
     `,
-    [userId, normalisedEmail, passwordHash, role, tenantId, role === 'teacher']
+    [
+      userId,
+      normalisedEmail,
+      passwordHash,
+      role,
+      tenantId,
+      role === 'teacher',
+      JSON.stringify({ source: 'demo-seed' })
+    ]
   );
   return userId;
 }

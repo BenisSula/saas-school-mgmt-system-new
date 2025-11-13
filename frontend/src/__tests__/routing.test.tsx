@@ -7,6 +7,30 @@ import { BrandProvider } from '../components/ui/BrandProvider';
 import { AuthProvider } from '../context/AuthContext';
 import * as AuthContextModule from '../context/AuthContext';
 import { api, type PlatformOverview } from '../lib/api';
+import { useEffect } from 'react';
+
+vi.mock('../pages/AdminReportsPage', () => ({
+  default: () => (
+    <div>
+      <h1 className="text-2xl font-semibold">Reports & Exports</h1>
+      <p>Mocked reports dashboard</p>
+    </div>
+  )
+}));
+
+vi.mock('../pages/superuser/SuperuserOverviewPage', () => {
+  const MockSuperuserOverview = () => {
+    useEffect(() => {
+      void api.superuser.getOverview();
+    }, []);
+    return (
+      <div>
+        <h1>Dashboard Overview</h1>
+      </div>
+    );
+  };
+  return { default: MockSuperuserOverview };
+});
 
 type MockAuthModule = {
   __mockAuthState: {
