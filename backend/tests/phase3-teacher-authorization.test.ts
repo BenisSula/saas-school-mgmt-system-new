@@ -23,7 +23,7 @@ type MockAuthRequest = Request & {
 };
 
 const currentUser: NonNullable<MockAuthRequest['user']> = {
-  id: 'teacher-user',
+  id: '', // Will be set in beforeAll
   role: 'teacher',
   tenantId: 'tenant_test',
   email: 'teacher@test.com',
@@ -68,6 +68,7 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
 
     tenantId = crypto.randomUUID();
     teacherUserId = crypto.randomUUID();
+    currentUser.id = teacherUserId; // Update mock with actual UUID
     teacherId = crypto.randomUUID();
     assignedClassId = crypto.randomUUID();
     unassignedClassId = crypto.randomUUID();

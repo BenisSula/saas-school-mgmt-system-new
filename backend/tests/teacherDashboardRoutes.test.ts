@@ -17,11 +17,16 @@ type MockAuthRequest = Request & {
   };
 };
 
+// Mock user ID - will be set in beforeAll
+// Use a module-level object so the mock can read the updated value
+const mockUserState = { id: '' };
 jest.mock('../src/middleware/authenticate', () => ({
   __esModule: true,
   default: (req: MockAuthRequest, _res: Response, next: NextFunction) => {
+    // Read the current value dynamically
+    const userId = mockUserState.id || '00000000-0000-0000-0000-000000000000';
     req.user = {
-      id: 'teacher-user',
+      id: userId,
       role: 'teacher',
       tenantId: 'tenant_alpha',
       email: 'jane@example.com',
@@ -46,6 +51,7 @@ describe('Teacher dashboard routes', () => {
   let subjectMathId: string;
   let subjectSciId: string;
   let teacherId: string;
+  let teacherUserId: string;
   let assignmentMathId: string;
   let studentAId: string;
   let studentBId: string;
@@ -68,6 +74,8 @@ describe('Teacher dashboard routes', () => {
     subjectMathId = crypto.randomUUID();
     subjectSciId = crypto.randomUUID();
     teacherId = crypto.randomUUID();
+    teacherUserId = crypto.randomUUID();
+    mockUserState.id = teacherUserId; // Set for mock
     assignmentMathId = crypto.randomUUID();
     const assignmentSciId = crypto.randomUUID();
     studentAId = crypto.randomUUID();
@@ -77,10 +85,10 @@ describe('Teacher dashboard routes', () => {
     await pool.query(
       `
         INSERT INTO shared.users (id, email, password_hash, role, tenant_id, is_verified, status)
-        VALUES ('teacher-user', 'jane@example.com', 'hash', 'teacher', $1, true, 'active')
+        VALUES ($1, 'jane@example.com', 'hash', 'teacher', $2, true, 'active')
         ON CONFLICT (email) DO UPDATE SET id = EXCLUDED.id
       `,
-      [tenant.id]
+      [teacherUserId, tenant.id]
     );
 
     await pool.query(

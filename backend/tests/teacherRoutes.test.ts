@@ -29,7 +29,7 @@ type TeacherClasses = Awaited<ReturnType<typeof listTeacherClasses>>;
 type TeacherMessages = Awaited<ReturnType<typeof listTeacherMessages>>;
 
 const currentUser: NonNullable<MockAuthRequest['user']> = {
-  id: 'teacher-user',
+  id: '', // Will be set in beforeAll
   role: 'teacher',
   tenantId: 'tenant_alpha',
   email: 'teacher@example.com',
@@ -90,6 +90,7 @@ describe('Teacher routes RBAC', () => {
     mockedGetPool.mockReturnValue(pool);
     tenantId = crypto.randomUUID();
     teacherUserId = crypto.randomUUID();
+    currentUser.id = teacherUserId; // Update mock with actual UUID
     await pool.query(
       `
         CREATE TABLE IF NOT EXISTS tenant_alpha.audit_logs (

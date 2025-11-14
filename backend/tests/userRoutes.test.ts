@@ -16,11 +16,13 @@ type AuthenticatedRequest = Request & {
   };
 };
 
+// Mock user ID - use a valid UUID for superadmin
+const mockSuperAdminId = randomUUID();
 jest.mock('../src/middleware/authenticate', () => ({
   __esModule: true,
   default: (req: AuthenticatedRequest, _res: Response, next: NextFunction) => {
     req.user = {
-      id: 'super-admin',
+      id: mockSuperAdminId,
       role: 'superadmin',
       tenantId: 'tenant_alpha',
       email: 'super@test.com',
@@ -58,11 +60,21 @@ describe('User management routes', () => {
     // Using schema name is more reliable in tests
     headers = { Authorization: 'Bearer fake', 'x-tenant-id': 'tenant_alpha' };
 
+    // Create superadmin user for the mock (required for authentication)
+    await pool.query(
+      `
+        INSERT INTO shared.users (id, email, password_hash, role, tenant_id, is_verified, status)
+        VALUES ($1, 'super@test.com', 'hash', 'superadmin', $2, true, 'active')
+        ON CONFLICT (email) DO UPDATE SET id = EXCLUDED.id
+      `,
+      [mockSuperAdminId, tenantId]
+    );
+
     targetUserId = randomUUID();
     await pool.query(
       `
-        INSERT INTO shared.users (id, email, password_hash, role, tenant_id, is_verified)
-        VALUES ($1, 'teacher@test.com', 'hash', 'teacher', $2, true)
+        INSERT INTO shared.users (id, email, password_hash, role, tenant_id, is_verified, status)
+        VALUES ($1, 'teacher@test.com', 'hash', 'teacher', $2, true, 'active')
       `,
       [targetUserId, tenantId]
     );
