@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { toast } from 'sonner';
 import { AuthPanel, type AuthView } from './AuthPanel';
+import type { AuthResponse } from '../../lib/api';
+import { getDefaultDashboardPath } from '../../lib/roleLinks';
 
 export interface AuthModalProps {
   isOpen: boolean;
@@ -12,6 +15,7 @@ export interface AuthModalProps {
 
 export function AuthModal({ isOpen, onClose, mode, setMode }: AuthModalProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const lastLocationRef = useRef<string>('');
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const previousOverflow = useRef<string>('');
@@ -105,7 +109,39 @@ export function AuthModal({ isOpen, onClose, mode, setMode }: AuthModalProps) {
             exit={{ scale: 0.95, opacity: 0, y: 16 }}
             onClick={(event) => event.stopPropagation()}
           >
-            <AuthPanel mode={mode} onModeChange={setMode} onSuccess={onClose} />
+            <AuthPanel
+              mode={mode}
+              onModeChange={setMode}
+              onSuccess={() => {
+                onClose();
+                // Navigation will be handled by App.tsx useEffect when user state updates
+              }}
+              onLoginSuccess={() => {
+                onClose();
+                toast.success('Signed in successfully.');
+                // Navigation will be handled by App.tsx useEffect when user state updates
+              }}
+              onRegisterSuccess={(auth: AuthResponse) => {
+                if (auth.user.status === 'active') {
+                  onClose();
+                  toast.success('Registration successful. Welcome aboard.');
+                  // Navigate to appropriate dashboard based on role
+                  const dashboardPath = getDefaultDashboardPath(auth.user.role);
+                  navigate(dashboardPath, { replace: true });
+                } else {
+                  onClose();
+                  toast.info(
+                    'Account created and pending admin approval. We will notify you once activated.'
+                  );
+                }
+              }}
+              onRegisterPending={() => {
+                onClose();
+                toast.info(
+                  'Account created and pending admin approval. We will notify you once activated.'
+                );
+              }}
+            />
           </motion.div>
         </motion.div>
       ) : null}

@@ -2,15 +2,17 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import type { AuthResponse } from '../../lib/api';
 import { AuthPanel } from '../../components/auth/AuthPanel';
+import { getDefaultDashboardPath } from '../../lib/roleLinks';
 
 export function RegisterPage() {
   const navigate = useNavigate();
 
   const handleSuccess = (auth: AuthResponse) => {
-    toast.success('Registration successful. Welcome aboard.');
-    // auth is used in the navigate call below
-    if (!auth.user.status || auth.user.status === 'active') {
-      navigate('/dashboard');
+    if (auth.user.status === 'active') {
+      toast.success('Registration successful. Welcome aboard.');
+      // Navigate to appropriate dashboard based on role
+      const dashboardPath = getDefaultDashboardPath(auth.user.role);
+      navigate(dashboardPath, { replace: true });
     }
   };
 

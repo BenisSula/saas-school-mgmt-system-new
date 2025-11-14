@@ -24,6 +24,8 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const ACTIVE_STATUS: UserStatus = 'active';
 
 function normaliseUser(user: AuthUser): AuthUser {
+  // Status is now always provided by backend, but we keep this for backward compatibility
+  // and to ensure we always have a valid status
   return {
     ...user,
     status: user.status ?? ACTIVE_STATUS

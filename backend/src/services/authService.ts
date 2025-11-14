@@ -47,6 +47,7 @@ export interface AuthResponse {
     role: Role;
     tenantId: string | null;
     isVerified: boolean;
+    status: 'pending' | 'active' | 'suspended' | 'rejected';
   };
 }
 
@@ -181,7 +182,8 @@ export async function signUp(input: SignUpInput): Promise<AuthResponse> {
       email: user.email,
       role: user.role,
       tenantId: user.tenant_id,
-      isVerified: user.is_verified
+      isVerified: user.is_verified,
+      status: (user.status as 'pending' | 'active' | 'suspended' | 'rejected') ?? 'pending'
     }
   };
 }
@@ -214,7 +216,8 @@ export async function login(input: LoginInput, context?: SessionContext): Promis
       email: user.email,
       role: user.role,
       tenantId: user.tenant_id,
-      isVerified: user.is_verified
+      isVerified: user.is_verified,
+      status: (user.status as 'pending' | 'active' | 'suspended' | 'rejected') ?? 'pending'
     }
   };
 
@@ -255,7 +258,8 @@ export async function refreshToken(token: string, context?: SessionContext): Pro
       email: user.email,
       role: user.role,
       tenantId: user.tenant_id,
-      isVerified: user.is_verified
+      isVerified: user.is_verified,
+      status: (user.status as 'pending' | 'active' | 'suspended' | 'rejected') ?? 'pending'
     }
   };
 }

@@ -39,7 +39,7 @@ type RefreshHandler = (auth: AuthResponse) => void;
 let onUnauthorized: UnauthorizedHandler | null = null;
 let onRefresh: RefreshHandler | null = null;
 
-export type Role = 'student' | 'teacher' | 'admin' | 'superadmin';
+export type Role = 'student' | 'teacher' | 'hod' | 'admin' | 'superadmin';
 export type UserStatus = 'pending' | 'active' | 'suspended' | 'rejected';
 
 export interface AuthUser {
@@ -48,7 +48,7 @@ export interface AuthUser {
   role: Role;
   tenantId: string | null;
   isVerified: boolean;
-  status?: UserStatus;
+  status: UserStatus;
 }
 
 export interface AuthResponse {
