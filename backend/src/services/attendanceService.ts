@@ -1,5 +1,6 @@
 import type { PoolClient } from 'pg';
 import { assertValidSchemaName } from '../db/tenantManager';
+import { checkTeacherAssignment } from '../middleware/verifyTeacherAssignment';
 
 export interface AttendanceMark {
   studentId: string;
@@ -13,9 +14,44 @@ export interface AttendanceMark {
 export async function markAttendance(
   client: PoolClient,
   schemaName: string,
-  records: AttendanceMark[]
+  records: AttendanceMark[],
+  actorId?: string
 ): Promise<void> {
   assertValidSchemaName(schemaName);
+
+  // Service-level verification: if actor is a teacher, verify assignment to class
+  if (actorId && records.length > 0) {
+    const firstRecord = records[0];
+    if (firstRecord.classId) {
+      // Check if actor is a teacher (we need to verify this from shared.users)
+      const userCheck = await client.query(`SELECT role FROM shared.users WHERE id = $1`, [
+        actorId
+      ]);
+      const userRole = userCheck.rows[0]?.role;
+
+      if (userRole === 'teacher') {
+        // Get teacher_id from teachers table using user email
+        const teacherCheck = await client.query(
+          `SELECT id FROM ${schemaName}.teachers WHERE email = (SELECT email FROM shared.users WHERE id = $1)`,
+          [actorId]
+        );
+        const teacherId = teacherCheck.rows[0]?.id;
+
+        if (teacherId) {
+          const isAssigned = await checkTeacherAssignment(
+            client,
+            schemaName,
+            teacherId,
+            firstRecord.classId
+          );
+          if (!isAssigned) {
+            throw new Error('Teacher is not assigned to this class');
+          }
+        }
+      }
+    }
+  }
+
   const query = `
     INSERT INTO ${schemaName}.attendance_records (student_id, class_id, status, marked_by, attendance_date, metadata)
     VALUES ($1, $2, $3, $4, $5, $6::jsonb)

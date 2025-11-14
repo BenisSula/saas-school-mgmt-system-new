@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import authenticate from '../middleware/authenticate';
 import tenantResolver from '../middleware/tenantResolver';
+import ensureTenantContext from '../middleware/ensureTenantContext';
 import { requirePermission } from '../middleware/rbac';
 import { teacherSchema } from '../validators/teacherValidator';
 import {
@@ -13,21 +14,20 @@ import {
 
 const router = Router();
 
-router.use(authenticate, tenantResolver(), requirePermission('users:manage'));
+router.use(
+  authenticate,
+  tenantResolver(),
+  ensureTenantContext(),
+  requirePermission('users:manage')
+);
 
 router.get('/', async (req, res) => {
-  if (!req.tenantClient || !req.tenant) {
-    return res.status(500).json({ message: 'Tenant context missing' });
-  }
-  const teachers = await listTeachers(req.tenantClient!, req.tenant.schema);
+  const teachers = await listTeachers(req.tenantClient!, req.tenant!.schema);
   res.json(teachers);
 });
 
 router.get('/:id', async (req, res) => {
-  if (!req.tenantClient || !req.tenant) {
-    return res.status(500).json({ message: 'Tenant context missing' });
-  }
-  const teacher = await getTeacher(req.tenantClient!, req.tenant.schema, req.params.id);
+  const teacher = await getTeacher(req.tenantClient!, req.tenant!.schema, req.params.id);
   if (!teacher) {
     return res.status(404).json({ message: 'Teacher not found' });
   }
@@ -41,10 +41,7 @@ router.post('/', async (req, res, next) => {
   }
 
   try {
-    if (!req.tenantClient || !req.tenant) {
-      return res.status(500).json({ message: 'Tenant context missing' });
-    }
-    const teacher = await createTeacher(req.tenantClient!, req.tenant.schema, parsed.data);
+    const teacher = await createTeacher(req.tenantClient!, req.tenant!.schema, parsed.data);
     res.status(201).json(teacher);
   } catch (error) {
     next(error);
@@ -58,12 +55,9 @@ router.put('/:id', async (req, res, next) => {
   }
 
   try {
-    if (!req.tenantClient || !req.tenant) {
-      return res.status(500).json({ message: 'Tenant context missing' });
-    }
     const teacher = await updateTeacher(
       req.tenantClient!,
-      req.tenant.schema,
+      req.tenant!.schema,
       req.params.id,
       parsed.data
     );
@@ -79,10 +73,7 @@ router.put('/:id', async (req, res, next) => {
 
 router.delete('/:id', async (req, res, next) => {
   try {
-    if (!req.tenantClient || !req.tenant) {
-      return res.status(500).json({ message: 'Tenant context missing' });
-    }
-    await deleteTeacher(req.tenantClient!, req.tenant.schema, req.params.id);
+    await deleteTeacher(req.tenantClient!, req.tenant!.schema, req.params.id);
     res.status(204).send();
   } catch (error) {
     next(error);

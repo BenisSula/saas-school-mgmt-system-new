@@ -1,6 +1,10 @@
+import argon2 from 'argon2';
+import crypto from 'crypto';
+import { Pool } from 'pg';
 import { getPool } from '../db/connection';
+import { Role } from '../config/permissions';
 
-type UserRole = 'student' | 'teacher' | 'admin' | 'superadmin';
+type UserRole = 'student' | 'teacher' | 'hod' | 'admin' | 'superadmin';
 
 export interface TenantUser {
   id: string;
@@ -131,6 +135,113 @@ export async function updateTenantUserRole(
   } finally {
     client.release();
   }
+}
+
+export interface CreateUserInput {
+  email: string;
+  password: string;
+  role: Role;
+  tenantId: string | null;
+  status?: 'pending' | 'active' | 'rejected' | 'suspended';
+  isVerified?: boolean;
+  // Optional extended fields (for superuser admin creation)
+  username?: string;
+  fullName?: string;
+  phone?: string | null;
+  schoolId?: string | null;
+  createdBy?: string | null;
+  auditLogEnabled?: boolean;
+  isTeachingStaff?: boolean;
+}
+
+export interface CreatedUser {
+  id: string;
+  email: string;
+  role: Role;
+  tenant_id: string | null;
+  is_verified: boolean;
+  status: string;
+  created_at: string;
+  username?: string;
+  full_name?: string;
+}
+
+/**
+ * Centralized user creation function.
+ * Handles password hashing and inserts user into shared.users table.
+ * This is the single source of truth for user creation logic.
+ */
+export async function createUser(pool: Pool, input: CreateUserInput): Promise<CreatedUser> {
+  const normalizedEmail = input.email.toLowerCase();
+  const passwordHash = await argon2.hash(input.password);
+  const userId = crypto.randomUUID();
+
+  // Determine status - default to 'pending' if not provided
+  const userStatus = input.status ?? 'pending';
+  const isVerified = input.isVerified ?? (input.role === 'superadmin' || input.role === 'admin');
+
+  // Build the INSERT query dynamically based on provided fields
+  const fields: string[] = [
+    'id',
+    'email',
+    'password_hash',
+    'role',
+    'tenant_id',
+    'is_verified',
+    'status'
+  ];
+  const values: unknown[] = [
+    userId,
+    normalizedEmail,
+    passwordHash,
+    input.role,
+    input.tenantId,
+    isVerified,
+    userStatus
+  ];
+
+  // Add optional extended fields if provided
+  if (input.username !== undefined) {
+    fields.push('username');
+    values.push(input.username.toLowerCase());
+  }
+  if (input.fullName !== undefined) {
+    fields.push('full_name');
+    values.push(input.fullName);
+  }
+  if (input.phone !== undefined) {
+    fields.push('phone');
+    values.push(input.phone);
+  }
+  if (input.schoolId !== undefined) {
+    fields.push('school_id');
+    values.push(input.schoolId);
+  }
+  if (input.createdBy !== undefined) {
+    fields.push('created_by');
+    values.push(input.createdBy);
+  }
+  if (input.auditLogEnabled !== undefined) {
+    fields.push('audit_log_enabled');
+    values.push(input.auditLogEnabled);
+  }
+  if (input.isTeachingStaff !== undefined) {
+    fields.push('is_teaching_staff');
+    values.push(input.isTeachingStaff);
+  }
+
+  const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
+
+  const result = await pool.query(
+    `
+      INSERT INTO shared.users (${fields.join(', ')})
+      VALUES (${placeholders})
+      RETURNING id, email, role, tenant_id, is_verified, status, created_at, username, full_name
+    `,
+    values
+  );
+
+  return result.rows[0] as CreatedUser;
 }
 
 export async function updateUserStatus(

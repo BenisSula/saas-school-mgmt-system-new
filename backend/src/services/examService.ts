@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { PoolClient } from 'pg';
 import PDFDocument from 'pdfkit';
+import { checkTeacherAssignment } from '../middleware/verifyTeacherAssignment';
 
 export interface ExamInput {
   name: string;
@@ -167,6 +168,39 @@ export async function bulkUpsertGrades(
   entries: GradeEntryInput[],
   actorId?: string
 ) {
+  // Service-level verification: if actor is a teacher, verify assignment to class
+  if (actorId && entries.length > 0) {
+    const firstEntry = entries[0];
+    if (firstEntry.classId) {
+      // Check if actor is a teacher
+      const userCheck = await client.query(`SELECT role FROM shared.users WHERE id = $1`, [
+        actorId
+      ]);
+      const userRole = userCheck.rows[0]?.role;
+
+      if (userRole === 'teacher') {
+        // Get teacher_id from teachers table using user email
+        const teacherCheck = await client.query(
+          `SELECT id FROM ${qualified(schema, 'teachers')} WHERE email = (SELECT email FROM shared.users WHERE id = $1)`,
+          [actorId]
+        );
+        const teacherId = teacherCheck.rows[0]?.id;
+
+        if (teacherId) {
+          const isAssigned = await checkTeacherAssignment(
+            client,
+            schema,
+            teacherId,
+            firstEntry.classId
+          );
+          if (!isAssigned) {
+            throw new Error('Teacher is not assigned to this class');
+          }
+        }
+      }
+    }
+  }
+
   const scales = await fetchGradeScales(client, schema);
   const upserted = [];
 

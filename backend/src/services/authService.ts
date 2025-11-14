@@ -19,6 +19,7 @@ import {
   SessionContext
 } from './platformMonitoringService';
 import { createTenant as createTenantSchema, createSchemaSlug } from '../db/tenantManager';
+import { createUser } from './userService';
 
 const PASSWORD_RESET_TTL = Number(process.env.PASSWORD_RESET_TTL ?? 60 * 30); // 30 minutes
 const EMAIL_VERIFICATION_TTL = Number(process.env.EMAIL_VERIFICATION_TTL ?? 60 * 60 * 24); // 24 hours
@@ -56,6 +57,7 @@ interface DbUserRow {
   tenant_id: string | null;
   is_verified: boolean;
   password_hash?: string;
+  status?: string;
 }
 
 async function getDbPool(): Promise<Pool> {
@@ -131,26 +133,37 @@ export async function signUp(input: SignUpInput): Promise<AuthResponse> {
     resolvedTenantId = tenant.id;
   }
 
-  const passwordHash = await argon2.hash(input.password);
-  const userId = crypto.randomUUID();
+  // Determine user status based on role and context
+  let userStatus: 'pending' | 'active' = 'pending';
+  if (input.role === 'superadmin') {
+    userStatus = 'active';
+  } else if (input.role === 'admin' && input.tenantName) {
+    // Admin creating new tenant is automatically active
+    userStatus = 'active';
+  } else if (input.role === 'admin' && input.tenantId) {
+    // Admin joining existing tenant needs approval
+    userStatus = 'pending';
+  }
+  // teacher, student, hod default to 'pending' (requires admin approval)
 
-  const result = await pool.query(
-    `
-      INSERT INTO shared.users (id, email, password_hash, role, tenant_id, is_verified)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING id, email, role, tenant_id, is_verified
-    `,
-    [
-      userId,
-      normalizedEmail,
-      passwordHash,
-      input.role,
-      resolvedTenantId,
-      input.role === 'superadmin' || input.role === 'admin'
-    ]
-  );
+  // Use centralized user creation function
+  const createdUser = await createUser(pool, {
+    email: normalizedEmail,
+    password: input.password,
+    role: input.role,
+    tenantId: resolvedTenantId,
+    status: userStatus,
+    isVerified: input.role === 'superadmin' || input.role === 'admin'
+  });
 
-  const user = result.rows[0] as DbUserRow;
+  const user: DbUserRow = {
+    id: createdUser.id,
+    email: createdUser.email,
+    role: createdUser.role,
+    tenant_id: createdUser.tenant_id,
+    is_verified: createdUser.is_verified,
+    status: createdUser.status
+  };
 
   const payload = buildTokenPayload(user);
   const accessToken = generateAccessToken(payload);

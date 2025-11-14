@@ -1,4 +1,3 @@
-import argon2 from 'argon2';
 import crypto from 'crypto';
 import { getPool } from '../db/connection';
 import {
@@ -9,6 +8,7 @@ import {
 } from '../db/tenantManager';
 import { recordSharedAuditLog, recordTenantAuditLog } from './auditLogService';
 import { sendNotificationToAdmins } from './platformMonitoringService';
+import { createUser } from './userService';
 
 type SubscriptionType = 'free' | 'trial' | 'paid';
 type TenantStatus = 'active' | 'suspended' | 'deleted';
@@ -477,40 +477,32 @@ export async function createAdminForSchool(
     throw new Error('School profile not found for tenant');
   }
 
-  const passwordHash = await argon2.hash(input.password);
-  const result = await pool.query(
-    `
-      INSERT INTO shared.users (
-        email,
-        password_hash,
-        role,
-        tenant_id,
-        is_verified,
-        username,
-        full_name,
-        phone,
-        school_id,
-        created_by,
-        status,
-        audit_log_enabled,
-        is_teaching_staff
-      )
-      VALUES ($1, $2, 'admin', $3, TRUE, $4, $5, $6, $7, $8, 'active', TRUE, FALSE)
-      RETURNING id, email, role, tenant_id, created_at, username, full_name
-    `,
-    [
-      normalizedEmail,
-      passwordHash,
-      tenantId,
-      normalizedUsername,
-      input.fullName,
-      input.phone ?? null,
-      schoolId,
-      actorId ?? null
-    ]
-  );
+  // Use centralized user creation function
+  const createdUser = await createUser(pool, {
+    email: normalizedEmail,
+    password: input.password,
+    role: 'admin',
+    tenantId,
+    status: 'active',
+    isVerified: true,
+    username: normalizedUsername,
+    fullName: input.fullName,
+    phone: input.phone ?? null,
+    schoolId,
+    createdBy: actorId ?? null,
+    auditLogEnabled: true,
+    isTeachingStaff: false
+  });
 
-  const admin = result.rows[0];
+  const admin = {
+    id: createdUser.id,
+    email: createdUser.email,
+    role: createdUser.role,
+    tenant_id: createdUser.tenant_id,
+    created_at: createdUser.created_at,
+    username: createdUser.username,
+    full_name: createdUser.full_name
+  };
 
   await pool.query(
     `

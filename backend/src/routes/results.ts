@@ -1,9 +1,8 @@
 import { Router } from 'express';
 import authenticate from '../middleware/authenticate';
 import tenantResolver from '../middleware/tenantResolver';
-import { requirePermission } from '../middleware/rbac';
+import { requirePermission, requireSelfOrPermission } from '../middleware/rbac';
 import { computeStudentResult, generateExamExport } from '../services/examService';
-import { requireSelfOrPermission } from '../middleware/authGuards';
 import { respondTenantContextMissing } from '../lib/friendlyMessages';
 
 const router = Router();

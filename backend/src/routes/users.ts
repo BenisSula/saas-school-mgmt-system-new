@@ -1,19 +1,17 @@
 import { Router } from 'express';
 import authenticate from '../middleware/authenticate';
 import tenantResolver from '../middleware/tenantResolver';
+import ensureTenantContext from '../middleware/ensureTenantContext';
 import { requirePermission } from '../middleware/rbac';
 import { listTenantUsers, updateTenantUserRole, updateUserStatus } from '../services/userService';
 import { roleUpdateSchema } from '../validators/userValidator';
 
 const router = Router();
 
-router.use(authenticate, tenantResolver());
+router.use(authenticate, tenantResolver(), ensureTenantContext());
 
 router.get('/', requirePermission('users:manage'), async (req, res, next) => {
   try {
-    if (!req.tenant) {
-      return res.status(500).json({ message: 'Tenant context missing' });
-    }
     const { status, role } = req.query;
     const filters: { status?: string; role?: string } = {};
     if (status && typeof status === 'string') {
@@ -22,7 +20,7 @@ router.get('/', requirePermission('users:manage'), async (req, res, next) => {
     if (role && typeof role === 'string') {
       filters.role = role;
     }
-    const users = await listTenantUsers(req.tenant.id, filters);
+    const users = await listTenantUsers(req.tenant!.id, filters);
     res.json(users);
   } catch (error) {
     next(error);
@@ -31,8 +29,8 @@ router.get('/', requirePermission('users:manage'), async (req, res, next) => {
 
 router.patch('/:userId/role', requirePermission('users:manage'), async (req, res, next) => {
   try {
-    if (!req.tenant || !req.user) {
-      return res.status(500).json({ message: 'Tenant context or user missing' });
+    if (!req.user) {
+      return res.status(500).json({ message: 'User context missing' });
     }
 
     const parsed = roleUpdateSchema.safeParse(req.body);
@@ -41,7 +39,7 @@ router.patch('/:userId/role', requirePermission('users:manage'), async (req, res
     }
 
     const updated = await updateTenantUserRole(
-      req.tenant.id,
+      req.tenant!.id,
       req.params.userId,
       parsed.data.role,
       req.user.id
@@ -59,11 +57,16 @@ router.patch('/:userId/role', requirePermission('users:manage'), async (req, res
 
 router.patch('/:userId/approve', requirePermission('users:manage'), async (req, res, next) => {
   try {
-    if (!req.tenant || !req.user) {
-      return res.status(500).json({ message: 'Tenant context or user missing' });
+    if (!req.user) {
+      return res.status(500).json({ message: 'User context missing' });
     }
 
-    const updated = await updateUserStatus(req.tenant.id, req.params.userId, 'active', req.user.id);
+    const updated = await updateUserStatus(
+      req.tenant!.id,
+      req.params.userId,
+      'active',
+      req.user.id
+    );
 
     if (!updated) {
       return res.status(404).json({ message: 'User not found for tenant' });
@@ -77,12 +80,12 @@ router.patch('/:userId/approve', requirePermission('users:manage'), async (req, 
 
 router.patch('/:userId/reject', requirePermission('users:manage'), async (req, res, next) => {
   try {
-    if (!req.tenant || !req.user) {
-      return res.status(500).json({ message: 'Tenant context or user missing' });
+    if (!req.user) {
+      return res.status(500).json({ message: 'User context missing' });
     }
 
     const updated = await updateUserStatus(
-      req.tenant.id,
+      req.tenant!.id,
       req.params.userId,
       'rejected',
       req.user.id
