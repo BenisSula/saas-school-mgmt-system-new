@@ -93,22 +93,21 @@ router.get(
         teacher.id,
         req.params.classId
       );
-      if (!roster) {
+      res.json(roster);
+    } catch (error) {
+      // Service-level check throws error if teacher not assigned (defense-in-depth)
+      if ((error as Error).message === 'Teacher is not assigned to this class') {
         await logUnauthorizedAttempt(req.tenantClient!, req.tenant!.schema, {
           userId: req.user?.id ?? null,
           path: req.originalUrl ?? req.path,
           method: req.method,
           reason: 'Teacher not assigned to class',
-          details: { teacherId: teacher.id, classId: req.params.classId }
+          details: { teacherId: req.teacherRecord?.id, classId: req.params.classId }
         });
-        return res
-          .status(403)
-          .json({
-            message: 'You are not assigned to this class. Thank you for your understanding.'
-          });
+        return res.status(403).json({
+          message: 'You are not assigned to this class. Thank you for your understanding.'
+        });
       }
-      res.json(roster);
-    } catch (error) {
       next(error);
     }
   }
@@ -156,11 +155,9 @@ router.get(
           reason: 'Teacher not assigned to class report',
           details: { teacherId: teacher.id, classId: req.params.classId }
         });
-        return res
-          .status(403)
-          .json({
-            message: 'You are not assigned to this class. Thank you for your understanding.'
-          });
+        return res.status(403).json({
+          message: 'You are not assigned to this class. Thank you for your understanding.'
+        });
       }
       res.json(report);
     } catch (error) {
@@ -189,11 +186,9 @@ router.get(
           reason: 'Teacher not assigned to class report PDF',
           details: { teacherId: teacher.id, classId: req.params.classId }
         });
-        return res
-          .status(403)
-          .json({
-            message: 'You are not assigned to this class. Thank you for your understanding.'
-          });
+        return res.status(403).json({
+          message: 'You are not assigned to this class. Thank you for your understanding.'
+        });
       }
 
       const pdfBuffer = await createClassReportPdf(report, teacher.name);

@@ -219,11 +219,10 @@ export async function getTeacherClassRoster(
   classId: string
 ) {
   ensureSchema(schema);
-  const assignments = await listTeacherAssignmentsRows(client, schema, teacherId);
-  const teachesClass = assignments.some((assignment) => assignment.classId === classId);
-  if (!teachesClass) {
-    return null;
-  }
+
+  // Explicit assignment verification - throws if not assigned
+  // The route handler will catch this and return 403
+  await ensureTeacherHasClass(client, schema, teacherId, classId);
 
   const result = await client.query(
     `
@@ -312,14 +311,23 @@ export async function requestAssignmentDrop(
   });
 }
 
+/**
+ * Explicitly verifies that a teacher is assigned to a class.
+ * Throws an error if not assigned.
+ * This provides service-level verification as a defense-in-depth measure.
+ */
 async function ensureTeacherHasClass(
   client: PoolClient,
   schema: string,
   teacherId: string,
   classId: string
-) {
+): Promise<void> {
   const assignments = await listTeacherAssignmentsRows(client, schema, teacherId);
-  return assignments.some((assignment) => assignment.classId === classId);
+  const isAssigned = assignments.some((assignment) => assignment.classId === classId);
+
+  if (!isAssigned) {
+    throw new Error('Teacher is not assigned to this class');
+  }
 }
 
 export async function getTeacherClassReport(
@@ -329,9 +337,12 @@ export async function getTeacherClassReport(
   classId: string
 ): Promise<TeacherClassReport | null> {
   ensureSchema(schema);
-  const hasClass = await ensureTeacherHasClass(client, schema, teacherId, classId);
-  if (!hasClass) {
-    return null;
+
+  // Explicit assignment verification - throws if not assigned
+  try {
+    await ensureTeacherHasClass(client, schema, teacherId, classId);
+  } catch {
+    return null; // Return null for consistency with existing API
   }
 
   const classResult = await client.query(`SELECT name FROM ${schema}.classes WHERE id = $1`, [

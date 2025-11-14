@@ -161,6 +161,49 @@ export async function createExamSession(
   return result.rows[0];
 }
 
+/**
+ * Service-level helper to verify teacher assignment.
+ * This provides an additional security layer even if route-level checks are bypassed.
+ */
+async function verifyTeacherAssignmentInService(
+  client: PoolClient,
+  schema: string,
+  actorId: string,
+  classId: string
+): Promise<void> {
+  // Check if actor is a teacher
+  const userCheck = await client.query<{ role: string; email: string }>(
+    `SELECT role, email FROM shared.users WHERE id = $1`,
+    [actorId]
+  );
+  const user = userCheck.rows[0];
+
+  if (!user || user.role !== 'teacher') {
+    return; // Not a teacher, skip check (admin/superadmin allowed)
+  }
+
+  if (!user.email) {
+    throw new Error('Teacher email not found');
+  }
+
+  // Get teacher_id from teachers table
+  const teacherCheck = await client.query<{ id: string }>(
+    `SELECT id FROM ${qualified(schema, 'teachers')} WHERE email = $1`,
+    [user.email]
+  );
+  const teacherId = teacherCheck.rows[0]?.id;
+
+  if (!teacherId) {
+    throw new Error('Teacher profile not found');
+  }
+
+  // Verify assignment
+  const isAssigned = await checkTeacherAssignment(client, schema, teacherId, classId);
+  if (!isAssigned) {
+    throw new Error('Teacher is not assigned to this class');
+  }
+}
+
 export async function bulkUpsertGrades(
   client: PoolClient,
   schema: string,
@@ -169,45 +212,11 @@ export async function bulkUpsertGrades(
   actorId?: string
 ) {
   // Service-level verification: if actor is a teacher, verify assignment to class
+  // This provides defense-in-depth even if route-level checks are bypassed
   if (actorId && entries.length > 0) {
     const firstEntry = entries[0];
     if (firstEntry.classId) {
-      // Check if actor is a teacher
-      const userCheck = await client.query(`SELECT role FROM shared.users WHERE id = $1`, [
-        actorId
-      ]);
-      const userRole = userCheck.rows[0]?.role;
-
-      if (userRole === 'teacher') {
-        // Get teacher_id from teachers table using user email
-        // First get the user email, then find the teacher
-        const userEmailResult = await client.query(
-          `SELECT email FROM shared.users WHERE id = $1`,
-          [actorId]
-        );
-        const userEmail = userEmailResult.rows[0]?.email;
-        if (!userEmail) {
-          return; // Skip check if user email not found
-        }
-        
-        const teacherCheck = await client.query(
-          `SELECT id FROM ${qualified(schema, 'teachers')} WHERE email = $1`,
-          [userEmail]
-        );
-        const teacherId = teacherCheck.rows[0]?.id;
-
-        if (teacherId) {
-          const isAssigned = await checkTeacherAssignment(
-            client,
-            schema,
-            teacherId,
-            firstEntry.classId
-          );
-          if (!isAssigned) {
-            throw new Error('Teacher is not assigned to this class');
-          }
-        }
-      }
+      await verifyTeacherAssignmentInService(client, schema, actorId, firstEntry.classId);
     }
   }
 

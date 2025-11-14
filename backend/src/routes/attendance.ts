@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import authenticate from '../middleware/authenticate';
 import tenantResolver from '../middleware/tenantResolver';
 import ensureTenantContext from '../middleware/ensureTenantContext';
@@ -16,63 +16,35 @@ const router = Router();
 
 router.use(authenticate, tenantResolver(), ensureTenantContext());
 
-router.post('/mark', requirePermission('attendance:manage'), async (req, res, next) => {
-  try {
-    const payload = req.body.records as AttendanceMark[];
-    if (!Array.isArray(payload) || payload.length === 0) {
-      return res.status(400).json({ message: 'records array required' });
-    }
-
-    // Extract classId from first record for verification
-    const firstRecord = payload[0];
-    if (firstRecord?.classId && req.user?.role === 'teacher') {
-      // Get teacher_id from teachers table using user email
-      const { checkTeacherAssignment } = await import('../middleware/verifyTeacherAssignment');
-      try {
-        // First get the user email, then find the teacher
-        const userResult = await req.tenantClient!.query(
-          `SELECT email FROM shared.users WHERE id = $1`,
-          [req.user.id]
-        );
-        const userEmail = userResult.rows[0]?.email;
-        if (!userEmail) {
-          // If user email not found, skip assignment check (might be admin or service account)
-          // Continue with the request
-        } else {
-        
-        const teacherResult = await req.tenantClient!.query(
-          `SELECT id FROM ${req.tenant!.schema}.teachers WHERE email = $1`,
-          [userEmail]
-        );
-        const teacherId = teacherResult.rows[0]?.id;
-
-        if (teacherId) {
-          const isAssigned = await checkTeacherAssignment(
-            req.tenantClient!,
-            req.tenant!.schema,
-            teacherId,
-            firstRecord.classId
-          );
-          if (!isAssigned) {
-            return res.status(403).json({
-              message: 'You are not assigned to this class. Thank you for your understanding.'
-            });
-          }
-        }
-        // If teacherId not found, allow through (might be admin or service account)
-        }
-      } catch (error) {
-        // If lookup fails, log but don't block (might be test environment or edge case)
-        console.warn('[attendance] Teacher lookup failed:', error);
-      }
-    }
-
-    await markAttendance(req.tenantClient!, req.tenant!.schema, payload, req.user?.id);
-    res.status(204).send();
-  } catch (error) {
-    next(error);
+// Middleware to extract classId from request body for teacher assignment verification
+const extractClassIdForVerification = (req: Request, res: Response, next: NextFunction) => {
+  const payload = req.body?.records;
+  if (Array.isArray(payload) && payload.length > 0 && payload[0]?.classId) {
+    // Attach classId to request for middleware to use
+    req.body._classIdForVerification = payload[0].classId;
   }
-});
+  next();
+};
+
+router.post(
+  '/mark',
+  requirePermission('attendance:manage'),
+  extractClassIdForVerification,
+  verifyTeacherAssignment({ classIdParam: '_classIdForVerification', allowAdmins: true }),
+  async (req, res, next) => {
+    try {
+      const payload = req.body.records as AttendanceMark[];
+      if (!Array.isArray(payload) || payload.length === 0) {
+        return res.status(400).json({ message: 'records array required' });
+      }
+
+      await markAttendance(req.tenantClient!, req.tenant!.schema, payload, req.user?.id);
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 router.get(
   '/:studentId',

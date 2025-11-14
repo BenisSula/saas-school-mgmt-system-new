@@ -1,7 +1,8 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import authenticate from '../middleware/authenticate';
 import tenantResolver from '../middleware/tenantResolver';
 import ensureTenantContext from '../middleware/ensureTenantContext';
+import verifyTeacherAssignment from '../middleware/verifyTeacherAssignment';
 import { requirePermission } from '../middleware/rbac';
 import { gradeBulkSchema } from '../validators/examValidator';
 import { bulkUpsertGrades } from '../services/examService';
@@ -15,65 +16,39 @@ router.use(
   requirePermission('grades:manage')
 );
 
-router.post('/bulk', async (req, res, next) => {
+// Middleware to extract classId from request body for teacher assignment verification
+const extractClassIdForVerification = (req: Request, res: Response, next: NextFunction) => {
   const parsed = gradeBulkSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ message: parsed.error.message });
+  if (parsed.success && parsed.data.entries.length > 0 && parsed.data.entries[0]?.classId) {
+    // Attach classId to request for middleware to use
+    req.body._classIdForVerification = parsed.data.entries[0].classId;
   }
+  next();
+};
 
-  try {
-    // Verify teacher assignment if teacher is submitting grades
-    if (req.user?.role === 'teacher' && parsed.data.entries.length > 0) {
-      const firstEntry = parsed.data.entries[0];
-      if (firstEntry.classId) {
-        const { checkTeacherAssignment } = await import('../middleware/verifyTeacherAssignment');
-        // Get teacher_id from teachers table using user email
-        // First get the user email, then find the teacher
-        const userResult = await req.tenantClient!.query(
-          `SELECT email FROM shared.users WHERE id = $1`,
-          [req.user.id]
-        );
-        const userEmail = userResult.rows[0]?.email;
-        if (!userEmail) {
-          // If user email not found, skip assignment check (might be admin or service account)
-          // Continue with the request
-        } else {
-        
-        const teacherResult = await req.tenantClient!.query(
-          `SELECT id FROM ${req.tenant!.schema}.teachers WHERE email = $1`,
-          [userEmail]
-        );
-        const teacherId = teacherResult.rows[0]?.id;
-
-        if (teacherId) {
-          const isAssigned = await checkTeacherAssignment(
-            req.tenantClient!,
-            req.tenant!.schema,
-            teacherId,
-            firstEntry.classId
-          );
-          if (!isAssigned) {
-            return res.status(403).json({
-              message: 'You are not assigned to this class. Thank you for your understanding.'
-            });
-          }
-        }
-        // If teacherId not found, allow through (might be admin or service account)
-        }
-      }
+router.post(
+  '/bulk',
+  extractClassIdForVerification,
+  verifyTeacherAssignment({ classIdParam: '_classIdForVerification', allowAdmins: true }),
+  async (req, res, next) => {
+    const parsed = gradeBulkSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: parsed.error.message });
     }
 
-    const grades = await bulkUpsertGrades(
-      req.tenantClient!,
-      req.tenant!.schema,
-      parsed.data.examId,
-      parsed.data.entries,
-      req.user?.id
-    );
-    res.status(200).json({ saved: grades?.length ?? 0 });
-  } catch (error) {
-    next(error);
+    try {
+      const grades = await bulkUpsertGrades(
+        req.tenantClient!,
+        req.tenant!.schema,
+        parsed.data.examId,
+        parsed.data.entries,
+        req.user?.id
+      );
+      res.status(200).json({ saved: grades?.length ?? 0 });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 export default router;
