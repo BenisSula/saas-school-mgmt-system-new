@@ -232,9 +232,10 @@ export async function getTeacherClassRoster(
              last_name,
              admission_number,
              parent_contacts,
-             class_id
+             class_id,
+             class_uuid
       FROM ${schema}.students
-      WHERE class_id = $1
+      WHERE class_uuid = $1
       ORDER BY last_name ASC, first_name ASC
     `,
     [classId]

@@ -12,7 +12,8 @@ import {
   type AttendanceHistoryResponse,
   type Invoice,
   type StudentProfileDetail,
-  type StudentResult
+  type StudentResult,
+  type TeacherClassRosterEntry
 } from '../../lib/api';
 
 interface FeeSummary {
@@ -48,6 +49,8 @@ export default function StudentDashboardPage() {
   });
   const [latestResult, setLatestResult] = useState<StudentResult | null>(null);
   const [profile, setProfile] = useState<StudentProfileDetail | null>(null);
+  const [roster, setRoster] = useState<TeacherClassRosterEntry[] | null>(null);
+  const [loadingRoster, setLoadingRoster] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -372,6 +375,75 @@ export default function StudentDashboardPage() {
               </button>
             ))}
           </div>
+        </section>
+
+        <section className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
+          <header className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-[var(--brand-surface-contrast)]">
+                Class Roster
+              </h2>
+              <p className="text-sm text-[var(--brand-muted)]">
+                View all students in your class. Click Load Roster to see your classmates.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                if (!user?.id) return;
+                setLoadingRoster(true);
+                try {
+                  const rosterData = await api.student.getClassRoster();
+                  setRoster(rosterData);
+                  toast.success('Class roster loaded successfully.');
+                } catch (err) {
+                  toast.error((err as Error).message);
+                  setRoster(null);
+                } finally {
+                  setLoadingRoster(false);
+                }
+              }}
+              loading={loadingRoster}
+            >
+              Load Roster
+            </Button>
+          </header>
+          {roster && roster.length > 0 ? (
+            <div className="overflow-hidden rounded-lg border border-[var(--brand-border)]">
+              <table className="min-w-full divide-y divide-[var(--brand-border)] text-sm">
+                <thead className="bg-black/20 text-xs uppercase tracking-wide text-[var(--brand-muted)]">
+                  <tr>
+                    <th className="px-4 py-2 text-left">Name</th>
+                    <th className="px-4 py-2 text-left">Admission Number</th>
+                    <th className="px-4 py-2 text-left">Class</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--brand-border)] bg-black/10">
+                  {roster.map((student) => (
+                    <tr key={student.id}>
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-[var(--brand-surface-contrast)]">
+                          {student.first_name} {student.last_name}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 text-[var(--brand-muted)]">
+                        {student.admission_number || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-[var(--brand-muted)]">
+                        {student.class_id || 'N/A'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : roster && roster.length === 0 ? (
+            <p className="text-sm text-[var(--brand-muted)]">No students found in your class.</p>
+          ) : (
+            <p className="text-sm text-[var(--brand-muted)]">
+              Click Load Roster to view your classmates.
+            </p>
+          )}
         </section>
 
         <section className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">

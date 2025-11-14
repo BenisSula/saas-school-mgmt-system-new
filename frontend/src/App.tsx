@@ -5,7 +5,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { LandingShell } from './layouts/LandingShell';
 import { AdminShell } from './layouts/AdminShell';
 import { getDefaultDashboardPath } from './lib/roleLinks';
-import PlaceholderPage from './pages/PlaceholderPage';
 import RouteMeta from './components/layout/RouteMeta';
 
 const HomePage = lazy(() => import('./pages'));
@@ -40,6 +39,7 @@ const SuperuserReportsPage = lazy(() => import('./pages/superuser/SuperuserRepor
 const SuperuserSettingsPage = lazy(() => import('./pages/superuser/SuperuserSettingsPage'));
 const AdminClassesSubjectsPage = lazy(() => import('./pages/admin/AdminClassesSubjectsPage'));
 const AdminAttendancePage = lazy(() => import('./pages/admin/AdminAttendancePage'));
+const AdminOverviewPage = lazy(() => import('./pages/admin/AdminOverviewPage'));
 const StudentDashboardPage = lazy(() => import('./pages/student/StudentDashboardPage'));
 
 function App() {
@@ -107,10 +107,7 @@ function App() {
                 fallback={<Navigate to={getDefaultDashboardPath(user?.role)} replace />}
               >
                 <RouteMeta title="Executive dashboard">
-                  <PlaceholderPage
-                    title="Executive dashboard"
-                    description="High-level metrics across tenants, uptime, and operational health."
-                  />
+                  <AdminOverviewPage />
                 </RouteMeta>
               </ProtectedRoute>
             }

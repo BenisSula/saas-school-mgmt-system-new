@@ -1,3 +1,4 @@
+import type { AriaAttributes } from 'react';
 import { motion } from 'framer-motion';
 import { Menu } from 'lucide-react';
 import type { AuthUser } from '../../lib/api';
@@ -21,6 +22,9 @@ export function DashboardHeader({
 }: DashboardHeaderProps) {
   const { tokens } = useBrand();
   const brandInitials = 'SS';
+  const toggleAria = sidebarOpen
+    ? ({ 'aria-expanded': 'true' as const } satisfies AriaAttributes)
+    : ({ 'aria-expanded': 'false' as const } satisfies AriaAttributes);
   const { title, titleId } = useDashboardRouteMeta();
 
   return (
@@ -37,7 +41,7 @@ export function DashboardHeader({
             className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-transparent text-[var(--brand-surface-contrast)] transition hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-primary)] lg:hidden"
             onClick={onToggleSidebar}
             aria-label="Toggle navigation"
-            aria-expanded={sidebarOpen}
+            {...toggleAria}
           >
             <Menu className="h-5 w-5" />
           </button>

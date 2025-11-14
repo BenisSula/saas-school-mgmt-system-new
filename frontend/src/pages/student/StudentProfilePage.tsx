@@ -3,7 +3,13 @@ import RouteMeta from '../../components/layout/RouteMeta';
 import { StatusBanner } from '../../components/ui/StatusBanner';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { api, type StudentProfileDetail, type StudentSubjectSummary } from '../../lib/api';
+import { Select } from '../../components/ui/Select';
+import {
+  api,
+  type StudentProfileDetail,
+  type StudentSubjectSummary,
+  type SchoolClass
+} from '../../lib/api';
 import { toast } from 'sonner';
 
 type ContactField = { label: string; value: string };
@@ -17,6 +23,7 @@ export default function StudentProfilePage() {
   const [promotionNotes, setPromotionNotes] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
   const [submittingPromotion, setSubmittingPromotion] = useState(false);
+  const [classes, setClasses] = useState<SchoolClass[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -24,10 +31,14 @@ export default function StudentProfilePage() {
       setLoading(true);
       setError(null);
       try {
-        const detail = await api.student.getProfile();
+        const [detail, classesList] = await Promise.all([
+          api.student.getProfile(),
+          api.listClasses()
+        ]);
         if (!cancelled) {
           setProfile(detail);
           setContacts(deriveContacts(detail.parentContacts));
+          setClasses(classesList);
         }
       } catch (err) {
         if (!cancelled) {
@@ -198,12 +209,16 @@ export default function StudentProfilePage() {
             </p>
           </header>
           <form className="grid gap-4 sm:grid-cols-2" onSubmit={handlePromotionSubmit}>
-            <Input
-              label="Target class ID"
-              placeholder="e.g. class-uuid"
+            <Select
+              label="Target class"
               value={promotionClassId}
               onChange={(event) => setPromotionClassId(event.target.value)}
+              options={classes.map((clazz) => ({
+                value: clazz.id,
+                label: clazz.name
+              }))}
               required
+              disabled={classes.length === 0}
             />
             <label className="flex w-full flex-col gap-2 text-sm text-[var(--brand-muted)] sm:col-span-2">
               Reason / notes

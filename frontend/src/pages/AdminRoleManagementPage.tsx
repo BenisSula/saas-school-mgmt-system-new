@@ -39,8 +39,10 @@ function AdminRoleManagementPage() {
       }
 
       if (pendingResult.status === 'fulfilled') {
-        setPendingUsers(pendingResult.value);
+        // Only show users with status='pending' in pending approvals
+        setPendingUsers(pendingResult.value.filter((user) => user.status === 'pending'));
       } else if (allResult.status === 'fulfilled') {
+        // Fallback: filter from all users
         setPendingUsers(allResult.value.filter((user) => user.status === 'pending'));
       } else {
         setPendingUsers([]);
@@ -201,7 +203,8 @@ function AdminRoleManagementPage() {
               Pending user approvals
             </h2>
             <p className="text-sm text-[var(--brand-muted)]">
-              Approve teacher or student accounts once verified. Only active accounts can sign in.
+              Approve or reject user registrations. Only users with status &quot;pending&quot;
+              appear here. Email verification status is separate from account approval.
             </p>
           </div>
           <Button variant="outline" onClick={loadUsers} loading={loading}>
@@ -226,7 +229,8 @@ function AdminRoleManagementPage() {
                     {user.email}
                   </p>
                   <p className="text-xs uppercase tracking-wide text-[var(--brand-muted)]">
-                    {user.role} · Requested on {new Date(user.created_at).toLocaleString()}
+                    {user.role} · {user.is_verified ? 'Verified' : 'Not verified'} · Requested on{' '}
+                    {new Date(user.created_at).toLocaleString()}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">

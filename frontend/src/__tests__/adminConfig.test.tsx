@@ -14,42 +14,41 @@ const termsResponse: unknown[] = [];
 const classesResponse: unknown[] = [];
 
 describe('AdminConfigurationPage', () => {
-  const fetchMock = vi.fn<
-    Promise<{
-      ok: boolean;
-      status: number;
-      json: () => Promise<unknown>;
-    }>,
-    [string | URL, (globalThis.RequestInit | undefined)?]
-  >();
+  const fetchMock = vi.fn<typeof fetch>();
   const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
-    fetchMock.mockImplementation((input: string | URL, init?: globalThis.RequestInit) => {
-      const url = typeof input === 'string' ? input : input.toString();
+    fetchMock.mockImplementation(async (...args: Parameters<typeof fetch>) => {
+      const [input, init] = args;
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : (input as Request).url;
       if (url.endsWith('/configuration/branding') && (!init || init.method === undefined)) {
-        return Promise.resolve({
+        return {
           ok: true,
           status: 200,
           json: async () => brandingResponse
-        });
+        } as unknown as Response;
       }
       if (url.endsWith('/configuration/terms') && (!init || init.method === undefined)) {
-        return Promise.resolve({
+        return {
           ok: true,
           status: 200,
           json: async () => termsResponse
-        });
+        } as unknown as Response;
       }
       if (url.endsWith('/configuration/classes') && (!init || init.method === undefined)) {
-        return Promise.resolve({
+        return {
           ok: true,
           status: 200,
           json: async () => classesResponse
-        });
+        } as unknown as Response;
       }
       if (url.endsWith('/configuration/terms') && init?.method === 'POST') {
-        return Promise.resolve({
+        return {
           ok: true,
           status: 201,
           json: async () => ({
@@ -58,10 +57,10 @@ describe('AdminConfigurationPage', () => {
             starts_on: '2025-01-10',
             ends_on: '2025-04-01'
           })
-        });
+        } as unknown as Response;
       }
       if (url.endsWith('/configuration/classes') && init?.method === 'POST') {
-        return Promise.resolve({
+        return {
           ok: true,
           status: 201,
           json: async () => ({
@@ -69,21 +68,21 @@ describe('AdminConfigurationPage', () => {
             name: 'Grade 9',
             description: 'Lower senior'
           })
-        });
+        } as unknown as Response;
       }
       if (url.endsWith('/configuration/branding') && init?.method === 'PUT') {
-        return Promise.resolve({
+        return {
           ok: true,
           status: 200,
           json: async () => ({
             ...brandingResponse,
             primary_color: '#abcdef'
           })
-        });
+        } as unknown as Response;
       }
       throw new Error(`Unhandled fetch: ${url}`);
     });
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    globalThis.fetch = fetchMock;
   });
 
   afterEach(() => {

@@ -62,6 +62,40 @@ async function fetchGradeScales(client: PoolClient, schema: string): Promise<Gra
   return result.rows;
 }
 
+export async function getGradeScales(client: PoolClient, schema: string): Promise<GradeScale[]> {
+  return fetchGradeScales(client, schema);
+}
+
+export async function listExams(client: PoolClient, schema: string) {
+  const result = await client.query(
+    `
+      SELECT 
+        e.id,
+        e.name,
+        e.description,
+        e.exam_date,
+        e.metadata,
+        e.created_at,
+        COUNT(DISTINCT es.id) as session_count,
+        COUNT(DISTINCT es.class_id) as class_count
+      FROM ${qualified(schema, EXAM_TABLE)} e
+      LEFT JOIN ${qualified(schema, SESSION_TABLE)} es ON e.id = es.exam_id
+      GROUP BY e.id, e.name, e.description, e.exam_date, e.metadata, e.created_at
+      ORDER BY e.exam_date DESC NULLS LAST, e.created_at DESC
+    `
+  );
+  return result.rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    examDate: row.exam_date,
+    metadata: row.metadata,
+    createdAt: row.created_at,
+    classes: Number(row.class_count) || 0,
+    sessions: Number(row.session_count) || 0
+  }));
+}
+
 function resolveGrade(
   score: number,
   scales: GradeScale[]

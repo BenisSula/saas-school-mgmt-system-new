@@ -22,6 +22,7 @@ export interface NavbarProps {
   user: AuthUser | null;
   onLogout: () => void;
   onShowAuthPanel?: () => void;
+  onShowRegisterPanel?: () => void;
 }
 
 const navItemVariants = {

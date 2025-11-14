@@ -69,12 +69,17 @@ export function tenantResolver(options: TenantResolverOptions = {}) {
       return next();
     }
 
+    const isSuperadmin = req.user?.role === 'superadmin';
+    if (isSuperadmin && optional) {
+      return next();
+    }
+
     const headerTenant = req.header('x-tenant-id');
     const hostTenant = extractHostTenant(req.headers.host);
     const identifier = headerTenant ?? hostTenant;
 
-    if (!identifier) {
-      if (optional) {
+    if (!identifier || identifier === '') {
+      if (optional || isSuperadmin) {
         return next();
       }
       return res.status(400).json({ message: 'Tenant context missing' });
@@ -83,7 +88,7 @@ export function tenantResolver(options: TenantResolverOptions = {}) {
     const tenant = await findTenant(identifier);
 
     if (!tenant) {
-      if (optional) {
+      if (optional || isSuperadmin) {
         return next();
       }
       return res.status(404).json({ message: 'Tenant not found' });
@@ -127,4 +132,3 @@ export function tenantResolver(options: TenantResolverOptions = {}) {
 }
 
 export default tenantResolver;
-

@@ -958,8 +958,20 @@ async function upsertUserAccount(options: {
     [normalizedEmail]
   );
 
-  if (existing.rowCount > 0) {
+  if ((existing.rowCount ?? 0) > 0) {
     const userId = existing.rows[0].id;
+    // Check current role to prevent downgrading admin/superadmin
+    const currentUser = await pool.query<{ role: string }>(
+      `SELECT role FROM shared.users WHERE id = $1`,
+      [userId]
+    );
+    const currentRole = currentUser.rows[0]?.role;
+    // Don't downgrade admin or superadmin roles
+    const roleToSet =
+      (currentRole === 'admin' || currentRole === 'superadmin') && options.role !== currentRole
+        ? currentRole
+        : options.role;
+
     await pool.query(
       `
         UPDATE shared.users
@@ -986,7 +998,7 @@ async function upsertUserAccount(options: {
       [
         userId,
         passwordHash,
-        options.role,
+        roleToSet,
         options.tenantId,
         options.schoolId,
         options.departmentId ?? null,
@@ -1031,7 +1043,7 @@ async function upsertUserAccount(options: {
         enrollment_date,
         metadata
       )
-      VALUES ($1, $2, $3, $4, $5, TRUE, NOW(), $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17::jsonb)
+      VALUES ($1, $2, $3, $4, $5, TRUE, NOW(), $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18::jsonb)
     `,
     [
       userId,
@@ -1084,7 +1096,7 @@ async function ensureClassRecord(
     className
   ]);
 
-  if (existing.rowCount > 0) {
+  if ((existing.rowCount ?? 0) > 0) {
     return existing.rows[0].id;
   }
 
@@ -1124,7 +1136,7 @@ async function ensureDetailedClassRecord(
     section: options.section
   };
 
-  if (existing.rowCount > 0) {
+  if ((existing.rowCount ?? 0) > 0) {
     const classId = existing.rows[0].id;
     await client.query(
       `
@@ -1205,35 +1217,145 @@ async function ensureSubjectRecord(
   };
   const code = generateSubjectCode(subjectName, className, registrationCode);
 
-  const existing = await client.query<{ id: string }>(
-    `SELECT id FROM subjects WHERE LOWER(name) = LOWER($1)`,
+  // Check for existing subject by code first, then by name
+  const existingByCode = await client.query<{ id: string }>(
+    `SELECT id FROM subjects WHERE code = $1 LIMIT 1`,
+    [code]
+  );
+
+  if ((existingByCode.rowCount ?? 0) > 0) {
+    const subjectId = existingByCode.rows[0]!.id;
+    // Update name and metadata (code already matches)
+    try {
+      await client.query(
+        `
+          UPDATE subjects
+          SET name = $2,
+              metadata = $3::jsonb,
+              updated_at = NOW()
+          WHERE id = $1
+        `,
+        [subjectId, subjectName, JSON.stringify(metadata)]
+      );
+    } catch (error: unknown) {
+      // If name conflicts, just update metadata
+      const err = error as { code?: string; constraint?: string };
+      if (err.code === '23505' && err.constraint?.includes('name')) {
+        await client.query(
+          `
+            UPDATE subjects
+            SET metadata = $2::jsonb,
+                updated_at = NOW()
+            WHERE id = $1
+          `,
+          [subjectId, JSON.stringify(metadata)]
+        );
+      } else {
+        throw error;
+      }
+    }
+    return subjectId;
+  }
+
+  // Check by name if not found by code
+  const existingByName = await client.query<{ id: string }>(
+    `SELECT id FROM subjects WHERE LOWER(name) = LOWER($1) LIMIT 1`,
     [subjectName]
   );
 
-  if (existing.rowCount > 0) {
-    const subjectId = existing.rows[0].id;
-    await client.query(
-      `
-        UPDATE subjects
-        SET code = $2,
-            metadata = $3::jsonb,
-            updated_at = NOW()
-        WHERE id = $1
-      `,
-      [subjectId, code, JSON.stringify(metadata)]
-    );
+  if ((existingByName.rowCount ?? 0) > 0) {
+    const subjectId = existingByName.rows[0]!.id;
+    // Try to update code if it doesn't conflict
+    try {
+      await client.query(
+        `
+          UPDATE subjects
+          SET code = $2,
+              metadata = $3::jsonb,
+              updated_at = NOW()
+          WHERE id = $1
+        `,
+        [subjectId, code, JSON.stringify(metadata)]
+      );
+    } catch (error: unknown) {
+      // If code conflicts, just update metadata
+      const err = error as { code?: string; constraint?: string };
+      if (err.code === '23505' && err.constraint?.includes('code')) {
+        await client.query(
+          `
+            UPDATE subjects
+            SET metadata = $2::jsonb,
+                updated_at = NOW()
+            WHERE id = $1
+          `,
+          [subjectId, JSON.stringify(metadata)]
+        );
+      } else {
+        throw error;
+      }
+    }
     return subjectId;
   }
 
   const subjectId = crypto.randomUUID();
-  await client.query(
-    `
-      INSERT INTO subjects (id, name, code, metadata)
-      VALUES ($1, $2, $3, $4::jsonb)
-    `,
-    [subjectId, subjectName, code, JSON.stringify(metadata)]
-  );
-  return subjectId;
+  try {
+    // Try inserting - handle conflicts in catch block
+    const insertResult = await client.query<{ id: string }>(
+      `
+        INSERT INTO subjects (id, name, code, metadata)
+        VALUES ($1, $2, $3, $4::jsonb)
+        RETURNING id
+      `,
+      [subjectId, subjectName, code, JSON.stringify(metadata)]
+    );
+    return insertResult.rows[0]!.id;
+  } catch (error: unknown) {
+    const err = error as { code?: string; constraint?: string; message?: string };
+    // Handle any constraint violation (code or name)
+    if (err.code === '23505') {
+      // Find existing subject by name or code
+      const existingByEither = await client.query<{ id: string }>(
+        `SELECT id FROM subjects WHERE code = $1 OR LOWER(name) = LOWER($2) LIMIT 1`,
+        [code, subjectName]
+      );
+      if ((existingByEither.rowCount ?? 0) > 0) {
+        const existingId = existingByEither.rows[0]!.id;
+        // Try to update both code and name if they don't conflict
+        try {
+          await client.query(
+            `
+              UPDATE subjects
+              SET name = $2,
+                  code = $3,
+                  metadata = $4::jsonb,
+                  updated_at = NOW()
+              WHERE id = $1
+            `,
+            [existingId, subjectName, code, JSON.stringify(metadata)]
+          );
+        } catch (updateError: unknown) {
+          // If update fails due to conflicts, try updating only non-conflicting fields
+          const updateErr = updateError as { code?: string; constraint?: string };
+          if (updateErr.code === '23505') {
+            // Try updating only metadata
+            await client.query(
+              `
+                UPDATE subjects
+                SET metadata = $2::jsonb,
+                    updated_at = NOW()
+                WHERE id = $1
+              `,
+              [existingId, JSON.stringify(metadata)]
+            );
+          } else {
+            throw updateError;
+          }
+        }
+        return existingId;
+      }
+    }
+    throw error;
+  }
 }
 
 async function ensureNotificationBroadcast(
@@ -1253,7 +1375,7 @@ async function ensureNotificationBroadcast(
     [tenantId, seed.title, seed.message]
   );
 
-  if (existing.rowCount > 0) {
+  if ((existing.rowCount ?? 0) > 0) {
     return;
   }
 
@@ -1302,7 +1424,7 @@ async function ensureSuperUser(summary: SeedSummary): Promise<string> {
   );
 
   let superUserId: string;
-  if (existing.rowCount > 0) {
+  if ((existing.rowCount ?? 0) > 0) {
     superUserId = existing.rows[0].id;
     await pool.query(
       `
@@ -1400,7 +1522,7 @@ async function ensureSchoolSetup(
   );
 
   let tenantId: string;
-  if (existingTenant.rowCount > 0) {
+  if ((existingTenant.rowCount ?? 0) > 0) {
     tenantId = existingTenant.rows[0].id;
     await runTenantMigrations(pool, schemaName);
     await seedTenant(pool, schemaName);
@@ -1494,6 +1616,16 @@ async function ensureSchoolSetup(
     passwordHash: adminAccount.passwordHash
   });
 
+  await withTenantSearchPath(pool, schemaName, async (client) => {
+    const existing = await client.query(`SELECT id FROM schools WHERE name = $1`, [school.name]);
+    if ((existing.rowCount ?? 0) === 0) {
+      await client.query(`INSERT INTO schools (name, address) VALUES ($1, $2::jsonb)`, [
+        school.name,
+        JSON.stringify({ city: 'Banjul', country: 'GM', address: school.address })
+      ]);
+    }
+  });
+
   return {
     tenantId,
     schemaName,
@@ -1529,7 +1661,7 @@ async function seedDepartmentsAndHods(
       username: department.hod.username,
       fullName: department.hod.fullName,
       password: department.hod.password,
-      role: 'hod',
+      role: 'teacher',
       tenantId: context.tenantId,
       schoolId: context.schoolId,
       departmentId,
@@ -2059,66 +2191,112 @@ async function seedStudentsForClass(options: {
 
   await withTenantSearchPath(pool, context.schemaName, async (client) => {
     await client.query('BEGIN');
+    // Store actual student IDs as we process them (will be populated during the loop)
+    const studentIdMap = new Map<string, string>();
     try {
       for (const student of studentsBatch) {
-        await client.query(
-          `
-            INSERT INTO students (
-              id,
-              user_id,
-              first_name,
-              last_name,
-              full_name,
-              date_of_birth,
-              class_id,
-              class_uuid,
-              admission_number,
-              school_id,
-              department_id,
-              email,
-              password_hash,
-              enrollment_date,
-              status,
-              metadata,
-              gender
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'active', $15::jsonb, $16)
-            ON CONFLICT (email) DO UPDATE
-              SET full_name = EXCLUDED.full_name,
-                  class_uuid = EXCLUDED.class_uuid,
-                  department_id = EXCLUDED.department_id,
-                  enrollment_date = EXCLUDED.enrollment_date,
-                  metadata = EXCLUDED.metadata,
-                  gender = EXCLUDED.gender,
-                  updated_at = NOW()
-          `,
-          [
-            student.tenantStudentId,
-            student.userId,
-            student.firstName,
-            student.lastName,
-            student.fullName,
-            student.dob,
-            classRecord.className,
-            classRecord.id,
-            student.admissionNumber,
-            context.schoolId,
-            classRecord.departmentId,
-            student.email,
-            student.passwordHash,
-            student.enrollmentDate,
-            JSON.stringify({
-              registrationCode: school.registrationCode,
-              className: classRecord.className,
-              gradeLevel: classRecord.gradeLevel,
-              section: classRecord.section,
-              academicYear: ACADEMIC_YEAR,
-              admissionNumber: student.admissionNumber
-            }),
-            student.gender
-          ]
+        // Check if student already exists by admission_number or email
+        const existingStudent = await client.query<{ id: string }>(
+          `SELECT id FROM students WHERE admission_number = $1 OR email = $2 LIMIT 1`,
+          [student.admissionNumber, student.email]
         );
 
+        let actualStudentId: string;
+        if ((existingStudent.rowCount ?? 0) > 0) {
+          // Student already exists, use existing ID
+          actualStudentId = existingStudent.rows[0]!.id;
+          // Update the map
+          studentIdMap.set(student.admissionNumber, actualStudentId);
+          // Update the existing student record
+          await client.query(
+            `
+              UPDATE students
+              SET full_name = $1,
+                  class_uuid = $2,
+                  department_id = $3,
+                  enrollment_date = $4,
+                  metadata = $5::jsonb,
+                  gender = $6,
+                  class_id = $7,
+                  updated_at = NOW()
+              WHERE id = $8
+            `,
+            [
+              student.fullName,
+              classRecord.id,
+              classRecord.departmentId,
+              student.enrollmentDate,
+              JSON.stringify({
+                registrationCode: school.registrationCode,
+                className: classRecord.className,
+                gradeLevel: classRecord.gradeLevel,
+                section: classRecord.section,
+                academicYear: ACADEMIC_YEAR,
+                admissionNumber: student.admissionNumber
+              }),
+              student.gender,
+              classRecord.className,
+              actualStudentId
+            ]
+          );
+        } else {
+          // Insert new student
+          const studentInsertResult = await client.query<{ id: string }>(
+            `
+              INSERT INTO students (
+                id,
+                user_id,
+                first_name,
+                last_name,
+                full_name,
+                date_of_birth,
+                class_id,
+                class_uuid,
+                admission_number,
+                school_id,
+                department_id,
+                email,
+                password_hash,
+                enrollment_date,
+                status,
+                metadata,
+                gender
+              )
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'active', $15::jsonb, $16)
+              RETURNING id
+            `,
+            [
+              student.tenantStudentId,
+              student.userId,
+              student.firstName,
+              student.lastName,
+              student.fullName,
+              student.dob,
+              classRecord.className,
+              classRecord.id,
+              student.admissionNumber,
+              context.schoolId,
+              classRecord.departmentId,
+              student.email,
+              student.passwordHash,
+              student.enrollmentDate,
+              JSON.stringify({
+                registrationCode: school.registrationCode,
+                className: classRecord.className,
+                gradeLevel: classRecord.gradeLevel,
+                section: classRecord.section,
+                academicYear: ACADEMIC_YEAR,
+                admissionNumber: student.admissionNumber
+              }),
+              student.gender
+            ]
+          );
+          actualStudentId = studentInsertResult.rows[0]!.id;
+          // Update the map
+          studentIdMap.set(student.admissionNumber, actualStudentId);
+        }
+
+        // Now insert student subjects using the actual student ID
         for (const subject of subjects) {
           const subjectId = subjectIdMap.get(subject);
           if (!subjectId) {
@@ -2135,12 +2313,14 @@ async function seedStudentsForClass(options: {
                 metadata
               )
               VALUES ($1, $2, $3, $4, $5, $6::jsonb)
-              ON CONFLICT (student_id, subject_id, academic_year) DO UPDATE
-                SET metadata = EXCLUDED.metadata
+              ON CONFLICT (student_id, subject_id) DO UPDATE
+                SET metadata = EXCLUDED.metadata,
+                    class_id = EXCLUDED.class_id,
+                    academic_year = EXCLUDED.academic_year
             `,
             [
               crypto.randomUUID(),
-              student.tenantStudentId,
+              actualStudentId,
               subjectId,
               classRecord.id,
               ACADEMIC_YEAR,
@@ -2171,7 +2351,7 @@ async function seedStudentsForClass(options: {
           `,
           [
             student.invoice.id,
-            student.tenantStudentId,
+            actualStudentId,
             student.invoice.amount,
             student.invoice.status,
             student.invoice.dueDate,
@@ -2204,8 +2384,27 @@ async function seedStudentsForClass(options: {
         );
       }
 
+      // After processing all students, create a concern for the first one
       if (studentsBatch.length > 0) {
         const concernStudent = studentsBatch[0];
+        // Get the actual student ID that was stored during processing
+        const concernStudentId = studentIdMap.get(concernStudent.admissionNumber);
+        if (!concernStudentId) {
+          // Fallback: query for it
+          const concernStudentQuery = await client.query<{ id: string }>(
+            `SELECT id FROM students WHERE admission_number = $1 LIMIT 1`,
+            [concernStudent.admissionNumber]
+          );
+          const fallbackId = concernStudentQuery.rows[0]?.id;
+          if (!fallbackId) {
+            console.warn(
+              `[seed] Could not find student ID for concern: ${concernStudent.admissionNumber}`
+            );
+            await client.query('COMMIT');
+            return;
+          }
+          studentIdMap.set(concernStudent.admissionNumber, fallbackId);
+        }
         await client.query(
           `
             INSERT INTO student_concerns (
@@ -2220,7 +2419,7 @@ async function seedStudentsForClass(options: {
           `,
           [
             crypto.randomUUID(),
-            concernStudent.tenantStudentId,
+            studentIdMap.get(concernStudent.admissionNumber)!,
             'Requesting timetable clarification for the upcoming term.',
             JSON.stringify({
               registrationCode: school.registrationCode,

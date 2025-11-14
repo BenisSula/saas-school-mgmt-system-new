@@ -8,7 +8,7 @@ const REFRESH_TOKEN_TTL_SECONDS = Number(process.env.REFRESH_TOKEN_TTL ?? 60 * 6
 
 export interface TokenPayload {
   userId: string;
-  tenantId: string;
+  tenantId: string | null;
   email: string;
   role: Role;
 }
@@ -29,7 +29,7 @@ export function generateAccessToken(payload: TokenPayload): string {
   return jwt.sign(
     {
       sub: payload.userId,
-      tenantId: payload.tenantId,
+      tenantId: payload.tenantId || '',
       email: payload.email,
       role: payload.role,
       tokenId
@@ -51,7 +51,7 @@ export function generateRefreshToken(payload: TokenPayload): {
   const token = jwt.sign(
     {
       sub: payload.userId,
-      tenantId: payload.tenantId,
+      tenantId: payload.tenantId || '',
       email: payload.email,
       role: payload.role,
       tokenId
@@ -114,7 +114,7 @@ export async function verifyRefreshToken(
   const row = result.rows[0];
   return {
     userId: row.user_id,
-    tenantId: row.tenant_id,
+    tenantId: row.tenant_id || '',
     email: row.email,
     role: row.role as Role
   };

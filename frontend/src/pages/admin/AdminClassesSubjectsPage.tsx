@@ -250,6 +250,9 @@ export default function AdminClassesSubjectsPage() {
       await api.admin.promoteStudent(selectedStudentId, { toClassId: promotionClassId });
       toast.success('Student promotion recorded.');
       setSuccess('Student class updated.');
+      // Reload students to reflect the class change
+      const updatedStudents = await api.listStudents();
+      setStudents(updatedStudents);
     } catch (err) {
       setFeedbackError((err as Error).message);
       toast.error((err as Error).message);

@@ -6,6 +6,7 @@ import {
   listStudentExamSummaries,
   listStudentSubjectsDetailed,
   listStudentMessages,
+  markStudentMessageAsRead,
   requestStudentPromotion,
   requestStudentSubjectDrop,
   getStudentProfileDetail,
@@ -15,6 +16,7 @@ import {
   generateStudentTermReport,
   fetchStudentReportPdf
 } from '../services/studentPortalService';
+import { getStudentClassRoster } from '../services/studentService';
 
 const router = Router();
 
@@ -146,6 +148,23 @@ router.get('/messages', async (req, res, next) => {
   }
 });
 
+router.patch('/messages/:messageId/read', async (req, res, next) => {
+  try {
+    if (!req.tenantClient || !req.tenant || !req.user?.id) {
+      return res.status(500).json({ message: 'Student context missing' });
+    }
+    await markStudentMessageAsRead(
+      req.tenantClient,
+      req.tenant.schema,
+      req.user.id,
+      req.params.messageId
+    );
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/terms', async (req, res, next) => {
   try {
     if (!req.tenantClient || !req.tenant) {
@@ -210,6 +229,21 @@ router.get('/reports/:reportId/pdf', async (req, res, next) => {
       .setHeader('Content-Type', 'application/pdf')
       .setHeader('Content-Disposition', 'attachment; filename="term-report.pdf"')
       .send(pdfBuffer);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/roster', async (req, res, next) => {
+  try {
+    if (!req.tenantClient || !req.tenant || !req.user?.id) {
+      return res.status(500).json({ message: 'Student context missing' });
+    }
+    const roster = await getStudentClassRoster(req.tenantClient, req.tenant.schema, req.user.id);
+    if (!roster) {
+      return res.status(404).json({ message: 'Student not found or not assigned to a class' });
+    }
+    res.json(roster);
   } catch (error) {
     next(error);
   }

@@ -379,6 +379,23 @@ export async function listStudentMessages(
   }));
 }
 
+export async function markStudentMessageAsRead(
+  client: PoolClient,
+  schema: string,
+  studentId: string,
+  messageId: string
+): Promise<void> {
+  await ensureStudentExists(client, schema, studentId);
+  await client.query(
+    `
+      UPDATE ${tableName(schema, 'student_messages')}
+      SET status = 'read'
+      WHERE id = $1 AND (student_id = $2 OR student_id IS NULL)
+    `,
+    [messageId, studentId]
+  );
+}
+
 export async function listAcademicTermsForStudent(
   client: PoolClient,
   schema: string

@@ -98,15 +98,29 @@ export default function StudentMessagesPage() {
                   </span>
                 </header>
                 <p className="text-sm leading-relaxed text-[var(--brand-muted)]">{message.body}</p>
-                <footer className="flex justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toast.info('Message marked as read locally.')}
-                  >
-                    Mark as read
-                  </Button>
-                </footer>
+                {message.status === 'unread' ? (
+                  <footer className="flex justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          await api.student.markMessageAsRead(message.id);
+                          setMessages((current) =>
+                            current.map((msg) =>
+                              msg.id === message.id ? { ...msg, status: 'read' } : msg
+                            )
+                          );
+                          toast.success('Message marked as read.');
+                        } catch (err) {
+                          toast.error((err as Error).message);
+                        }
+                      }}
+                    >
+                      Mark as read
+                    </Button>
+                  </footer>
+                ) : null}
               </article>
             ))}
           </div>

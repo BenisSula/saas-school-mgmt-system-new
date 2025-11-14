@@ -17,10 +17,20 @@ ON CONFLICT (name) DO UPDATE
 ALTER TABLE shared.users
   DROP CONSTRAINT IF EXISTS shared_users_role_fk;
 
-ALTER TABLE shared.users
-  ADD CONSTRAINT shared_users_role_fk FOREIGN KEY (role)
-    REFERENCES shared.roles(name)
-    ON UPDATE CASCADE;
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 
+    FROM pg_constraint 
+    WHERE conname = 'shared_users_role_fk' 
+    AND conrelid = 'shared.users'::regclass
+  ) THEN
+    ALTER TABLE shared.users
+      ADD CONSTRAINT shared_users_role_fk FOREIGN KEY (role)
+        REFERENCES shared.roles(name)
+        ON UPDATE CASCADE;
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS shared.schools (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

@@ -25,13 +25,13 @@ router.use(authLimiter);
 
 router.post('/signup', async (req, res) => {
   try {
-    const { email, password, role, tenantId } = req.body;
+    const { email, password, role, tenantId, tenantName } = req.body;
 
     if (!email || !password || !role) {
       return res.status(400).json({ message: 'email, password, and role are required' });
     }
 
-    const response = await signUp({ email, password, role, tenantId });
+    const response = await signUp({ email, password, role, tenantId, tenantName });
     return res.status(201).json(response);
   } catch (error) {
     return res.status(400).json({ message: (error as Error).message });

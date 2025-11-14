@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '../ui/ThemeToggle';
 
 const LINKS = [
@@ -9,8 +8,11 @@ const LINKS = [
   { label: 'Contact', section: 'contact-section' }
 ];
 
-export function LandingHeader() {
-  const navigate = useNavigate();
+export interface LandingHeaderProps {
+  onSignIn?: () => void;
+}
+
+export function LandingHeader({ onSignIn }: LandingHeaderProps) {
   const handleNavClick = (sectionId: string) => {
     if (typeof document === 'undefined') return;
     const element = document.getElementById(sectionId);
@@ -35,7 +37,7 @@ export function LandingHeader() {
           <ThemeToggle />
           <button
             type="button"
-            onClick={() => navigate('/auth/login')}
+            onClick={onSignIn}
             className="rounded-md border border-transparent bg-[var(--brand-primary)]/90 px-4 py-2 text-sm font-medium text-[var(--brand-primary-contrast)] transition hover:bg-[var(--brand-primary)]"
           >
             Sign in
@@ -45,7 +47,7 @@ export function LandingHeader() {
           <ThemeToggle />
           <button
             type="button"
-            onClick={() => navigate('/auth/login')}
+            onClick={onSignIn}
             className="rounded-md border border-transparent bg-[var(--brand-primary)]/90 px-3 py-2 text-xs font-semibold text-[var(--brand-primary-contrast)] transition hover:bg-[var(--brand-primary)]"
           >
             Sign in

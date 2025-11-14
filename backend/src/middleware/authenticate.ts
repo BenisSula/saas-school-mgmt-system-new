@@ -4,7 +4,7 @@ import { Role } from '../config/permissions';
 
 export interface JwtPayload {
   sub: string;
-  tenantId: string;
+  tenantId: string | '';
   role: Role;
   email: string;
   tokenId: string;
@@ -39,7 +39,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
 
     req.user = {
       id: payload.sub,
-      tenantId: payload.tenantId,
+      tenantId: payload.tenantId || '',
       role: payload.role,
       email: payload.email,
       tokenId: payload.tokenId
@@ -52,4 +52,3 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
 }
 
 export default authenticate;
-

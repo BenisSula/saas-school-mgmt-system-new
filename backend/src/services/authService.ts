@@ -18,6 +18,7 @@ import {
   rotateSessionToken,
   SessionContext
 } from './platformMonitoringService';
+import { createTenant as createTenantSchema, createSchemaSlug } from '../db/tenantManager';
 
 const PASSWORD_RESET_TTL = Number(process.env.PASSWORD_RESET_TTL ?? 60 * 30); // 30 minutes
 const EMAIL_VERIFICATION_TTL = Number(process.env.EMAIL_VERIFICATION_TTL ?? 60 * 60 * 24); // 24 hours
@@ -27,6 +28,7 @@ export interface SignUpInput {
   password: string;
   role: Role;
   tenantId?: string;
+  tenantName?: string;
 }
 
 export interface LoginInput {
@@ -74,7 +76,7 @@ async function findUserByEmail(pool: Pool, email: string): Promise<DbUserRow | u
 function buildTokenPayload(user: DbUserRow): TokenPayload {
   return {
     userId: user.id,
-    tenantId: user.tenant_id ?? 'shared',
+    tenantId: user.tenant_id ?? '',
     email: user.email,
     role: user.role as Role
   };
@@ -84,24 +86,52 @@ export async function signUp(input: SignUpInput): Promise<AuthResponse> {
   const pool = await getDbPool();
   const normalizedEmail = input.email.toLowerCase();
 
-  if (input.role !== 'superadmin' && !input.tenantId) {
-    throw new Error('tenantId is required for non-superadmin roles');
-  }
-
-  if (input.tenantId) {
-    const tenant = await findTenantById(pool, input.tenantId);
-    if (!tenant) {
-      throw new Error('Tenant not found');
-    }
-  }
-
   const existing = await findUserByEmail(pool, normalizedEmail);
   if (existing) {
     throw new Error('User already exists');
   }
 
+  let resolvedTenantId: string | null = null;
+
+  if (input.role === 'superadmin') {
+    resolvedTenantId = null;
+  } else if (input.tenantId) {
+    const tenant = await findTenantById(pool, input.tenantId);
+    if (!tenant) {
+      throw new Error('Tenant not found');
+    }
+    resolvedTenantId = tenant.id;
+  } else if (input.role === 'admin' && input.tenantName) {
+    const tenantName = input.tenantName.trim();
+    if (!tenantName) {
+      throw new Error('Tenant name is required for admin registration without tenant ID');
+    }
+
+    const schemaName = createSchemaSlug(tenantName);
+    const tenant = await createTenantSchema(
+      {
+        name: tenantName,
+        schemaName,
+        subscriptionType: 'trial',
+        status: 'active',
+        billingEmail: normalizedEmail
+      },
+      pool
+    );
+    resolvedTenantId = tenant.id;
+  } else if (input.role === 'admin' && !input.tenantId) {
+    throw new Error('Either tenantId or tenantName is required for admin registration');
+  } else if (!input.tenantId) {
+    throw new Error('tenantId is required for non-admin roles');
+  } else {
+    const tenant = await findTenantById(pool, input.tenantId);
+    if (!tenant) {
+      throw new Error('Tenant not found');
+    }
+    resolvedTenantId = tenant.id;
+  }
+
   const passwordHash = await argon2.hash(input.password);
-  const tenantId = input.role === 'superadmin' ? null : (input.tenantId ?? null);
   const userId = crypto.randomUUID();
 
   const result = await pool.query(
@@ -110,7 +140,14 @@ export async function signUp(input: SignUpInput): Promise<AuthResponse> {
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id, email, role, tenant_id, is_verified
     `,
-    [userId, normalizedEmail, passwordHash, input.role, tenantId, input.role === 'superadmin']
+    [
+      userId,
+      normalizedEmail,
+      passwordHash,
+      input.role,
+      resolvedTenantId,
+      input.role === 'superadmin' || input.role === 'admin'
+    ]
   );
 
   const user = result.rows[0] as DbUserRow;

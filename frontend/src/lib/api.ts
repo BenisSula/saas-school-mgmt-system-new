@@ -1,22 +1,36 @@
+function normaliseBaseUrl(raw: string): string {
+  try {
+    const url = new URL(raw);
+    if (url.hostname === 'localhost') {
+      url.hostname = '127.0.0.1';
+      return url.toString();
+    }
+    return url.toString();
+  } catch {
+    return raw;
+  }
+}
+
 const API_BASE_URL = (() => {
   const explicit = import.meta.env.VITE_API_BASE_URL ?? import.meta.env.VITE_API_URL;
   if (explicit) {
-    return explicit;
+    return normaliseBaseUrl(explicit);
   }
   if (import.meta.env.DEV) {
-    console.warn('[api] Falling back to default API base URL http://localhost:3001');
-    return 'http://localhost:3001';
+    const fallback = 'http://127.0.0.1:3001';
+    console.warn(
+      `[api] Falling back to default API base URL ${fallback}. Configure VITE_API_BASE_URL to override.`
+    );
+    return fallback;
   }
   throw new Error('Missing VITE_API_BASE_URL environment variable');
 })();
-const DEFAULT_TENANT = import.meta.env.VITE_TENANT_ID ?? 'tenant_alpha';
-
 const REFRESH_STORAGE_KEY = 'saas-school.refreshToken';
 const TENANT_STORAGE_KEY = 'saas-school.tenantId';
 
 let accessToken: string | null = null;
 let refreshToken: string | null = null;
-let tenantId: string | null = DEFAULT_TENANT;
+let tenantId: string | null = null;
 let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
 
 type UnauthorizedHandler = () => void;
@@ -54,6 +68,7 @@ export interface RegisterPayload {
   password: string;
   role: Role;
   tenantId?: string;
+  tenantName?: string;
 }
 
 type FetchOptions = Omit<globalThis.RequestInit, 'headers'> & {
@@ -99,7 +114,7 @@ function persistSession(tokens: { refresh: string | null; tenant: string | null 
 const TENANT_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
 function isValidTenantId(id: string | null | undefined): id is string {
-  return Boolean(id && TENANT_ID_PATTERN.test(id));
+  return Boolean(id && id.trim() !== '' && TENANT_ID_PATTERN.test(id));
 }
 
 function parseDuration(input: string): number {
@@ -152,8 +167,8 @@ function scheduleTokenRefresh(expiresIn: string) {
 export function initialiseSession(auth: AuthResponse, persist: boolean = true) {
   accessToken = auth.accessToken;
   refreshToken = auth.refreshToken;
-  const resolvedTenant = auth.user.tenantId ?? DEFAULT_TENANT;
-  tenantId = isValidTenantId(resolvedTenant) ? resolvedTenant : DEFAULT_TENANT;
+  const resolvedTenant = auth.user.tenantId;
+  tenantId = resolvedTenant && isValidTenantId(resolvedTenant) ? resolvedTenant : null;
   if (persist) {
     persistSession({ refresh: refreshToken, tenant: tenantId });
   }
@@ -163,7 +178,7 @@ export function initialiseSession(auth: AuthResponse, persist: boolean = true) {
 export function clearSession() {
   accessToken = null;
   refreshToken = null;
-  tenantId = DEFAULT_TENANT;
+  tenantId = null;
   clearRefreshTimer();
   persistSession({ refresh: null, tenant: null });
 }
@@ -175,7 +190,7 @@ export function hydrateFromStorage(): { refreshToken: string | null; tenantId: s
   const storedRefresh = window.localStorage.getItem(REFRESH_STORAGE_KEY);
   const storedTenant = window.localStorage.getItem(TENANT_STORAGE_KEY);
   refreshToken = storedRefresh;
-  const safeTenant = storedTenant && isValidTenantId(storedTenant) ? storedTenant : DEFAULT_TENANT;
+  const safeTenant = storedTenant && isValidTenantId(storedTenant) ? storedTenant : null;
   tenantId = safeTenant;
   if (storedTenant && !isValidTenantId(storedTenant)) {
     window.localStorage.removeItem(TENANT_STORAGE_KEY);
@@ -187,7 +202,7 @@ export function setTenant(nextTenant: string | null) {
   if (nextTenant && !isValidTenantId(nextTenant)) {
     throw new Error('Invalid tenant identifier');
   }
-  tenantId = nextTenant ?? DEFAULT_TENANT;
+  tenantId = nextTenant;
   persistSession({ refresh: refreshToken, tenant: tenantId });
 }
 
@@ -200,7 +215,7 @@ async function performRefresh(): Promise<AuthResponse | null> {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-tenant-id': tenantId ?? DEFAULT_TENANT
+        ...(tenantId ? { 'x-tenant-id': tenantId } : {})
       },
       body: JSON.stringify({ refreshToken })
     });
@@ -229,7 +244,7 @@ async function performRefresh(): Promise<AuthResponse | null> {
 async function apiFetch<T>(path: string, options: FetchOptions = {}, retry = true): Promise<T> {
   const { responseType = 'json', ...rest } = options;
   const headers: Record<string, string> = {
-    'x-tenant-id': tenantId ?? DEFAULT_TENANT,
+    ...(tenantId ? { 'x-tenant-id': tenantId } : {}),
     ...(rest.body ? { 'Content-Type': 'application/json' } : {}),
     ...rest.headers
   };
@@ -238,10 +253,25 @@ async function apiFetch<T>(path: string, options: FetchOptions = {}, retry = tru
     headers.Authorization = `Bearer ${accessToken}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...rest,
-    headers
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...rest,
+      headers
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Network error';
+    if (
+      errorMessage.includes('Failed to fetch') ||
+      errorMessage.includes('NetworkError') ||
+      errorMessage.includes('ERR_')
+    ) {
+      throw new Error(
+        `Unable to connect to the server at ${API_BASE_URL}. Please ensure the backend server is running and accessible.`
+      );
+    }
+    throw new Error(`Network request failed: ${errorMessage}`);
+  }
 
   if (response.status === 401 && retry && refreshToken) {
     const refreshed = await performRefresh();
@@ -319,6 +349,7 @@ export interface TenantUser {
   is_verified: boolean;
   created_at: string;
   status?: UserStatus;
+  additional_roles?: Array<{ role: string; metadata?: Record<string, unknown> }>;
 }
 
 export interface AttendanceHistoryItem {
@@ -387,6 +418,28 @@ export interface Invoice {
   description?: string | null;
   currency?: string | null;
   created_at?: string;
+  items?: Array<{ description: string; amount: number }>;
+  payments?: Array<{ amount: number; status: string; received_at: string }>;
+  student_name?: string;
+  admission_number?: string;
+}
+
+export interface ExamSummary {
+  id: string;
+  name: string;
+  description?: string | null;
+  examDate?: string | null;
+  metadata?: Record<string, unknown> | null;
+  createdAt: string;
+  classes: number;
+  sessions: number;
+}
+
+export interface GradeScale {
+  min_score: number;
+  max_score: number;
+  grade: string;
+  remark: string | null;
 }
 
 export interface TeacherProfile {
@@ -402,6 +455,7 @@ export interface StudentRecord {
   first_name: string;
   last_name: string;
   class_id: string | null;
+  class_uuid?: string | null;
   admission_number: string | null;
 }
 
@@ -803,6 +857,13 @@ export const api = {
     ),
 
   // Grades & exams
+  listExams: () => apiFetch<ExamSummary[]>('/exams'),
+  getGradeScales: () => apiFetch<GradeScale[]>('/exams/grade-scales'),
+  createExam: (payload: { name: string; description?: string; examDate?: string }) =>
+    apiFetch<ExamSummary>('/exams', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
   bulkUpsertGrades: (examId: string, entries: GradeEntryInput[]) =>
     apiFetch<{ saved: number }>('/grades/bulk', {
       method: 'POST',
@@ -812,6 +873,20 @@ export const api = {
     apiFetch<StudentResult>(`/results/${studentId}${buildQuery({ exam_id: examId })}`),
 
   // Invoices
+  listInvoices: (filters?: { studentId?: string; status?: string }) =>
+    apiFetch<Invoice[]>(
+      `/invoices${buildQuery({ studentId: filters?.studentId, status: filters?.status })}`
+    ),
+  createInvoice: (payload: {
+    studentId: string;
+    dueDate: string;
+    items: Array<{ description: string; amount: number }>;
+    metadata?: Record<string, unknown>;
+  }) =>
+    apiFetch<Invoice>('/invoices', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
   getStudentInvoices: (studentId: string) => apiFetch<Invoice[]>(`/invoices/${studentId}`),
 
   student: {
@@ -856,6 +931,11 @@ export const api = {
     downloadTermReport: (reportId: string) =>
       apiFetch<Blob>(`/student/reports/${reportId}/pdf`, {
         responseType: 'blob'
+      }),
+    getClassRoster: () => apiFetch<TeacherClassRosterEntry[]>('/student/roster'),
+    markMessageAsRead: (messageId: string) =>
+      apiFetch<void>(`/student/messages/${messageId}/read`, {
+        method: 'PATCH'
       })
   },
 
@@ -863,6 +943,8 @@ export const api = {
   listUsers: () => apiFetch<TenantUser[]>('/users'),
   listTeachers: () => apiFetch<TeacherProfile[]>('/teachers'),
   listStudents: () => apiFetch<StudentRecord[]>('/students'),
+  getSchool: () =>
+    apiFetch<{ id: string; name: string; address: Record<string, unknown> } | null>('/school'),
   updateUserRole: (userId: string, role: Role) =>
     apiFetch<TenantUser>(`/users/${userId}/role`, {
       method: 'PATCH',
