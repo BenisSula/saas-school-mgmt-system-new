@@ -26,7 +26,15 @@ router.get('/', requirePermission('users:manage'), async (req, res, next) => {
     const users = await listTenantUsers(req.tenant.id, filters);
     res.json(users);
   } catch (error) {
-    next(error);
+    console.error('Error in /users route:', error);
+    if (!res.headersSent) {
+      res.status(500).json({
+        message: 'Failed to list users',
+        error: (error as Error).message
+      });
+    } else {
+      next(error);
+    }
   }
 });
 

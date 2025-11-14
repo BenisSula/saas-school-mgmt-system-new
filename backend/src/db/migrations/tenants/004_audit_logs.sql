@@ -4,6 +4,8 @@ CREATE TABLE IF NOT EXISTS {{schema}}.audit_logs (
   action TEXT NOT NULL,
   entity_type TEXT NOT NULL,
   entity_id UUID,
+  actor_role TEXT,
+  target TEXT,
   details JSONB DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

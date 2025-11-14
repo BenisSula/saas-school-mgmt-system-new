@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { Pool } from 'pg';
 import { getPool } from '../db/connection';
 import { Role } from '../config/permissions';
+import { buildWhereClauseFromFilters } from '../lib/queryUtils';
 
 type UserRole = 'student' | 'teacher' | 'hod' | 'admin' | 'superadmin';
 
@@ -21,25 +22,25 @@ export async function listTenantUsers(
   filters?: { status?: string; role?: string }
 ): Promise<TenantUser[]> {
   const pool = getPool();
-  const conditions: string[] = ['u.tenant_id = $1'];
-  const params: unknown[] = [tenantId];
-  let paramIndex = 2;
+
+  // Build WHERE clause using query utils
+  const filterConditions: Record<string, unknown> = {
+    'u.tenant_id': tenantId
+  };
 
   if (filters?.status) {
-    conditions.push(`u.status = $${paramIndex}`);
-    params.push(filters.status);
-    paramIndex++;
+    filterConditions['u.status'] = filters.status;
   }
 
   if (filters?.role) {
-    conditions.push(`u.role = $${paramIndex}`);
-    params.push(filters.role);
-    paramIndex++;
+    filterConditions['u.role'] = filters.role;
   }
 
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const { whereClause, params } = buildWhereClauseFromFilters(filterConditions);
 
-  const result = await pool.query(
+  // Query users and their roles separately to avoid pg-mem compatibility issues
+  // with jsonb_build_object/json_build_object
+  const usersResult = await pool.query(
     `
       SELECT 
         u.id, 
@@ -47,32 +48,56 @@ export async function listTenantUsers(
         u.role, 
         u.is_verified, 
         u.status, 
-        u.created_at,
-        COALESCE(
-          json_agg(
-            DISTINCT jsonb_build_object(
-              'role', ur.role_name,
-              'metadata', ur.metadata
-            )
-          ) FILTER (WHERE ur.role_name IS NOT NULL),
-          '[]'::json
-        ) as additional_roles
+        u.created_at
       FROM shared.users u
-      LEFT JOIN shared.user_roles ur ON u.id = ur.user_id
       ${whereClause}
-      GROUP BY u.id, u.email, u.role, u.is_verified, u.status, u.created_at
       ORDER BY u.role, u.created_at DESC
     `,
     params
   );
-  return result.rows.map((row) => ({
+
+  // Get additional roles for all users in one query
+  const userIds = usersResult.rows.map((row) => row.id);
+  let rolesResult: { rows: Array<{ user_id: string; role_name: string; metadata: unknown }> } = {
+    rows: []
+  };
+
+  if (userIds.length > 0) {
+    const placeholders = userIds.map((_, i) => `$${i + 1}`).join(', ');
+    rolesResult = await pool.query(
+      `
+        SELECT user_id, role_name, metadata
+        FROM shared.user_roles
+        WHERE user_id IN (${placeholders})
+      `,
+      userIds
+    );
+  }
+
+  // Group roles by user_id
+  const rolesByUserId = new Map<
+    string,
+    Array<{ role: string; metadata: Record<string, unknown> }>
+  >();
+  for (const roleRow of rolesResult.rows) {
+    if (!rolesByUserId.has(roleRow.user_id)) {
+      rolesByUserId.set(roleRow.user_id, []);
+    }
+    rolesByUserId.get(roleRow.user_id)!.push({
+      role: roleRow.role_name,
+      metadata: (roleRow.metadata as Record<string, unknown>) || {}
+    });
+  }
+
+  // Combine users with their additional roles
+  return usersResult.rows.map((row) => ({
     id: row.id,
     email: row.email,
     role: row.role,
     is_verified: row.is_verified,
     status: row.status,
     created_at: row.created_at,
-    additional_roles: row.additional_roles || []
+    additional_roles: rolesByUserId.get(row.id) || []
   }));
 }
 
