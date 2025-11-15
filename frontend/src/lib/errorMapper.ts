@@ -4,19 +4,21 @@ import type { ApiErrorResponse } from './api';
  * Maps API error responses to field-level errors
  * Returns an object with field names as keys and error messages as values
  */
-export function mapApiErrorToFieldErrors(error: Error & { apiError?: ApiErrorResponse }): Record<string, string> {
+export function mapApiErrorToFieldErrors(
+  error: Error & { apiError?: ApiErrorResponse }
+): Record<string, string> {
   const fieldErrors: Record<string, string> = {};
 
   if (error.apiError) {
     const apiError = error.apiError;
-    
+
     // If error has a specific field, map it directly
     if (apiError.field) {
       fieldErrors[apiError.field] = apiError.message;
     } else {
       // Try to infer field from error code or message
       const message = apiError.message.toLowerCase();
-      
+
       if (message.includes('email') || apiError.code === 'DUPLICATE_EMAIL') {
         fieldErrors.email = apiError.message;
       } else if (message.includes('password') || apiError.code === 'INVALID_CREDENTIALS') {
@@ -42,10 +44,10 @@ export function isCriticalError(error: Error & { apiError?: ApiErrorResponse }):
   }
 
   const code = error.apiError.code;
-  
+
   // Critical error codes
   const criticalCodes = ['INTERNAL_ERROR', 'NETWORK_ERROR', 'UNAUTHORIZED'];
-  
+
   if (code && criticalCodes.includes(code)) {
     return true;
   }
@@ -54,4 +56,3 @@ export function isCriticalError(error: Error & { apiError?: ApiErrorResponse }):
   const fieldErrors = mapApiErrorToFieldErrors(error);
   return Object.keys(fieldErrors).length === 0;
 }
-

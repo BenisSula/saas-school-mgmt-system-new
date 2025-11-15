@@ -18,9 +18,7 @@ export function RegisterPage() {
   };
 
   const handlePending = () => {
-    toast.info(
-      'Account created and pending admin approval. We will notify you once activated.'
-    );
+    toast.info('Account created and pending admin approval. We will notify you once activated.');
   };
 
   return (

@@ -76,4 +76,3 @@ export type RegistrationFormData =
   | StudentRegistrationFormData
   | TeacherRegistrationFormData
   | AdminRegistrationFormData;
-

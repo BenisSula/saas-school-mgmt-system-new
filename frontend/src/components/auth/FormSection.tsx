@@ -21,9 +21,7 @@ export function FormSection({ title, description, children, className = '' }: Fo
               {title}
             </h3>
           )}
-          {description && (
-            <p className="text-sm text-[var(--brand-muted)]">{description}</p>
-          )}
+          {description && <p className="text-sm text-[var(--brand-muted)]">{description}</p>}
         </div>
       )}
       <div className="space-y-4">{children}</div>
@@ -32,4 +30,3 @@ export function FormSection({ title, description, children, className = '' }: Fo
 }
 
 export default FormSection;
-

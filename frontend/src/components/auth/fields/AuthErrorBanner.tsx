@@ -21,7 +21,10 @@ export function AuthErrorBanner({ message, onDismiss, className = '' }: AuthErro
         aria-live="assertive"
       >
         <div className="flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 flex-shrink-0 text-red-500 dark:text-red-400" aria-hidden="true" />
+          <AlertCircle
+            className="h-5 w-5 flex-shrink-0 text-red-500 dark:text-red-400"
+            aria-hidden="true"
+          />
           <p className="flex-1 text-sm font-medium text-red-700 dark:text-red-200">{message}</p>
           {onDismiss && (
             <button
@@ -40,4 +43,3 @@ export function AuthErrorBanner({ message, onDismiss, className = '' }: AuthErro
 }
 
 export default AuthErrorBanner;
-

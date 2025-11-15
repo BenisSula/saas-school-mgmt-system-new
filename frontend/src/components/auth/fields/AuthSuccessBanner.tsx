@@ -45,4 +45,3 @@ export function AuthSuccessBanner({ message, onDismiss, className = '' }: AuthSu
 }
 
 export default AuthSuccessBanner;
-

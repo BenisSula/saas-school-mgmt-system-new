@@ -88,14 +88,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const auth = await authApi.login(payload);
-      
+
       // Validate response structure
       if (!auth || !auth.user || !auth.accessToken) {
         throw new Error('Invalid response from server. Please try again.');
       }
-      
+
       const normalised = normalizeUser(auth.user);
-      
+
       // Check if user is active - if not, clear session and show error
       if (!isActive(normalised)) {
         clearSession();
@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const statusLabel = normalised.status === 'pending' ? 'pending admin approval' : 'inactive';
         throw new Error(`Account ${statusLabel}. Please contact an administrator.`);
       }
-      
+
       // User is active - initialize session and set user state
       const authWithStatus: AuthResponse = { ...auth, user: normalised };
       initialiseSession(authWithStatus);
@@ -124,22 +124,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const auth = await authApi.register(payload);
-      
+
       // Validate response structure
       if (!auth || !auth.user || !auth.accessToken) {
         throw new Error('Invalid response from server. Please try again.');
       }
-      
+
       const normalised = normalizeUser(auth.user);
       const authWithStatus: AuthResponse = { ...auth, user: normalised };
-      
+
       // Only initialize session if user is active
       if (!isActive(normalised)) {
         clearSession();
         setUser(null);
         return authWithStatus;
       }
-      
+
       // User is active - initialize session and set user state
       initialiseSession(authWithStatus);
       setTenant(normalised.tenantId ?? null);

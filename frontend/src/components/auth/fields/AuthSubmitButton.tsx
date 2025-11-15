@@ -21,9 +21,12 @@ export function AuthSubmitButton({
   const isDisabled = disabled || loading;
 
   const variantClasses = {
-    primary: 'bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)] hover:brightness-110 focus-visible:outline-[var(--brand-primary)]',
-    secondary: 'bg-[var(--brand-secondary)] text-[var(--brand-secondary-contrast)] hover:brightness-110 focus-visible:outline-[var(--brand-secondary)]',
-    accent: 'bg-[var(--brand-accent)] text-[var(--brand-accent-contrast)] hover:brightness-110 focus-visible:outline-[var(--brand-accent)]'
+    primary:
+      'bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)] hover:brightness-110 focus-visible:outline-[var(--brand-primary)]',
+    secondary:
+      'bg-[var(--brand-secondary)] text-[var(--brand-secondary-contrast)] hover:brightness-110 focus-visible:outline-[var(--brand-secondary)]',
+    accent:
+      'bg-[var(--brand-accent)] text-[var(--brand-accent-contrast)] hover:brightness-110 focus-visible:outline-[var(--brand-accent)]'
   };
 
   return (
@@ -45,4 +48,3 @@ export function AuthSubmitButton({
 }
 
 export default AuthSubmitButton;
-

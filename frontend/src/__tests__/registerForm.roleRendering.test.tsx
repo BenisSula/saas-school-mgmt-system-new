@@ -135,4 +135,3 @@ describe('RegisterForm - Role-based Field Rendering', () => {
     expect(screen.getByText(/search for your school/i)).toBeInTheDocument();
   });
 });
-
