@@ -31,7 +31,7 @@ export default function AdminAttendancePage() {
   const classes = classesData || [];
 
   // Load class roster
-  const { data: studentsData } = useQuery(
+  const { data: studentsData, isLoading: studentsLoading } = useQuery(
     ['class-roster', selectedClassId],
     async () => {
       if (!selectedClassId) return [];

@@ -16,7 +16,7 @@ export default function AdminExamConfigPage() {
   const [showScaleModal, setShowScaleModal] = useState(false);
   const [examForm, setExamForm] = useState({ name: '', description: '', examDate: '' });
 
-  const { data: examsData } = useExams();
+  const { data: examsData, isLoading: examsLoading } = useExams();
 
   const exams = useMemo(() => examsData || [], [examsData]);
 

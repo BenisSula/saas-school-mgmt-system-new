@@ -27,7 +27,7 @@ export default function AdminClassAssignmentPage() {
   });
 
   const { data: classesData, isLoading: classesLoading } = useClasses();
-  const { data: studentsData } = useStudents();
+  const { data: studentsData, isLoading: studentsLoading } = useStudents();
   const { data: teachersData } = useTeachers();
   const { data: subjectsData } = useSubjects();
 
