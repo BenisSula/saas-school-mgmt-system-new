@@ -213,7 +213,7 @@ describe('Dashboard routing', () => {
 
     const reportsHeading = await within(screen.getByRole('main')).findByRole('heading', {
       level: 1,
-      name: /Reports & exports/i
+      name: /Reports Dashboard/i
     });
     expect(reportsHeading).toBeInTheDocument();
 

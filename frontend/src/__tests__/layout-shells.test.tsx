@@ -1,10 +1,12 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { BrandProvider } from '../components/ui/BrandProvider';
 import { LandingShell } from '../layouts/LandingShell';
 import { AdminShell } from '../layouts/AdminShell';
+import { queryClient } from '../lib/react-query';
 
 vi.mock('../lib/api', () => ({
   api: {
@@ -32,7 +34,9 @@ beforeAll(() => {
 const renderWithBrand = (ui: React.ReactElement, initialEntries: string[] = ['/']) =>
   render(
     <MemoryRouter initialEntries={initialEntries}>
-      <BrandProvider>{ui}</BrandProvider>
+      <QueryClientProvider client={queryClient}>
+        <BrandProvider>{ui}</BrandProvider>
+      </QueryClientProvider>
     </MemoryRouter>
   );
 

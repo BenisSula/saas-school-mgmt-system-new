@@ -1,16 +1,20 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BrandProvider } from '../components/ui/BrandProvider';
 import { AdminShell } from '../layouts/AdminShell';
 import { useResponsiveSidebar } from '../hooks/useResponsiveSidebar';
 import { api } from '../lib/api';
+import { queryClient } from '../lib/react-query';
 
 function renderWithProviders(ui: React.ReactElement, initialEntries: string[]) {
   return render(
     <MemoryRouter initialEntries={initialEntries}>
-      <BrandProvider>{ui}</BrandProvider>
+      <QueryClientProvider client={queryClient}>
+        <BrandProvider>{ui}</BrandProvider>
+      </QueryClientProvider>
     </MemoryRouter>
   );
 }
