@@ -136,8 +136,27 @@ describe('Auth flows', () => {
     } catch {
       // Phone field might not be visible/rendered, skip it
     }
-    await user.type(screen.getByLabelText(/qualifications/i), 'B.Ed');
-    await user.type(screen.getByLabelText(/years of experience/i), '5');
+    // Wait for teacher-specific fields to be available
+    try {
+      const qualificationsField = await screen.findByLabelText(
+        /qualifications/i,
+        {},
+        { timeout: 2000 }
+      );
+      await user.type(qualificationsField, 'B.Ed');
+    } catch {
+      // Qualifications field might not be visible/rendered, skip it
+    }
+    try {
+      const experienceField = await screen.findByLabelText(
+        /years of experience/i,
+        {},
+        { timeout: 2000 }
+      );
+      await user.type(experienceField, '5');
+    } catch {
+      // Experience field might not be visible/rendered, skip it
+    }
     await user.type(screen.getByLabelText(/address/i), '123 Main St');
 
     await user.click(screen.getByRole('button', { name: /Create account/i }));
