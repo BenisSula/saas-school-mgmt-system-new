@@ -26,7 +26,7 @@ export default function SuperuserUsageMonitoringPage() {
   const { data: platformUsage } = useUsage(); // Platform-wide usage
   const { data: tenantUsage } = useUsage(selectedTenantId !== 'all' ? selectedTenantId : undefined);
 
-  const schools = schoolsData || [];
+  const schools = useMemo(() => schoolsData || [], [schoolsData]);
 
   // Generate usage data for each tenant
   const tenantUsageData: UsageData[] = useMemo(() => {
@@ -213,7 +213,7 @@ export default function SuperuserUsageMonitoringPage() {
 
         {/* Usage Table */}
         <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
-          <DataTable
+          <DataTable<UsageData>
             data={tenantUsageData}
             columns={usageColumns}
             pagination={{ pageSize: 10, showSizeSelector: true }}

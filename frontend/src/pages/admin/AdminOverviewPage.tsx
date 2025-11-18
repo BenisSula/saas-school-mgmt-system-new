@@ -289,7 +289,7 @@ export default function AdminOverviewPage() {
           <h2 className="mb-4 text-xl font-semibold text-[var(--brand-surface-contrast)]">
             All Users
           </h2>
-          <DataTable
+          <DataTable<TenantUser>
             data={users}
             columns={userColumns}
             pagination={{ pageSize: 10, showSizeSelector: true }}
@@ -302,7 +302,7 @@ export default function AdminOverviewPage() {
           <h2 className="mb-4 text-xl font-semibold text-[var(--brand-surface-contrast)]">
             Teachers
           </h2>
-          <DataTable
+          <DataTable<TeacherProfile>
             data={teachers}
             columns={teacherColumns}
             pagination={{ pageSize: 10, showSizeSelector: true }}
@@ -315,7 +315,7 @@ export default function AdminOverviewPage() {
           <h2 className="mb-4 text-xl font-semibold text-[var(--brand-surface-contrast)]">
             Students
           </h2>
-          <DataTable
+          <DataTable<StudentRecord>
             data={students}
             columns={studentColumns}
             pagination={{ pageSize: 10, showSizeSelector: true }}

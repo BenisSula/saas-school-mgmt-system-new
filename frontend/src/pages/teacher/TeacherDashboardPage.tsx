@@ -226,7 +226,7 @@ export default function TeacherDashboardPage() {
               </p>
             </div>
           </header>
-          <DataTable
+          <DataTable<TeacherAssignmentSummary>
             data={overview.assignments}
             columns={assignmentColumns}
             pagination={{ pageSize: 10, showSizeSelector: true }}

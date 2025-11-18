@@ -13,7 +13,7 @@ import { defaultDate } from '../../lib/utils/date';
 
 type AttendanceStatus = 'present' | 'absent' | 'late';
 
-interface AttendanceRow {
+interface AttendanceRow extends Record<string, unknown> {
   studentId: string;
   name: string;
   status: AttendanceStatus;
@@ -31,7 +31,7 @@ export default function AdminAttendancePage() {
   const classes = classesData || [];
 
   // Load class roster
-  const { data: studentsData, isLoading: studentsLoading } = useQuery(
+  const { data: studentsData } = useQuery(
     ['class-roster', selectedClassId],
     async () => {
       if (!selectedClassId) return [];
@@ -43,7 +43,7 @@ export default function AdminAttendancePage() {
     { enabled: !!selectedClassId }
   );
 
-  const students = studentsData || [];
+  const students = useMemo(() => studentsData || [], [studentsData]);
 
   // Initialize rows when students load
   useEffect(() => {
@@ -61,7 +61,7 @@ export default function AdminAttendancePage() {
     async (records: AttendanceMark[]) => {
       await api.markAttendance(records);
     },
-    [queryKeys.admin.attendance()] as unknown[][],
+    [queryKeys.admin.attendance()] as unknown as unknown[][],
     { successMessage: 'Attendance saved successfully' }
   );
 
@@ -188,7 +188,7 @@ export default function AdminAttendancePage() {
                 Save Attendance
               </Button>
             </div>
-            <DataTable
+            <DataTable<AttendanceRow>
               data={rows}
               columns={attendanceColumns}
               pagination={{ pageSize: 20, showSizeSelector: true }}

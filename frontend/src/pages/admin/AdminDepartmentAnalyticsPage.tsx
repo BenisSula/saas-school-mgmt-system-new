@@ -17,9 +17,9 @@ export default function AdminDepartmentAnalyticsPage() {
   const { data: classesData } = useClasses();
   const { data: analyticsData } = useDepartmentAnalytics(selectedDepartment !== 'all' ? selectedDepartment : undefined);
 
-  const teachers = teachersData || [];
-  const students = studentsData || [];
-  const classes = classesData || [];
+  const teachers = useMemo(() => teachersData || [], [teachersData]);
+  const students = useMemo(() => studentsData || [], [studentsData]);
+  const classes = useMemo(() => classesData || [], [classesData]);
 
   // Extract departments from teachers' subjects
   const departments = useMemo(() => {

@@ -27,7 +27,7 @@ export default function AdminClassAssignmentPage() {
   });
 
   const { data: classesData, isLoading: classesLoading } = useClasses();
-  const { data: studentsData, isLoading: studentsLoading } = useStudents();
+  const { data: studentsData } = useStudents();
   const { data: teachersData } = useTeachers();
   const { data: subjectsData } = useSubjects();
 
@@ -50,7 +50,7 @@ export default function AdminClassAssignmentPage() {
     async (payload: { studentId: string; classId: string }) => {
       await api.updateStudent(payload.studentId, { classId: payload.classId });
     },
-    [queryKeys.admin.students(), queryKeys.admin.classes()] as unknown[][],
+    [queryKeys.admin.students(), queryKeys.admin.classes()] as unknown as unknown[][],
     { successMessage: 'Student assigned to class successfully' }
   );
 
@@ -62,7 +62,7 @@ export default function AdminClassAssignmentPage() {
         isClassTeacher: payload.isClassTeacher
       });
     },
-    [queryKeys.admin.teachers(), queryKeys.admin.classes()],
+    [queryKeys.admin.teachers(), queryKeys.admin.classes()] as unknown as unknown[][],
     { successMessage: 'Teacher assigned successfully' }
   );
 
@@ -170,7 +170,7 @@ export default function AdminClassAssignmentPage() {
             <h2 className="mb-4 text-lg font-semibold text-[var(--brand-surface-contrast)]">
               Students in {selectedClass?.name}
             </h2>
-            <DataTable
+            <DataTable<StudentRecord>
               data={classStudents}
               columns={studentColumns}
               pagination={{ pageSize: 10, showSizeSelector: true }}

@@ -184,7 +184,7 @@ export default function AdminReportsPage() {
 
         {/* Attendance Table */}
         <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
-          <DataTable
+          <DataTable<AttendanceAggregate>
             data={attendance}
             columns={attendanceColumns}
             pagination={{ pageSize: 10, showSizeSelector: true }}

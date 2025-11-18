@@ -335,7 +335,7 @@ export default function StudentDashboardPage() {
               View full history
             </Button>
           </header>
-          <DataTable
+          <DataTable<AttendanceHistoryItem>
             data={attendanceSummary.recent}
             columns={attendanceColumns}
             pagination={{ pageSize: 10 }}

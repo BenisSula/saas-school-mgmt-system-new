@@ -18,7 +18,7 @@ export default function SuperuserSubscriptionsPage() {
 
   const { data: schoolsData, isLoading: schoolsLoading } = useSchools();
 
-  const schools = schoolsData || [];
+  const schools = useMemo(() => schoolsData || [], [schoolsData]);
 
   const updateSubscriptionMutation = useMutationWithInvalidation(
     async (payload: { schoolId: string; subscriptionType: SubscriptionTier }) => {
@@ -26,7 +26,7 @@ export default function SuperuserSubscriptionsPage() {
         subscriptionType: payload.subscriptionType
       });
     },
-    [queryKeys.superuser.schools(), queryKeys.superuser.subscriptions()] as unknown[][],
+    [queryKeys.superuser.schools(), queryKeys.superuser.subscriptions()] as unknown as unknown[][],
     { successMessage: 'Subscription updated successfully' }
   );
 
@@ -191,7 +191,7 @@ export default function SuperuserSubscriptionsPage() {
 
         {/* Subscriptions Table */}
         <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
-          <DataTable
+          <DataTable<PlatformSchool>
             data={schools}
             columns={subscriptionColumns}
             pagination={{ pageSize: 10, showSizeSelector: true }}

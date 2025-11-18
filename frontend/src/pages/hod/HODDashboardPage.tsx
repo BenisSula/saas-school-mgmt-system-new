@@ -184,7 +184,7 @@ export default function HODDashboardPage() {
               Teachers under your oversight in the {department.department} department.
             </p>
           </header>
-          <DataTable
+          <DataTable<TeacherProfile>
             data={department.teachers}
             columns={teacherColumns}
             pagination={{ pageSize: 10, showSizeSelector: true }}

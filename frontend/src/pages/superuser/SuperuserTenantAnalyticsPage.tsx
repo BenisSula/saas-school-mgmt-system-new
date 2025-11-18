@@ -19,7 +19,7 @@ export default function SuperuserTenantAnalyticsPage() {
     selectedTenantId !== 'all' ? selectedTenantId : undefined
   );
 
-  const schools = schoolsData || [];
+  const schools = useMemo(() => schoolsData || [], [schoolsData]);
 
   // Tenant distribution chart
   const tenantDistribution: BarChartData[] = useMemo(() => {
@@ -214,7 +214,7 @@ export default function SuperuserTenantAnalyticsPage() {
 
         {/* Tenants Table */}
         <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
-          <DataTable
+          <DataTable<PlatformSchool>
             data={schools}
             columns={tenantColumns}
             pagination={{ pageSize: 10, showSizeSelector: true }}

@@ -16,26 +16,26 @@ export default function AdminExamConfigPage() {
   const [showScaleModal, setShowScaleModal] = useState(false);
   const [examForm, setExamForm] = useState({ name: '', description: '', examDate: '' });
 
-  const { data: examsData, isLoading: examsLoading } = useExams();
+  const { data: examsData } = useExams();
 
-  const exams = examsData || [];
+  const exams = useMemo(() => examsData || [], [examsData]);
 
   const createExamMutation = useMutationWithInvalidation(
     async (payload: { name: string; description?: string; examDate?: string }) => {
       // TODO: Implement backend endpoint
       await api.createExam(payload);
     },
-    [queryKeys.admin.exams()],
+    [queryKeys.admin.exams()] as unknown as unknown[][],
     { successMessage: 'Exam created successfully' }
   );
 
   const deleteExamMutation = useMutationWithInvalidation(
-    async (examId: string) => {
+    async () => {
       // TODO: Implement backend endpoint
       // Note: deleteExam API endpoint not yet implemented
       throw new Error('Delete exam functionality not yet implemented');
     },
-    [queryKeys.admin.exams()] as unknown[][],
+    [queryKeys.admin.exams()] as unknown as unknown[][],
     { successMessage: 'Exam deleted successfully' }
   );
 
@@ -113,7 +113,7 @@ export default function AdminExamConfigPage() {
 
         {/* Exams Table */}
         <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
-          <DataTable
+          <DataTable<ExamSummary>
             data={exams}
             columns={examColumns}
             pagination={{ pageSize: 10, showSizeSelector: true }}

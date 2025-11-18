@@ -52,28 +52,24 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         'border border-transparent text-[var(--brand-primary)] bg-transparent hover:bg-[rgba(29,78,216,0.08)] focus-visible:outline-[var(--brand-primary)] disabled:opacity-50'
     };
 
-    // Extract animation-related props that conflict with framer-motion
-    // These are excluded from props via Omit in ButtonProps interface
-    const {
-      onAnimationStart: _onAnimationStart,
-      onAnimationEnd: _onAnimationEnd,
-      onAnimationIteration: _onAnimationIteration,
-      ...restProps
-    } = props;
+    // Animation-related props are already excluded from ButtonProps via Omit
+    // No need to destructure them as they don't exist in props
+    // Cast restProps to avoid type conflicts with framer-motion
+    const motionProps = {
+      ...props,
+      ref,
+      'data-variant': variant,
+      'data-size': size,
+      className: `${baseClasses} ${SIZE_CLASSES[size]} ${variantClasses[variant]} touch-target ${className}`,
+      disabled: isDisabled,
+      'aria-disabled': isDisabled,
+      whileHover: !isDisabled ? buttonPress.hover : undefined,
+      whileTap: !isDisabled ? buttonPress.tap : undefined,
+      transition: { duration: 0.15 }
+    } as React.ComponentPropsWithoutRef<typeof motion.button>;
 
     return (
-      <motion.button
-        ref={ref}
-        data-variant={variant}
-        data-size={size}
-        className={`${baseClasses} ${SIZE_CLASSES[size]} ${variantClasses[variant]} touch-target ${className}`}
-        disabled={isDisabled}
-        aria-disabled={isDisabled}
-        whileHover={!isDisabled ? buttonPress.hover : undefined}
-        whileTap={!isDisabled ? buttonPress.tap : undefined}
-        transition={{ duration: 0.15 }}
-        {...restProps}
-      >
+      <motion.button {...motionProps}>
         {loading && (
           <span
             className="inline-block h-4 w-4 animate-spin rounded-full border border-current border-t-transparent"
