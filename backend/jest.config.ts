@@ -8,23 +8,24 @@ const config: Config = {
   testMatch: ['**/*.test.ts'],
   testPathIgnorePatterns: ['/node_modules/', '\\.js$'],
   clearMocks: true,
-  onlyChanged: false,
+  changedFilesWithAncestor: false,
   transform: {
     '^.+\\.ts$': [
       'ts-jest',
       {
-        tsconfig: {
-          esModuleInterop: true,
-          allowSyntheticDefaultImports: true,
-          isolatedModules: false
-        },
-        useESM: false
+        tsconfig: '<rootDir>/tsconfig.json',
+        useESM: false,
+        isolatedModules: false,
+        diagnostics: {
+          ignoreCodes: [151001]
+        }
       }
     ]
   },
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1'
-  }
+  },
+  transformIgnorePatterns: ['/node_modules/', '\\.js$']
 };
 
 export default config;

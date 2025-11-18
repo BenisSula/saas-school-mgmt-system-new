@@ -67,12 +67,11 @@ describe('SuperuserOverviewPage', () => {
     await waitFor(() => expect(api.superuser.getOverview).toHaveBeenCalledTimes(1));
 
     const statsSection = await screen.findByLabelText(/Platform statistics/i);
-    expect(
-      within(statsSection).getByRole('heading', { level: 2, name: /Total schools/i })
-    ).toBeInTheDocument();
-    expect(
-      within(statsSection).getByRole('heading', { level: 2, name: /Total users/i })
-    ).toBeInTheDocument();
+    // StatCard uses <p> tags, not headings, so check for text content
+    expect(within(statsSection).getByText(/Total schools/i)).toBeInTheDocument();
+    expect(within(statsSection).getByText(/Total users/i)).toBeInTheDocument();
+    expect(within(statsSection).getByText('5')).toBeInTheDocument(); // Total schools value
+    expect(within(statsSection).getByText('250')).toBeInTheDocument(); // Total users value
 
     const insightsSection = await screen.findByLabelText(/Subscription and revenue insights/i);
     expect(

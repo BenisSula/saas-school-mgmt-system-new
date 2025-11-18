@@ -10,7 +10,9 @@
     "moduleResolution": "node",
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["node", "jest"]
+    "types": ["node", "jest"],
+    "verbatimModuleSyntax": false,
+    "isolatedModules": false
   },
   "include": ["src", "tests"],
   "exclude": ["dist", "node_modules"]
