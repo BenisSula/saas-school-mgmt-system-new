@@ -73,7 +73,7 @@ describe('tenantResolver middleware', () => {
       connect: jest.fn().mockResolvedValue(mockClient)
     };
 
-    mockedGetPool.mockReturnValue(mockPool as Pool);
+    mockedGetPool.mockReturnValue(mockPool as unknown as Pool);
 
     const app = express();
     app.get('/students/count', tenantResolver(), async (req, res) => {

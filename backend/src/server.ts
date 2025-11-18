@@ -44,7 +44,12 @@ async function startServer(): Promise<void> {
   const pool = getPool();
 
   try {
-    await runMigrations(pool);
+    // Skip migrations if SKIP_MIGRATIONS is set (useful for development/testing)
+    if (process.env.SKIP_MIGRATIONS !== 'true') {
+      await runMigrations(pool);
+    } else {
+      console.warn('⚠️  Skipping migrations (SKIP_MIGRATIONS=true)');
+    }
 
     const shouldSeedDemo =
       process.env.AUTO_SEED_DEMO === 'true' ||
@@ -66,7 +71,34 @@ async function startServer(): Promise<void> {
     }
     listenWithRetry(server, PORT, 5);
   } catch (error) {
-    console.error('Failed to start server due to DB connection error', error);
+    const err = error as Error & { code?: string };
+    console.error('\n❌ Failed to start server due to DB connection error\n');
+
+    if (err.code === '28P01') {
+      console.error('🔐 Password Authentication Failed');
+      console.error(
+        '\nThe PostgreSQL password in your .env file does not match your PostgreSQL server.'
+      );
+      console.error('\n📋 To fix this:');
+      console.error('   Option 1: Reset PostgreSQL password to match .env');
+      console.error('      Run in pgAdmin or psql:');
+      console.error("      ALTER USER postgres WITH PASSWORD 'postgres';");
+      console.error('\n   Option 2: Update .env with your actual password');
+      console.error('      Edit backend/.env and update DATABASE_URL');
+      console.error('\n   Option 3: Skip migrations temporarily (for testing)');
+      console.error('      Set SKIP_MIGRATIONS=true in .env');
+      console.error('\n📄 See backend/DATABASE_SETUP.md for detailed instructions\n');
+    } else if (err.code === 'ECONNREFUSED') {
+      console.error('🔌 Connection Refused');
+      console.error('\nPostgreSQL server is not running or not accessible on port 5432.');
+      console.error('Please ensure PostgreSQL is running and accessible.\n');
+    } else {
+      console.error('Error details:', err.message);
+      if (err.code) {
+        console.error('Error code:', err.code);
+      }
+    }
+
     process.exit(1);
   }
 }

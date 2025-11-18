@@ -30,7 +30,7 @@ export interface DataTableProps<T> {
   responsive?: boolean;
 }
 
-export function DataTable<T extends Record<string, unknown> = Record<string, unknown>>({
+export function DataTable<T = Record<string, unknown>>({
   data,
   columns,
   searchable = true,

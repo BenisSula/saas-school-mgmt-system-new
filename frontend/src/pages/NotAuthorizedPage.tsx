@@ -2,7 +2,7 @@
  * Not Authorized Page
  * Displayed when user lacks required permissions
  */
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { AlertCircle, Home, ArrowLeft } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
@@ -10,7 +10,11 @@ import { getDefaultDashboardPath } from '../lib/roleLinks';
 
 export function NotAuthorizedPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
+
+  // Get the previous location from state (set by ProtectedRoute)
+  const from = (location.state as { from?: string })?.from;
 
   const handleGoHome = () => {
     if (user) {
@@ -21,7 +25,11 @@ export function NotAuthorizedPage() {
   };
 
   const handleGoBack = () => {
-    navigate(-1);
+    if (from) {
+      navigate(from, { replace: true });
+    } else {
+      navigate(-1);
+    }
   };
 
   return (

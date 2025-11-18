@@ -39,20 +39,20 @@ export function HealthBanner() {
       setHealth({
         status: 'error',
         message:
-          "We can't reach the authentication server. Try again in a moment. (If you're a developer, check VITE_API_BASE_URL and that the backend is running on port 3002.)"
+          "We can't reach the authentication server. Try again in a moment. (If you're a developer, check VITE_API_BASE_URL and that the backend is running on port 3001.)"
       });
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         setHealth({
           status: 'error',
           message:
-            "Connection timeout. The server may be slow or unavailable. (If you're a developer, check that the backend is running on port 3002.)"
+            "Connection timeout. The server may be slow or unavailable. (If you're a developer, check that the backend is running on port 3001.)"
         });
       } else {
         setHealth({
           status: 'error',
           message:
-            "We can't reach the authentication server. Try again in a moment. (If you're a developer, check VITE_API_BASE_URL and that the backend is running on port 3002.)"
+            "We can't reach the authentication server. Try again in a moment. (If you're a developer, check VITE_API_BASE_URL and that the backend is running on port 3001.)"
         });
       }
     }

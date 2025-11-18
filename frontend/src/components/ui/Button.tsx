@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { buttonPress } from '../../lib/utils/animations';
+import { cn } from '../../lib/utils/cn';
 
 export type ButtonVariant = 'solid' | 'outline' | 'ghost';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -60,7 +61,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       ref,
       'data-variant': variant,
       'data-size': size,
-      className: `${baseClasses} ${SIZE_CLASSES[size]} ${variantClasses[variant]} touch-target ${className}`,
+      className: cn(
+        baseClasses,
+        SIZE_CLASSES[size],
+        variantClasses[variant],
+        'touch-target',
+        className
+      ),
       disabled: isDisabled,
       'aria-disabled': isDisabled,
       whileHover: !isDisabled ? buttonPress.hover : undefined,
