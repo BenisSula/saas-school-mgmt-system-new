@@ -14,18 +14,27 @@ export interface WebSocketMessage {
   timestamp: number;
 }
 
-export type AuthenticatedWebSocket = any & {
+type WSSLike = {
+  on: (event: string, cb: (...args: unknown[]) => void) => void;
+  close?: () => void;
+};
+
+export interface AuthenticatedWebSocket {
   userId?: string;
   tenantId?: string;
   role?: string;
   isAuthenticated: boolean;
-};
+  readyState?: number;
+  send?: (data: string) => void;
+  close?: (code?: number, reason?: string) => void;
+  on?: (event: string, cb: (...args: unknown[]) => void) => void;
+}
 
 /**
  * WebSocket server manager
  */
 export class WebSocketManager {
-  private wss: any | null = null;
+  private wss: WSSLike | null = null;
   private clients: Map<string, Set<AuthenticatedWebSocket>> = new Map();
 
   /**
@@ -38,7 +47,7 @@ export class WebSocketManager {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { WebSocketServer: WSS } = require('ws');
       
-      this.wss = new WSS({
+      this.wss = (new WSS({
         server,
         path: '/ws',
         verifyClient: (info: { origin: string }) => {
@@ -53,9 +62,9 @@ export class WebSocketManager {
           }
           return true;
         }
-      }) as any;
+      }) as unknown) as WSSLike;
 
-      this.wss.on('connection', (ws: any, req: unknown) => {
+      this.wss.on('connection', (ws: unknown, req: unknown) => {
         this.handleConnection(ws as AuthenticatedWebSocket, req);
       });
 
@@ -80,14 +89,13 @@ export class WebSocketManager {
    * Handle new WebSocket connection
    */
   private async handleConnection(ws: AuthenticatedWebSocket, req: unknown): Promise<void> {
-    const request = req as { url?: string; headers?: { authorization?: string } };
     ws.isAuthenticated = false;
 
     // Authenticate via token in query string or header
     const token = this.extractToken(req);
     
     if (!token) {
-      ws.close(1008, 'Authentication required');
+      ws.close?.(1008, 'Authentication required');
       return;
     }
 
@@ -105,17 +113,21 @@ export class WebSocketManager {
       ws.isAuthenticated = true;
 
       // Add to client map
-      this.addClient(ws.userId, ws);
+      this.addClient(ws.userId ?? '', ws);
 
-      ws.on('message', (data: Buffer) => {
-        this.handleMessage(ws, data);
+      ws.on?.('message', (data: unknown) => {
+        if (data instanceof Buffer) {
+          this.handleMessage(ws, data as Buffer);
+        } else if (typeof data === 'string') {
+          this.handleMessage(ws, Buffer.from(data));
+        }
       });
 
-      ws.on('close', () => {
-        this.removeClient(ws.userId || '', ws);
+      ws.on?.('close', () => {
+        this.removeClient(ws.userId ?? '', ws);
       });
 
-      ws.on('error', (error: unknown) => {
+      ws.on?.('error', (error: unknown) => {
         logger.error({ err: error }, '[WebSocket] Connection error');
       });
 
@@ -129,7 +141,7 @@ export class WebSocketManager {
       logger.info({ userId: ws.userId }, '[WebSocket] Client connected');
     } catch (error) {
       logger.error({ err: error }, '[WebSocket] Authentication failed');
-      ws.close(1008, 'Authentication failed');
+      ws.close?.(1008, 'Authentication failed');
     }
   }
 
@@ -163,7 +175,7 @@ export class WebSocketManager {
    */
   private handleMessage(ws: AuthenticatedWebSocket, data: Buffer): void {
     if (!ws.isAuthenticated) {
-      ws.close(1008, 'Not authenticated');
+      ws.close?.(1008, 'Not authenticated');
       return;
     }
 
@@ -194,11 +206,11 @@ export class WebSocketManager {
         break;
       case 'subscribe':
         // Handle subscription to channels
-        this.handleSubscribe(ws, message.payload);
+        this.handleSubscribe(ws);
         break;
       case 'unsubscribe':
         // Handle unsubscription
-        this.handleUnsubscribe(ws, message.payload);
+        this.handleUnsubscribe(ws);
         break;
       default:
         this.sendError(ws, `Unknown message type: ${message.type}`);
@@ -208,7 +220,7 @@ export class WebSocketManager {
   /**
    * Handle subscription
    */
-  private handleSubscribe(ws: AuthenticatedWebSocket, payload: unknown): void {
+  private handleSubscribe(ws: AuthenticatedWebSocket): void {
     // Implementation for channel subscriptions
     logger.info({ userId: ws.userId }, '[WebSocket] Client subscribed to channel');
   }
@@ -216,7 +228,7 @@ export class WebSocketManager {
   /**
    * Handle unsubscription
    */
-  private handleUnsubscribe(ws: AuthenticatedWebSocket, payload: unknown): void {
+  private handleUnsubscribe(ws: AuthenticatedWebSocket): void {
     // Implementation for channel unsubscriptions
     logger.info({ userId: ws.userId }, '[WebSocket] Client unsubscribed from channel');
   }
@@ -227,7 +239,7 @@ export class WebSocketManager {
   private send(ws: AuthenticatedWebSocket, message: WebSocketMessage): void {
     // WebSocket.OPEN = 1
     if (ws.readyState === 1) {
-      ws.send(JSON.stringify(message));
+      ws.send?.(JSON.stringify(message));
     }
   }
 
@@ -294,7 +306,7 @@ export class WebSocketManager {
    */
   close(): void {
     if (this.wss) {
-      this.wss.close();
+      this.wss.close?.();
       this.clients.clear();
       logger.info({}, '[WebSocket] Server closed');
     }
@@ -303,4 +315,3 @@ export class WebSocketManager {
 
 // Singleton instance
 export const wsManager = new WebSocketManager();
-
