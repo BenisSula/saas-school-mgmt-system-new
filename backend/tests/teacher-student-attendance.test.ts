@@ -11,7 +11,7 @@ jest.mock('../src/db/connection', () => ({
   closePool: jest.fn()
 }));
 
-const mockedGetPool = getPool as unknown as jest.Mock;
+const mockedGetPool = jest.mocked(getPool);
 
 jest.setTimeout(20000);
 
@@ -131,10 +131,10 @@ describe('Teacher → Student Attendance Flow Integration', () => {
 
     // Create class
     classId = crypto.randomUUID();
-    await pool.query(
-      `INSERT INTO tenant_attendance.classes (id, name) VALUES ($1, $2)`,
-      [classId, 'Grade 10A']
-    );
+    await pool.query(`INSERT INTO tenant_attendance.classes (id, name) VALUES ($1, $2)`, [
+      classId,
+      'Grade 10A'
+    ]);
 
     // Create teacher user via signup
     const teacherEmail = `teacher-${crypto.randomUUID()}@attendanceschool.com`;
@@ -149,12 +149,9 @@ describe('Teacher → Student Attendance Flow Integration', () => {
       });
       teacherToken = teacherSignupResponse.accessToken;
       teacherUserId = teacherSignupResponse.user.id;
-      
+
       // Update teacher status to active
-      await pool.query(
-        `UPDATE shared.users SET status = 'active' WHERE id = $1`,
-        [teacherUserId]
-      );
+      await pool.query(`UPDATE shared.users SET status = 'active' WHERE id = $1`, [teacherUserId]);
     } catch (error) {
       const loginResponse = await request(app).post('/auth/login').send({
         email: teacherEmail,
@@ -197,12 +194,9 @@ describe('Teacher → Student Attendance Flow Integration', () => {
       });
       studentToken = studentSignupResponse.accessToken;
       studentUserId = studentSignupResponse.user.id;
-      
+
       // Update student status to active
-      await pool.query(
-        `UPDATE shared.users SET status = 'active' WHERE id = $1`,
-        [studentUserId]
-      );
+      await pool.query(`UPDATE shared.users SET status = 'active' WHERE id = $1`, [studentUserId]);
     } catch (error) {
       const loginResponse = await request(app).post('/auth/login').send({
         email: studentEmail,
@@ -375,4 +369,3 @@ describe('Teacher → Student Attendance Flow Integration', () => {
     }
   });
 });
-

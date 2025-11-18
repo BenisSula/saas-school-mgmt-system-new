@@ -1,6 +1,6 @@
 /**
  * Comprehensive API Integration Tests
- * 
+ *
  * Tests complete API workflows and integration between different endpoints.
  */
 
@@ -42,7 +42,7 @@ jest.mock('../src/db/connection', () => ({
   closePool: jest.fn()
 }));
 
-const mockedGetPool = getPool as unknown as jest.Mock;
+const mockedGetPool = jest.mocked(getPool);
 
 describe('API Integration Tests', () => {
   let pool: Pool;
@@ -77,9 +77,24 @@ describe('API Integration Tests', () => {
       `INSERT INTO shared.users (id, email, password_hash, role, status, tenant_id)
        VALUES ($1, $2, $3, $4, $5, $6), ($7, $8, $9, $10, $11, $12), ($13, $14, $15, $16, $17, $18)`,
       [
-        adminId, 'admin@integration.com', '$argon2id$v=19$m=65536,t=3,p=4$test', 'admin', 'active', tenantId,
-        teacherId, 'teacher@integration.com', '$argon2id$v=19$m=65536,t=3,p=4$test', 'teacher', 'active', tenantId,
-        studentId, 'student@integration.com', '$argon2id$v=19$m=65536,t=3,p=4$test', 'student', 'active', tenantId
+        adminId,
+        'admin@integration.com',
+        '$argon2id$v=19$m=65536,t=3,p=4$test',
+        'admin',
+        'active',
+        tenantId,
+        teacherId,
+        'teacher@integration.com',
+        '$argon2id$v=19$m=65536,t=3,p=4$test',
+        'teacher',
+        'active',
+        tenantId,
+        studentId,
+        'student@integration.com',
+        '$argon2id$v=19$m=65536,t=3,p=4$test',
+        'student',
+        'active',
+        tenantId
       ]
     );
   });
@@ -223,9 +238,7 @@ describe('API Integration Tests', () => {
   describe('User Management Workflow', () => {
     it('should allow admin to manage users', async () => {
       // List users
-      const listResponse = await request(app)
-        .get('/users')
-        .set(getAuthHeaders(adminId, 'admin'));
+      const listResponse = await request(app).get('/users').set(getAuthHeaders(adminId, 'admin'));
 
       expect([200, 404]).toContain(listResponse.status);
 
@@ -333,4 +346,3 @@ describe('API Integration Tests', () => {
     await pool.end();
   });
 });
-

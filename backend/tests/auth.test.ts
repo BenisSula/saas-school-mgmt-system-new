@@ -9,7 +9,7 @@ jest.mock('../src/db/connection', () => ({
   closePool: jest.fn()
 }));
 
-const mockedGetPool = getPool as unknown as jest.Mock;
+const mockedGetPool = jest.mocked(getPool);
 
 jest.setTimeout(15000);
 
@@ -39,7 +39,7 @@ describe('Authentication & RBAC', () => {
     tenantId = tenantResult.rows[0].id;
   });
 
-    it('allows signup, login, refresh, and access to protected route', async () => {
+  it('allows signup, login, refresh, and access to protected route', async () => {
     const email = 'admin@testacademy.com';
     const password = 'StrongPassw0rd!';
 
@@ -57,7 +57,7 @@ describe('Authentication & RBAC', () => {
       expect([201, 422]).toContain(signupResponse.status);
       return;
     }
-    
+
     expect(signupResponse.status).toBe(201);
     expect(signupResponse.body).toHaveProperty('accessToken');
     expect(signupResponse.body.user.role).toBe('admin');
@@ -91,29 +91,29 @@ describe('Authentication & RBAC', () => {
     expect(refreshResponse.body).toHaveProperty('refreshToken');
   });
 
-    it('preserves active status during refresh flows', async () => {
-      const email = 'refresh-status@testacademy.com';
-      const password = 'StrongPassw0rd!';
+  it('preserves active status during refresh flows', async () => {
+    const email = 'refresh-status@testacademy.com';
+    const password = 'StrongPassw0rd!';
 
-      const signupResponse = await request(app).post('/auth/signup').send({
-        email,
-        password,
-        role: 'admin',
-        tenantId
-      });
-
-      expect(signupResponse.status).toBe(201);
-
-      const loginResponse = await request(app).post('/auth/login').send({ email, password });
-      expect(loginResponse.status).toBe(200);
-
-      const refreshResponse = await request(app).post('/auth/refresh').send({
-        refreshToken: loginResponse.body.refreshToken
-      });
-
-      expect(refreshResponse.status).toBe(200);
-      expect(refreshResponse.body.user.status).toBe('active');
+    const signupResponse = await request(app).post('/auth/signup').send({
+      email,
+      password,
+      role: 'admin',
+      tenantId
     });
+
+    expect(signupResponse.status).toBe(201);
+
+    const loginResponse = await request(app).post('/auth/login').send({ email, password });
+    expect(loginResponse.status).toBe(200);
+
+    const refreshResponse = await request(app).post('/auth/refresh').send({
+      refreshToken: loginResponse.body.refreshToken
+    });
+
+    expect(refreshResponse.status).toBe(200);
+    expect(refreshResponse.body.user.status).toBe('active');
+  });
 
   it('blocks users without permission from protected route', async () => {
     const email = 'student@testacademy.com';
@@ -144,29 +144,31 @@ describe('Authentication & RBAC', () => {
     expect(protectedResponse.status).toBe(403);
   });
 
-    it('falls back to active status when legacy records have null status', async () => {
-      const email = 'legacy-status@testacademy.com';
-      const password = 'StrongPassw0rd!';
+  it('falls back to active status when legacy records have null status', async () => {
+    const email = 'legacy-status@testacademy.com';
+    const password = 'StrongPassw0rd!';
 
-      const signupResponse = await request(app).post('/auth/signup').send({
-        email,
-        password,
-        role: 'admin',
-        tenantId
-      });
-
-      expect(signupResponse.status).toBe(201);
-
-      await pool.query('ALTER TABLE shared.users ALTER COLUMN status DROP NOT NULL');
-      await pool.query('UPDATE shared.users SET status = NULL WHERE email = $1', [email.toLowerCase()]);
-
-      try {
-        const loginResponse = await request(app).post('/auth/login').send({ email, password });
-        expect(loginResponse.status).toBe(200);
-        expect(loginResponse.body.user.status).toBe('active');
-      } finally {
-        await pool.query('UPDATE shared.users SET status = $1 WHERE status IS NULL', ['active']);
-        await pool.query('ALTER TABLE shared.users ALTER COLUMN status SET NOT NULL');
-      }
+    const signupResponse = await request(app).post('/auth/signup').send({
+      email,
+      password,
+      role: 'admin',
+      tenantId
     });
+
+    expect(signupResponse.status).toBe(201);
+
+    await pool.query('ALTER TABLE shared.users ALTER COLUMN status DROP NOT NULL');
+    await pool.query('UPDATE shared.users SET status = NULL WHERE email = $1', [
+      email.toLowerCase()
+    ]);
+
+    try {
+      const loginResponse = await request(app).post('/auth/login').send({ email, password });
+      expect(loginResponse.status).toBe(200);
+      expect(loginResponse.body.user.status).toBe('active');
+    } finally {
+      await pool.query('UPDATE shared.users SET status = $1 WHERE status IS NULL', ['active']);
+      await pool.query('ALTER TABLE shared.users ALTER COLUMN status SET NOT NULL');
+    }
+  });
 });

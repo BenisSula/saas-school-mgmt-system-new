@@ -11,7 +11,7 @@ jest.mock('../src/db/connection', () => ({
   closePool: jest.fn()
 }));
 
-const mockedGetPool = getPool as unknown as jest.Mock;
+const mockedGetPool = jest.mocked(getPool);
 
 describe('RBAC Middleware Unit Tests', () => {
   let pool: Pool;

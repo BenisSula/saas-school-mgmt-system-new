@@ -1,9 +1,6 @@
 import { describe, it, expect } from '@jest/globals';
-import {
-  validateSignupInput,
-  normalizeSignupPayload,
-  type SignUpInputRaw
-} from '../src/services/authValidation';
+import { validateSignupInput, normalizeSignupPayload } from '../src/services/authValidation';
+import type { SignUpInputRaw } from '../src/services/authValidation';
 import { ValidationError } from '../src/middleware/validation';
 
 describe('Auth Validation', () => {
@@ -364,4 +361,3 @@ describe('Auth Validation', () => {
     });
   });
 });
-

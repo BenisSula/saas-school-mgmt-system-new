@@ -11,7 +11,7 @@ jest.mock('../src/db/connection', () => ({
   closePool: jest.fn()
 }));
 
-const mockedGetPool = getPool as unknown as jest.Mock;
+const mockedGetPool = jest.mocked(getPool);
 
 describe('tenantManager', () => {
   let pool: Pool;
@@ -73,37 +73,28 @@ describe('tenantResolver middleware', () => {
       connect: jest.fn().mockResolvedValue(mockClient)
     };
 
-    mockedGetPool.mockReturnValue(mockPool as unknown as Pool);
+    mockedGetPool.mockReturnValue(mockPool as Pool);
 
     const app = express();
-    app.get(
-      '/students/count',
-      tenantResolver(),
-      async (req, res) => {
-        if (!req.tenantClient) {
-          return res.status(500).json({ message: 'tenant client missing' });
-        }
-
-        const result = await req.tenantClient.query(
-          `SELECT COUNT(*)::int AS count FROM students`
-        );
-
-        return res.json({ tenant: req.tenant, count: result.rows[0].count });
+    app.get('/students/count', tenantResolver(), async (req, res) => {
+      if (!req.tenantClient) {
+        return res.status(500).json({ message: 'tenant client missing' });
       }
-    );
 
-    const response = await request(app)
-      .get('/students/count')
-      .set('x-tenant-id', 'tenant_alpha');
+      const result = await req.tenantClient.query(`SELECT COUNT(*)::int AS count FROM students`);
+
+      return res.json({ tenant: req.tenant, count: result.rows[0].count });
+    });
+
+    const response = await request(app).get('/students/count').set('x-tenant-id', 'tenant_alpha');
 
     expect(response.status).toBe(200);
     expect(response.body.count).toBe(1);
     expect(response.body.tenant.schema).toBe('tenant_alpha');
 
-    expect(mockPool.query).toHaveBeenCalledWith(
-      expect.stringContaining('FROM shared.tenants'),
-      ['tenant_alpha']
-    );
+    expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('FROM shared.tenants'), [
+      'tenant_alpha'
+    ]);
     expect(mockClient.query).toHaveBeenNthCalledWith(1, 'SET search_path TO tenant_alpha, public');
     expect(mockClient.query).toHaveBeenNthCalledWith(
       2,
@@ -113,4 +104,3 @@ describe('tenantResolver middleware', () => {
     expect(mockClient.release).toHaveBeenCalled();
   });
 });
-

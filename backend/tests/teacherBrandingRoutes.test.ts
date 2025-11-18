@@ -36,7 +36,7 @@ jest.mock('../src/db/connection', () => ({
   closePool: jest.fn()
 }));
 
-const mockedGetPool = getPool as unknown as jest.Mock;
+const mockedGetPool = jest.mocked(getPool);
 
 describe('Teacher and branding routes', () => {
   beforeAll(async () => {
@@ -106,4 +106,3 @@ describe('Teacher and branding routes', () => {
     expect(get.body.name).toBe('Updated Academy');
   });
 });
-

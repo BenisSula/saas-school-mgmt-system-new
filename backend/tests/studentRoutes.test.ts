@@ -35,7 +35,7 @@ jest.mock('../src/db/connection', () => ({
   closePool: jest.fn()
 }));
 
-const mockedGetPool = getPool as unknown as jest.Mock;
+const mockedGetPool = jest.mocked(getPool);
 
 describe('Student routes', () => {
   beforeAll(async () => {
@@ -48,20 +48,16 @@ describe('Student routes', () => {
       },
       testPool.pool
     );
-
   });
 
   const authHeaders = { Authorization: 'Bearer fake', 'x-tenant-id': 'tenant_alpha' };
 
   it('creates and retrieves students', async () => {
-    const create = await request(app)
-      .post('/students')
-      .set(authHeaders)
-      .send({
-        firstName: 'Ada',
-        lastName: 'Lovelace',
-        admissionNumber: 'A001'
-      });
+    const create = await request(app).post('/students').set(authHeaders).send({
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+      admissionNumber: 'A001'
+    });
 
     expect(create.status).toBe(201);
 
@@ -70,4 +66,3 @@ describe('Student routes', () => {
     expect(list.body.length).toBeGreaterThanOrEqual(1);
   });
 });
-

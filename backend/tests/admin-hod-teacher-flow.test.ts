@@ -10,7 +10,7 @@ jest.mock('../src/db/connection', () => ({
   closePool: jest.fn()
 }));
 
-const mockedGetPool = getPool as unknown as jest.Mock;
+const mockedGetPool = jest.mocked(getPool);
 
 jest.setTimeout(20000);
 
@@ -55,10 +55,9 @@ describe('Admin → HOD & Teacher Flow Integration', () => {
     adminUserId = crypto.randomUUID();
 
     // Check if user already exists
-    const existingUser = await pool.query(
-      'SELECT * FROM shared.users WHERE email = $1',
-      [adminEmail]
-    );
+    const existingUser = await pool.query('SELECT * FROM shared.users WHERE email = $1', [
+      adminEmail
+    ]);
 
     if (existingUser.rows.length === 0) {
       // Insert admin directly into database
@@ -104,7 +103,7 @@ describe('Admin → HOD & Teacher Flow Integration', () => {
       expect([201, 400, 422]).toContain(hodSignupResponse.status);
       return; // Skip rest of test if signup failed
     }
-    
+
     expect(hodSignupResponse.status).toBe(201);
     expect(hodSignupResponse.body.user.role).toBe('hod');
     expect(hodSignupResponse.body.user.tenantId).toBe(tenantId);
@@ -132,10 +131,9 @@ describe('Admin → HOD & Teacher Flow Integration', () => {
     expect(approveResponse.body.status).toBe('active');
 
     // Step 4: Verify HOD is now active
-    const activeHodCheck = await pool.query(
-      `SELECT status FROM shared.users WHERE id = $1`,
-      [hodUserId]
-    );
+    const activeHodCheck = await pool.query(`SELECT status FROM shared.users WHERE id = $1`, [
+      hodUserId
+    ]);
 
     expect(activeHodCheck.rows[0].status).toBe('active');
 
@@ -189,10 +187,9 @@ describe('Admin → HOD & Teacher Flow Integration', () => {
     expect(approveResponse.body.status).toBe('active');
 
     // Step 4: Verify Teacher is now active
-    const activeTeacherCheck = await pool.query(
-      `SELECT status FROM shared.users WHERE id = $1`,
-      [teacherUserId]
-    );
+    const activeTeacherCheck = await pool.query(`SELECT status FROM shared.users WHERE id = $1`, [
+      teacherUserId
+    ]);
 
     expect(activeTeacherCheck.rows[0].status).toBe('active');
 
@@ -257,4 +254,3 @@ describe('Admin → HOD & Teacher Flow Integration', () => {
     });
   });
 });
-

@@ -53,7 +53,7 @@ jest.mock('../src/services/examService', () => {
   };
 });
 
-const mockedGetPool = getPool as unknown as jest.Mock;
+const mockedGetPool = jest.mocked(getPool);
 const computeStudentResultMock = computeStudentResult as jest.MockedFunction<
   typeof computeStudentResult
 >;

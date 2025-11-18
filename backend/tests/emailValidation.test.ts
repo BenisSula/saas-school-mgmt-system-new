@@ -38,8 +38,10 @@ describe('Email Format Validation', () => {
   });
 
   it('should handle null and undefined', () => {
-    expect(validateEmailFormat(null as unknown as string)).toBe(false);
-    expect(validateEmailFormat(undefined as unknown as string)).toBe(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(validateEmailFormat(null as any)).toBe(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(validateEmailFormat(undefined as any)).toBe(false);
   });
 
   it('should trim whitespace before validation', () => {
@@ -47,4 +49,3 @@ describe('Email Format Validation', () => {
     expect(validateEmailFormat('  invalid  ')).toBe(false);
   });
 });
-

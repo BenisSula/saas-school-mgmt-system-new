@@ -10,7 +10,7 @@ jest.mock('../src/db/connection', () => ({
   closePool: jest.fn()
 }));
 
-const mockedGetPool = getPool as unknown as jest.Mock;
+const mockedGetPool = jest.mocked(getPool);
 
 jest.setTimeout(15000);
 
@@ -215,4 +215,3 @@ describe('Auth Error Codes - PHASE 3', () => {
     });
   });
 });
-

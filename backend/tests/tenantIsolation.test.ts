@@ -1,6 +1,6 @@
 /**
  * Tenant Isolation Tests
- * 
+ *
  * Tests that multi-tenant isolation is properly enforced.
  * Users should only be able to access data from their own tenant.
  */
@@ -43,7 +43,7 @@ jest.mock('../src/db/connection', () => ({
   closePool: jest.fn()
 }));
 
-const mockedGetPool = getPool as unknown as jest.Mock;
+const mockedGetPool = jest.mocked(getPool);
 
 describe('Tenant Isolation', () => {
   let pool: Pool;
@@ -68,8 +68,16 @@ describe('Tenant Isolation', () => {
        VALUES ($1, $2, $3, $4, $5), ($6, $7, $8, $9, $10)
        ON CONFLICT (schema_name) DO NOTHING`,
       [
-        tenant1Id, 'School 1', 'school1.local', 'tenant_1', 'active',
-        tenant2Id, 'School 2', 'school2.local', 'tenant_2', 'active'
+        tenant1Id,
+        'School 1',
+        'school1.local',
+        'tenant_1',
+        'active',
+        tenant2Id,
+        'School 2',
+        'school2.local',
+        'tenant_2',
+        'active'
       ]
     );
 
@@ -86,8 +94,18 @@ describe('Tenant Isolation', () => {
       `INSERT INTO shared.users (id, email, password_hash, role, status, tenant_id)
        VALUES ($1, $2, $3, $4, $5, $6), ($7, $8, $9, $10, $11, $12)`,
       [
-        admin1Id, 'admin1@school1.com', '$argon2id$v=19$m=65536,t=3,p=4$test', 'admin', 'active', tenant1Id,
-        admin2Id, 'admin2@school2.com', '$argon2id$v=19$m=65536,t=3,p=4$test', 'admin', 'active', tenant2Id
+        admin1Id,
+        'admin1@school1.com',
+        '$argon2id$v=19$m=65536,t=3,p=4$test',
+        'admin',
+        'active',
+        tenant1Id,
+        admin2Id,
+        'admin2@school2.com',
+        '$argon2id$v=19$m=65536,t=3,p=4$test',
+        'admin',
+        'active',
+        tenant2Id
       ]
     );
 
@@ -183,12 +201,10 @@ describe('Tenant Isolation', () => {
         tokenId: 'test-token'
       };
 
-      const response = await request(app)
-        .get('/students')
-        .set({
-          Authorization: 'Bearer fake-token',
-          'x-tenant-id': tenant2Id
-        });
+      const response = await request(app).get('/students').set({
+        Authorization: 'Bearer fake-token',
+        'x-tenant-id': tenant2Id
+      });
 
       // Should reject due to tenant mismatch
       expect([403, 401, 400]).toContain(response.status);
@@ -203,12 +219,10 @@ describe('Tenant Isolation', () => {
         tokenId: 'test-token'
       };
 
-      const response = await request(app)
-        .get('/students')
-        .set({
-          Authorization: 'Bearer fake-token'
-          // Missing x-tenant-id header
-        });
+      const response = await request(app).get('/students').set({
+        Authorization: 'Bearer fake-token'
+        // Missing x-tenant-id header
+      });
 
       expect([400, 401, 403]).toContain(response.status);
     });
@@ -231,18 +245,16 @@ describe('Tenant Isolation', () => {
         const studentId = createResponse.body.id;
 
         // Verify student exists in tenant 1 schema
-        const result = await pool.query(
-          'SELECT * FROM tenant_1.students WHERE id = $1',
-          [studentId]
-        );
+        const result = await pool.query('SELECT * FROM tenant_1.students WHERE id = $1', [
+          studentId
+        ]);
 
         expect(result.rows.length).toBeGreaterThan(0);
 
         // Verify student does NOT exist in tenant 2 schema
-        const result2 = await pool.query(
-          'SELECT * FROM tenant_2.students WHERE id = $1',
-          [studentId]
-        );
+        const result2 = await pool.query('SELECT * FROM tenant_2.students WHERE id = $1', [
+          studentId
+        ]);
 
         expect(result2.rows.length).toBe(0);
       }
@@ -255,7 +267,14 @@ describe('Tenant Isolation', () => {
       await pool.query(
         `INSERT INTO shared.users (id, email, password_hash, role, status, tenant_id)
          VALUES ($1, $2, $3, $4, $5, $6)`,
-        [superadminId, 'super@platform.com', '$argon2id$v=19$m=65536,t=3,p=4$test', 'superadmin', 'active', null]
+        [
+          superadminId,
+          'super@platform.com',
+          '$argon2id$v=19$m=65536,t=3,p=4$test',
+          'superadmin',
+          'active',
+          null
+        ]
       );
 
       // Superadmin should be able to access tenant 1 data
@@ -267,20 +286,16 @@ describe('Tenant Isolation', () => {
         tokenId: 'test-token'
       };
 
-      const response1 = await request(app)
-        .get('/students')
-        .set({
-          Authorization: 'Bearer fake-token',
-          'x-tenant-id': tenant1Id
-        });
+      const response1 = await request(app).get('/students').set({
+        Authorization: 'Bearer fake-token',
+        'x-tenant-id': tenant1Id
+      });
 
       // Superadmin should be able to access tenant 2 data
-      const response2 = await request(app)
-        .get('/students')
-        .set({
-          Authorization: 'Bearer fake-token',
-          'x-tenant-id': tenant2Id
-        });
+      const response2 = await request(app).get('/students').set({
+        Authorization: 'Bearer fake-token',
+        'x-tenant-id': tenant2Id
+      });
 
       // Both should succeed (or at least not be 403)
       expect([200, 404]).toContain(response1.status);
@@ -292,4 +307,3 @@ describe('Tenant Isolation', () => {
     await pool.end();
   });
 });
-

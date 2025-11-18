@@ -48,7 +48,7 @@ jest.mock('../src/db/connection', () => ({
   closePool: jest.fn()
 }));
 
-const mockedGetPool = getPool as unknown as jest.Mock;
+const mockedGetPool = jest.mocked(getPool);
 
 describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
   let pool: Pool;

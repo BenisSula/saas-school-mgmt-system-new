@@ -10,15 +10,7 @@ describe('Role Validation', () => {
   });
 
   it('should reject invalid roles', () => {
-    const invalidRoles = [
-      'invalid',
-      'guest',
-      'moderator',
-      'superuser',
-      '',
-      'student ',
-      ' teacher'
-    ];
+    const invalidRoles = ['invalid', 'guest', 'moderator', 'superuser', '', 'student ', ' teacher'];
 
     for (const role of invalidRoles) {
       expect(validateRole(role)).toBe(false);
@@ -35,9 +27,8 @@ describe('Role Validation', () => {
     const testRole = 'student';
     if (validateRole(testRole)) {
       // TypeScript should narrow the type here
-      const role: Role = testRole;
+      const role = testRole as Role;
       expect(role).toBe('student');
     }
   });
 });
-

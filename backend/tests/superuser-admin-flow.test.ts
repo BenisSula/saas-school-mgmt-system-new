@@ -10,7 +10,7 @@ jest.mock('../src/db/connection', () => ({
   closePool: jest.fn()
 }));
 
-const mockedGetPool = getPool as unknown as jest.Mock;
+const mockedGetPool = jest.mocked(getPool);
 
 jest.setTimeout(20000);
 
@@ -186,7 +186,7 @@ describe('SuperUser → Admin Flow Integration', () => {
       expect([201, 422]).toContain(adminSignupResponse.status);
       return; // Skip rest of test if signup failed
     }
-    
+
     expect(adminSignupResponse.status).toBe(201);
     expect(adminSignupResponse.body.user.role).toBe('admin');
     expect(adminSignupResponse.body.user.tenantId).toBe(newTenantId);

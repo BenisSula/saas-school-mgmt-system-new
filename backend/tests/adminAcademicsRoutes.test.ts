@@ -36,7 +36,7 @@ jest.mock('../src/db/connection', () => ({
   closePool: jest.fn()
 }));
 
-const mockedGetPool = getPool as unknown as jest.Mock;
+const mockedGetPool = jest.mocked(getPool);
 
 describe('Admin academics routes', () => {
   const authHeaders = { Authorization: 'Bearer fake', 'x-tenant-id': 'tenant_alpha' };

@@ -1,6 +1,6 @@
 /**
  * Role-Based Route Access Tests
- * 
+ *
  * Tests that routes are properly protected by RBAC permissions
  * and that users can only access routes they have permission for.
  */
@@ -43,7 +43,7 @@ jest.mock('../src/db/connection', () => ({
   closePool: jest.fn()
 }));
 
-const mockedGetPool = getPool as unknown as jest.Mock;
+const mockedGetPool = jest.mocked(getPool);
 
 describe('Role-Based Route Access', () => {
   let pool: Pool;
@@ -201,9 +201,7 @@ describe('Role-Based Route Access', () => {
     });
 
     it('should allow admin to manage users', async () => {
-      const response = await request(app)
-        .get('/users')
-        .set(getAuthHeaders(adminUserId, 'admin'));
+      const response = await request(app).get('/users').set(getAuthHeaders(adminUserId, 'admin'));
 
       expect([200, 404]).toContain(response.status);
     });
@@ -299,4 +297,3 @@ describe('Role-Based Route Access', () => {
     await pool.end();
   });
 });
-

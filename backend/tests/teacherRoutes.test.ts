@@ -66,7 +66,7 @@ jest.mock('../src/services/teacherDashboardService', () => {
   };
 });
 
-const mockedGetPool = getPool as unknown as jest.Mock;
+const mockedGetPool = jest.mocked(getPool);
 const findTeacherByEmailMock = findTeacherByEmail as jest.MockedFunction<typeof findTeacherByEmail>;
 const getTeacherOverviewMock = getTeacherOverview as jest.MockedFunction<typeof getTeacherOverview>;
 const listTeacherClassesMock = listTeacherClasses as jest.MockedFunction<typeof listTeacherClasses>;

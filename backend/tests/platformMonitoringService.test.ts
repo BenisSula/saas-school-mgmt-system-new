@@ -15,7 +15,7 @@ jest.mock('../src/db/connection', () => ({
   closePool: jest.fn()
 }));
 
-const mockedGetPool = getPool as unknown as jest.Mock;
+const mockedGetPool = jest.mocked(getPool);
 
 describe('platformMonitoringService', () => {
   let pool: Awaited<ReturnType<typeof createTestPool>>['pool'];
@@ -33,7 +33,9 @@ describe('platformMonitoringService', () => {
   beforeEach(async () => {
     // Create user_sessions table if it doesn't exist (for pg-mem compatibility)
     // Use uuid_generate_v4() which is registered in testDb.ts for pg-mem
-    await pool.query(`
+    await pool
+      .query(
+        `
       CREATE TABLE IF NOT EXISTS shared.user_sessions (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         user_id UUID NOT NULL REFERENCES shared.users(id) ON DELETE CASCADE,
@@ -45,10 +47,12 @@ describe('platformMonitoringService', () => {
         logout_ip TEXT,
         logout_user_agent TEXT
       )
-    `).catch(() => {
-      // Table might already exist, ignore error
-    });
-    
+    `
+      )
+      .catch(() => {
+        // Table might already exist, ignore error
+      });
+
     await pool.query('DELETE FROM shared.user_sessions').catch(() => {});
     await pool.query('DELETE FROM shared.notifications').catch(() => {});
     await pool.query('DELETE FROM shared.audit_logs').catch(() => {});
