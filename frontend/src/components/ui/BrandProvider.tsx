@@ -136,7 +136,9 @@ function applyCssVariables(tokens: BrandTokens) {
   entries.forEach(([key, value]) => root.style.setProperty(key, value));
 }
 
-function applyTheme(theme: ThemeMode) {
+// Note: Theme application is handled by lib/theme/theme.ts
+// This function only sets the data-theme attribute for BrandProvider's theme mode
+function applyBrandTheme(theme: ThemeMode) {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
   root.dataset.theme = theme;
@@ -209,7 +211,7 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
   }, [tokens]);
 
   useEffect(() => {
-    applyTheme(theme);
+    applyBrandTheme(theme);
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(THEME_STORAGE_KEY, theme);
     }

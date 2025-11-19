@@ -29,20 +29,7 @@ function trimAndUnquote(value: string): string {
   return trimmed;
 }
 
-function safeWindowOrigin(): string | null {
-  try {
-    if (typeof window === 'undefined' || !window.location || !window.location.origin) {
-      return null;
-    }
-    const origin = window.location.origin;
-    if (!isAbsoluteHttpUrl(origin)) {
-      return null;
-    }
-    return origin;
-  } catch {
-    return null;
-  }
-}
+// Removed unused function safeWindowOrigin
 
 function normaliseBaseUrl(raw: string): string {
   try {
@@ -54,16 +41,34 @@ function normaliseBaseUrl(raw: string): string {
 }
 
 function resolveApiBaseUrl(): string {
-  // Dev: always resolve to a valid absolute base
-  if (import.meta.env.DEV) {
-    const origin = safeWindowOrigin() ?? 'http://127.0.0.1:5173';
-    return stripTrailingSlash(`${origin}/api`);
-  }
-
+  // Check for explicit VITE_API_BASE_URL first (even in dev mode)
   const explicitRaw = (import.meta.env.VITE_API_BASE_URL ?? import.meta.env.VITE_API_URL) as
     | string
     | undefined;
 
+  if (explicitRaw) {
+    const cleaned = trimAndUnquote(explicitRaw);
+    if (cleaned) {
+      // Relative base like "/api" - keep it relative so Vite proxy can handle it
+      if (cleaned.startsWith('/')) {
+        // In development, Vite proxy handles /api -> backend
+        // Don't convert to absolute URL - let browser use relative path
+        return stripTrailingSlash(cleaned);
+      }
+      // Absolute URL provided - use it
+      const normalised = stripTrailingSlash(normaliseBaseUrl(cleaned));
+      if (isAbsoluteHttpUrl(normalised)) {
+        return normalised;
+      }
+    }
+  }
+
+  // Fallback: In dev mode, use relative /api path (Vite proxy will handle it)
+  if (import.meta.env.DEV) {
+    return '/api';
+  }
+
+  // Production: require explicit configuration
   if (!explicitRaw) {
     throw new Error('Missing or invalid VITE_API_BASE_URL: <empty> — see docs/.env.example');
   }
@@ -71,17 +76,6 @@ function resolveApiBaseUrl(): string {
   const cleaned = trimAndUnquote(explicitRaw);
   if (!cleaned) {
     throw new Error('Missing or invalid VITE_API_BASE_URL: <whitespace> — see docs/.env.example');
-  }
-
-  // Relative base like "/api"
-  if (cleaned.startsWith('/')) {
-    const origin = safeWindowOrigin();
-    if (!origin) {
-      throw new Error(
-        `Invalid environment for relative VITE_API_BASE_URL (${cleaned}) — window.location.origin is not http(s).`
-      );
-    }
-    return stripTrailingSlash(`${origin}${cleaned}`);
   }
 
   // Absolute or host-only; require http/https
@@ -103,9 +97,9 @@ try {
   throw error;
 }
 
-// Validate API_BASE_URL is absolute http(s) URL
-if (!isAbsoluteHttpUrl(API_BASE_URL)) {
-  const errorMsg = `[SUMANO][API_BASE_URL] CRITICAL: Resolved to invalid base: "${API_BASE_URL}". Expected http:// or https:// URL.`;
+// Validate API_BASE_URL - allow relative paths (for Vite proxy) or absolute URLs
+if (!API_BASE_URL.startsWith('/') && !isAbsoluteHttpUrl(API_BASE_URL)) {
+  const errorMsg = `[SUMANO][API_BASE_URL] CRITICAL: Resolved to invalid base: "${API_BASE_URL}". Expected http:// or https:// URL, or relative path like /api.`;
   console.error(errorMsg);
   throw new Error(errorMsg);
 }
@@ -130,6 +124,14 @@ function safeJoinUrl(path: string, base: string): string {
     throw new Error(`Invalid API_BASE_URL: ${String(base)}. Expected a non-empty string.`);
   }
 
+  // Base is relative path (e.g., /api) - use as-is for Vite proxy
+  if (base.startsWith('/')) {
+    // Ensure path starts with / for proper resolution
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    // Combine relative paths: /api + /auth/login = /api/auth/login
+    return `${base}${normalizedPath}`;
+  }
+
   // Base is already absolute http(s)
   if (isAbsoluteHttpUrl(base)) {
     try {
@@ -148,47 +150,10 @@ function safeJoinUrl(path: string, base: string): string {
     }
   }
 
-  // Base is relative (e.g. '/api') – anchor to origin in the browser
-  const origin = safeWindowOrigin();
-  let absoluteBase: string;
-
-  if (!origin) {
-    // Fallback to hardcoded dev server if window.location.origin is invalid (e.g., chrome-extension://)
-    const fallbackOrigin = import.meta.env.DEV ? 'http://127.0.0.1:5173' : null;
-    if (!fallbackOrigin) {
-      throw new Error(
-        `Cannot construct API URL: window.location.origin is not http(s) and no fallback available. ` +
-          `Please access the app via http://localhost:5173 (not via browser extension or file://). ` +
-          `Current origin: ${typeof window !== 'undefined' ? window.location.origin : 'N/A'}.`
-      );
-    }
-    absoluteBase = `${fallbackOrigin}${base}`;
-  } else {
-    absoluteBase = `${origin}${base}`;
-  }
-
-  // Final validation before constructing URL
-  if (!isAbsoluteHttpUrl(absoluteBase)) {
-    throw new Error(
-      `Invalid absolute base URL constructed: "${absoluteBase}" (from origin: ${origin || 'null'}, base: ${base}). ` +
-        `This should never happen. Please report this error.`
-    );
-  }
-
-  try {
-    // Ensure absoluteBase ends with / for proper URL resolution
-    const normalizedBase = absoluteBase.endsWith('/') ? absoluteBase : `${absoluteBase}/`;
-    // Ensure path starts with / for proper resolution
-    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-    return new URL(normalizedPath, normalizedBase).toString();
-  } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    throw new Error(
-      `Failed to construct URL with path "${path}" and base "${absoluteBase}": ${errorMsg}. ` +
-        `Please check your environment configuration. ` +
-        `Current window.location.origin: ${typeof window !== 'undefined' ? window.location.origin : 'N/A'}.`
-    );
-  }
+  // Fallback: Base is relative but doesn't start with / - shouldn't happen
+  throw new Error(
+    `Invalid API_BASE_URL: "${base}". Expected absolute URL (http://...) or relative path starting with / (e.g., /api).`
+  );
 }
 // Keys are kept in tokenSecurity; avoid unused local duplicates
 // const REFRESH_STORAGE_KEY = 'saas-school.refreshToken';
@@ -310,6 +275,10 @@ async function extractError(
     } catch {
       // ignore
     }
+  }
+  // For 404 responses, provide a more helpful error message
+  if (response.status === 404) {
+    return { message: `Resource not found: ${response.url || 'Unknown endpoint'}` };
   }
   return { message: response.statusText || 'Request failed' };
 }
@@ -501,8 +470,9 @@ async function apiFetch<T>(path: string, options: FetchOptions = {}, retry = tru
     throw new Error(errorMsg);
   }
 
-  if (!isAbsoluteHttpUrl(API_BASE_URL)) {
-    const errorMsg = `API_BASE_URL is not absolute: "${API_BASE_URL}". Expected http:// or https:// URL.`;
+  // Allow relative paths (for Vite proxy) or absolute URLs
+  if (!API_BASE_URL.startsWith('/') && !isAbsoluteHttpUrl(API_BASE_URL)) {
+    const errorMsg = `API_BASE_URL is invalid: "${API_BASE_URL}". Expected http:// or https:// URL, or relative path like /api.`;
     console.error('[apiFetch]', errorMsg);
     console.error(
       '[apiFetch] Current window.location:',

@@ -1,4 +1,5 @@
 import React, { useId } from 'react';
+import { cn } from '../../lib/utils/cn';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -24,7 +25,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       : 'border-[var(--brand-border)] focus-visible:ring-[var(--brand-primary)] hover:border-[var(--brand-border-strong)]';
 
     return (
-      <div className={`flex flex-col gap-1.5 ${className}`}>
+      <div className={cn('flex flex-col gap-1.5', className)}>
         {label ? (
           <label htmlFor={inputId} className="text-sm font-medium text-[var(--brand-text-primary)]">
             {label}
@@ -35,7 +36,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           id={inputId}
           aria-describedby={describedBy.join(' ') || undefined}
           aria-invalid={Boolean(error)}
-          className={`${baseClasses} ${fieldClasses}`}
+          className={cn(baseClasses, fieldClasses)}
           {...props}
         />
         {helperText ? (

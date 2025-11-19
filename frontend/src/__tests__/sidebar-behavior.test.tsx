@@ -5,7 +5,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BrandProvider } from '../components/ui/BrandProvider';
 import { AdminShell } from '../layouts/AdminShell';
-import { useResponsiveSidebar } from '../hooks/useResponsiveSidebar';
+import { useSidebar } from '../hooks/useSidebar';
 import { api } from '../lib/api';
 import { queryClient } from '../lib/react-query';
 
@@ -147,7 +147,7 @@ describe('Sidebar role links', () => {
 
 describe('Sidebar persistence', () => {
   function TestSidebarPersistence({ storageKey }: { storageKey: string }) {
-    const { collapsed, toggleCollapsed } = useResponsiveSidebar({
+    const { collapsed, toggleCollapsed } = useSidebar({
       storageKey: storageKey,
       initialOpen: true
     });

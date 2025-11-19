@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import type { Role, Permission } from '../config/permissions';
 import { hasPermission } from '../config/permissions';
@@ -21,6 +22,32 @@ export function ProtectedRoute({
   children
 }: ProtectedRouteProps) {
   const { isLoading, user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [hasRedirected, setHasRedirected] = React.useState(false);
+
+  // Define default prompts before hooks (for use in useEffect)
+  const defaultSignInPrompt = React.useMemo(
+    () => (
+      <div className="rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 text-center text-sm text-[var(--brand-muted)]">
+        Please sign in to view this page.
+      </div>
+    ),
+    []
+  );
+
+  const defaultAccessDeniedPrompt = React.useMemo(
+    () => (
+      <div
+        className="rounded-lg border border-red-500/40 bg-red-500/10 p-6 text-sm text-red-200"
+        role="alert"
+        aria-live="assertive"
+      >
+        You do not have permission to view this page.
+      </div>
+    ),
+    []
+  );
 
   // Calculate required permissions based on user role and permission list
   const hasRequiredPermissions = React.useMemo(() => {
@@ -43,6 +70,47 @@ export function ProtectedRoute({
     }
   }, [allowedPermissions, requireAllPermissions, user]);
 
+  // Redirect to not-authorized if access denied (only once)
+  // Must be called before any conditional returns (React hooks rule)
+  React.useEffect(() => {
+    if (isLoading || hasRedirected) return;
+    if (!user) return;
+
+    if (user.status !== 'active') {
+      // Don't redirect for pending status - show inline message
+      return;
+    }
+
+    // Check role-based access
+    if (allowedRoles && !allowedRoles.includes(user.role)) {
+      setHasRedirected(true);
+      navigate('/not-authorized', {
+        replace: true,
+        state: { from: location.pathname }
+      });
+      return;
+    }
+
+    // Check permission-based access
+    if (allowedPermissions && !hasRequiredPermissions) {
+      setHasRedirected(true);
+      navigate('/not-authorized', {
+        replace: true,
+        state: { from: location.pathname }
+      });
+      return;
+    }
+  }, [
+    isLoading,
+    user,
+    allowedRoles,
+    allowedPermissions,
+    hasRequiredPermissions,
+    navigate,
+    location.pathname,
+    hasRedirected
+  ]);
+
   if (isLoading) {
     return (
       loadingFallback ?? (
@@ -52,22 +120,6 @@ export function ProtectedRoute({
       )
     );
   }
-
-  const defaultSignInPrompt = (
-    <div className="rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 text-center text-sm text-[var(--brand-muted)]">
-      Please sign in to view this page.
-    </div>
-  );
-
-  const defaultAccessDeniedPrompt = (
-    <div
-      className="rounded-lg border border-red-500/40 bg-red-500/10 p-6 text-sm text-red-200"
-      role="alert"
-      aria-live="assertive"
-    >
-      You do not have permission to view this page.
-    </div>
-  );
 
   if (!user) {
     return fallback ?? defaultSignInPrompt;
@@ -81,17 +133,26 @@ export function ProtectedRoute({
     );
   }
 
-  const accessDeniedContent = fallback ?? defaultAccessDeniedPrompt;
+  // If redirecting, show loading state
+  if (hasRedirected) {
+    return (
+      <div className="flex min-h-[200px] items-center justify-center text-sm text-[var(--brand-muted)]">
+        Redirecting...
+      </div>
+    );
+  }
 
   // Check role-based access first
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return accessDeniedContent;
+    // Will be handled by useEffect redirect, but show fallback while redirecting
+    return fallback ?? defaultAccessDeniedPrompt;
   }
 
   // Check permission-based access (only if roles check passed or no roles specified)
   // If both roles and permissions are specified, user must pass both checks
   if (allowedPermissions && !hasRequiredPermissions) {
-    return accessDeniedContent;
+    // Will be handled by useEffect redirect, but show fallback while redirecting
+    return fallback ?? defaultAccessDeniedPrompt;
   }
 
   return <>{children}</>;

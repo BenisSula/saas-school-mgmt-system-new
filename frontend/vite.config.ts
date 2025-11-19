@@ -10,14 +10,14 @@ export default defineConfig({
     proxy: {
       // Proxy API calls during dev to avoid CORS/DNS issues
       '/api': {
-        target: 'http://127.0.0.1:3002',
+        target: 'http://127.0.0.1:3001',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, '')
       },
       // Proxy WebSocket during dev if enabled on backend
       '/ws': {
-        target: 'http://127.0.0.1:3002',
+        target: 'http://127.0.0.1:3001',
         ws: true,
         changeOrigin: true,
         secure: false

@@ -37,6 +37,27 @@ const authLimiter = rateLimit({
 
 router.use(authLimiter);
 
+// Health check endpoint for auth routes (checks database connection)
+router.get('/health', async (_req, res) => {
+  try {
+    const { getPool } = await import('../db/connection');
+    const pool = getPool();
+    await pool.query('SELECT 1');
+    res.status(200).json({
+      status: 'ok',
+      db: 'ok',
+      timestamp: new Date().toISOString()
+    });
+  } catch {
+    res.status(503).json({
+      status: 'error',
+      db: 'error',
+      message: 'Database connection failed',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 router.post('/signup', async (req, res) => {
   try {
     const { email, password, role, tenantId, tenantName, profile } = req.body;
