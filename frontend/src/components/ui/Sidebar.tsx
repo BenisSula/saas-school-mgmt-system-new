@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 import type { SidebarLink } from '../../lib/roleLinks';
@@ -36,6 +36,61 @@ function SidebarComponent({
 }: SidebarProps) {
   const shouldCollapse = collapsed && isDesktop;
   const isExpanded = !collapsed;
+  const navRef = useRef<HTMLElement>(null);
+  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Keyboard navigation: Arrow keys to navigate, Enter/Space to activate
+  useEffect(() => {
+    if (!open && !isDesktop) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!navRef.current) return;
+
+      const buttons = buttonRefs.current.filter((ref) => ref !== null) as HTMLButtonElement[];
+      if (buttons.length === 0) return;
+
+      const currentIndex = buttons.findIndex((btn) => btn === document.activeElement);
+
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          if (currentIndex < buttons.length - 1) {
+            buttons[currentIndex + 1]?.focus();
+          } else {
+            buttons[0]?.focus();
+          }
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          if (currentIndex > 0) {
+            buttons[currentIndex - 1]?.focus();
+          } else {
+            buttons[buttons.length - 1]?.focus();
+          }
+          break;
+        case 'Home':
+          e.preventDefault();
+          buttons[0]?.focus();
+          break;
+        case 'End':
+          e.preventDefault();
+          buttons[buttons.length - 1]?.focus();
+          break;
+        case 'Escape':
+          if (!isDesktop) {
+            e.preventDefault();
+            onClose();
+          }
+          break;
+      }
+    };
+
+    const navElement = navRef.current;
+    navElement?.addEventListener('keydown', handleKeyDown);
+    return () => {
+      navElement?.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, isDesktop, onClose]);
 
   // Pre-compute button props to avoid linter issues with JSX expressions
   const collapseButtonProps = {
@@ -95,12 +150,13 @@ function SidebarComponent({
         </div>
 
         <nav
+          ref={navRef}
           className="flex flex-1 flex-col overflow-y-auto px-2 py-4 text-sm text-[var(--brand-surface-contrast)] scrollbar-thin lg:px-3"
           role="navigation"
           aria-label="Sidebar navigation"
         >
           <ul className="flex flex-col gap-1">
-            {links.map((link) => {
+            {links.map((link, index) => {
               const isActive = activePath === link.path;
               return (
                 <motion.li
@@ -112,6 +168,9 @@ function SidebarComponent({
                   exit="hidden"
                 >
                   <button
+                    ref={(el) => {
+                      buttonRefs.current[index] = el;
+                    }}
                     type="button"
                     aria-current={isActive ? 'page' : undefined}
                     onClick={() => {
