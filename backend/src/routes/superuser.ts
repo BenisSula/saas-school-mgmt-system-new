@@ -139,4 +139,45 @@ router.get('/usage', async (req, res, next) => {
   }
 });
 
+router.patch('/users/:userId/status', async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    if (!status || !['pending', 'active', 'suspended', 'rejected'].includes(status)) {
+      return res.status(400).json({ message: 'Valid status is required' });
+    }
+    const { updatePlatformUserStatus } = await import('../services/platformMonitoringService');
+    const updated = await updatePlatformUserStatus(req.params.userId, status, req.user?.id ?? null);
+    if (!updated) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(updated);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/reports', async (req, res, next) => {
+  try {
+    const { type } = req.body;
+    if (!type || !['audit', 'users', 'revenue', 'activity'].includes(type)) {
+      return res.status(400).json({ message: 'Valid report type is required' });
+    }
+    const { generatePlatformReport } = await import('../services/platformMonitoringService');
+    const result = await generatePlatformReport(type, req.user?.id ?? null);
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put('/settings', async (req, res, next) => {
+  try {
+    const { updatePlatformSettings } = await import('../services/platformMonitoringService');
+    await updatePlatformSettings(req.body, req.user?.id ?? null);
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

@@ -135,9 +135,9 @@ export function SuperuserUsersPage() {
     setShowEditModal(true);
   };
 
-  const handleStatusUpdate = async (_userId: string, newStatus: UserStatus) => {
+  const handleStatusUpdate = async (userId: string, newStatus: UserStatus) => {
     try {
-      // TODO: Implement status update API call when backend endpoint is available
+      await api.superuser.updateUserStatus(userId, newStatus);
       toast.success(`User status updated to ${newStatus}`);
       await loadUsers();
     } catch (err) {

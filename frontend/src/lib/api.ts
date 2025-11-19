@@ -1496,6 +1496,11 @@ export const api = {
         body: JSON.stringify(payload)
       }),
     listUsers: () => apiFetch<PlatformUserSummary[]>('/superuser/users'),
+    updateUserStatus: (userId: string, status: UserStatus) =>
+      apiFetch<PlatformUserSummary>(`/superuser/users/${userId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status })
+      }),
     getTenantAnalytics: (tenantId: string) =>
       apiFetch<{
         tenantId: string;
@@ -1522,7 +1527,38 @@ export const api = {
         totalStorage?: number;
         totalApiCalls?: number;
       }>(`/superuser/usage${params}`);
-    }
+    },
+    generateReport: (type: 'audit' | 'users' | 'revenue' | 'activity') =>
+      apiFetch<{ id: string; downloadUrl?: string }>('/superuser/reports', {
+        method: 'POST',
+        body: JSON.stringify({ type })
+      }),
+    updateSettings: (settings: {
+      globalBranding: {
+        platformName: string;
+        defaultLogoUrl: string | null;
+        defaultPrimaryColor: string;
+      };
+      authentication: {
+        requireEmailVerification: boolean;
+        allowSelfRegistration: boolean;
+        sessionTimeoutMinutes: number;
+      };
+      features: {
+        enableAuditLogging: boolean;
+        enableNotifications: boolean;
+        enableHighContrastMode: boolean;
+      };
+      integrations: {
+        paymentProcessor: string;
+        emailProvider: string;
+        smsProvider: string | null;
+      };
+    }) =>
+      apiFetch<{ success: boolean }>('/superuser/settings', {
+        method: 'PUT',
+        body: JSON.stringify(settings)
+      })
   },
   admin: {
     listSubjects: () => apiFetch<Subject[]>('/admin/subjects'),

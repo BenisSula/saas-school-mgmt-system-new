@@ -20,7 +20,9 @@ export const AUDIT_ENTITY_TYPES = [
   'USER',
   'USER_SESSION',
   'NOTIFICATION',
-  'DEPARTMENT'
+  'DEPARTMENT',
+  'REPORT',
+  'SETTINGS'
 ] as const;
 
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
