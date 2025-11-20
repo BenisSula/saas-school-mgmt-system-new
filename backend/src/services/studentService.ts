@@ -1,57 +1,21 @@
 import type { PoolClient } from 'pg';
 import { StudentInput } from '../validators/studentValidator';
 import { getTableName, serializeJsonField } from '../lib/serviceUtils';
+import { resolveClassId, listEntities, getEntityById, deleteEntityById } from '../lib/crudHelpers';
 
 const table = 'students';
 
 export async function listStudents(client: PoolClient, schema: string) {
-  const tableName = getTableName(schema, table);
-  const result = await client.query(`SELECT * FROM ${tableName} ORDER BY created_at DESC`);
-  return result.rows;
+  return listEntities(client, schema, table);
 }
 
 export async function getStudent(client: PoolClient, schema: string, id: string) {
-  const tableName = getTableName(schema, table);
-  const result = await client.query(`SELECT * FROM ${tableName} WHERE id = $1`, [id]);
-  return result.rows[0];
+  return getEntityById(client, schema, table, id);
 }
 
 export async function createStudent(client: PoolClient, schema: string, payload: StudentInput) {
   // Resolve classId to both class_id (name) and class_uuid (UUID)
-  let classIdName: string | null = null;
-  let classUuid: string | null = null;
-
-  if (payload.classId) {
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      payload.classId
-    );
-
-    if (isUUID) {
-      // It's a UUID, fetch the class name
-      const classResult = await client.query<{ id: string; name: string }>(
-        `SELECT id, name FROM ${schema}.classes WHERE id = $1`,
-        [payload.classId]
-      );
-      if (classResult.rows.length > 0) {
-        classUuid = classResult.rows[0].id;
-        classIdName = classResult.rows[0].name;
-      }
-    } else {
-      // It's a name, find the class UUID
-      const classResult = await client.query<{ id: string; name: string }>(
-        `SELECT id, name FROM ${schema}.classes WHERE name = $1 LIMIT 1`,
-        [payload.classId]
-      );
-      if (classResult.rows.length > 0) {
-        classUuid = classResult.rows[0].id;
-        classIdName = classResult.rows[0].name;
-      } else {
-        // Class not found, just set the name
-        classIdName = payload.classId;
-        classUuid = null;
-      }
-    }
-  }
+  const { classIdName, classUuid } = await resolveClassId(client, schema, payload.classId);
 
   const tableName = getTableName(schema, table);
   const result = await client.query(
@@ -80,47 +44,23 @@ export async function updateStudent(
   id: string,
   payload: Partial<StudentInput>
 ) {
-  const existing = await getStudent(client, schema, id);
+  const existing = await getStudent<{
+    class_id: string | null;
+    class_uuid: string | null;
+    first_name: string;
+    last_name: string;
+    date_of_birth: string | null;
+    admission_number: string | null;
+    parent_contacts: unknown;
+  }>(client, schema, id);
   if (!existing) {
     return null;
   }
 
   // If classId is provided, resolve it to both class_id (name) and class_uuid (UUID)
-  let classIdName: string | null = existing.class_id;
-  let classUuid: string | null = existing.class_uuid;
-
-  if (payload.classId) {
-    // Check if payload.classId is a UUID (class reference) or a name
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      payload.classId
-    );
-
-    if (isUUID) {
-      // It's a UUID, fetch the class name
-      const classResult = await client.query<{ id: string; name: string }>(
-        `SELECT id, name FROM ${schema}.classes WHERE id = $1`,
-        [payload.classId]
-      );
-      if (classResult.rows.length > 0) {
-        classUuid = classResult.rows[0].id;
-        classIdName = classResult.rows[0].name;
-      }
-    } else {
-      // It's a name, find the class UUID
-      const classResult = await client.query<{ id: string; name: string }>(
-        `SELECT id, name FROM ${schema}.classes WHERE name = $1 LIMIT 1`,
-        [payload.classId]
-      );
-      if (classResult.rows.length > 0) {
-        classUuid = classResult.rows[0].id;
-        classIdName = classResult.rows[0].name;
-      } else {
-        // Class not found, just set the name
-        classIdName = payload.classId;
-        classUuid = null;
-      }
-    }
-  }
+  const resolved = await resolveClassId(client, schema, payload.classId);
+  const classIdName = resolved.classIdName ?? existing.class_id;
+  const classUuid = resolved.classUuid ?? existing.class_uuid;
 
   const next = {
     first_name: payload.firstName ?? existing.first_name,
@@ -163,8 +103,7 @@ export async function updateStudent(
 }
 
 export async function deleteStudent(client: PoolClient, schema: string, id: string) {
-  const tableName = getTableName(schema, table);
-  await client.query(`DELETE FROM ${tableName} WHERE id = $1`, [id]);
+  return deleteEntityById(client, schema, table, id);
 }
 
 export async function moveStudentToClass(
@@ -173,41 +112,16 @@ export async function moveStudentToClass(
   id: string,
   classId: string
 ) {
-  const existing = await getStudent(client, schema, id);
+  const existing = await getStudent<{
+    class_id: string | null;
+    class_uuid: string | null;
+  }>(client, schema, id);
   if (!existing) {
     return null;
   }
 
   // Resolve classId to both class_id (name) and class_uuid (UUID)
-  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(classId);
-  let classIdName: string | null = null;
-  let classUuid: string | null = null;
-
-  if (isUUID) {
-    // It's a UUID, fetch the class name
-    const classResult = await client.query<{ id: string; name: string }>(
-      `SELECT id, name FROM ${schema}.classes WHERE id = $1`,
-      [classId]
-    );
-    if (classResult.rows.length > 0) {
-      classUuid = classResult.rows[0].id;
-      classIdName = classResult.rows[0].name;
-    }
-  } else {
-    // It's a name, find the class UUID
-    const classResult = await client.query<{ id: string; name: string }>(
-      `SELECT id, name FROM ${schema}.classes WHERE name = $1 LIMIT 1`,
-      [classId]
-    );
-    if (classResult.rows.length > 0) {
-      classUuid = classResult.rows[0].id;
-      classIdName = classResult.rows[0].name;
-    } else {
-      // Class not found, just set the name
-      classIdName = classId;
-      classUuid = null;
-    }
-  }
+  const { classIdName, classUuid } = await resolveClassId(client, schema, classId);
 
   const tableName = getTableName(schema, table);
   const result = await client.query(

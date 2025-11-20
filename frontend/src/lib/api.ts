@@ -186,6 +186,7 @@ export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
   expiresIn: string;
+  mustChangePassword?: boolean; // Flag indicating user must change password after login
   user: AuthUser;
 }
 
@@ -431,7 +432,10 @@ async function performRefresh(): Promise<AuthResponse | null> {
 
     if (!response.ok) {
       const message = await extractError(response);
-      console.warn('[api] refresh token failed', message);
+      // Only log non-401 errors (401 is expected when refresh token is expired/invalid)
+      if (response.status !== 401) {
+        console.warn('[api] refresh token failed', message);
+      }
       clearSession();
       onUnauthorized?.();
       return null;
@@ -1114,11 +1118,16 @@ export interface CreateSchoolAdminPayload {
   phone?: string | null;
 }
 
-function buildQuery(params: Record<string, string | undefined>): string {
+function buildQuery(params?: Record<string, string | number | boolean | string[] | undefined>): string {
+  if (!params) return '';
   const search = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
-      search.set(key, value);
+      if (Array.isArray(value)) {
+        value.forEach(v => search.append(key, String(v)));
+      } else {
+        search.set(key, String(value));
+      }
     }
   });
   const queryString = search.toString();
@@ -1154,6 +1163,16 @@ export const authApi = {
   },
   async refresh(): Promise<AuthResponse | null> {
     return performRefresh();
+  },
+  async changePassword(payload: { currentPassword: string; newPassword: string }): Promise<void> {
+    await apiFetch<void>(
+      '/auth/change-password',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      },
+      true
+    );
   }
 };
 
@@ -1558,7 +1577,314 @@ export const api = {
       apiFetch<{ success: boolean }>('/superuser/settings', {
         method: 'PUT',
         body: JSON.stringify(settings)
-      })
+      }),
+    // Session Management
+    getLoginHistory: (userId: string, filters?: {
+      tenantId?: string | null;
+      startDate?: string;
+      endDate?: string;
+      isActive?: boolean;
+      limit?: number;
+      offset?: number;
+    }) => {
+      const queryParams: Record<string, string | number | boolean | string[] | undefined> = {};
+      if (filters) {
+        if (filters.tenantId !== undefined) queryParams.tenantId = filters.tenantId || undefined;
+        if (filters.startDate !== undefined) queryParams.startDate = filters.startDate;
+        if (filters.endDate !== undefined) queryParams.endDate = filters.endDate;
+        if (filters.isActive !== undefined) queryParams.isActive = filters.isActive;
+        if (filters.limit !== undefined) queryParams.limit = filters.limit;
+        if (filters.offset !== undefined) queryParams.offset = filters.offset;
+      }
+      const params = buildQuery(queryParams);
+      return apiFetch<{ sessions: UserSession[]; total: number }>(
+        `/superuser/users/${userId}/login-history${params}`
+      );
+    },
+    getSessions: (userId: string) =>
+      apiFetch<{ sessions: UserSession[] }>(`/superuser/users/${userId}/sessions`),
+    getAllActiveSessions: (filters?: {
+      userId?: string;
+      tenantId?: string | null;
+      limit?: number;
+      offset?: number;
+    }) => {
+      const queryParams: Record<string, string | number | undefined> = {};
+      if (filters) {
+        if (filters.userId !== undefined) queryParams.userId = filters.userId;
+        if (filters.tenantId !== undefined) queryParams.tenantId = filters.tenantId === null ? 'null' : filters.tenantId;
+        if (filters.limit !== undefined) queryParams.limit = filters.limit;
+        if (filters.offset !== undefined) queryParams.offset = filters.offset;
+      }
+      const params = buildQuery(queryParams);
+      return apiFetch<{ sessions: UserSession[]; total: number }>(
+        `/superuser/sessions${params}`
+      );
+    },
+    revokeSession: (userId: string, sessionId: string) =>
+      apiFetch<{ message: string }>(`/superuser/users/${userId}/sessions/${sessionId}/revoke`, {
+        method: 'POST'
+      }),
+    revokeAllSessions: (userId: string, exceptSessionId?: string) =>
+      apiFetch<{ message: string; revokedCount?: number }>(
+        `/superuser/users/${userId}/sessions/revoke-all`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ exceptSessionId })
+        }
+      ),
+    getLoginAttempts: (filters?: {
+      email?: string;
+      userId?: string;
+      tenantId?: string | null;
+      success?: boolean;
+      startDate?: string;
+      endDate?: string;
+      limit?: number;
+      offset?: number;
+    }) => {
+      const queryParams: Record<string, string | number | boolean | undefined> = {};
+      if (filters) {
+        if (filters.email !== undefined) queryParams.email = filters.email;
+        if (filters.userId !== undefined) queryParams.userId = filters.userId;
+        if (filters.tenantId !== undefined) queryParams.tenantId = filters.tenantId === null ? 'null' : filters.tenantId;
+        if (filters.success !== undefined) queryParams.success = filters.success;
+        if (filters.startDate !== undefined) queryParams.startDate = filters.startDate;
+        if (filters.endDate !== undefined) queryParams.endDate = filters.endDate;
+        if (filters.limit !== undefined) queryParams.limit = filters.limit;
+        if (filters.offset !== undefined) queryParams.offset = filters.offset;
+      }
+      const params = buildQuery(queryParams);
+      return apiFetch<{ attempts: LoginAttemptRecord[]; total: number }>(
+        `/superuser/login-attempts${params}`
+      );
+    },
+    // Password Management
+    resetPassword: (userId: string, payload?: { reason?: string }) =>
+      apiFetch<{ message: string; temporaryPassword: string }>(
+        `/superuser/users/${userId}/reset-password`,
+        {
+          method: 'POST',
+          body: JSON.stringify(payload || {})
+        }
+      ),
+    changePassword: (userId: string, payload: { newPassword: string; reason?: string }) =>
+      apiFetch<{ message: string }>(`/superuser/users/${userId}/change-password`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    getPasswordHistory: (userId: string, filters?: {
+      tenantId?: string | null;
+      changeType?: 'self_reset' | 'admin_reset' | 'admin_change' | 'forced_reset';
+      startDate?: string;
+      endDate?: string;
+      limit?: number;
+      offset?: number;
+    }) => {
+      const queryParams: Record<string, string | number | boolean | string[] | undefined> = {};
+      if (filters) {
+        if (filters.tenantId !== undefined) queryParams.tenantId = filters.tenantId || undefined;
+        if (filters.changeType !== undefined) queryParams.changeType = filters.changeType;
+        if (filters.startDate !== undefined) queryParams.startDate = filters.startDate;
+        if (filters.endDate !== undefined) queryParams.endDate = filters.endDate;
+        if (filters.limit !== undefined) queryParams.limit = filters.limit;
+        if (filters.offset !== undefined) queryParams.offset = filters.offset;
+      }
+      const params = buildQuery(queryParams);
+      return apiFetch<{ history: PasswordChangeHistory[]; total: number }>(
+        `/superuser/users/${userId}/password-history${params}`
+      );
+    },
+    // Audit Logs
+    getPlatformAuditLogs: (filters?: {
+      tenantId?: string;
+      userId?: string;
+      action?: string;
+      resourceType?: string;
+      resourceId?: string;
+      severity?: 'info' | 'warning' | 'error' | 'critical';
+      tags?: string[];
+      startDate?: string;
+      endDate?: string;
+      limit?: number;
+      offset?: number;
+    }) => {
+      const queryParams: Record<string, string | number | boolean | string[] | undefined> = {};
+      if (filters) {
+        if (filters.tenantId !== undefined) queryParams.tenantId = filters.tenantId;
+        if (filters.userId !== undefined) queryParams.userId = filters.userId;
+        if (filters.action !== undefined) queryParams.action = filters.action;
+        if (filters.resourceType !== undefined) queryParams.resourceType = filters.resourceType;
+        if (filters.resourceId !== undefined) queryParams.resourceId = filters.resourceId;
+        if (filters.severity !== undefined) queryParams.severity = filters.severity;
+        if (filters.tags !== undefined && filters.tags.length > 0) {
+          // Backend expects comma-separated string, not array
+          queryParams.tags = filters.tags.join(',');
+        }
+        if (filters.startDate !== undefined) queryParams.startDate = filters.startDate;
+        if (filters.endDate !== undefined) queryParams.endDate = filters.endDate;
+        if (filters.limit !== undefined) queryParams.limit = filters.limit;
+        if (filters.offset !== undefined) queryParams.offset = filters.offset;
+      }
+      const params = buildQuery(queryParams);
+      return apiFetch<{ logs: AuditLogEntry[]; total: number }>(
+        `/superuser/audit-logs${params}`
+      );
+    },
+    exportPlatformAuditLogs: (filters?: {
+      tenantId?: string;
+      userId?: string;
+      action?: string;
+      resourceType?: string;
+      resourceId?: string;
+      severity?: 'info' | 'warning' | 'error' | 'critical';
+      tags?: string[];
+      startDate?: string;
+      endDate?: string;
+      format?: 'csv' | 'json';
+    }) => {
+      const queryParams: Record<string, string | number | boolean | string[] | undefined> = {
+        format: filters?.format || 'json'
+      };
+      if (filters) {
+        if (filters.tenantId !== undefined) queryParams.tenantId = filters.tenantId;
+        if (filters.userId !== undefined) queryParams.userId = filters.userId;
+        if (filters.action !== undefined) queryParams.action = filters.action;
+        if (filters.resourceType !== undefined) queryParams.resourceType = filters.resourceType;
+        if (filters.resourceId !== undefined) queryParams.resourceId = filters.resourceId;
+        if (filters.severity !== undefined) queryParams.severity = filters.severity;
+        if (filters.tags !== undefined && filters.tags.length > 0) {
+          // Backend expects comma-separated string, not array
+          queryParams.tags = filters.tags.join(',');
+        }
+        if (filters.startDate !== undefined) queryParams.startDate = filters.startDate;
+        if (filters.endDate !== undefined) queryParams.endDate = filters.endDate;
+      }
+      const params = buildQuery(queryParams);
+      return apiFetch<Blob>(`/superuser/audit-logs/export${params}`, {
+        responseType: 'blob'
+      });
+    },
+    // Investigation Management
+    createCase: (payload: {
+      title: string;
+      description?: string;
+      priority?: 'low' | 'medium' | 'high' | 'critical';
+      caseType: 'anomaly' | 'security' | 'compliance' | 'abuse' | 'other';
+      relatedUserId?: string;
+      relatedTenantId?: string | null;
+      assignedTo?: string;
+      tags?: string[];
+      metadata?: Record<string, unknown>;
+    }) =>
+      apiFetch<InvestigationCase>(`/superuser/investigations/cases`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    getCases: (filters?: {
+      status?: 'open' | 'investigating' | 'resolved' | 'closed';
+      priority?: 'low' | 'medium' | 'high' | 'critical';
+      caseType?: 'anomaly' | 'security' | 'compliance' | 'abuse' | 'other';
+      relatedUserId?: string;
+      relatedTenantId?: string | null;
+      assignedTo?: string;
+      createdBy?: string;
+      tags?: string[];
+      startDate?: string;
+      endDate?: string;
+      limit?: number;
+      offset?: number;
+    }) => {
+      const queryParams: Record<string, string | number | undefined> = {};
+      if (filters) {
+        if (filters.status !== undefined) queryParams.status = filters.status;
+        if (filters.priority !== undefined) queryParams.priority = filters.priority;
+        if (filters.caseType !== undefined) queryParams.caseType = filters.caseType;
+        if (filters.relatedUserId !== undefined) queryParams.relatedUserId = filters.relatedUserId;
+        if (filters.relatedTenantId !== undefined) queryParams.relatedTenantId = filters.relatedTenantId === null ? 'null' : filters.relatedTenantId;
+        if (filters.assignedTo !== undefined) queryParams.assignedTo = filters.assignedTo;
+        if (filters.createdBy !== undefined) queryParams.createdBy = filters.createdBy;
+        if (filters.tags !== undefined) queryParams.tags = filters.tags.join(',');
+        if (filters.startDate !== undefined) queryParams.startDate = filters.startDate;
+        if (filters.endDate !== undefined) queryParams.endDate = filters.endDate;
+        if (filters.limit !== undefined) queryParams.limit = filters.limit;
+        if (filters.offset !== undefined) queryParams.offset = filters.offset;
+      }
+      const params = buildQuery(queryParams);
+      return apiFetch<{ cases: InvestigationCase[]; total: number }>(`/superuser/investigations/cases${params}`);
+    },
+    getCase: (caseId: string) =>
+      apiFetch<{ case: InvestigationCase; notes: CaseNote[]; evidence: CaseEvidence[] }>(
+        `/superuser/investigations/cases/${caseId}`
+      ),
+    updateCaseStatus: (caseId: string, payload: {
+      status: 'open' | 'investigating' | 'resolved' | 'closed';
+      resolution?: string;
+      resolutionNotes?: string;
+    }) =>
+      apiFetch<InvestigationCase>(`/superuser/investigations/cases/${caseId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      }),
+    addCaseNote: (caseId: string, payload: {
+      note: string;
+      noteType?: 'note' | 'finding' | 'evidence' | 'action';
+      metadata?: Record<string, unknown>;
+    }) =>
+      apiFetch<CaseNote>(`/superuser/investigations/cases/${caseId}/notes`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    addCaseEvidence: (caseId: string, payload: {
+      evidenceType: 'audit_log' | 'session' | 'login_attempt' | 'password_change' | 'file' | 'other';
+      evidenceId: string;
+      evidenceSource: string;
+      description?: string;
+      metadata?: Record<string, unknown>;
+    }) =>
+      apiFetch<CaseEvidence>(`/superuser/investigations/cases/${caseId}/evidence`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    detectAnomalies: (filters?: {
+      userId?: string;
+      tenantId?: string | null;
+      startDate?: string;
+      endDate?: string;
+    }) => {
+      const queryParams: Record<string, string | undefined> = {};
+      if (filters) {
+        if (filters.userId !== undefined) queryParams.userId = filters.userId;
+        if (filters.tenantId !== undefined) queryParams.tenantId = filters.tenantId === null ? 'null' : filters.tenantId;
+        if (filters.startDate !== undefined) queryParams.startDate = filters.startDate;
+        if (filters.endDate !== undefined) queryParams.endDate = filters.endDate;
+      }
+      const params = buildQuery(queryParams);
+      return apiFetch<{ anomalies: AnomalyDetectionResult[] }>(`/superuser/investigations/anomalies${params}`);
+    },
+    getUserActions: (userId: string, filters?: {
+      tenantId?: string | null;
+      startDate?: string;
+      endDate?: string;
+      limit?: number;
+      offset?: number;
+    }) => {
+      const queryParams: Record<string, string | number | undefined> = {};
+      if (filters) {
+        if (filters.tenantId !== undefined) queryParams.tenantId = filters.tenantId === null ? 'null' : filters.tenantId;
+        if (filters.startDate !== undefined) queryParams.startDate = filters.startDate;
+        if (filters.endDate !== undefined) queryParams.endDate = filters.endDate;
+        if (filters.limit !== undefined) queryParams.limit = filters.limit;
+        if (filters.offset !== undefined) queryParams.offset = filters.offset;
+      }
+      const params = buildQuery(queryParams);
+      return apiFetch<{ actions: AuditLogEntry[]; total: number }>(`/superuser/investigations/users/${userId}/actions${params}`);
+    },
+    exportCaseAuditTrail: (caseId: string, format: 'csv' | 'pdf' | 'json' = 'json') => {
+      return apiFetch<Blob>(`/superuser/investigations/cases/${caseId}/export?format=${format}`, {
+        responseType: 'blob'
+      });
+    }
   },
   admin: {
     listSubjects: () => apiFetch<Subject[]>('/admin/subjects'),
@@ -1722,17 +2048,788 @@ export const api = {
       totalStudents: number;
       averageClassSize: number;
     }>(`/reports/department-analytics${params}`);
+  },
+  // Advanced Reports
+  reports: {
+    // Report Definitions
+    createReportDefinition: (payload: {
+      tenantId?: string;
+      name: string;
+      description?: string;
+      reportType: 'attendance' | 'grades' | 'fees' | 'users' | 'analytics' | 'custom';
+      dataSource: string;
+      queryTemplate: string;
+      parameters?: Record<string, unknown>;
+      columns?: Array<{ name: string; type: string; label: string }>;
+      filters?: Record<string, unknown>;
+      rolePermissions?: string[];
+    }) =>
+      apiFetch<{ id: string }>('/superuser/reports/definitions', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    getReportDefinitions: (tenantId?: string) => {
+      const params = tenantId ? `?tenantId=${tenantId}` : '';
+      return apiFetch<{ reports: unknown[] }>(`/superuser/reports/definitions${params}`);
+    },
+    getReportDefinition: (id: string, tenantId?: string) => {
+      const params = tenantId ? `?tenantId=${tenantId}` : '';
+      return apiFetch<unknown>(`/superuser/reports/definitions/${id}${params}`);
+    },
+    executeReport: (reportId: string, parameters?: Record<string, unknown>) =>
+      apiFetch<{
+        executionId: string;
+        data: unknown[];
+        rowCount: number;
+        executionTimeMs: number;
+        columns: Array<{ name: string; type: string; label: string }>;
+      }>(`/superuser/reports/definitions/${reportId}/execute`, {
+        method: 'POST',
+        body: JSON.stringify({ parameters })
+      }),
+    getHistoricalTrend: (reportId: string, days?: number) => {
+      const params = days ? `?days=${days}` : '';
+      return apiFetch<{ trends: unknown[] }>(`/superuser/reports/definitions/${reportId}/trends${params}`);
+    },
+    compareWithHistory: (reportId: string, payload: {
+      parameters?: Record<string, unknown>;
+      comparisonDays?: number;
+    }) =>
+      apiFetch<{
+        current: unknown;
+        comparison: unknown;
+      }>(`/superuser/reports/definitions/${reportId}/compare`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    // Scheduled Reports
+    createScheduledReport: (payload: {
+      reportDefinitionId: string;
+      name: string;
+      scheduleType: 'daily' | 'weekly' | 'monthly' | 'custom';
+      scheduleConfig: Record<string, unknown>;
+      parameters?: Record<string, unknown>;
+      exportFormat: 'csv' | 'pdf' | 'excel' | 'json';
+      recipients: string[];
+    }) =>
+      apiFetch<{ id: string }>('/superuser/reports/scheduled', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    getScheduledReports: () =>
+      apiFetch<{ scheduledReports: unknown[] }>('/superuser/reports/scheduled'),
+    updateScheduledReport: (id: string, updates: {
+      name?: string;
+      scheduleType?: 'daily' | 'weekly' | 'monthly' | 'custom';
+      scheduleConfig?: Record<string, unknown>;
+      parameters?: Record<string, unknown>;
+      exportFormat?: 'csv' | 'pdf' | 'excel' | 'json';
+      recipients?: string[];
+      isActive?: boolean;
+    }) =>
+      apiFetch<unknown>(`/superuser/reports/scheduled/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates)
+      }),
+    deleteScheduledReport: (id: string) =>
+      apiFetch<void>(`/superuser/reports/scheduled/${id}`, {
+        method: 'DELETE'
+      }),
+    // Custom Reports
+    createCustomReport: (payload: {
+      name: string;
+      description?: string;
+      baseTemplateId?: string;
+      dataSources: string[];
+      joins?: Array<{ type: 'inner' | 'left' | 'right' | 'full'; table: string; on: string }>;
+      selectedColumns: Array<{ table: string; column: string; alias?: string; aggregate?: 'sum' | 'avg' | 'count' | 'min' | 'max' }>;
+      filters?: Array<{ column: string; operator: string; value: unknown }>;
+      groupBy?: string[];
+      orderBy?: Array<{ column: string; direction: 'ASC' | 'DESC' }>;
+      visualizationType?: 'table' | 'bar' | 'line' | 'pie' | 'area';
+      rolePermissions?: string[];
+      isShared?: boolean;
+    }) =>
+      apiFetch<{ id: string }>('/superuser/reports/custom', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    getCustomReports: () =>
+      apiFetch<{ customReports: unknown[] }>('/superuser/reports/custom'),
+    executeCustomReport: (id: string) =>
+      apiFetch<{
+        executionId: string;
+        data: unknown[];
+        columns: Array<{ name: string; label: string }>;
+        rowCount: number;
+        executionTimeMs: number;
+      }>(`/superuser/reports/custom/${id}/execute`, {
+        method: 'POST'
+      }),
+    updateCustomReport: (id: string, updates: {
+      name?: string;
+      description?: string;
+      selectedColumns?: unknown[];
+      filters?: unknown[];
+      groupBy?: string[];
+      orderBy?: unknown[];
+      visualizationType?: 'table' | 'bar' | 'line' | 'pie' | 'area';
+      isShared?: boolean;
+    }) =>
+      apiFetch<unknown>(`/superuser/reports/custom/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates)
+      }),
+    deleteCustomReport: (id: string) =>
+      apiFetch<void>(`/superuser/reports/custom/${id}`, {
+        method: 'DELETE'
+      }),
+    // Exports
+    exportReport: (executionId: string, format: 'csv' | 'pdf' | 'excel' | 'json', title?: string) =>
+      apiFetch<{ url: string; expiresAt: string }>(`/superuser/reports/executions/${executionId}/export`, {
+        method: 'POST',
+        body: JSON.stringify({ format, title })
+      }),
+    sendReportViaEmail: (executionId: string, payload: {
+      recipients: string[];
+      format?: 'csv' | 'pdf' | 'excel' | 'json';
+    }) =>
+      apiFetch<{ success: boolean }>(`/superuser/reports/executions/${executionId}/email`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })
+  },
+  // Support & Communication
+  support: {
+    // Tickets
+    createTicket: (payload: {
+      subject: string;
+      description: string;
+      priority?: 'low' | 'medium' | 'high' | 'urgent';
+      category?: 'technical' | 'billing' | 'feature_request' | 'bug' | 'other';
+      metadata?: Record<string, unknown>;
+    }) =>
+      apiFetch<unknown>('/api/support/tickets', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    getTickets: (filters?: {
+      status?: string;
+      priority?: string;
+      category?: string;
+      createdBy?: string;
+      assignedTo?: string;
+      limit?: number;
+      offset?: number;
+    }) =>
+      apiFetch<{ tickets: unknown[]; total: number }>(
+        `/api/support/tickets${buildQuery(filters)}`
+      ),
+    getTicket: (id: string, includeComments?: boolean) =>
+      apiFetch<unknown>(
+        `/api/support/tickets/${id}${buildQuery({ comments: includeComments ? 'true' : undefined })}`
+      ),
+    updateTicket: (id: string, updates: {
+      subject?: string;
+      description?: string;
+      status?: 'open' | 'in_progress' | 'resolved' | 'closed' | 'pending';
+      priority?: 'low' | 'medium' | 'high' | 'urgent';
+      category?: 'technical' | 'billing' | 'feature_request' | 'bug' | 'other';
+      assignedTo?: string | null;
+    }) =>
+      apiFetch<unknown>(`/api/support/tickets/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates)
+      }),
+    addTicketComment: (ticketId: string, payload: {
+      content: string;
+      isInternal?: boolean;
+      attachments?: Array<{ fileName: string; fileUrl: string; fileSize: number; mimeType: string }>;
+    }) =>
+      apiFetch<unknown>(`/api/support/tickets/${ticketId}/comments`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    getTicketComments: (ticketId: string) =>
+      apiFetch<{ comments: unknown[] }>(`/api/support/tickets/${ticketId}/comments`),
+    // Announcements
+    getAnnouncements: () =>
+      apiFetch<{ announcements: unknown[] }>('/api/support/announcements/me'),
+    markAnnouncementViewed: (id: string) =>
+      apiFetch<{ success: boolean }>(`/api/support/announcements/${id}/view`, {
+        method: 'POST'
+      }),
+    getAllAnnouncements: (filters?: {
+      type?: string;
+      isActive?: boolean;
+      limit?: number;
+      offset?: number;
+    }) =>
+      apiFetch<{ announcements: unknown[]; total: number }>(
+        `/api/support/announcements${buildQuery(filters)}`
+      ),
+    createAnnouncement: (payload: {
+      title: string;
+      content: string;
+      contentHtml?: string;
+      type: 'info' | 'warning' | 'success' | 'error' | 'maintenance';
+      priority?: 'low' | 'medium' | 'high';
+      isPinned?: boolean;
+      targetRoles?: string[];
+      startDate?: string;
+      endDate?: string;
+    }) =>
+      apiFetch<unknown>('/api/support/announcements', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    updateAnnouncement: (id: string, updates: {
+      title?: string;
+      content?: string;
+      contentHtml?: string;
+      type?: 'info' | 'warning' | 'success' | 'error' | 'maintenance';
+      priority?: 'low' | 'medium' | 'high';
+      isPinned?: boolean;
+      isActive?: boolean;
+      targetRoles?: string[];
+      startDate?: string;
+      endDate?: string;
+    }) =>
+      apiFetch<unknown>(`/api/support/announcements/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates)
+      }),
+    deleteAnnouncement: (id: string) =>
+      apiFetch<void>(`/api/support/announcements/${id}`, {
+        method: 'DELETE'
+      }),
+    // Messages
+    getMessages: (filters?: {
+      isRead?: boolean;
+      isArchived?: boolean;
+      messageType?: string;
+      priority?: string;
+      limit?: number;
+      offset?: number;
+    }) =>
+      apiFetch<{ messages: unknown[]; total: number; unreadCount: number }>(
+        `/api/support/messages${buildQuery(filters)}`
+      ),
+    createMessage: (payload: {
+      recipientId?: string;
+      recipientRole?: string;
+      subject: string;
+      content: string;
+      contentHtml?: string;
+      messageType: 'direct' | 'broadcast' | 'system';
+      priority?: 'low' | 'normal' | 'high' | 'urgent';
+      attachments?: Array<{ fileName: string; fileUrl: string; fileSize: number; mimeType: string }>;
+      metadata?: Record<string, unknown>;
+    }) =>
+      apiFetch<unknown>('/api/support/messages', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    markMessageRead: (id: string) =>
+      apiFetch<{ success: boolean }>(`/api/support/messages/${id}/read`, {
+        method: 'POST'
+      }),
+    archiveMessage: (id: string) =>
+      apiFetch<{ success: boolean }>(`/api/support/messages/${id}/archive`, {
+        method: 'POST'
+      }),
+    getMessageThread: (threadId: string) =>
+      apiFetch<unknown>(`/api/support/messages/threads/${threadId}`),
+    // Knowledge Base
+    getKbCategories: () =>
+      apiFetch<{ categories: unknown[] }>('/api/support/knowledge-base/categories'),
+    createKbCategory: (payload: {
+      parentId?: string;
+      name: string;
+      slug?: string;
+      description?: string;
+      displayOrder?: number;
+    }) =>
+      apiFetch<unknown>('/api/support/knowledge-base/categories', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    getKbArticles: (filters?: {
+      categoryId?: string;
+      published?: boolean;
+      featured?: boolean;
+      tags?: string[];
+      search?: string;
+      limit?: number;
+      offset?: number;
+    }) =>
+      apiFetch<{ articles: unknown[]; total: number }>(
+        `/api/support/knowledge-base/articles${buildQuery(filters)}`
+      ),
+    getKbArticle: (slug: string) =>
+      apiFetch<unknown>(`/api/support/knowledge-base/articles/${slug}`),
+    createKbArticle: (payload: {
+      categoryId?: string;
+      title: string;
+      slug?: string;
+      content: string;
+      contentHtml?: string;
+      summary?: string;
+      tags?: string[];
+      isPublished?: boolean;
+      isFeatured?: boolean;
+    }) =>
+      apiFetch<unknown>('/api/support/knowledge-base/articles', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    updateKbArticle: (id: string, updates: {
+      title?: string;
+      slug?: string;
+      content?: string;
+      contentHtml?: string;
+      summary?: string;
+      tags?: string[];
+      categoryId?: string;
+      isPublished?: boolean;
+      isFeatured?: boolean;
+    }) =>
+      apiFetch<unknown>(`/api/support/knowledge-base/articles/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates)
+      }),
+    submitKbFeedback: (articleId: string, payload: {
+      feedbackType: 'helpful' | 'not_helpful' | 'comment';
+      comment?: string;
+    }) =>
+      apiFetch<unknown>(`/api/support/knowledge-base/articles/${articleId}/feedback`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    // Status Page
+    getStatusPageSummary: (tenantId?: string) =>
+      apiFetch<{
+        overallStatus: 'operational' | 'degraded' | 'down';
+        services: Array<{ name: string; status: 'up' | 'down' | 'degraded'; uptimePercentage: number }>;
+        activeIncidents: unknown[];
+        upcomingMaintenance: unknown[];
+      }>(`/api/support/status/public${buildQuery({ tenantId })}`),
+    getIncidents: (filters?: {
+      status?: string;
+      severity?: string;
+      limit?: number;
+      offset?: number;
+    }) =>
+      apiFetch<{ incidents: unknown[]; total: number }>(
+        `/api/support/status/incidents${buildQuery(filters)}`
+      ),
+    getIncident: (id: string) =>
+      apiFetch<unknown>(`/api/support/status/incidents/${id}`),
+    createIncident: (payload: {
+      title: string;
+      description: string;
+      status: 'investigating' | 'identified' | 'monitoring' | 'resolved';
+      severity: 'minor' | 'major' | 'critical';
+      affectedServices?: string[];
+    }) =>
+      apiFetch<unknown>('/api/support/status/incidents', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    addIncidentUpdate: (incidentId: string, payload: {
+      status: 'investigating' | 'identified' | 'monitoring' | 'resolved';
+      message: string;
+    }) =>
+      apiFetch<unknown>(`/api/support/status/incidents/${incidentId}/updates`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    getScheduledMaintenance: (filters?: {
+      status?: string;
+      upcomingOnly?: boolean;
+      limit?: number;
+      offset?: number;
+    }) =>
+      apiFetch<{ maintenance: unknown[]; total: number }>(
+        `/api/support/status/maintenance${buildQuery(filters)}`
+      ),
+    createScheduledMaintenance: (payload: {
+      title: string;
+      description: string;
+      affectedServices?: string[];
+      scheduledStart: string;
+      scheduledEnd: string;
+    }) =>
+      apiFetch<unknown>('/api/support/status/maintenance', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    updateMaintenanceStatus: (id: string, updates: {
+      status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+      actualStart?: string;
+      actualEnd?: string;
+    }) =>
+      apiFetch<unknown>(`/api/support/status/maintenance/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates)
+      }),
+    getUptimeStatistics: (filters?: {
+      serviceName?: string;
+      days?: number;
+    }) =>
+      apiFetch<{ statistics: unknown[] }>(
+        `/api/support/status/uptime${buildQuery(filters)}`
+      ),
+      recordUptimeCheck: (payload: {
+        serviceName: string;
+        status: 'up' | 'down' | 'degraded';
+        responseTimeMs?: number;
+        metadata?: Record<string, unknown>;
+      }) =>
+        apiFetch<{ success: boolean }>('/api/support/status/uptime', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        })
+  },
+  // Data Management & SSO
+  dataManagement: {
+    // Backups
+    createBackup: (payload: {
+      tenantId?: string;
+      backupType: 'full' | 'incremental' | 'schema_only' | 'data_only';
+      storageProvider: 'local' | 's3' | 'azure' | 'gcs';
+      storageLocation: string;
+      metadata?: Record<string, unknown>;
+    }) =>
+      apiFetch<unknown>('/superuser/data/backups', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    getBackups: (filters?: {
+      status?: string;
+      backupType?: string;
+      limit?: number;
+      offset?: number;
+    }) =>
+      apiFetch<{ jobs: unknown[]; total: number }>(
+        `/superuser/data/backups${buildQuery(filters)}`
+      ),
+    createBackupSchedule: (payload: {
+      name: string;
+      backupType: 'full' | 'incremental' | 'schema_only' | 'data_only';
+      scheduleCron: string;
+      retentionDays?: number;
+      storageProvider: 'local' | 's3' | 'azure' | 'gcs';
+      storageConfig?: Record<string, unknown>;
+    }) =>
+      apiFetch<unknown>('/superuser/data/backup-schedules', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    getBackupSchedules: () =>
+      apiFetch<{ schedules: unknown[] }>('/superuser/data/backup-schedules'),
+    updateBackupSchedule: (id: string, updates: {
+      name?: string;
+      scheduleCron?: string;
+      retentionDays?: number;
+      isActive?: boolean;
+      storageConfig?: Record<string, unknown>;
+    }) =>
+      apiFetch<unknown>(`/superuser/data/backup-schedules/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates)
+      }),
+    deleteBackupSchedule: (id: string) =>
+      apiFetch<void>(`/superuser/data/backup-schedules/${id}`, {
+        method: 'DELETE'
+      }),
+    // Data Export/Import
+    createExportJob: (payload: {
+      tenantId: string;
+      exportType: 'full' | 'partial' | 'gdpr' | 'custom';
+      format: 'json' | 'csv' | 'sql' | 'excel';
+      tablesIncluded?: string[];
+      filters?: Record<string, unknown>;
+    }) =>
+      apiFetch<unknown>('/superuser/data/exports', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    getExportJobs: (filters?: {
+      status?: string;
+      exportType?: string;
+      limit?: number;
+      offset?: number;
+    }) =>
+      apiFetch<{ jobs: unknown[]; total: number }>(
+        `/superuser/data/exports${buildQuery(filters)}`
+      ),
+    createImportJob: (payload: {
+      tenantId: string;
+      importType: 'full' | 'merge' | 'update_only';
+      format: 'json' | 'csv' | 'sql' | 'excel';
+      fileUrl: string;
+      fileSizeBytes?: number;
+      tablesTargeted?: string[];
+    }) =>
+      apiFetch<unknown>('/superuser/data/imports', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    getImportJobs: (filters?: {
+      status?: string;
+      importType?: string;
+      limit?: number;
+      offset?: number;
+    }) =>
+      apiFetch<{ jobs: unknown[]; total: number }>(
+        `/superuser/data/imports${buildQuery(filters)}`
+      ),
+    // GDPR
+    createGdprRequest: (payload: {
+      tenantId: string;
+      userId: string;
+      requestType: 'full_erasure' | 'anonymize' | 'export_only';
+      reason?: string;
+      dataCategories?: string[];
+    }) =>
+      apiFetch<unknown>('/superuser/data/gdpr/requests', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    verifyGdprRequest: (id: string, verificationToken: string) =>
+      apiFetch<{ success: boolean }>(`/superuser/data/gdpr/requests/${id}/verify`, {
+        method: 'POST',
+        body: JSON.stringify({ verificationToken })
+      }),
+    processGdprRequest: (id: string) =>
+      apiFetch<unknown>(`/superuser/data/gdpr/requests/${id}/process`, {
+        method: 'POST'
+      }),
+    getGdprRequests: (filters?: {
+      userId?: string;
+      status?: string;
+      limit?: number;
+      offset?: number;
+    }) =>
+      apiFetch<{ requests: unknown[]; total: number }>(
+        `/superuser/data/gdpr/requests${buildQuery(filters)}`
+      ),
+    cancelGdprRequest: (id: string) =>
+      apiFetch<{ success: boolean }>(`/superuser/data/gdpr/requests/${id}/cancel`, {
+        method: 'POST'
+      })
+  },
+  sso: {
+    // SAML
+    getSamlProviders: () =>
+      apiFetch<{ providers: unknown[] }>('/auth/sso/saml/providers'),
+    createSamlProvider: (payload: {
+      providerName: string;
+      metadataUrl?: string;
+      entityId: string;
+      ssoUrl: string;
+      sloUrl?: string;
+      certificate: string;
+      jitProvisioning?: boolean;
+      jitDefaultRole?: string;
+      attributeMapping?: Record<string, string>;
+    }) =>
+      apiFetch<unknown>('/auth/sso/saml/providers', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    initiateSamlAuth: (payload: {
+      providerId: string;
+      relayState?: string;
+    }) =>
+      apiFetch<{ samlRequest: string; ssoUrl: string; relayState: string }>(
+        '/auth/sso/saml/initiate',
+        {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        }
+      ),
+    // OAuth2/OIDC
+    getOAuthProviders: () =>
+      apiFetch<{ providers: unknown[] }>('/auth/sso/oauth/providers'),
+    createOAuthProvider: (payload: {
+      providerName: string;
+      providerType: 'oauth2' | 'oidc';
+      clientId: string;
+      clientSecret: string;
+      authorizationUrl: string;
+      tokenUrl: string;
+      userinfoUrl?: string;
+      scopes?: string[];
+      jitProvisioning?: boolean;
+      jitDefaultRole?: string;
+      attributeMapping?: Record<string, string>;
+    }) =>
+      apiFetch<unknown>('/auth/sso/oauth/providers', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    getOAuthAuthorizationUrl: (providerId: string) =>
+      apiFetch<{ authorizationUrl: string; state: string }>(
+        `/auth/sso/oauth/authorize?providerId=${providerId}`
+      ),
+    refreshOAuthToken: (payload: {
+      providerId: string;
+      refreshToken: string;
+    }) =>
+      apiFetch<{ accessToken: string; refreshToken?: string; expiresIn?: number }>(
+        '/auth/sso/oauth/refresh',
+        {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        }
+      )
   }
 };
 
 export interface AuditLogEntry {
   id: string;
   action: string;
-  entityType: string;
-  entityId: string | null;
-  userId: string | null;
-  userEmail: string | null;
-  timestamp: string;
-  details: Record<string, unknown> | null;
+  entityType?: string;
+  entityId?: string | null;
+  userId?: string | null;
+  userEmail?: string | null;
+  timestamp?: string;
+  createdAt?: string | Date;
+  details?: Record<string, unknown> | null;
+  ipAddress?: string | null;
+  tenantId?: string | null;
+  resourceType?: string;
+  resourceId?: string;
+  severity?: 'info' | 'warning' | 'error' | 'critical';
+  tags?: string[];
+  userAgent?: string;
+  requestId?: string;
+}
+
+export interface UserSession {
+  id: string;
+  userId: string;
+  tenantId: string | null;
   ipAddress: string | null;
+  userAgent: string | null;
+  deviceInfo: Record<string, unknown>;
+  normalizedDeviceInfo?: {
+    platform?: string;
+    os?: string;
+    browser?: string;
+    deviceType?: 'mobile' | 'tablet' | 'desktop';
+    raw?: string;
+  };
+  loginAt: string;
+  logoutAt: string | null;
+  expiresAt: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PasswordChangeHistory {
+  id: string;
+  userId: string;
+  tenantId: string | null;
+  changedBy: string | null;
+  changedByEmail?: string | null;
+  changedByName?: string | null;
+  changedByRole?: string | null;
+  changeType: 'self_reset' | 'admin_reset' | 'admin_change' | 'forced_reset';
+  ipAddress: string | null;
+  userAgent: string | null;
+  deviceInfo?: {
+    platform?: string;
+    os?: string;
+    browser?: string;
+    deviceType?: 'mobile' | 'tablet' | 'desktop';
+    raw?: string;
+  };
+  changedAt: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface LoginAttemptRecord {
+  id: string;
+  email: string;
+  userId: string | null;
+  tenantId: string | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  deviceInfo?: {
+    platform?: string;
+    os?: string;
+    browser?: string;
+    deviceType?: 'mobile' | 'tablet' | 'desktop';
+    raw?: string;
+  };
+  success: boolean;
+  failureReason: string | null;
+  attemptedAt: string;
+}
+
+export interface InvestigationCase {
+  id: string;
+  caseNumber: string;
+  title: string;
+  description?: string | null;
+  status: 'open' | 'investigating' | 'resolved' | 'closed';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  caseType: 'anomaly' | 'security' | 'compliance' | 'abuse' | 'other';
+  relatedUserId?: string | null;
+  relatedTenantId?: string | null;
+  assignedTo?: string | null;
+  createdBy: string;
+  resolvedBy?: string | null;
+  openedAt: string;
+  investigatedAt?: string | null;
+  resolvedAt?: string | null;
+  closedAt?: string | null;
+  resolution?: string | null;
+  resolutionNotes?: string | null;
+  tags: string[];
+  metadata: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CaseNote {
+  id: string;
+  caseId: string;
+  note: string;
+  noteType: 'note' | 'finding' | 'evidence' | 'action';
+  createdBy: string;
+  createdAt: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface CaseEvidence {
+  id: string;
+  caseId: string;
+  evidenceType: 'audit_log' | 'session' | 'login_attempt' | 'password_change' | 'file' | 'other';
+  evidenceId: string;
+  evidenceSource?: string | null;
+  description?: string | null;
+  addedBy: string;
+  addedAt: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface AnomalyDetectionResult {
+  type: 'failed_logins' | 'multiple_ips' | 'unusual_activity' | 'suspicious_pattern';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  description: string;
+  userId?: string;
+  userEmail?: string;
+  tenantId?: string | null;
+  evidence: Array<{
+    type: string;
+    id: string;
+    timestamp: string;
+    details: Record<string, unknown>;
+  }>;
+  detectedAt: string;
 }

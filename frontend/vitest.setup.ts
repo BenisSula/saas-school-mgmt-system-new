@@ -57,10 +57,14 @@ console.warn = (...args: any[]) => {
 // These errors are created in tests to verify error handling, but Vitest flags them as unhandled
 // before the form's error handler can catch them. Since we verify error display in tests,
 // these warnings can be safely suppressed.
-if (typeof process !== 'undefined') {
+// @ts-expect-error - process is available in Node.js test environment but not in browser types
+if (typeof process !== 'undefined' && process.on && process.listeners) {
+  // @ts-expect-error - process is available in Node.js test environment
   const originalListeners = process.listeners('unhandledRejection');
+  // @ts-expect-error - process is available in Node.js test environment
   process.removeAllListeners('unhandledRejection');
   
+  // @ts-expect-error - process is available in Node.js test environment
   process.on('unhandledRejection', (reason: unknown) => {
     // Check if this is a test error that will be handled by form error handlers
     if (
@@ -75,10 +79,10 @@ if (typeof process !== 'undefined') {
     }
     
     // For other unhandled rejections, re-emit to original listeners
-    originalListeners.forEach((listener) => {
+    originalListeners.forEach((listener: unknown) => {
       if (typeof listener === 'function') {
         try {
-          listener(reason, Promise.reject(reason));
+          (listener as (reason: unknown, promise: Promise<unknown>) => void)(reason, Promise.reject(reason));
         } catch {
           // Ignore errors in listeners
         }

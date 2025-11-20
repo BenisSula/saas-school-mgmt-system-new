@@ -65,7 +65,7 @@ function TableComponent<T>({
                 <th
                   key={column.key ? String(column.key) : `header-${columnIndex}`}
                   scope="col"
-                  className={`px-3 py-3 font-semibold uppercase tracking-wide text-xs text-[var(--brand-text-primary)] sm:px-4 ${
+                  className={`table-header-cell ${
                     column.align === 'center'
                       ? 'text-center'
                       : column.align === 'right'
@@ -114,7 +114,7 @@ function TableComponent<T>({
                   return (
                     <td
                       key={key}
-                      className={`px-3 py-3 text-[var(--brand-text-primary)] sm:px-4 ${
+                      className={`table-cell ${
                         column.align === 'center'
                           ? 'text-center'
                           : column.align === 'right'

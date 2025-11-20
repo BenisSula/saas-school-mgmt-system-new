@@ -31,7 +31,10 @@ router.get('/', requirePermission('users:manage'), validateInput(listStudentsQue
   const { classId } = req.query;
   const pagination = req.pagination!;
   
-  const allStudents = await listStudents(req.tenantClient!, req.tenant!.schema);
+  const allStudents = await listStudents(req.tenantClient!, req.tenant!.schema) as Array<{
+    class_uuid?: string | null;
+    class_id?: string | null;
+  }>;
   
   // Filter by class if specified
   let filtered = allStudents;

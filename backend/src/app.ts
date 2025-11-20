@@ -24,17 +24,27 @@ import studentPortalRouter from './routes/studentPortal';
 import auditRouter from './routes/audit';
 import searchRouter from './routes/search';
 import notificationsRouter from './routes/notifications';
+import emailNotificationsRouter from './routes/notifications/email';
+import supportRouter from './routes/support';
+import metricsRouter from './routes/metrics';
+import incidentResponseRouter from './routes/incident-response';
 import { errorHandler } from './middleware/errorHandler';
+import { metricsMiddleware } from './middleware/metrics';
+import { initializeErrorTracking } from './services/monitoring/errorTracking';
+import { requestLogger } from './services/monitoring/loggingService';
 import authenticate from './middleware/authenticate';
 import { requirePermission } from './middleware/rbac';
 import { tenantResolver } from './middleware/tenantResolver';
-import { apiLimiter, writeLimiter, adminActionLimiter } from './middleware/rateLimiter';
+import { apiLimiter, writeLimiter, adminActionLimiter, superuserStrictLimiter, suspiciousLoginLimiter } from './middleware/rateLimiter';
 import { sanitizeInput } from './middleware/validateInput';
 import { setCsrfToken, csrfProtection } from './middleware/csrf';
 import { auditAdminActions } from './middleware/auditAdminActions';
 import { enhancedTenantIsolation } from './middleware/enhancedTenantIsolation';
 import { parsePagination } from './middleware/pagination';
 import { cachePolicies } from './middleware/cache';
+
+// Initialize error tracking
+initializeErrorTracking();
 
 const app = express();
 
@@ -94,12 +104,16 @@ app.use(express.json({ limit: '10mb' })); // Limit request body size
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Global middleware
+app.use(requestLogger); // Request logging
+app.use(metricsMiddleware); // Prometheus metrics
 app.use(apiLimiter); // Apply rate limiting to all routes
 app.use(sanitizeInput); // Sanitize all input
 app.use(setCsrfToken); // Set CSRF token cookie
 
 // Health check (no auth required)
 app.use('/health', healthRouter);
+// Metrics endpoint (no auth required, but should be protected in production)
+app.use('/metrics', metricsRouter);
 // Auth routes (with strict rate limiting)
 app.use('/auth', authRouter);
 
@@ -117,13 +131,17 @@ app.use('/invoices', authenticate, tenantResolver(), enhancedTenantIsolation, wr
 app.use('/payments', authenticate, tenantResolver(), enhancedTenantIsolation, writeLimiter, csrfProtection, parsePagination, cachePolicies.sensitive, paymentsRouter);
 app.use('/configuration', authenticate, tenantResolver(), enhancedTenantIsolation, writeLimiter, csrfProtection, configurationRouter);
 app.use('/reports', authenticate, tenantResolver(), enhancedTenantIsolation, parsePagination, cachePolicies.admin, reportsRouter);
-app.use('/superuser', authenticate, tenantResolver({ optional: true }), adminActionLimiter, csrfProtection, auditAdminActions, cachePolicies.sensitive, superuserRouter);
+// Superuser routes with stricter rate limiting for sensitive operations
+app.use('/superuser', authenticate, tenantResolver({ optional: true }), superuserStrictLimiter, csrfProtection, auditAdminActions, cachePolicies.sensitive, superuserRouter);
 app.use('/users', authenticate, tenantResolver({ optional: true }), enhancedTenantIsolation, writeLimiter, csrfProtection, parsePagination, cachePolicies.admin, usersRouter);
 app.use('/teacher', authenticate, tenantResolver(), enhancedTenantIsolation, parsePagination, cachePolicies.user, teacherRouter);
 app.use('/student', authenticate, tenantResolver(), enhancedTenantIsolation, parsePagination, cachePolicies.user, studentPortalRouter);
 app.use('/audit', authenticate, tenantResolver({ optional: true }), parsePagination, cachePolicies.sensitive, auditRouter);
 app.use('/search', authenticate, tenantResolver(), enhancedTenantIsolation, parsePagination, cachePolicies.user, searchRouter);
 app.use('/notifications', authenticate, tenantResolver(), enhancedTenantIsolation, parsePagination, cachePolicies.user, notificationsRouter);
+app.use('/api/notifications/email', emailNotificationsRouter);
+app.use('/api/support', supportRouter);
+app.use('/incident-response', incidentResponseRouter);
 
 app.get(
   '/admin/overview',

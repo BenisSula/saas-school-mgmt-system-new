@@ -60,6 +60,7 @@ export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
   expiresIn: string;
+  mustChangePassword?: boolean; // Flag indicating user must change password after login
   user: {
     id: string;
     email: string;
@@ -293,10 +294,63 @@ export async function login(input: LoginInput, context?: SessionContext): Promis
       console.warn(`[auth] User ${user.id} has no status, defaulting to 'pending'`);
     }
 
+    // Check if user has a temporary password (admin reset)
+    // Look for recent admin_reset in password_change_history
+    let mustChangePassword = false;
+    try {
+      const passwordHistoryResult = await pool.query(
+        `
+          SELECT change_type, metadata, changed_at
+          FROM shared.password_change_history
+          WHERE user_id = $1
+            AND change_type = 'admin_reset'
+          ORDER BY changed_at DESC
+          LIMIT 1
+        `,
+        [user.id]
+      );
+
+      if (passwordHistoryResult.rows.length > 0) {
+        const latestReset = passwordHistoryResult.rows[0];
+        const metadata = latestReset.metadata || {};
+        
+        // Check if this was a temporary password reset
+        if (metadata.temporaryPassword === true) {
+          // Check if user hasn't changed password since reset
+          // If the latest password change is still the admin_reset, user must change password
+          const latestChangeResult = await pool.query(
+            `
+              SELECT change_type
+              FROM shared.password_change_history
+              WHERE user_id = $1
+              ORDER BY changed_at DESC
+              LIMIT 1
+            `,
+            [user.id]
+          );
+
+          if (latestChangeResult.rows.length > 0) {
+            const latestChange = latestChangeResult.rows[0];
+            // If latest change is still admin_reset (not self_reset or admin_change), must change
+            if (latestChange.change_type === 'admin_reset') {
+              mustChangePassword = true;
+            }
+          }
+        }
+      }
+    } catch (historyError: unknown) {
+      // If password_change_history table doesn't exist, ignore (user can login normally)
+      const errorMessage = historyError instanceof Error ? historyError.message : String(historyError);
+      if (!errorMessage.includes('does not exist') && !errorMessage.includes('relation')) {
+        console.error('[auth] Error checking password history:', historyError);
+      }
+    }
+
     const response: AuthResponse = {
       accessToken,
       refreshToken,
       expiresIn: process.env.ACCESS_TOKEN_TTL ?? '900s',
+      mustChangePassword,
       user: {
         id: user.id,
         email: user.email,
@@ -310,6 +364,18 @@ export async function login(input: LoginInput, context?: SessionContext): Promis
     // Record login event - don't fail login if this fails
     try {
       await recordLoginEvent(user.id, refreshToken, context);
+      
+      // Also log successful login attempt
+      const { logLoginAttempt } = await import('./superuser/platformAuditService');
+      await logLoginAttempt(pool, {
+        email: user.email,
+        success: true,
+        ipAddress: context?.ip || null,
+        userAgent: context?.userAgent || null,
+        userId: user.id,
+        tenantId: user.tenant_id,
+        failureReason: null
+      });
     } catch (error) {
       // Log error but don't fail the login
       console.error('[auth] Failed to record login event:', error);

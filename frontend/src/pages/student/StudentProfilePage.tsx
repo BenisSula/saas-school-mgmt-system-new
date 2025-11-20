@@ -6,6 +6,7 @@ import { ProfileSection as Section } from '../../components/profile/ProfileSecti
 import { ActivityHistory } from '../../components/profile/ActivityHistory';
 import { AuditLogs } from '../../components/profile/AuditLogs';
 import { FileUploads } from '../../components/profile/FileUploads';
+import { PasswordChangeSection } from '../../components/profile/PasswordChangeSection';
 import { useProfileData } from '../../hooks/useProfileData';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -385,6 +386,12 @@ export default function StudentProfilePage() {
             }}
           />
         )
+      },
+      {
+        id: 'password-change',
+        title: 'Security',
+        description: 'Change your account password',
+        content: <PasswordChangeSection />
       }
     ],
     [

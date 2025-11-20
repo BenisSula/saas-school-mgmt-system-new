@@ -1,6 +1,9 @@
 import { useQuery as useReactQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+// Re-export for convenience
+export { useMutation, useQueryClient };
+
 // Query keys factory
 export const queryKeys = {
   // Admin queries

@@ -27,8 +27,8 @@ export function AuditLogs({
 
   const filteredLogs = logs.filter((log) => {
     if (filter.action !== 'all' && log.action !== filter.action) return false;
-    if (filter.dateFrom && log.timestamp < filter.dateFrom) return false;
-    if (filter.dateTo && log.timestamp > filter.dateTo) return false;
+    if (filter.dateFrom && log.timestamp && log.timestamp < filter.dateFrom) return false;
+    if (filter.dateTo && log.timestamp && log.timestamp > filter.dateTo) return false;
     return true;
   });
 
@@ -107,7 +107,13 @@ export function AuditLogs({
                   )}
                 </div>
                 <time className="text-[var(--brand-muted)] whitespace-nowrap">
-                  {new Date(log.timestamp).toLocaleString()}
+                  {(() => {
+                    const ts = log.timestamp || log.createdAt;
+                    if (!ts) return 'N/A';
+                    if (typeof ts === 'string') return new Date(ts).toLocaleString();
+                    if (ts instanceof Date) return ts.toLocaleString();
+                    return 'N/A';
+                  })()}
                 </time>
               </div>
             </div>

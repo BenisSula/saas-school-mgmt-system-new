@@ -16,16 +16,7 @@ import { Select } from '../components/ui/Select';
 import { StatusBanner } from '../components/ui/StatusBanner';
 import { useAsyncFeedback } from '../hooks/useAsyncFeedback';
 import { sanitizeIdentifier } from '../lib/sanitize';
-
-function downloadJson(filename: string, data: unknown) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
+import { exportToJSON } from '../lib/utils/export';
 
 function AdminReportsPage() {
   const [attendanceFilters, setAttendanceFilters] = useState({
@@ -231,7 +222,7 @@ function AdminReportsPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => downloadJson('attendance-report.json', attendanceData)}
+              onClick={() => exportToJSON(attendanceData, 'attendance-report')}
               disabled={attendanceData.length === 0}
             >
               Download JSON
@@ -284,7 +275,7 @@ function AdminReportsPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => downloadJson('grades-report.json', gradeData)}
+              onClick={() => exportToJSON(gradeData, 'grades-report')}
               disabled={gradeData.length === 0}
             >
               Download JSON
@@ -321,7 +312,7 @@ function AdminReportsPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => downloadJson('fees-report.json', feeData)}
+              onClick={() => exportToJSON(feeData, 'fees-report')}
               disabled={feeData.length === 0}
             >
               Download JSON

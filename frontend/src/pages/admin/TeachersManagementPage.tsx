@@ -10,10 +10,9 @@ import { StatusBanner } from '../../components/ui/StatusBanner';
 import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton';
 import { PaginatedTable } from '../../components/admin/PaginatedTable';
 import { ExportButtons } from '../../components/admin/ExportButtons';
-import { exportToCSV } from '../../lib/utils/export';
+import { createExportHandlers } from '../../hooks/useExport';
 import { api, type TeacherProfile, type SchoolClass, type Subject } from '../../lib/api';
 import type { TableColumn } from '../../components/ui/Table';
-import { defaultDate } from '../../lib/utils/date';
 
 interface TeacherFilters {
   search: string;
@@ -176,25 +175,21 @@ export function TeachersManagementPage() {
     }
   };
 
-  const handleExportCSV = () => {
+  // Consolidated export handlers using DRY principle
+  const exportHandlers = useMemo(() => {
     const exportData = filteredTeachers.map((t) => ({
       Name: t.name,
       Email: t.email,
       Subjects: t.subjects.join('; '),
       Classes: t.assigned_classes.join('; ')
     }));
-    exportToCSV(exportData, `teachers-${defaultDate()}`);
-  };
 
-  const handleExportPDF = () => {
-    // TODO: Implement PDF export when backend endpoint is available
-    toast.info('PDF export coming soon');
-  };
+    return createExportHandlers(exportData, 'teachers', ['Name', 'Email', 'Subjects', 'Classes']);
+  }, [filteredTeachers]);
 
-  const handleExportExcel = () => {
-    // TODO: Implement Excel export when backend endpoint is available
-    toast.info('Excel export coming soon');
-  };
+  const handleExportCSV = exportHandlers.exportCSV;
+  const handleExportPDF = exportHandlers.exportPDF;
+  const handleExportExcel = exportHandlers.exportExcel;
 
   const toggleRowSelection = (teacherId: string) => {
     setSelectedRows((prev) => {
