@@ -27,11 +27,21 @@ const config: Config = {
     // Map node: specifiers to bare built-ins for Jest
     '^node:(.*)$': '$1'
   },
-  // Allow transforming superagent/formidable and other ESM dependencies
-  // Note: formidable uses Node built-ins that Jest needs to resolve correctly
+  // Don't transform formidable - it's ESM and causes issues with Node built-ins
+  // Instead, let Node handle it natively
   transformIgnorePatterns: [
-    '/node_modules/(?!(superagent|formidable|@jest|supertest)/)'
-  ]
+    '/node_modules/(?!(superagent|@jest|supertest)/)',
+    '/node_modules/formidable/'
+  ],
+  // Setup file to handle Node built-in module resolution
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  // Configure Jest to properly handle Node built-in modules
+  // This prevents Jest from trying to resolve built-ins as file paths
+  moduleDirectories: ['node_modules', '<rootDir>'],
+  // Use custom resolver to handle Node built-ins correctly
+  resolver: '<rootDir>/jest-resolver.js',
+  // Ensure formidable and its dependencies are completely ignored
+  modulePathIgnorePatterns: []
 };
 
 export default config;
