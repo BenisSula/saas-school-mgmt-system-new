@@ -8,52 +8,34 @@ import { Select } from '../../components/ui/Select';
 import { Modal } from '../../components/ui/Modal';
 import { StatusBanner } from '../../components/ui/StatusBanner';
 import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton';
-import { PaginatedTable, type SortableTableColumn } from '../../components/admin/PaginatedTable';
+import { PaginatedTable } from '../../components/admin/PaginatedTable';
 import { ExportButtons } from '../../components/admin/ExportButtons';
-import { exportToCSV, exportToPDF, exportToExcel } from '../../lib/utils/export';
+import { exportToCSV } from '../../lib/utils/export';
 import {
   api,
   type StudentRecord,
   type SchoolClass,
-  type StudentProfileDetail,
-  type TenantUser,
-  type Subject
+  type StudentProfileDetail
 } from '../../lib/api';
-import { userApi } from '../../lib/api/userApi';
+import type { TableColumn } from '../../components/ui/Table';
 import { defaultDate } from '../../lib/utils/date';
-import { AdminUserRegistrationModal } from '../../components/admin/AdminUserRegistrationModal';
 
 interface StudentFilters {
   search: string;
   classId: string;
   enrollmentStatus: string;
-  admissionNumber: string;
-  hasParentInfo: string;
-  enrollmentDateFrom: string;
-  enrollmentDateTo: string;
-  dateOfBirthFrom: string;
-  dateOfBirthTo: string;
 }
 
 const defaultFilters: StudentFilters = {
   search: '',
   classId: 'all',
-  enrollmentStatus: 'all',
-  admissionNumber: '',
-  hasParentInfo: 'all',
-  enrollmentDateFrom: '',
-  enrollmentDateTo: '',
-  dateOfBirthFrom: '',
-  dateOfBirthTo: ''
+  enrollmentStatus: 'all'
 };
 
 export function StudentsManagementPage() {
   const navigate = useNavigate();
   const [students, setStudents] = useState<StudentRecord[]>([]);
-  const [users, setUsers] = useState<TenantUser[]>([]);
   const [classes, setClasses] = useState<SchoolClass[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [school, setSchool] = useState<{ id: string; name: string; address?: Record<string, unknown> } | null>(null);
   const [studentDetails, setStudentDetails] = useState<Map<string, StudentProfileDetail>>(
     new Map()
   );
@@ -63,33 +45,20 @@ export function StudentsManagementPage() {
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [showClassModal, setShowClassModal] = useState<boolean>(false);
   const [showParentModal, setShowParentModal] = useState<boolean>(false);
-  const [showPasswordModal, setShowPasswordModal] = useState<boolean>(false);
-  const [showSubjectsModal, setShowSubjectsModal] = useState<boolean>(false);
-  const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
-  const [pendingStudents, setPendingStudents] = useState<TenantUser[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<StudentRecord | null>(null);
   const [selectedClass, setSelectedClass] = useState<string>('');
-  const [selectedSubjectIds, setSelectedSubjectIds] = useState<string[]>([]);
   const [parentName, setParentName] = useState<string>('');
   const [parentContact, setParentContact] = useState<string>('');
-  const [newPassword, setNewPassword] = useState<string>('');
-  const [confirmPassword, setConfirmPassword] = useState<string>('');
-  const [updatingPassword, setUpdatingPassword] = useState<boolean>(false);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [studentsResult, usersResult, pendingUsersResult, classesResult, subjectsResult, schoolResult] =
-        await Promise.allSettled([
-          api.listStudents(),
-          userApi.listUsers(),
-          api.listPendingUsers(),
-          api.listClasses(),
-          api.admin.listSubjects(),
-          api.getSchool()
-        ]);
+      const [studentsResult, classesResult] = await Promise.allSettled([
+        api.listStudents(),
+        api.listClasses()
+      ]);
 
       if (studentsResult.status === 'fulfilled') {
         setStudents(studentsResult.value);
@@ -99,28 +68,8 @@ export function StudentsManagementPage() {
         throw new Error((studentsResult.reason as Error).message || 'Failed to load students');
       }
 
-      if (usersResult.status === 'fulfilled') {
-        setUsers(usersResult.value);
-      }
-
-      if (pendingUsersResult.status === 'fulfilled') {
-        // Filter pending users by student role
-        const pending = pendingUsersResult.value.filter(
-          (u) => u.role === 'student' && u.status === 'pending'
-        );
-        setPendingStudents(pending);
-      }
-
       if (classesResult.status === 'fulfilled') {
         setClasses(classesResult.value);
-      }
-
-      if (subjectsResult.status === 'fulfilled') {
-        setSubjects(subjectsResult.value);
-      }
-
-      if (schoolResult.status === 'fulfilled' && schoolResult.value) {
-        setSchool(schoolResult.value);
       }
     } catch (err) {
       const message = (err as Error).message;
@@ -153,53 +102,6 @@ export function StudentsManagementPage() {
         if (student.class_id !== filters.classId && student.class_uuid !== filters.classId) {
           return false;
         }
-      }
-
-      // Admission number filter
-      if (filters.admissionNumber) {
-        const admissionLower = filters.admissionNumber.toLowerCase();
-        if (!student.admission_number?.toLowerCase().includes(admissionLower)) return false;
-      }
-
-      // Parent info filter
-      if (filters.hasParentInfo !== 'all') {
-        const hasParent =
-          Array.isArray(student.parent_contacts) && student.parent_contacts.length > 0;
-        if (filters.hasParentInfo === 'yes' && !hasParent) return false;
-        if (filters.hasParentInfo === 'no' && hasParent) return false;
-      }
-
-      // Enrollment date range filter
-      if (filters.enrollmentDateFrom || filters.enrollmentDateTo) {
-        const enrollmentDate = student.enrollment_date
-          ? new Date(student.enrollment_date)
-          : null;
-        if (filters.enrollmentDateFrom && enrollmentDate) {
-          const fromDate = new Date(filters.enrollmentDateFrom);
-          if (enrollmentDate < fromDate) return false;
-        }
-        if (filters.enrollmentDateTo && enrollmentDate) {
-          const toDate = new Date(filters.enrollmentDateTo);
-          toDate.setHours(23, 59, 59, 999); // Include entire end date
-          if (enrollmentDate > toDate) return false;
-        }
-        if ((filters.enrollmentDateFrom || filters.enrollmentDateTo) && !enrollmentDate)
-          return false;
-      }
-
-      // Date of birth range filter
-      if (filters.dateOfBirthFrom || filters.dateOfBirthTo) {
-        const dob = student.date_of_birth ? new Date(student.date_of_birth) : null;
-        if (filters.dateOfBirthFrom && dob) {
-          const fromDate = new Date(filters.dateOfBirthFrom);
-          if (dob < fromDate) return false;
-        }
-        if (filters.dateOfBirthTo && dob) {
-          const toDate = new Date(filters.dateOfBirthTo);
-          toDate.setHours(23, 59, 59, 999);
-          if (dob > toDate) return false;
-        }
-        if ((filters.dateOfBirthFrom || filters.dateOfBirthTo) && !dob) return false;
       }
 
       // Enrollment status filter (placeholder - would need backend support)
@@ -240,35 +142,6 @@ export function StudentsManagementPage() {
     setShowProfileModal(true);
   };
 
-  // Helper to find user by student record
-  const findUserForStudent = useCallback(
-    (student: StudentRecord): TenantUser | null => {
-      // Try multiple matching strategies
-      const firstName = student.first_name.toLowerCase();
-      const lastName = student.last_name.toLowerCase();
-      const admissionNumber = student.admission_number?.toLowerCase() || '';
-
-      // Strategy 1: Match by admission number in email
-      if (admissionNumber) {
-        const userByAdmission = users.find(
-          (u) => u.role === 'student' && u.email.toLowerCase().includes(admissionNumber)
-        );
-        if (userByAdmission) return userByAdmission;
-      }
-
-      // Strategy 2: Match by first name and last name in email
-      const userByName = users.find(
-        (u) =>
-          u.role === 'student' &&
-          (u.email.toLowerCase().includes(firstName) || u.email.toLowerCase().includes(lastName))
-      );
-      if (userByName) return userByName;
-
-      return null;
-    },
-    [users]
-  );
-
   const handleAssignClass = (student: StudentRecord) => {
     setSelectedStudent(student);
     setSelectedClass(student.class_id || '');
@@ -285,45 +158,6 @@ export function StudentsManagementPage() {
       await api.updateStudent(selectedStudent.id, { classId: selectedClass });
       toast.success('Class assigned successfully');
       setShowClassModal(false);
-      setSelectedClass('');
-      await loadData();
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
-  };
-
-  const handleRemoveClass = async (student: StudentRecord) => {
-    if (!window.confirm(`Remove ${student.first_name} ${student.last_name} from their class?`)) {
-      return;
-    }
-
-    try {
-      await api.updateStudent(student.id, { classId: '' });
-      toast.success('Class removed successfully');
-      await loadData();
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
-  };
-
-  const handleManageSubjects = async (student: StudentRecord) => {
-    setSelectedStudent(student);
-    try {
-      const currentSubjects = await api.admin.getStudentSubjects(student.id);
-      setSelectedSubjectIds(currentSubjects.map((s) => s.subject_id));
-      setShowSubjectsModal(true);
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
-  };
-
-  const handleSaveSubjects = async () => {
-    if (!selectedStudent) return;
-
-    try {
-      await api.admin.setStudentSubjects(selectedStudent.id, selectedSubjectIds);
-      toast.success('Subjects updated successfully');
-      setShowSubjectsModal(false);
       await loadData();
     } catch (err) {
       toast.error((err as Error).message);
@@ -410,81 +244,6 @@ export function StudentsManagementPage() {
     }
   };
 
-  const handleManagePassword = async (student: StudentRecord) => {
-    setSelectedStudent(student);
-    setNewPassword('');
-    setConfirmPassword('');
-    setShowPasswordModal(true);
-  };
-
-  const handleUpdatePassword = async () => {
-    if (!selectedStudent) return;
-
-    if (!newPassword || newPassword.length < 8) {
-      toast.error('Password must be at least 8 characters');
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-
-    // Find user by student record
-    const targetUser = findUserForStudent(selectedStudent);
-    if (!targetUser) {
-      toast.error(
-        'User account not found for this student. Please ensure the student has a registered account with matching email.'
-      );
-      return;
-    }
-
-    setUpdatingPassword(true);
-    try {
-      await userApi.updateUserPassword({ userId: targetUser.id, newPassword });
-      toast.success('Password updated successfully');
-      setShowPasswordModal(false);
-      setNewPassword('');
-      setConfirmPassword('');
-    } catch (err) {
-      toast.error((err as Error).message);
-    } finally {
-      setUpdatingPassword(false);
-    }
-  };
-
-  const handleApproveStudent = async (user: TenantUser) => {
-    try {
-      setLoading(true);
-      await userApi.approveUser(user.id);
-      toast.success(`${user.email} approved. Profile record created.`);
-      setPendingStudents((current) => current.filter((u) => u.id !== user.id));
-      await loadData();
-    } catch (err) {
-      toast.error((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRejectStudent = async (user: TenantUser) => {
-    if (!window.confirm(`Reject access for ${user.email}?`)) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await userApi.rejectUser(user.id);
-      toast.success(`${user.email} rejected.`);
-      setPendingStudents((current) => current.filter((u) => u.id !== user.id));
-      await loadData();
-    } catch (err) {
-      toast.error((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleBulkDelete = async () => {
     if (selectedRows.size === 0) {
       toast.error('Please select students to delete');
@@ -517,23 +276,11 @@ export function StudentsManagementPage() {
   };
 
   const handleExportPDF = () => {
-    const exportData = filteredStudents.map((s) => ({
-      'First Name': s.first_name,
-      'Last Name': s.last_name,
-      'Admission Number': s.admission_number || 'N/A',
-      Class: s.class_id || 'N/A'
-    }));
-    exportToPDF(exportData, `students-${defaultDate()}`, 'Students Report');
+    toast.info('PDF export coming soon');
   };
 
   const handleExportExcel = () => {
-    const exportData = filteredStudents.map((s) => ({
-      'First Name': s.first_name,
-      'Last Name': s.last_name,
-      'Admission Number': s.admission_number || 'N/A',
-      Class: s.class_id || 'N/A'
-    }));
-    exportToExcel(exportData, `students-${defaultDate()}.xls`);
+    toast.info('Excel export coming soon');
   };
 
   const toggleRowSelection = (studentId: string) => {
@@ -556,9 +303,8 @@ export function StudentsManagementPage() {
     }
   };
 
-  const studentColumns: SortableTableColumn<StudentRecord>[] = [
+  const studentColumns: TableColumn<StudentRecord>[] = [
     {
-      key: 'checkbox',
       header: (
         <input
           type="checkbox"
@@ -579,10 +325,7 @@ export function StudentsManagementPage() {
       align: 'center'
     },
     {
-      key: 'name',
       header: 'Name',
-      sortable: true,
-      sortKey: 'first_name',
       render: (row) => (
         <div>
           <p className="font-semibold text-[var(--brand-surface-contrast)]">
@@ -595,21 +338,7 @@ export function StudentsManagementPage() {
       )
     },
     {
-      key: 'admission_number',
-      header: 'Admission #',
-      sortable: true,
-      sortKey: 'admission_number',
-      render: (row) => (
-        <span className="text-sm text-[var(--brand-surface-contrast)]">
-          {row.admission_number || 'N/A'}
-        </span>
-      )
-    },
-    {
-      key: 'class',
       header: 'Class',
-      sortable: true,
-      sortKey: 'class_id',
       render: (row) => (
         <span className="text-sm text-[var(--brand-surface-contrast)]">
           {row.class_id || 'Not assigned'}
@@ -617,29 +346,17 @@ export function StudentsManagementPage() {
       )
     },
     {
-      key: 'actions',
       header: 'Actions',
       render: (row) => (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => handleViewProfile(row)}>
             View
           </Button>
           <Button size="sm" variant="ghost" onClick={() => handleAssignClass(row)}>
             Assign Class
           </Button>
-          {row.class_id && (
-            <Button size="sm" variant="outline" onClick={() => handleRemoveClass(row)}>
-              Remove Class
-            </Button>
-          )}
-          <Button size="sm" variant="ghost" onClick={() => handleManageSubjects(row)}>
-            Subjects
-          </Button>
           <Button size="sm" variant="ghost" onClick={() => handleManageParent(row)}>
             Parent
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => handleManagePassword(row)}>
-            Password
           </Button>
           <Button
             size="sm"
@@ -675,14 +392,8 @@ export function StudentsManagementPage() {
               Manage students, assign classes, manage parent/guardian information, and view academic
               history.
             </p>
-            {school && (
-              <p className="text-xs text-[var(--brand-muted)] mt-1">
-                School: <span className="font-medium">{school.name}</span>
-              </p>
-            )}
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={() => setShowCreateModal(true)}>Create Student</Button>
+          <div className="flex gap-2">
             <ExportButtons
               onExportCSV={handleExportCSV}
               onExportPDF={handleExportPDF}
@@ -698,58 +409,11 @@ export function StudentsManagementPage() {
 
         {error ? <StatusBanner status="error" message={error} /> : null}
 
-        {pendingStudents.length > 0 && (
-          <section className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-4 shadow-sm">
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-[var(--brand-surface-contrast)]">
-                Pending Student Approvals ({pendingStudents.length})
-              </h2>
-              <p className="text-sm text-[var(--brand-muted)]">
-                Review and approve student registrations
-              </p>
-            </div>
-            <div className="space-y-3">
-              {pendingStudents.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex flex-col gap-3 rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface)]/50 p-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="flex-1">
-                    <p className="font-semibold text-[var(--brand-surface-contrast)]">
-                      {user.email}
-                    </p>
-                    <p className="text-xs text-[var(--brand-muted)]">
-                      Requested on {new Date(user.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => handleApproveStudent(user)}
-                      disabled={loading}
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleRejectStudent(user)}
-                      disabled={loading}
-                    >
-                      Reject
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
         <section
           className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-4 shadow-sm"
           aria-label="Filters"
         >
-          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-3">
             <Input
               label="Search"
               placeholder="Search by name, admission number, class..."
@@ -765,47 +429,16 @@ export function StudentsManagementPage() {
                 ...classes.map((c) => ({ label: c.name, value: c.id }))
               ]}
             />
-            <Input
-              label="Admission Number"
-              placeholder="Filter by admission number..."
-              value={filters.admissionNumber}
-              onChange={(e) => setFilters((f) => ({ ...f, admissionNumber: e.target.value }))}
-            />
             <Select
-              label="Has Parent Info"
-              value={filters.hasParentInfo}
-              onChange={(e) => setFilters((f) => ({ ...f, hasParentInfo: e.target.value }))}
+              label="Enrollment status"
+              value={filters.enrollmentStatus}
+              onChange={(e) => setFilters((f) => ({ ...f, enrollmentStatus: e.target.value }))}
               options={[
-                { label: 'All', value: 'all' },
-                { label: 'Yes', value: 'yes' },
-                { label: 'No', value: 'no' }
+                { label: 'All statuses', value: 'all' },
+                { label: 'Active', value: 'active' },
+                { label: 'Graduated', value: 'graduated' },
+                { label: 'Transferred', value: 'transferred' }
               ]}
-            />
-          </div>
-          <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Input
-              label="Enrollment Date From"
-              type="date"
-              value={filters.enrollmentDateFrom}
-              onChange={(e) => setFilters((f) => ({ ...f, enrollmentDateFrom: e.target.value }))}
-            />
-            <Input
-              label="Enrollment Date To"
-              type="date"
-              value={filters.enrollmentDateTo}
-              onChange={(e) => setFilters((f) => ({ ...f, enrollmentDateTo: e.target.value }))}
-            />
-            <Input
-              label="Date of Birth From"
-              type="date"
-              value={filters.dateOfBirthFrom}
-              onChange={(e) => setFilters((f) => ({ ...f, dateOfBirthFrom: e.target.value }))}
-            />
-            <Input
-              label="Date of Birth To"
-              type="date"
-              value={filters.dateOfBirthTo}
-              onChange={(e) => setFilters((f) => ({ ...f, dateOfBirthTo: e.target.value }))}
             />
           </div>
           <div className="mt-4 flex items-center justify-between text-sm text-[var(--brand-muted)]">
@@ -814,13 +447,7 @@ export function StudentsManagementPage() {
             </span>
             {(filters.search ||
               filters.classId !== 'all' ||
-              filters.enrollmentStatus !== 'all' ||
-              filters.admissionNumber ||
-              filters.hasParentInfo !== 'all' ||
-              filters.enrollmentDateFrom ||
-              filters.enrollmentDateTo ||
-              filters.dateOfBirthFrom ||
-              filters.dateOfBirthTo) && (
+              filters.enrollmentStatus !== 'all') && (
               <Button size="sm" variant="ghost" onClick={() => setFilters(defaultFilters)}>
                 Clear filters
               </Button>
@@ -866,65 +493,49 @@ export function StudentsManagementPage() {
                     {selectedStudentDetail?.className || selectedStudent.class_id || 'Not assigned'}
                   </p>
                 </div>
-                    {selectedStudentDetail && (
-                      <>
-                        <div>
-                          <p className="text-xs font-medium text-[var(--brand-muted)] mb-1">Subjects</p>
-                          <div className="flex flex-wrap gap-1">
-                            {selectedStudentDetail.subjects.length > 0 ? (
-                              selectedStudentDetail.subjects.map((subject) => (
-                                <span
-                                  key={subject.subjectId}
-                                  className="rounded-full bg-[var(--brand-primary)]/20 px-2 py-1 text-xs text-[var(--brand-primary)]"
-                                >
-                                  {subject.name}
-                                </span>
-                              ))
-                            ) : (
-                              <span className="text-xs text-[var(--brand-muted)]">No subjects</span>
-                            )}
-                          </div>
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-[var(--brand-muted)] mb-1">
-                            Parent/Guardian
-                          </p>
-                          <div className="text-sm text-[var(--brand-surface-contrast)]">
-                            {Array.isArray(selectedStudentDetail.parentContacts) &&
-                            selectedStudentDetail.parentContacts.length > 0 ? (
-                              selectedStudentDetail.parentContacts.map(
-                                (parent: unknown, idx: number) => {
-                                  const p = parent as { name?: string; contact?: string };
-                                  return (
-                                    <div key={idx}>
-                                      {p.name} - {p.contact}
-                                    </div>
-                                  );
-                                }
-                              )
-                            ) : (
-                              <span className="text-[var(--brand-muted)]">No parent information</span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="md:col-span-2">
-                          <p className="text-xs font-medium text-[var(--brand-muted)] mb-1">
-                            Academic History
-                          </p>
-                          <div className="text-sm text-[var(--brand-surface-contrast)]">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() =>
-                                navigate(`/dashboard/student/profile?studentId=${selectedStudent.id}`)
-                              }
+                {selectedStudentDetail && (
+                  <>
+                    <div>
+                      <p className="text-xs font-medium text-[var(--brand-muted)] mb-1">Subjects</p>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedStudentDetail.subjects.length > 0 ? (
+                          selectedStudentDetail.subjects.map((subject) => (
+                            <span
+                              key={subject.subjectId}
+                              className="rounded-full bg-[var(--brand-primary)]/20 px-2 py-1 text-xs text-[var(--brand-primary)]"
                             >
-                              View Full Academic History
-                            </Button>
-                          </div>
-                        </div>
-                      </>
-                    )}
+                              {subject.name}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-[var(--brand-muted)]">No subjects</span>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-[var(--brand-muted)] mb-1">
+                        Parent/Guardian
+                      </p>
+                      <div className="text-sm text-[var(--brand-surface-contrast)]">
+                        {Array.isArray(selectedStudentDetail.parentContacts) &&
+                        selectedStudentDetail.parentContacts.length > 0 ? (
+                          selectedStudentDetail.parentContacts.map(
+                            (parent: unknown, idx: number) => {
+                              const p = parent as { name?: string; contact?: string };
+                              return (
+                                <div key={idx}>
+                                  {p.name} - {p.contact}
+                                </div>
+                              );
+                            }
+                          )
+                        ) : (
+                          <span className="text-[var(--brand-muted)]">No parent information</span>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button variant="ghost" onClick={() => setShowProfileModal(false)}>
@@ -998,133 +609,6 @@ export function StudentsManagementPage() {
                   Cancel
                 </Button>
                 <Button onClick={handleSaveParent}>Save</Button>
-              </div>
-            </div>
-          </Modal>
-        )}
-
-        {showPasswordModal && selectedStudent && (
-          <Modal
-            title={`Change Password: ${selectedStudent.first_name} ${selectedStudent.last_name}`}
-            isOpen={showPasswordModal}
-            onClose={() => {
-              setShowPasswordModal(false);
-              setSelectedStudent(null);
-              setNewPassword('');
-              setConfirmPassword('');
-            }}
-          >
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-[var(--brand-muted)] mb-2">
-                  Update password for this student account
-                </p>
-                <Input
-                  label="New Password"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password (min 8 characters)"
-                  required
-                />
-                <Input
-                  label="Confirm Password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm new password"
-                  required
-                />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setShowPasswordModal(false);
-                    setNewPassword('');
-                    setConfirmPassword('');
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={handleUpdatePassword} loading={updatingPassword}>
-                  Update Password
-                </Button>
-              </div>
-            </div>
-          </Modal>
-        )}
-
-        {showCreateModal && (
-          <AdminUserRegistrationModal
-            defaultRole="student"
-            onClose={() => setShowCreateModal(false)}
-            onSuccess={async () => {
-              setShowCreateModal(false);
-              await loadData();
-              toast.success('Student created successfully');
-            }}
-          />
-        )}
-
-        {showSubjectsModal && selectedStudent && (
-          <Modal
-            title={`Manage Subjects: ${selectedStudent.first_name} ${selectedStudent.last_name}`}
-            isOpen={showSubjectsModal}
-            onClose={() => {
-              setShowSubjectsModal(false);
-              setSelectedStudent(null);
-              setSelectedSubjectIds([]);
-            }}
-          >
-            <div className="space-y-4">
-              <p className="text-sm text-[var(--brand-muted)]">
-                Select subjects for this student. Changes will replace existing subject assignments.
-              </p>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {subjects.length > 0 ? (
-                  subjects.map((subject) => (
-                    <div
-                      key={subject.id}
-                      className="flex items-center gap-2 rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface)]/50 p-3"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedSubjectIds.includes(subject.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedSubjectIds([...selectedSubjectIds, subject.id]);
-                          } else {
-                            setSelectedSubjectIds(selectedSubjectIds.filter((id) => id !== subject.id));
-                          }
-                        }}
-                        className="rounded border-[var(--brand-border)]"
-                      />
-                      <div className="flex-1">
-                        <p className="font-semibold text-[var(--brand-surface-contrast)]">
-                          {subject.name}
-                        </p>
-                        {subject.code && (
-                          <p className="text-xs text-[var(--brand-muted)]">{subject.code}</p>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-[var(--brand-muted)]">No subjects available</p>
-                )}
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setShowSubjectsModal(false);
-                    setSelectedSubjectIds([]);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={handleSaveSubjects}>Save Subjects</Button>
               </div>
             </div>
           </Modal>

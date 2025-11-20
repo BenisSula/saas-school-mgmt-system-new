@@ -29,32 +29,20 @@ export function Card({
   padding = 'md'
 }: CardProps) {
   const baseClasses = `card-base ${paddingClasses[padding]} ${onClick ? 'cursor-pointer' : ''} ${className}`;
+  const Component = hoverable || onClick ? motion.div : 'div';
 
-  if (hoverable || onClick) {
-    return (
-      <motion.div
-        variants={fadeIn}
-        initial="hidden"
-        animate="visible"
-        whileHover={hoverable ? cardHover.hover : undefined}
-        whileTap={onClick ? cardHover.tap : undefined}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
-        onClick={onClick}
-        className={baseClasses}
-      >
-        {children}
-      </motion.div>
-    );
-  }
+  const props =
+    hoverable || onClick
+      ? {
+          variants: fadeIn,
+          initial: 'hidden',
+          animate: 'visible',
+          whileHover: hoverable ? cardHover.hover : undefined,
+          whileTap: onClick ? cardHover.tap : undefined,
+          onClick,
+          className: baseClasses
+        }
+      : { className: baseClasses };
 
-  return (
-    <motion.div
-      variants={fadeIn}
-      initial="hidden"
-      animate="visible"
-      className={baseClasses}
-    >
-      {children}
-    </motion.div>
-  );
+  return <Component {...props}>{children}</Component>;
 }

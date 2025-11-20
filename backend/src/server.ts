@@ -3,10 +3,8 @@ import http from 'http';
 import { wsManager } from './lib/websocket';
 import { getPool } from './db/connection';
 import { runMigrations } from './db/runMigrations';
-// Seed data removed - use seedSuperUserOnly.ts script instead
+import { seedDemoTenant } from './seed/demoTenant';
 import { validateRequiredEnvVars } from './lib/envValidation';
-import { initializeEmailService } from './services/emailService';
-import { printEmailConfigValidation } from './lib/emailConfigValidator';
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 
@@ -46,10 +44,6 @@ async function startServer(): Promise<void> {
   const pool = getPool();
 
   try {
-    // Validate and initialize email service
-    printEmailConfigValidation();
-    initializeEmailService();
-
     // Skip migrations if SKIP_MIGRATIONS is set (useful for development/testing)
     if (process.env.SKIP_MIGRATIONS !== 'true') {
       await runMigrations(pool);
@@ -57,8 +51,15 @@ async function startServer(): Promise<void> {
       console.warn('⚠️  Skipping migrations (SKIP_MIGRATIONS=true)');
     }
 
-    // Seed data removed - only superuser should be seeded manually via seedSuperUserOnly.ts
-    // To seed superuser, run: npm run seed:superuser
+    const shouldSeedDemo =
+      process.env.AUTO_SEED_DEMO === 'true' ||
+      (process.env.AUTO_SEED_DEMO === undefined &&
+        process.env.NODE_ENV !== 'production' &&
+        process.env.NODE_ENV !== 'test');
+
+    if (shouldSeedDemo) {
+      await seedDemoTenant(pool);
+    }
 
     await pool.query('SELECT 1');
     const server = http.createServer(app);

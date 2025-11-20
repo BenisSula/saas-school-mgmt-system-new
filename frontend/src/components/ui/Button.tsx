@@ -46,11 +46,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variantClasses: Record<ButtonVariant, string> = {
       solid:
-        'border border-transparent text-[var(--brand-primary-contrast)] bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-hover)] focus-visible:outline-[var(--brand-primary)] disabled:opacity-60 transition-colors duration-200',
+        'border border-transparent text-[var(--brand-primary-contrast)] bg-[var(--brand-primary)] hover:brightness-110 focus-visible:outline-[var(--brand-primary)] disabled:opacity-60',
       outline:
-        'border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-[var(--brand-primary-light)] focus-visible:outline-[var(--brand-primary)] disabled:opacity-50 transition-colors duration-200',
+        'border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-[rgba(29,78,216,0.08)] focus-visible:outline-[var(--brand-primary)] disabled:opacity-50',
       ghost:
-        'border border-transparent text-[var(--brand-primary)] bg-transparent hover:bg-[var(--brand-surface-secondary)] focus-visible:outline-[var(--brand-primary)] disabled:opacity-50 transition-colors duration-200'
+        'border border-transparent text-[var(--brand-primary)] bg-transparent hover:bg-[rgba(29,78,216,0.08)] focus-visible:outline-[var(--brand-primary)] disabled:opacity-50'
     };
 
     // Animation-related props are already excluded from ButtonProps via Omit

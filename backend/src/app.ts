@@ -24,9 +24,6 @@ import studentPortalRouter from './routes/studentPortal';
 import auditRouter from './routes/audit';
 import searchRouter from './routes/search';
 import notificationsRouter from './routes/notifications';
-import departmentsRouter from './routes/departments';
-import credentialsRouter from './routes/credentials';
-import tenantStatusRouter from './routes/tenantStatus';
 import { errorHandler } from './middleware/errorHandler';
 import authenticate from './middleware/authenticate';
 import { requirePermission } from './middleware/rbac';
@@ -38,9 +35,6 @@ import { auditAdminActions } from './middleware/auditAdminActions';
 import { enhancedTenantIsolation } from './middleware/enhancedTenantIsolation';
 import { parsePagination } from './middleware/pagination';
 import { cachePolicies } from './middleware/cache';
-import { securityHeaders } from './middleware/securityHeaders';
-import { addRequestId } from './middleware/requestId';
-import { requestTimeout } from './middleware/requestTimeout';
 
 const app = express();
 
@@ -99,22 +93,17 @@ app.use(cookieParser()); // Parse cookies for CSRF tokens
 app.use(express.json({ limit: '10mb' })); // Limit request body size
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Global security middleware (order matters)
-app.use(addRequestId); // Add request ID for tracing
-app.use(securityHeaders); // Add security headers
-app.use(requestTimeout()); // Request timeout protection
+// Global middleware
 app.use(apiLimiter); // Apply rate limiting to all routes
 app.use(sanitizeInput); // Sanitize all input
 app.use(setCsrfToken); // Set CSRF token cookie
 
 // Health check (no auth required)
 app.use('/health', healthRouter);
-// Public schools endpoint (no auth required for landing page)
-app.use('/schools', tenantsRouter);
 // Auth routes (with strict rate limiting)
 app.use('/auth', authRouter);
 
-// Protected tenant routes with enhanced security
+// Protected routes with enhanced security
 app.use('/tenants', authenticate, tenantResolver({ optional: true }), enhancedTenantIsolation, csrfProtection, auditAdminActions, tenantsRouter);
 app.use('/students', authenticate, tenantResolver(), enhancedTenantIsolation, writeLimiter, csrfProtection, parsePagination, cachePolicies.user, studentsRouter);
 app.use('/teachers', authenticate, tenantResolver(), enhancedTenantIsolation, writeLimiter, csrfProtection, parsePagination, cachePolicies.user, teachersRouter);
@@ -135,9 +124,6 @@ app.use('/student', authenticate, tenantResolver(), enhancedTenantIsolation, par
 app.use('/audit', authenticate, tenantResolver({ optional: true }), parsePagination, cachePolicies.sensitive, auditRouter);
 app.use('/search', authenticate, tenantResolver(), enhancedTenantIsolation, parsePagination, cachePolicies.user, searchRouter);
 app.use('/notifications', authenticate, tenantResolver(), enhancedTenantIsolation, parsePagination, cachePolicies.user, notificationsRouter);
-app.use('/departments', authenticate, tenantResolver(), enhancedTenantIsolation, writeLimiter, csrfProtection, departmentsRouter);
-app.use('/credentials', authenticate, tenantResolver(), enhancedTenantIsolation, writeLimiter, csrfProtection, credentialsRouter);
-app.use('/tenant-status', tenantStatusRouter);
 
 app.get(
   '/admin/overview',

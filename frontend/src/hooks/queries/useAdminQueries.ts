@@ -57,30 +57,3 @@ export function useDepartmentAnalytics(departmentId?: string) {
     { enabled: true }
   );
 }
-
-// User Growth Trends
-export function useUserGrowthTrends(days: number = 30) {
-  return useQuery(
-    ['admin', 'user-growth', days],
-    () => api.getUserGrowthTrends(days),
-    { enabled: true }
-  );
-}
-
-// Teachers Per Department
-export function useTeachersPerDepartment() {
-  return useQuery(
-    ['admin', 'teachers-per-department'],
-    () => api.getTeachersPerDepartment(),
-    { enabled: true }
-  );
-}
-
-// Students Per Class
-export function useStudentsPerClass() {
-  return useQuery(
-    ['admin', 'students-per-class'],
-    () => api.getStudentsPerClass(),
-    { enabled: true }
-  );
-}

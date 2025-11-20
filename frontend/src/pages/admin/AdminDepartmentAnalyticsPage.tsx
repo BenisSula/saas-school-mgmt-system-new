@@ -5,7 +5,6 @@ import { BarChart, type BarChartData } from '../../components/charts/BarChart';
 import { PieChart, type PieChartData } from '../../components/charts/PieChart';
 import { StatCard } from '../../components/charts/StatCard';
 import { LineChart, type LineChartDataPoint } from '../../components/charts/LineChart';
-import { ChartContainer, PageHeader } from '../../components/charts';
 import { Select } from '../../components/ui/Select';
 import RouteMeta from '../../components/layout/RouteMeta';
 import { Users, GraduationCap, BookOpen, TrendingUp } from 'lucide-react';
@@ -95,23 +94,27 @@ export default function AdminDepartmentAnalyticsPage() {
   return (
     <RouteMeta title="Department Analytics">
       <div className="space-y-6">
-        <PageHeader
-          title="Department Analytics"
-          description="Overview of department performance and statistics"
-          action={
-            <div className="sm:w-48">
-              <Select
-                label="Department"
-                value={selectedDepartment}
-                onChange={(e) => setSelectedDepartment(e.target.value)}
-                options={[
-                  { label: 'All Departments', value: 'all' },
-                  ...departments.map((dept) => ({ label: dept, value: dept }))
-                ]}
-              />
-            </div>
-          }
-        />
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-[var(--brand-surface-contrast)]">
+              Department Analytics
+            </h1>
+            <p className="mt-1 text-sm text-[var(--brand-muted)]">
+              Overview of department performance and statistics
+            </p>
+          </div>
+          <div className="sm:w-48">
+            <Select
+              label="Department"
+              value={selectedDepartment}
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+              options={[
+                { label: 'All Departments', value: 'all' },
+                ...departments.map((dept) => ({ label: dept, value: dept }))
+              ]}
+            />
+          </div>
+        </header>
 
         {/* Stats Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -143,19 +146,19 @@ export default function AdminDepartmentAnalyticsPage() {
 
         {/* Charts */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <ChartContainer>
+          <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
             <BarChart
               data={teacherDistribution}
               title="Teacher Distribution by Department"
               height={250}
             />
-          </ChartContainer>
-          <ChartContainer>
+          </div>
+          <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
             <PieChart data={studentDistribution} title="Student Distribution by Class" size={250} />
-          </ChartContainer>
-          <ChartContainer className="lg:col-span-2">
+          </div>
+          <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm lg:col-span-2">
             <LineChart data={classSizeTrend} title="Class Size Trend" height={200} />
-          </ChartContainer>
+          </div>
         </div>
       </div>
     </RouteMeta>

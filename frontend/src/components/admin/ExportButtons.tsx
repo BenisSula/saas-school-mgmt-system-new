@@ -14,7 +14,7 @@ export function ExportButtons({
   disabled = false
 }: ExportButtonsProps) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex gap-2">
       <Button size="sm" variant="outline" onClick={onExportCSV} disabled={disabled}>
         Export CSV
       </Button>

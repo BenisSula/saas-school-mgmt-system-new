@@ -1,13 +1,9 @@
 import { useMemo } from 'react';
 import { ProfileLayout, type ProfileSection } from '../../components/profile/ProfileLayout';
-import {
-  AssignedClassesSection,
-  AssignedSubjectsSection,
-  DepartmentSection,
-  ActivityHistorySection,
-  FileUploadsSection,
-  AuditLogsSection
-} from '../../components/profile/sections';
+import { ProfileSection as Section } from '../../components/profile/ProfileSection';
+import { ActivityHistory } from '../../components/profile/ActivityHistory';
+import { AuditLogs } from '../../components/profile/AuditLogs';
+import { FileUploads } from '../../components/profile/FileUploads';
 import { useProfileData } from '../../hooks/useProfileData';
 import { api, type TeacherProfileDetail, type TeacherProfile } from '../../lib/api';
 
@@ -80,36 +76,30 @@ export default function HODProfilePage() {
         id: 'personal-info',
         title: 'Personal information',
         content: (
-          <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
-            <div className="grid gap-4 md:grid-cols-2">
-              {profile ? (
-                <>
+          <Section isEmpty={!profile}>
+            {profile && (
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <p className="mb-1 text-xs font-medium text-[var(--brand-muted)]">Name</p>
+                  <p className="text-sm text-[var(--brand-surface-contrast)]">{profile.name}</p>
+                </div>
+                <div>
+                  <p className="mb-1 text-xs font-medium text-[var(--brand-muted)]">Email</p>
+                  <p className="text-sm text-[var(--brand-surface-contrast)]">
+                    {profile.email || 'Not provided'}
+                  </p>
+                </div>
+                {profile.department && (
                   <div>
-                    <p className="mb-1 text-xs font-medium text-[var(--brand-muted)]">Name</p>
-                    <p className="text-sm text-[var(--brand-surface-contrast)]">{profile.name}</p>
-                  </div>
-                  <div>
-                    <p className="mb-1 text-xs font-medium text-[var(--brand-muted)]">Email</p>
+                    <p className="mb-1 text-xs font-medium text-[var(--brand-muted)]">Department</p>
                     <p className="text-sm text-[var(--brand-surface-contrast)]">
-                      {profile.email || 'Not provided'}
+                      {profile.department}
                     </p>
                   </div>
-                  {profile.department && (
-                    <div>
-                      <p className="mb-1 text-xs font-medium text-[var(--brand-muted)]">
-                        Department
-                      </p>
-                      <p className="text-sm text-[var(--brand-surface-contrast)]">
-                        {profile.department}
-                      </p>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <p className="text-sm text-[var(--brand-muted)]">No personal information available</p>
-              )}
-            </div>
-          </div>
+                )}
+              </div>
+            )}
+          </Section>
         )
       },
       {
@@ -117,11 +107,15 @@ export default function HODProfilePage() {
         title: 'Department assignment',
         description: 'Department you oversee as Head of Department',
         content: (
-          <DepartmentSection
-            department={profile?.department}
-            teachersUnderOversight={profile?.teachersUnderOversight}
-            emptyMessage="No department assigned"
-          />
+          <Section isEmpty={!profile?.department} emptyMessage="No department assigned">
+            {profile?.department && (
+              <div className="rounded-lg border border-[var(--brand-border)] bg-slate-950/40 p-4">
+                <p className="text-lg font-semibold text-[var(--brand-surface-contrast)]">
+                  {profile.department}
+                </p>
+              </div>
+            )}
+          </Section>
         )
       },
       {
@@ -129,20 +123,23 @@ export default function HODProfilePage() {
         title: 'Subject specializations',
         description: 'Subjects you are qualified to teach',
         content: (
-          <AssignedSubjectsSection
-            subjects={
-              profile?.subjects.map((subject) => ({
-                id: subject,
-                name: subject
-              })) || []
-            }
+          <Section
+            isEmpty={!profile || profile.subjects.length === 0}
             emptyMessage="No subject specializations recorded"
-            renderSubject={(subject) => (
-              <span className="rounded-full border border-[var(--brand-border)] bg-[var(--brand-primary)]/20 px-3 py-1 text-sm text-[var(--brand-primary)]">
-                {subject.name}
-              </span>
+          >
+            {profile && profile.subjects.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {profile.subjects.map((subject) => (
+                  <span
+                    key={subject}
+                    className="rounded-full border border-[var(--brand-border)] bg-[var(--brand-primary)]/20 px-3 py-1 text-sm text-[var(--brand-primary)]"
+                  >
+                    {subject}
+                  </span>
+                ))}
+              </div>
             )}
-          />
+          </Section>
         )
       },
       {
@@ -150,10 +147,79 @@ export default function HODProfilePage() {
         title: 'Assigned classes',
         description: 'Classes you are currently teaching',
         content: (
-          <AssignedClassesSection
-            classes={profile?.classes || []}
+          <Section
+            isEmpty={!profile || profile.classes.length === 0}
             emptyMessage="You are not currently assigned to any classes"
-          />
+          >
+            {profile && profile.classes.length > 0 && (
+              <div className="space-y-3">
+                {profile.classes.map((clazz) => (
+                  <div
+                    key={clazz.id}
+                    className="rounded-lg border border-[var(--brand-border)] bg-slate-950/40 p-4"
+                  >
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-sm font-semibold text-[var(--brand-surface-contrast)]">
+                        {clazz.name}
+                      </p>
+                      {clazz.isClassTeacher && (
+                        <span className="rounded-full bg-emerald-500/20 px-2 py-1 text-[11px] font-semibold text-emerald-200">
+                          Classroom teacher
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-2 text-xs uppercase tracking-wide text-[var(--brand-muted)]">
+                      Subjects
+                    </p>
+                    <p className="text-sm text-[var(--brand-muted)]">
+                      {clazz.subjects.length > 0 ? clazz.subjects.join(', ') : 'Not specified'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Section>
+        )
+      },
+      {
+        id: 'teacher-oversight',
+        title: 'Teacher oversight',
+        description: 'Teachers under your department oversight',
+        content: (
+          <Section
+            isEmpty={
+              !profile?.teachersUnderOversight || profile.teachersUnderOversight.length === 0
+            }
+            emptyMessage="No teachers currently under your oversight"
+          >
+            {profile?.teachersUnderOversight && profile.teachersUnderOversight.length > 0 && (
+              <div className="space-y-2">
+                {profile.teachersUnderOversight.map((teacher) => (
+                  <div
+                    key={teacher.id}
+                    className="rounded-lg border border-[var(--brand-border)]/60 bg-slate-950/40 p-3"
+                  >
+                    <p className="text-sm font-medium text-[var(--brand-surface-contrast)]">
+                      {teacher.name}
+                    </p>
+                    <p className="text-xs text-[var(--brand-muted)]">{teacher.email}</p>
+                    {teacher.subjects.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {teacher.subjects.map((subject) => (
+                          <span
+                            key={subject}
+                            className="rounded-full bg-[var(--brand-accent)]/20 px-2 py-1 text-xs text-[var(--brand-accent)]"
+                          >
+                            {subject}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </Section>
         )
       },
       {
@@ -161,25 +227,26 @@ export default function HODProfilePage() {
         title: 'Department analytics',
         description: 'Overview of department performance and statistics',
         content: (
-          <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
-            <p className="text-sm text-[var(--brand-muted)]">
-              Department analytics will be displayed here when available
-            </p>
-          </div>
+          <Section
+            isEmpty={true}
+            emptyMessage="Department analytics will be displayed here when available"
+          >
+            {null}
+          </Section>
         )
       },
       {
         id: 'activity-history',
         title: 'Activity history',
         description: 'Recent actions and events',
-        content: <ActivityHistorySection activities={activities} />
+        content: <ActivityHistory activities={activities} />
       },
       {
         id: 'uploads',
         title: 'Uploads & attachments',
         description: 'Files and documents associated with your profile',
         content: (
-          <FileUploadsSection
+          <FileUploads
             uploads={uploads}
             canUpload={true}
             canDelete={true}
@@ -198,7 +265,7 @@ export default function HODProfilePage() {
         title: 'Audit logs',
         description: 'Detailed log of all actions performed on your account',
         content: (
-          <AuditLogsSection
+          <AuditLogs
             logs={auditLogs}
             onRefresh={async () => {
               window.location.reload();

@@ -1,12 +1,6 @@
-/**
- * Unified Bar Chart Component
- * Uses Recharts internally but maintains backward-compatible API
- * Consolidates custom SVG and Recharts implementations
- */
 import { useMemo } from 'react';
-import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useBrand } from '../ui/BrandProvider';
-import { Card } from '../ui/Card';
+import { motion } from 'framer-motion';
+import { fadeIn } from '../../lib/utils/animations';
 
 export interface BarChartData {
   label: string;
@@ -22,91 +16,66 @@ export interface BarChartProps {
   responsive?: boolean;
 }
 
-/**
- * Unified Bar Chart - uses Recharts for better accessibility and features
- * Maintains backward compatibility with existing API
- */
 export function BarChart({
   data,
   title,
   height = 200,
+  showValues = true,
   responsive = true
 }: BarChartProps) {
-  const { tokens } = useBrand();
-
-  // Transform data to Recharts format
-  const rechartsData = useMemo(() => {
-    return data.map((item) => ({
-      name: item.label,
-      value: item.value
-    }));
-  }, [data]);
-
-  // Get colors from data or use brand colors
-  const barColor = useMemo(() => {
-    return data[0]?.color || tokens.primary;
-  }, [data, tokens]);
-
-  if (!data || data.length === 0) {
-    return (
-      <Card padding="lg">
-        {title && (
-          <h3 className="mb-4 text-sm font-semibold text-[var(--brand-text-primary)] sm:text-base">
-            {title}
-          </h3>
-        )}
-        <p className="text-sm text-[var(--brand-muted)] text-center py-8">
-          No data available
-        </p>
-      </Card>
-    );
-  }
+  const maxValue = useMemo(() => Math.max(...data.map((d) => d.value), 1), [data]);
 
   return (
-    <div className={`w-full ${responsive ? 'overflow-x-auto scrollbar-thin' : ''}`}>
+    <motion.div
+      className={`w-full ${responsive ? 'overflow-x-auto scrollbar-thin' : ''}`}
+      variants={fadeIn}
+      initial="hidden"
+      animate="visible"
+    >
       {title && (
         <h3 className="mb-4 text-sm font-semibold text-[var(--brand-text-primary)] sm:text-base">
           {title}
         </h3>
       )}
-      <ResponsiveContainer width="100%" height={height}>
-        <RechartsBarChart
-          data={rechartsData}
-          margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
-          role="img"
-          aria-label={title || 'Bar chart'}
-        >
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke="var(--brand-border)"
-            opacity={0.3}
-          />
-          <XAxis
-            dataKey="name"
-            angle={-45}
-            textAnchor="end"
-            height={80}
-            tick={{ fill: 'var(--brand-surface-contrast)', fontSize: 12 }}
-          />
-          <YAxis
-            tick={{ fill: 'var(--brand-surface-contrast)', fontSize: 12 }}
-          />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: 'var(--brand-surface)',
-              border: '1px solid var(--brand-border)',
-              borderRadius: '8px',
-              color: 'var(--brand-surface-contrast)'
-            }}
-            cursor={{ fill: 'var(--brand-border)', opacity: 0.2 }}
-          />
-          <Bar
-            dataKey="value"
-            fill={barColor}
-            radius={[4, 4, 0, 0]}
-          />
-        </RechartsBarChart>
-      </ResponsiveContainer>
-    </div>
+      <div className="relative" style={{ height: `${height}px` }}>
+        <div className="flex h-full items-end justify-between gap-1 sm:gap-2">
+          {data.map((item, index) => {
+            const percentage = (item.value / maxValue) * 100;
+            const barColor = item.color || 'var(--brand-primary)';
+
+            return (
+              <motion.div
+                key={index}
+                className="flex flex-1 flex-col items-center gap-1"
+                style={{ height: '100%' }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05, duration: 0.3 }}
+              >
+                {showValues && (
+                  <span className="text-xs font-medium text-[var(--brand-text-primary)]">
+                    {item.value}
+                  </span>
+                )}
+                <motion.div
+                  className="w-full rounded-t transition-all duration-300 hover:opacity-80"
+                  style={{
+                    height: `${percentage}%`,
+                    backgroundColor: barColor,
+                    minHeight: item.value > 0 ? '4px' : '0'
+                  }}
+                  role="img"
+                  aria-label={`${item.label}: ${item.value}`}
+                  whileHover={{ scale: 1.05 }}
+                />
+                <span className="mt-1 text-[10px] text-[var(--brand-muted)] text-center leading-tight">
+                  {item.label}
+                </span>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    </motion.div>
   );
 }

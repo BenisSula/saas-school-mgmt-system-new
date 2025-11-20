@@ -16,12 +16,11 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const describedBy: string[] = [];
     if (helperText) describedBy.push(helperId);
     if (error) describedBy.push(errorId);
-    const hasError = Boolean(error);
 
     const baseClasses =
-      'block w-full rounded-lg border bg-[var(--brand-surface)] text-[var(--brand-text-primary)] placeholder:text-[var(--brand-muted)] focus-visible-ring transition-all duration-200 px-3 py-2 text-sm sm:text-base touch-target';
+      'block w-full rounded-lg border bg-[var(--brand-surface)] text-[var(--brand-text-primary)] placeholder:text-[var(--brand-muted)] focus-visible-ring transition-all duration-200 px-3 py-2 text-sm sm:text-base';
 
-    const fieldClasses = hasError
+    const fieldClasses = error
       ? 'border-[var(--brand-error)] focus-visible:ring-[var(--brand-error)]'
       : 'border-[var(--brand-border)] focus-visible:ring-[var(--brand-primary)] hover:border-[var(--brand-border-strong)]';
 
@@ -35,8 +34,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           id={inputId}
-          aria-describedby={describedBy.length > 0 ? describedBy.join(' ') : undefined}
-          {...(hasError ? { 'aria-invalid': 'true' as const } : {})}
+          aria-describedby={describedBy.join(' ') || undefined}
+          aria-invalid={Boolean(error)}
           className={cn(baseClasses, fieldClasses)}
           {...props}
         />

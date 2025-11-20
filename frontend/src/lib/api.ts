@@ -7,39 +7,17 @@ import {
   clearAllTokens,
   isValidTokenFormat
 } from './security/tokenSecurity';
-// import { sanitizeForDisplay } from './sanitize';
+// import { sanitizeForDisplay } from './security/inputSanitization';
 import { extractPaginatedData, type PaginatedResponse } from './api/pagination';
 
-// ============================================================================
-// API Base URL Resolution & Validation
-// ============================================================================
-
-/**
- * Configuration constants for API base URL resolution
- */
-const API_CONFIG = {
-  DEFAULT_DEV_PROXY_PATH: '/api',
-  SUPPORTED_PROTOCOLS: ['http:', 'https:'] as const,
-  DOCKER_SERVICE_HOSTNAMES: ['backend', 'api', 'api-server'] as const
-} as const;
-
-/**
- * Strips trailing slash from URL string
- */
 function stripTrailingSlash(input: string): string {
   return input.endsWith('/') ? input.slice(0, -1) : input;
 }
 
-/**
- * Checks if a string is an absolute HTTP/HTTPS URL
- */
 function isAbsoluteHttpUrl(value: string): boolean {
   return /^https?:\/\//i.test(value);
 }
 
-/**
- * Trims whitespace and removes surrounding quotes from environment variable values
- */
 function trimAndUnquote(value: string): string {
   const trimmed = value.trim();
   if (
@@ -51,252 +29,130 @@ function trimAndUnquote(value: string): string {
   return trimmed;
 }
 
-/**
- * Normalizes a URL string, ensuring it's properly formatted
- */
+// Removed unused function safeWindowOrigin
+
 function normaliseBaseUrl(raw: string): string {
   try {
     const url = new URL(raw);
     return stripTrailingSlash(url.toString());
   } catch {
-    // If URL parsing fails, return cleaned string
     return stripTrailingSlash(raw);
   }
 }
 
-/**
- * Gets a safe window.location.origin with fallback
- * Handles cases where window.location.origin might be invalid or unavailable
- */
-function getSafeWindowOrigin(): string | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  try {
-    const origin = window.location.origin;
-    // Validate origin is a proper URL
-    if (origin && (origin.startsWith('http://') || origin.startsWith('https://'))) {
-      return origin;
-    }
-    // Fallback: construct from protocol, hostname, and port
-    const { protocol, hostname, port } = window.location;
-    if (protocol && hostname) {
-      const constructed = port ? `${protocol}//${hostname}:${port}` : `${protocol}//${hostname}`;
-      if (isAbsoluteHttpUrl(constructed)) {
-        return constructed;
-      }
-    }
-  } catch (error) {
-    console.warn('[API] Failed to get window.location.origin:', error);
-  }
-
-  return null;
-}
-
-/**
- * Validates that an environment variable value is non-empty and properly formatted
- */
-function validateEnvValue(value: string | undefined, varName: string): string | null {
-  if (!value) {
-    return null;
-  }
-
-  const cleaned = trimAndUnquote(value);
-  if (!cleaned || cleaned.length === 0) {
-    console.warn(`[API] ${varName} is empty or whitespace-only`);
-    return null;
-  }
-
-  return cleaned;
-}
-
-/**
- * Detects and warns about Docker service hostnames that won't work from browser
- */
-function detectDockerHostname(url: string): boolean {
-  const lowerUrl = url.toLowerCase();
-  return API_CONFIG.DOCKER_SERVICE_HOSTNAMES.some((hostname) =>
-    lowerUrl.includes(`//${hostname}:`)
-  );
-}
-
-/**
- * Resolves the API base URL from environment variables with proper validation
- * 
- * Strategy:
- * 1. Check VITE_API_BASE_URL (or VITE_API_URL for backward compatibility)
- * 2. If relative path (/api) - use as-is for Vite proxy
- * 3. If absolute URL - validate and use
- * 4. In dev mode: fallback to /api proxy path
- * 5. In production: require explicit configuration
- */
 function resolveApiBaseUrl(): string {
-  // Step 1: Get environment variable value
-  const envValue = validateEnvValue(
-    import.meta.env.VITE_API_BASE_URL ?? import.meta.env.VITE_API_URL,
-    'VITE_API_BASE_URL'
-  );
+  // Check for explicit VITE_API_BASE_URL first (even in dev mode)
+  const explicitRaw = (import.meta.env.VITE_API_BASE_URL ?? import.meta.env.VITE_API_URL) as
+    | string
+    | undefined;
 
-  // Step 2: Handle relative paths (for Vite proxy)
-  if (envValue && envValue.startsWith('/')) {
-    const normalized = stripTrailingSlash(envValue);
-    if (import.meta.env.DEV) {
-      console.log(`[API] Using relative proxy path: ${normalized}`);
-    }
-    return normalized;
-  }
-
-  // Step 3: Handle absolute URLs
-  if (envValue) {
-    // Warn about Docker service hostnames (won't work from browser)
-    if (detectDockerHostname(envValue)) {
-      console.warn(
-        `[API] WARNING: VITE_API_BASE_URL contains Docker service hostname (${envValue}). ` +
-          `This won't work from browser. Use relative path '/api' or 'http://localhost:PORT' instead.`
-      );
-    }
-
-    try {
-      const normalized = normaliseBaseUrl(envValue);
-      if (isAbsoluteHttpUrl(normalized)) {
-        if (import.meta.env.DEV) {
-          console.log(`[API] Using absolute URL: ${normalized}`);
-        }
-        return normalized;
+  if (explicitRaw) {
+    const cleaned = trimAndUnquote(explicitRaw);
+    if (cleaned) {
+      // Relative base like "/api" - keep it relative so Vite proxy can handle it
+      if (cleaned.startsWith('/')) {
+        // In development, Vite proxy handles /api -> backend
+        // Don't convert to absolute URL - let browser use relative path
+        return stripTrailingSlash(cleaned);
       }
-      console.warn(`[API] Invalid absolute URL format: ${envValue}`);
-    } catch (error) {
-      console.error(`[API] Failed to normalize URL: ${envValue}`, error);
+      // Absolute URL provided - use it
+      const normalised = stripTrailingSlash(normaliseBaseUrl(cleaned));
+      if (isAbsoluteHttpUrl(normalised)) {
+        return normalised;
+      }
     }
   }
 
-  // Step 4: Development fallback
+  // Fallback: In dev mode, use relative /api path (Vite proxy will handle it)
   if (import.meta.env.DEV) {
-    console.log(`[API] No VITE_API_BASE_URL set, using default dev proxy: ${API_CONFIG.DEFAULT_DEV_PROXY_PATH}`);
-    return API_CONFIG.DEFAULT_DEV_PROXY_PATH;
+    return '/api';
   }
 
-  // Step 5: Production requires explicit configuration
-  const errorMsg = envValue
-    ? `Invalid VITE_API_BASE_URL: "${envValue}". Must be absolute URL (http://...) or relative path (/api).`
-    : 'Missing VITE_API_BASE_URL. Required in production. Set to absolute URL or relative path (/api).';
-  throw new Error(errorMsg);
+  // Production: require explicit configuration
+  if (!explicitRaw) {
+    throw new Error('Missing or invalid VITE_API_BASE_URL: <empty> — see docs/.env.example');
+  }
+
+  const cleaned = trimAndUnquote(explicitRaw);
+  if (!cleaned) {
+    throw new Error('Missing or invalid VITE_API_BASE_URL: <whitespace> — see docs/.env.example');
+  }
+
+  // Absolute or host-only; require http/https
+  const normalised = stripTrailingSlash(normaliseBaseUrl(cleaned));
+  if (!isAbsoluteHttpUrl(normalised)) {
+    throw new Error(
+      `Missing or invalid VITE_API_BASE_URL: ${explicitRaw} — must start with http:// or https:// (or be a relative path like /api).`
+    );
+  }
+  return normalised;
 }
 
-/**
- * Validates the resolved API_BASE_URL at runtime
- */
-function validateResolvedBaseUrl(baseUrl: string): void {
-  // Must be relative path or absolute URL
-  if (!baseUrl.startsWith('/') && !isAbsoluteHttpUrl(baseUrl)) {
-    const errorMsg = `Invalid API_BASE_URL format: "${baseUrl}". Expected absolute URL (http://...) or relative path (/api).`;
-    console.error(`[API] ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
-
-  // Additional validation for absolute URLs
-  if (isAbsoluteHttpUrl(baseUrl)) {
-    try {
-      const url = new URL(baseUrl);
-      if (!API_CONFIG.SUPPORTED_PROTOCOLS.includes(url.protocol as any)) {
-        throw new Error(`Unsupported protocol: ${url.protocol}. Only http: and https: are supported.`);
-      }
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      console.error(`[API] Invalid absolute URL: ${baseUrl}`, errorMsg);
-      throw new Error(`Invalid API_BASE_URL: ${errorMsg}`);
-    }
-  }
-}
-
-// Resolve and validate API base URL
 let API_BASE_URL: string;
 try {
   API_BASE_URL = resolveApiBaseUrl();
-  validateResolvedBaseUrl(API_BASE_URL);
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
-  console.error('[API] CRITICAL: API_BASE_URL resolution failed:', message);
+  console.error('[SUMANO][API_BASE_URL] RESOLUTION FAILED:', message);
   throw error;
 }
 
-// Development logging
-if (import.meta.env.DEV) {
-  console.group('[API] Configuration');
-  console.log('API_BASE_URL:', API_BASE_URL);
-  const windowOrigin = getSafeWindowOrigin();
-  if (windowOrigin) {
-    console.log('Window Origin:', windowOrigin);
-  } else {
-    console.warn('Window Origin: Unable to determine (may be SSR context)');
-  }
-  if (typeof window !== 'undefined') {
-    console.log('Window Href:', window.location.href);
-  }
-  console.groupEnd();
+// Validate API_BASE_URL - allow relative paths (for Vite proxy) or absolute URLs
+if (!API_BASE_URL.startsWith('/') && !isAbsoluteHttpUrl(API_BASE_URL)) {
+  const errorMsg = `[SUMANO][API_BASE_URL] CRITICAL: Resolved to invalid base: "${API_BASE_URL}". Expected http:// or https:// URL, or relative path like /api.`;
+  console.error(errorMsg);
+  throw new Error(errorMsg);
 }
 
-/**
- * Safely joins a path with the API base URL, guaranteeing a valid absolute URL when needed
- * 
- * @param path - API endpoint path (e.g., '/auth/login')
- * @param base - Base URL (relative '/api' or absolute 'http://...')
- * @returns Resolved URL string
- * @throws Error if URL construction fails
- */
-function safeJoinUrl(path: string, base: string): string {
-  // Validate inputs
-  if (!path || typeof path !== 'string') {
-    throw new Error(`Invalid path: ${String(path)}. Expected non-empty string.`);
+if (import.meta.env.DEV) {
+  console.log('[SUMANO][API_BASE_URL]', API_BASE_URL);
+  // Validate window context
+  if (typeof window !== 'undefined') {
+    console.log('[SUMANO][WINDOW_ORIGIN]', window.location.origin);
+    console.log('[SUMANO][WINDOW_HREF]', window.location.href);
   }
-  if (!base || typeof base !== 'string') {
-    throw new Error(`Invalid API_BASE_URL: ${String(base)}. Expected non-empty string.`);
-  }
+}
 
-  // If path is already absolute, use it as-is (shouldn't happen in normal flow)
-  if (isAbsoluteHttpUrl(path)) {
-    console.warn(`[API] Path is already absolute: ${path}. Using as-is.`);
+function safeJoinUrl(path: string, base: string): string {
+  // If path is already absolute, use it as-is
+  if (/^https?:\/\//i.test(path)) {
     return path;
   }
 
-  // Normalize path: ensure it starts with /
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-
-  // Case 1: Base is relative path (e.g., '/api') - use for Vite proxy
-  if (base.startsWith('/')) {
-    // Combine relative paths: /api + /auth/login = /api/auth/login
-    const combined = `${base}${normalizedPath}`;
-    // Validate no double slashes (except after protocol)
-    return combined.replace(/([^:]\/)\/+/g, '$1');
+  // Ensure base is never empty or invalid
+  if (!base || typeof base !== 'string') {
+    throw new Error(`Invalid API_BASE_URL: ${String(base)}. Expected a non-empty string.`);
   }
 
-  // Case 2: Base is absolute URL - construct absolute URL
+  // Base is relative path (e.g., /api) - use as-is for Vite proxy
+  if (base.startsWith('/')) {
+    // Ensure path starts with / for proper resolution
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    // Combine relative paths: /api + /auth/login = /api/auth/login
+    return `${base}${normalizedPath}`;
+  }
+
+  // Base is already absolute http(s)
   if (isAbsoluteHttpUrl(base)) {
     try {
-      // Parse base URL to ensure it's valid
-      const baseUrl = new URL(base);
-      
+      // Ensure base ends with / for proper URL resolution
+      const normalizedBase = base.endsWith('/') ? base : `${base}/`;
       // Ensure path starts with / for proper resolution
-      const resolvedUrl = new URL(normalizedPath, baseUrl);
-      
-      // Return as string, stripping trailing slash if present
-      return stripTrailingSlash(resolvedUrl.toString());
+      const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+      return new URL(normalizedPath, normalizedBase).toString();
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      const windowOrigin = getSafeWindowOrigin();
       throw new Error(
-        `Failed to construct absolute URL with base "${base}" and path "${path}": ${errorMsg}. ` +
-          `Window origin: ${windowOrigin || 'N/A'}. ` +
-          `Please check VITE_API_BASE_URL configuration.`
+        `Failed to construct URL with base "${base}" and path "${path}": ${errorMsg}. ` +
+          `Please check VITE_API_BASE_URL or restart the dev server. ` +
+          `Current window.location.origin: ${typeof window !== 'undefined' ? window.location.origin : 'N/A'}.`
       );
     }
   }
 
-  // Case 3: Invalid base format
+  // Fallback: Base is relative but doesn't start with / - shouldn't happen
   throw new Error(
-    `Invalid API_BASE_URL format: "${base}". ` +
-      `Expected absolute URL (http://...) or relative path starting with / (e.g., /api).`
+    `Invalid API_BASE_URL: "${base}". Expected absolute URL (http://...) or relative path starting with / (e.g., /api).`
   );
 }
 // Keys are kept in tokenSecurity; avoid unused local duplicates
@@ -625,93 +481,61 @@ async function apiFetch<T>(path: string, options: FetchOptions = {}, retry = tru
     throw new Error(errorMsg);
   }
 
-  // Build request URL with validation
-  let requestUrl: string;
-  try {
-    requestUrl = safeJoinUrl(path, API_BASE_URL);
-  } catch (urlError) {
-    const errorMsg = urlError instanceof Error ? urlError.message : String(urlError);
-    const windowOrigin = getSafeWindowOrigin();
-    console.error('[apiFetch] URL construction failed:', {
-      path,
-      API_BASE_URL,
-      error: errorMsg,
-      windowOrigin: windowOrigin || 'N/A',
-      windowHref: typeof window !== 'undefined' ? window.location.href : 'N/A'
-    });
-    throw new Error(`Failed to construct API URL: ${errorMsg}`);
-  }
-
-  // Auto-recovery handler for network failures
-  const attemptFetch = async (url: string, attemptNumber: number = 1): Promise<Response> => {
-    try {
-      const response = await fetch(url, {
-        ...rest,
-        headers,
-        credentials: 'include' // Include cookies for CSRF token
-      });
-      return response;
-    } catch (fetchError) {
-      const errorMsg = fetchError instanceof Error ? fetchError.message : String(fetchError);
-      const isNetworkError =
-        errorMsg.includes('Failed to fetch') ||
-        errorMsg.includes('NetworkError') ||
-        errorMsg.includes('ERR_') ||
-        errorMsg.includes('ERR_NAME_NOT_RESOLVED') ||
-        errorMsg.includes('ERR_CONNECTION_REFUSED') ||
-        errorMsg.includes('ERR_NETWORK_CHANGED');
-
-      // Log network errors for debugging
-      if (isNetworkError && import.meta.env.DEV) {
-        console.warn(`[apiFetch] Network error (attempt ${attemptNumber}):`, {
-          url,
-          error: errorMsg,
-          API_BASE_URL,
-          suggestion: 'Check if backend server is running and accessible'
-        });
-      }
-
-      // Auto-recovery: If using Docker hostname and first attempt fails, try localhost
-      if (attemptNumber === 1 && isNetworkError && detectDockerHostname(url)) {
-        const localhostUrl = url.replace(/\/\/backend:/g, '//127.0.0.1:');
-        if (localhostUrl !== url) {
-          console.warn(
-            `[apiFetch] Retrying with localhost fallback: ${localhostUrl} (original: ${url})`
-          );
-          return attemptFetch(localhostUrl, 2);
-        }
-      }
-
-      // Throw user-friendly error
-      if (isNetworkError) {
-        const suggestion = import.meta.env.DEV
-          ? `Ensure backend is running on ${API_BASE_URL.startsWith('/') ? 'port configured in Vite proxy' : API_BASE_URL}`
-          : 'Check network connection and server status';
-        throw new Error(
-          `Unable to connect to API server at ${API_BASE_URL}. ${suggestion}. ` +
-            `Original error: ${errorMsg}`
-        );
-      }
-
-      // Re-throw non-network errors
-      throw fetchError;
-    }
-  };
-
-  // Execute fetch with auto-recovery
   let response: Response;
   try {
-    response = await attemptFetch(requestUrl);
-  } catch (error) {
-    // Final error handling - log and re-throw
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error('[apiFetch] Request failed after retries:', {
-      path,
-      requestUrl,
-      API_BASE_URL,
-      error: errorMsg
+    // Build a safe absolute URL and avoid accidental double slashes
+    let requestUrl: string;
+    try {
+      requestUrl = safeJoinUrl(path, API_BASE_URL);
+    } catch (urlError) {
+      const errorMsg = urlError instanceof Error ? urlError.message : String(urlError);
+      console.error('[apiFetch] URL construction failed:', {
+        path,
+        API_BASE_URL,
+        error: errorMsg,
+        windowOrigin: typeof window !== 'undefined' ? window.location.origin : 'N/A',
+        windowHref: typeof window !== 'undefined' ? window.location.href : 'N/A'
+      });
+      throw new Error(`Failed to construct API URL: ${errorMsg}`);
+    }
+    // Pre-rewrite docker service hostname for host browser in dev
+    if (import.meta.env.DEV && requestUrl.includes('//backend:')) {
+      requestUrl = requestUrl.replace('//backend:', '//127.0.0.1:');
+    }
+    response = await fetch(requestUrl, {
+      ...rest,
+      headers,
+      credentials: 'include' // Include cookies for CSRF token
     });
-    throw error;
+  } catch (error) {
+    // Fallback retry: if dev build points to a Docker service hostname that isn't resolvable
+    // from the host browser (e.g., http://backend:3001), retry once with 127.0.0.1
+    try {
+      const reqUrl = safeJoinUrl(path, API_BASE_URL);
+      if (reqUrl.includes('//backend:')) {
+        const fallbackUrl = reqUrl.replace('//backend:', '//127.0.0.1:');
+        response = await fetch(fallbackUrl, {
+          ...rest,
+          headers,
+          credentials: 'include'
+        });
+      } else {
+        throw error;
+      }
+    } catch (retryError) {
+      const retryMsg = retryError instanceof Error ? retryError.message : String(retryError);
+      if (
+        retryMsg.includes('Failed to fetch') ||
+        retryMsg.includes('NetworkError') ||
+        retryMsg.includes('ERR_') ||
+        retryMsg.includes('ERR_NAME_NOT_RESOLVED')
+      ) {
+        throw new Error(
+          `Unable to connect to the server at ${API_BASE_URL}. Please ensure the backend server is running and accessible.`
+        );
+      }
+      throw new Error(`Network request failed: ${retryMsg}`);
+    }
   }
 
   if (response.status === 401 && retry && refreshToken) {
@@ -723,33 +547,11 @@ async function apiFetch<T>(path: string, options: FetchOptions = {}, retry = tru
 
   if (!response.ok) {
     const errorInfo = await extractError(response);
-    const error = new Error(errorInfo.message) as Error & { apiError?: ApiErrorResponse; suppressLog?: boolean };
+    const error = new Error(errorInfo.message) as Error & { apiError?: ApiErrorResponse };
     // Attach structured error data for field-level error handling
     if (errorInfo.error) {
       error.apiError = errorInfo.error;
     }
-    
-    // Mark expected errors to suppress logging
-    // These are handled gracefully by components
-    const isPublicEndpoint = path.includes('/configuration/branding') || 
-                             path.includes('/schools/top');
-    const isListEndpoint = (path === '/teachers' || path === '/students');
-    const isExpectedError = 
-      (response.status === 401 && isPublicEndpoint) || // Public endpoints that require auth
-      (response.status === 500 && isPublicEndpoint) || // Server errors on public endpoints
-      (response.status === 400 && isListEndpoint); // Validation errors on list endpoints (should be fixed by backend)
-    
-    if (isExpectedError) {
-      // Mark error to suppress React Query logging
-      error.suppressLog = true;
-    } else if (response.status === 401 && !isPublicEndpoint && import.meta.env.DEV) {
-      // Log warnings for unexpected 401s only in dev
-      console.warn(`[API] Authentication required for ${path}`);
-    } else if (response.status === 400 && import.meta.env.DEV && !isListEndpoint) {
-      // Log 400 errors in dev for debugging (except list endpoints which are expected)
-      console.warn(`[API] Bad request: ${path}`, errorInfo);
-    }
-    
     throw error;
   }
 
@@ -918,8 +720,6 @@ export interface TeacherProfile {
   email: string;
   subjects: string[];
   assigned_classes: string[];
-  qualifications?: string;
-  yearsOfExperience?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -931,8 +731,6 @@ function transformTeacher(backendTeacher: {
   email: string;
   subjects: string | string[];
   assigned_classes: string | string[];
-  qualifications?: string | null;
-  years_of_experience?: number | null;
   created_at?: string;
   updated_at?: string;
 }): TeacherProfile {
@@ -950,8 +748,6 @@ function transformTeacher(backendTeacher: {
       : typeof backendTeacher.assigned_classes === 'string'
         ? JSON.parse(backendTeacher.assigned_classes || '[]')
         : [],
-    qualifications: backendTeacher.qualifications ?? undefined,
-    yearsOfExperience: backendTeacher.years_of_experience ?? undefined,
     created_at: backendTeacher.created_at,
     updated_at: backendTeacher.updated_at
   };
@@ -965,7 +761,6 @@ export interface StudentRecord {
   class_uuid?: string | null;
   admission_number: string | null;
   date_of_birth?: string | null;
-  enrollment_date?: string | null;
   parent_contacts?: Array<{ name: string; relationship: string; phone: string }> | string | null;
   created_at?: string;
   updated_at?: string;
@@ -980,7 +775,6 @@ function transformStudent(backendStudent: {
   class_uuid?: string | null;
   admission_number: string | null;
   date_of_birth?: string | null;
-  enrollment_date?: string | null;
   parent_contacts?: string | Array<{ name: string; relationship: string; phone: string }> | null;
   created_at?: string;
   updated_at?: string;
@@ -1006,7 +800,6 @@ function transformStudent(backendStudent: {
     class_uuid: backendStudent.class_uuid,
     admission_number: backendStudent.admission_number,
     date_of_birth: backendStudent.date_of_birth,
-    enrollment_date: backendStudent.enrollment_date,
     parent_contacts: parentContacts,
     created_at: backendStudent.created_at,
     updated_at: backendStudent.updated_at
@@ -1036,7 +829,6 @@ export interface AdminTeacherAssignment {
   subject_id: string;
   subject_name: string;
   is_class_teacher: boolean;
-  metadata?: Record<string, unknown>;
 }
 
 export interface TeacherAssignmentSummary {
@@ -1232,7 +1024,6 @@ export interface PlatformOverview {
   };
   roleDistribution: {
     admins: number;
-    superadmins: number;
     hods: number;
     teachers: number;
     students: number;
@@ -1412,15 +1203,6 @@ export const api = {
       false // Don't retry on lookup failures
     );
   },
-  // Tenant Status
-  getTenantStatus: (tenantId: string) =>
-    apiFetch<{
-      status: 'pending' | 'preparing' | 'ready' | 'failed';
-      error?: string;
-      startedAt?: string;
-      completedAt?: string;
-    }>(`/tenant-status/${tenantId}`, {}, false), // Don't retry on status checks
-
   // Configuration
   getBranding: () => apiFetch<BrandingConfig | null>('/configuration/branding'),
   updateBranding: (payload: Partial<BrandingConfig>) =>
@@ -1503,10 +1285,6 @@ export const api = {
     apiFetch<ExamSummary>('/exams', {
       method: 'POST',
       body: JSON.stringify(payload)
-    }),
-  deleteExam: (examId: string) =>
-    apiFetch<void>(`/exams/${examId}`, {
-      method: 'DELETE'
     }),
   bulkUpsertGrades: (examId: string, entries: GradeEntryInput[]) =>
     apiFetch<{ saved: number }>('/grades/bulk', {
@@ -1601,14 +1379,7 @@ export const api = {
   },
   updateTeacher: (
     id: string,
-    payload: {
-      name?: string;
-      email?: string;
-      subjects?: string[];
-      assignedClasses?: string[];
-      qualifications?: string;
-      yearsOfExperience?: number;
-    }
+    payload: { name?: string; email?: string; subjects?: string[]; assignedClasses?: string[] }
   ) =>
     apiFetch<TeacherProfile>(`/teachers/${id}`, {
       method: 'PUT',
@@ -1635,7 +1406,6 @@ export const api = {
       firstName?: string;
       lastName?: string;
       dateOfBirth?: string;
-      enrollmentDate?: string;
       classId?: string;
       admissionNumber?: string;
       parentContacts?: Array<{ name: string; relationship: string; phone: string }>;
@@ -1666,38 +1436,11 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ reason })
     }),
-  bulkApproveUsers: (userIds: string[]) =>
-    apiFetch<{
-      success: boolean;
-      processed: number;
-      successful: number;
-      failed: number;
-      results: Array<{ userId: string; success: boolean; error?: string }>;
-    }>('/users/bulk-approve', {
-      method: 'POST',
-      body: JSON.stringify({ userIds })
-    }),
-  bulkRejectUsers: (userIds: string[]) =>
-    apiFetch<{
-      success: boolean;
-      processed: number;
-      successful: number;
-      failed: number;
-      results: Array<{ userId: string; success: boolean; error?: string }>;
-    }>('/users/bulk-reject', {
-      method: 'POST',
-      body: JSON.stringify({ userIds })
-    }),
-  updateUserPassword: (userId: string, password: string) =>
-    apiFetch<{ success: boolean; message: string }>(`/users/${userId}/password`, {
-      method: 'PATCH',
-      body: JSON.stringify({ password })
-    }),
   // Admin user registration
   registerUser: (payload: {
     email: string;
     password: string;
-    role: 'student' | 'teacher' | 'hod';
+    role: 'student' | 'teacher';
     fullName: string;
     gender?: 'male' | 'female' | 'other';
     address?: string;
@@ -1707,14 +1450,12 @@ export const api = {
     parentGuardianContact?: string;
     studentId?: string;
     classId?: string;
-    // Teacher/HOD fields
+    // Teacher fields
     phone?: string;
     qualifications?: string;
     yearsOfExperience?: number;
     subjects?: string[];
     teacherId?: string;
-    // HOD fields
-    departmentId?: string;
   }) =>
     apiFetch<{ userId: string; profileId: string; email: string; role: Role; status: 'active' }>(
       '/users/register',
@@ -1723,30 +1464,6 @@ export const api = {
         body: JSON.stringify(payload)
       }
     ),
-  // Departments
-  listDepartments: () => apiFetch<Array<{ id: string; name: string; slug: string; contact_email?: string; contact_phone?: string }>>('/departments'),
-  // Credentials
-  downloadCredentialPDF: (data: {
-    email: string;
-    password: string;
-    fullName: string;
-    role: string;
-    schoolName?: string;
-  }) =>
-    apiFetch<{ base64: string }>('/credentials/pdf', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    }),
-  sendCredentialEmail: (data: {
-    email: string;
-    password: string;
-    fullName: string;
-    role: string;
-  }) =>
-    apiFetch<{ success: boolean; message: string }>('/credentials/email', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    }),
   getTopSchools: (limit = 5) => apiFetch<TopSchool[]>(`/schools/top?limit=${limit}`),
   superuser: {
     getOverview: () => apiFetch<PlatformOverview>('/superuser/overview'),
@@ -1869,12 +1586,7 @@ export const api = {
     listTeacherAssignments: () => apiFetch<AdminTeacherAssignment[]>('/admin/teacher-assignments'),
     assignTeacher: (
       teacherId: string,
-      payload: {
-        classId: string;
-        subjectId: string;
-        isClassTeacher?: boolean;
-        metadata?: Record<string, unknown>;
-      }
+      payload: { classId: string; subjectId: string; isClassTeacher?: boolean }
     ) =>
       apiFetch<AdminTeacherAssignment>(`/admin/teachers/${teacherId}/assignments`, {
         method: 'POST',
@@ -2010,26 +1722,7 @@ export const api = {
       totalStudents: number;
       averageClassSize: number;
     }>(`/reports/department-analytics${params}`);
-  },
-  getUserGrowthTrends: (days: number = 30) =>
-    apiFetch<Array<{
-      date: string;
-      student: number;
-      teacher: number;
-      admin: number;
-      hod: number;
-      total: number;
-    }>>(`/reports/user-growth${buildQuery({ days: String(days) })}`),
-  getTeachersPerDepartment: () =>
-    apiFetch<Array<{
-      department: string;
-      count: number;
-    }>>('/reports/teachers-per-department'),
-  getStudentsPerClass: () =>
-    apiFetch<Array<{
-      className: string;
-      count: number;
-    }>>('/reports/students-per-class')
+  }
 };
 
 export interface AuditLogEntry {

@@ -1,5 +1,4 @@
 @import './theme/variables.css';
-@import './spacing.css';
 
 @tailwind base;
 @tailwind components;
@@ -126,44 +125,9 @@
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--brand-surface)];
   }
 
-  /* Mobile touch targets - WCAG 2.5.5 Target Size */
+  /* Mobile touch targets */
   .touch-target {
     @apply min-h-[44px] min-w-[44px];
-  }
-
-  /* Enhanced spacing utilities */
-  .space-section {
-    @apply space-y-4 sm:space-y-6 lg:space-y-8;
-  }
-
-  .space-component {
-    @apply space-y-2 sm:space-y-3 lg:space-y-4;
-  }
-
-  /* Typography utilities */
-  .text-balance {
-    text-wrap: balance;
-  }
-
-  .text-pretty {
-    text-wrap: pretty;
-  }
-
-  /* Improved focus states */
-  .focus-ring-enhanced {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--brand-surface)];
-  }
-
-  /* Smooth scrolling */
-  .smooth-scroll {
-    scroll-behavior: smooth;
-  }
-
-  /* Container queries support */
-  @container (min-width: 640px) {
-    .container-sm\:block {
-      display: block;
-    }
   }
 
   /* Scrollbar styling */

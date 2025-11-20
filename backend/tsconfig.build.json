@@ -6,6 +6,6 @@
     "outDir": "dist"
   },
   "include": ["src/**/*"],
-  "exclude": ["tests", "tests/**/*", "dist", "node_modules", "src/scripts/**/*", "src/seed/**/*"]
+  "exclude": ["tests", "tests/**/*", "dist", "node_modules"]
 }
 

@@ -1,12 +1,6 @@
-/**
- * Unified Line Chart Component
- * Uses Recharts internally but maintains backward-compatible API
- * Consolidates custom SVG and Recharts implementations
- */
 import { useMemo } from 'react';
-import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useBrand } from '../ui/BrandProvider';
-import { Card } from '../ui/Card';
+import { motion } from 'framer-motion';
+import { fadeIn } from '../../lib/utils/animations';
 
 export interface LineChartDataPoint {
   label: string;
@@ -22,92 +16,99 @@ export interface LineChartProps {
   responsive?: boolean;
 }
 
-/**
- * Unified Line Chart - uses Recharts for better accessibility and features
- * Maintains backward compatibility with existing API
- */
 export function LineChart({
   data,
   title,
   height = 200,
-  color,
+  color = 'var(--brand-primary)',
   showDots = true,
   responsive = true
 }: LineChartProps) {
-  const { tokens } = useBrand();
-  const lineColor = color || tokens.primary;
+  const maxValue = useMemo(() => Math.max(...data.map((d) => d.value), 1), [data]);
+  const minValue = useMemo(() => Math.min(...data.map((d) => d.value), 0), [data]);
+  const range = maxValue - minValue || 1;
 
-  // Transform data to Recharts format
-  const rechartsData = useMemo(() => {
-    return data.map((point) => ({
-      name: point.label,
-      value: point.value
-    }));
-  }, [data]);
+  const points = useMemo(() => {
+    return data.map((point, index) => {
+      const x = (index / (data.length - 1 || 1)) * 100;
+      const y = 100 - ((point.value - minValue) / range) * 100;
+      return { x, y, ...point };
+    });
+  }, [data, minValue, range]);
 
-  if (!data || data.length === 0) {
-    return (
-      <Card padding="lg">
-        {title && (
-          <h3 className="mb-4 text-sm font-semibold text-[var(--brand-text-primary)] sm:text-base">
-            {title}
-          </h3>
-        )}
-        <p className="text-sm text-[var(--brand-muted)] text-center py-8">
-          No data available
-        </p>
-      </Card>
-    );
-  }
+  const pathData = useMemo(() => {
+    if (points.length === 0) return '';
+    const first = points[0];
+    let path = `M ${first.x} ${first.y}`;
+    for (let i = 1; i < points.length; i++) {
+      path += ` L ${points[i].x} ${points[i].y}`;
+    }
+    return path;
+  }, [points]);
 
   return (
-    <div className={`w-full ${responsive ? 'overflow-x-auto scrollbar-thin' : ''}`}>
+    <motion.div
+      className={`w-full ${responsive ? 'overflow-x-auto scrollbar-thin' : ''}`}
+      variants={fadeIn}
+      initial="hidden"
+      animate="visible"
+    >
       {title && (
         <h3 className="mb-4 text-sm font-semibold text-[var(--brand-text-primary)] sm:text-base">
           {title}
         </h3>
       )}
-      <ResponsiveContainer width="100%" height={height}>
-        <RechartsLineChart
-          data={rechartsData}
-          margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
-          role="img"
-          aria-label={title || 'Line chart'}
+      <div className="relative" style={{ height: `${height}px` }}>
+        <svg
+          width="100%"
+          height="100%"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          className="absolute inset-0"
         >
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke="var(--brand-border)"
-            opacity={0.3}
+          {/* Grid lines */}
+          {[0, 25, 50, 75, 100].map((y) => (
+            <line
+              key={y}
+              x1="0"
+              y1={y}
+              x2="100"
+              y2={y}
+              stroke="var(--brand-border)"
+              strokeWidth="0.5"
+              opacity="0.3"
+            />
+          ))}
+          {/* Line */}
+          <path
+            d={pathData}
+            fill="none"
+            stroke={color}
+            strokeWidth="2"
+            vectorEffect="non-scaling-stroke"
           />
-          <XAxis
-            dataKey="name"
-            angle={-45}
-            textAnchor="end"
-            height={80}
-            tick={{ fill: 'var(--brand-surface-contrast)', fontSize: 12 }}
-          />
-          <YAxis
-            tick={{ fill: 'var(--brand-surface-contrast)', fontSize: 12 }}
-          />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: 'var(--brand-surface)',
-              border: '1px solid var(--brand-border)',
-              borderRadius: '8px',
-              color: 'var(--brand-surface-contrast)'
-            }}
-            cursor={{ stroke: 'var(--brand-border)', strokeWidth: 1, strokeDasharray: '5 5' }}
-          />
-          <Line
-            type="monotone"
-            dataKey="value"
-            stroke={lineColor}
-            strokeWidth={2}
-            dot={showDots ? { r: 4, fill: lineColor } : false}
-            activeDot={{ r: 6 }}
-          />
-        </RechartsLineChart>
-      </ResponsiveContainer>
-    </div>
+          {/* Dots */}
+          {showDots &&
+            points.map((point, index) => (
+              <circle
+                key={index}
+                cx={point.x}
+                cy={point.y}
+                r="1.5"
+                fill={color}
+                className="hover:r-2 transition-all"
+              />
+            ))}
+        </svg>
+        {/* Labels */}
+        <div className="absolute bottom-0 left-0 right-0 flex justify-between text-[10px] text-[var(--brand-muted)]">
+          {data.map((point, index) => (
+            <span key={index} className="truncate">
+              {point.label}
+            </span>
+          ))}
+        </div>
+      </div>
+    </motion.div>
   );
 }

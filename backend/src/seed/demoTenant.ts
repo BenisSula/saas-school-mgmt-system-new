@@ -1,9 +1,3 @@
-/**
- * @deprecated Demo tenant seeding has been removed from the application
- * This file is kept for reference but seedDemoTenant() will not create any data
- * Use seedSuperUserOnly.ts to create only the superuser account
- */
-/* eslint-disable */
 import argon2 from 'argon2';
 import crypto from 'crypto';
 import type { Pool } from 'pg';
@@ -62,16 +56,20 @@ async function ensureTenant(pool: Pool): Promise<{ id: string }> {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function ensureUser(
-  _pool: Pool,
-  _options: {
+  pool: Pool,
+  {
+    email,
+    password,
+    role,
+    preferredId
+  }: {
     email: string;
     password: string;
     role: 'admin' | 'teacher' | 'superadmin' | 'student';
     preferredId?: string;
   },
-  _tenantId: string | null
+  tenantId: string | null
 ): Promise<string> {
   const normalisedEmail = email.toLowerCase();
   const passwordHash = await argon2.hash(password);
@@ -135,11 +133,10 @@ async function ensureUser(
   return userId;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function seedTenantData(
-  _pool: Pool,
-  _teacherUserId: string,
-  _studentSeedId: string
+  pool: Pool,
+  teacherUserId: string,
+  studentSeedId: string
 ): Promise<string> {
   let primaryStudentId = studentSeedId;
 
@@ -331,16 +328,7 @@ async function seedTenantData(
   return primaryStudentId;
 }
 
-export async function seedDemoTenant(_pool: Pool): Promise<void> {
-  // DISABLED: Seed data has been removed from the application
-  // This function no longer creates any demo data
-  console.warn('⚠️  WARNING: seedDemoTenant() is disabled. Seed data has been removed.');
-  console.warn('⚠️  Use seedSuperUserOnly.ts to create only the superuser account.');
-  console.warn('⚠️  To seed superuser, run: npm run seed:superuser');
-  return;
-  
-  // DISABLED CODE BELOW - kept for reference only
-  /*
+export async function seedDemoTenant(pool: Pool): Promise<void> {
   const tenant = await ensureTenant(pool);
   const superUserId = await ensureUser(pool, SUPERUSER, null);
   const adminUserId = await ensureUser(pool, ADMIN_USER, tenant.id);
@@ -364,7 +352,6 @@ export async function seedDemoTenant(_pool: Pool): Promise<void> {
       userIds: { superUserId, adminUserId, teacherUserId, studentUserId }
     });
   }
-  */
 }
 
 export type DemoSeedContext = {

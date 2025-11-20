@@ -1,8 +1,12 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
+import { X } from 'lucide-react';
 import { api } from '../../lib/api';
-import { userApi } from '../../lib/api/userApi';
-import { CredentialDisplayModal } from './CredentialDisplayModal';
-import { BaseUserRegistrationModal, type BaseUserRegistrationFormData } from './BaseUserRegistrationModal';
+import { Button } from '../ui/Button';
+import { Select } from '../ui/Select';
+import { AuthInput } from '../auth/fields/AuthInput';
+import { AuthDatePicker } from '../auth/fields/AuthDatePicker';
+import { AuthMultiSelect } from '../auth/fields/AuthMultiSelect';
+import { AuthErrorBanner } from '../auth/fields/AuthErrorBanner';
 import { sanitizeText } from '../../lib/sanitize';
 import {
   studentRegistrationSchema,
@@ -13,7 +17,6 @@ import type { ZodError } from 'zod';
 export interface AdminUserRegistrationModalProps {
   onClose: () => void;
   onSuccess: () => void;
-  defaultRole?: 'student' | 'teacher' | 'hod';
 }
 
 const SUBJECT_OPTIONS = [
@@ -27,95 +30,87 @@ const SUBJECT_OPTIONS = [
   { label: 'Computer Science', value: 'computer_science' }
 ];
 
-/**
- * Admin User Registration Modal (Refactored)
- * 
- * Uses BaseUserRegistrationModal for UI structure
- * Handles validation, submission, and credential display
- */
 export function AdminUserRegistrationModal({
   onClose,
-  onSuccess,
-  defaultRole = 'student'
+  onSuccess
 }: AdminUserRegistrationModalProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [role, setRole] = useState<'student' | 'teacher'>('student');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [gender, setGender] = useState<string>('');
+  const [address, setAddress] = useState('');
+
+  // Student fields
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [parentGuardianName, setParentGuardianName] = useState('');
+  const [parentGuardianContact, setParentGuardianContact] = useState('');
+  const [studentId, setStudentId] = useState('');
+  const [classId, setClassId] = useState('');
+
+  // Teacher fields
+  const [phone, setPhone] = useState('');
+  const [qualifications, setQualifications] = useState('');
+  const [yearsOfExperience, setYearsOfExperience] = useState<string>('');
+  const [subjects, setSubjects] = useState<string[]>([]);
+  const [teacherId, setTeacherId] = useState('');
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [showCredentialModal, setShowCredentialModal] = useState(false);
-  const [createdCredentials, setCreatedCredentials] = useState<{
-    email: string;
-    password: string;
-    fullName: string;
-    role: string;
-  } | null>(null);
-  const [departments, setDepartments] = useState<Array<{ id: string; name: string }>>([]);
-  const [loadingDepartments, setLoadingDepartments] = useState(false);
-  const [currentRole, setCurrentRole] = useState<'student' | 'teacher' | 'hod'>(defaultRole);
 
-  // Load departments when HOD role is selected
-  useEffect(() => {
-    if (currentRole === 'hod' && departments.length === 0) {
-      setLoadingDepartments(true);
-      api.listDepartments()
-        .then((depts) => {
-          setDepartments(depts);
-        })
-        .catch((err) => {
-          console.error('[AdminUserRegistrationModal] Failed to load departments:', err);
-          setError('Failed to load departments. Please try again.');
-        })
-        .finally(() => {
-          setLoadingDepartments(false);
-        });
-    }
-  }, [currentRole, departments.length]);
+  const isStudent = role === 'student';
+  const normalizedEmail = useMemo(() => sanitizeText(email).toLowerCase(), [email]);
 
-  const validateForm = (
-    formData: BaseUserRegistrationFormData,
-    role: 'student' | 'teacher' | 'hod'
-  ): boolean => {
+  const clearFieldError = (field: string) => {
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const validateForm = (): boolean => {
     try {
       let schema;
-      let formDataToValidate: unknown;
+      let formData: unknown;
 
-      const normalizedEmail = sanitizeText(formData.email).toLowerCase();
-
-      if (role === 'student') {
-        formDataToValidate = {
+      if (isStudent) {
+        formData = {
           email: normalizedEmail,
-          password: formData.password,
-          confirmPassword: formData.confirmPassword,
+          password,
+          confirmPassword,
           role: 'student',
-          fullName: formData.fullName,
-          gender: formData.gender || undefined,
-          dateOfBirth: formData.dateOfBirth || undefined,
-          parentGuardianName: formData.parentGuardianName || undefined,
-          parentGuardianContact: formData.parentGuardianContact || undefined,
-          studentId: formData.studentId || undefined,
-          classId: formData.classId || undefined,
-          address: formData.address || undefined
+          fullName,
+          gender: gender || undefined,
+          dateOfBirth: dateOfBirth || undefined,
+          parentGuardianName: parentGuardianName || undefined,
+          parentGuardianContact: parentGuardianContact || undefined,
+          studentId: studentId || undefined,
+          classId: classId || undefined,
+          address: address || undefined
         };
         schema = studentRegistrationSchema;
       } else {
-        formDataToValidate = {
+        formData = {
           email: normalizedEmail,
-          password: formData.password,
-          confirmPassword: formData.confirmPassword,
+          password,
+          confirmPassword,
           role: 'teacher',
-          fullName: formData.fullName,
-          gender: formData.gender || undefined,
-          phone: formData.phone || undefined,
-          qualifications: formData.qualifications || undefined,
-          yearsOfExperience: formData.yearsOfExperience ? parseInt(formData.yearsOfExperience, 10) : 0,
-          subjects: formData.subjects,
-          teacherId: formData.teacherId || undefined,
-          address: formData.address || undefined
+          fullName,
+          gender: gender || undefined,
+          phone: phone || undefined,
+          qualifications: qualifications || undefined,
+          yearsOfExperience: yearsOfExperience ? parseInt(yearsOfExperience, 10) : 0,
+          subjects,
+          teacherId: teacherId || undefined,
+          address: address || undefined
         };
         schema = teacherRegistrationSchema;
       }
 
-      schema.parse(formDataToValidate);
+      schema.parse(formData);
       setFieldErrors({});
       return true;
     } catch (err) {
@@ -133,13 +128,13 @@ export function AdminUserRegistrationModal({
     }
   };
 
-  const handleSubmit = async (data: BaseUserRegistrationFormData & { role: 'student' | 'teacher' | 'hod' }) => {
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (submitting) return;
 
     setError(null);
-    setCurrentRole(data.role);
 
-    if (!validateForm(data, data.role)) {
+    if (!validateForm()) {
       setError('Please correct the errors in the form.');
       return;
     }
@@ -147,14 +142,10 @@ export function AdminUserRegistrationModal({
     setSubmitting(true);
 
     try {
-      const normalizedEmail = sanitizeText(data.email).toLowerCase();
-      const isStudent = data.role === 'student';
-      const isHOD = data.role === 'hod';
-
       const payload: {
         email: string;
         password: string;
-        role: 'student' | 'teacher' | 'hod';
+        role: 'student' | 'teacher';
         fullName: string;
         gender?: 'male' | 'female' | 'other';
         address?: string;
@@ -168,50 +159,31 @@ export function AdminUserRegistrationModal({
         yearsOfExperience?: number;
         subjects?: string[];
         teacherId?: string;
-        departmentId?: string;
       } = {
         email: normalizedEmail,
-        password: data.password,
-        role: data.role,
-        fullName: data.fullName,
-        ...(data.gender ? { gender: data.gender as 'male' | 'female' | 'other' } : {}),
-        ...(data.address ? { address: data.address } : {})
+        password,
+        role,
+        fullName,
+        ...(gender ? { gender: gender as 'male' | 'female' | 'other' } : {}),
+        ...(address ? { address } : {})
       };
 
       if (isStudent) {
-        if (data.dateOfBirth) payload.dateOfBirth = data.dateOfBirth;
-        if (data.parentGuardianName) payload.parentGuardianName = data.parentGuardianName;
-        if (data.parentGuardianContact) payload.parentGuardianContact = data.parentGuardianContact;
-        if (data.studentId) payload.studentId = data.studentId;
-        if (data.classId) payload.classId = data.classId;
+        if (dateOfBirth) payload.dateOfBirth = dateOfBirth;
+        if (parentGuardianName) payload.parentGuardianName = parentGuardianName;
+        if (parentGuardianContact) payload.parentGuardianContact = parentGuardianContact;
+        if (studentId) payload.studentId = studentId;
+        if (classId) payload.classId = classId;
       } else {
-        if (data.phone) payload.phone = data.phone;
-        if (data.qualifications) payload.qualifications = data.qualifications;
-        if (data.yearsOfExperience) payload.yearsOfExperience = parseInt(data.yearsOfExperience, 10);
-        if (data.subjects.length > 0) payload.subjects = data.subjects;
-        if (data.teacherId) payload.teacherId = data.teacherId;
-        // HOD-specific field
-        if (isHOD && data.departmentId) payload.departmentId = data.departmentId;
+        if (phone) payload.phone = phone;
+        if (qualifications) payload.qualifications = qualifications;
+        if (yearsOfExperience) payload.yearsOfExperience = parseInt(yearsOfExperience, 10);
+        if (subjects.length > 0) payload.subjects = subjects;
+        if (teacherId) payload.teacherId = teacherId;
       }
 
-      await userApi.createUser({
-        email: normalizedEmail,
-        password: data.password,
-        role: data.role,
-        profile: payload
-      });
-      
-      // Store credentials to show in modal
-      setCreatedCredentials({
-        email: normalizedEmail,
-        password: data.password,
-        fullName: data.fullName,
-        role: data.role
-      });
-      
-      // Show credential modal
-      setShowCredentialModal(true);
-      setIsOpen(false);
+      await api.registerUser(payload);
+      onSuccess();
     } catch (err) {
       let message = 'Failed to register user. Please try again.';
       if (err instanceof Error) {
@@ -226,53 +198,299 @@ export function AdminUserRegistrationModal({
     }
   };
 
-  const handleClose = () => {
-    setIsOpen(false);
-    onClose();
-  };
-
-  const handleCredentialModalClose = () => {
-    setShowCredentialModal(false);
-    setCreatedCredentials(null);
-    setError(null);
-    setFieldErrors({});
-    onSuccess();
-  };
-
   return (
-    <>
-      <BaseUserRegistrationModal
-        isOpen={isOpen}
-        onClose={handleClose}
-        onSubmit={handleSubmit}
-        defaultRole={defaultRole}
-        submitting={submitting}
-        error={error}
-        fieldErrors={fieldErrors}
-        departments={departments}
-        loadingDepartments={loadingDepartments}
-        subjectOptions={SUBJECT_OPTIONS}
-        onErrorDismiss={() => setError(null)}
-        onFieldErrorClear={(field) => {
-          setFieldErrors((prev) => {
-            const next = { ...prev };
-            delete next[field];
-            return next;
-          });
-        }}
-      />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-auto rounded-2xl border border-[var(--brand-border)] bg-[var(--brand-surface)] p-6 shadow-2xl">
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 rounded-lg p-2 text-[var(--brand-muted)] transition-colors hover:bg-[var(--brand-surface)]/50 hover:text-[var(--brand-surface-contrast)]"
+          aria-label="Close"
+        >
+          <X className="h-5 w-5" />
+        </button>
 
-      {/* Credential Display Modal */}
-      {showCredentialModal && createdCredentials && (
-        <CredentialDisplayModal
-          isOpen={showCredentialModal}
-          onClose={handleCredentialModalClose}
-          credentials={createdCredentials}
-        />
-      )}
-    </>
+        <header className="mb-6">
+          <h2 className="text-2xl font-semibold text-[var(--brand-surface-contrast)]">
+            Register New User
+          </h2>
+          <p className="mt-2 text-sm text-[var(--brand-muted)]">
+            Create a new user account with profile. The user will be immediately active and can sign
+            in.
+          </p>
+        </header>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Role Selection */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-[var(--brand-surface-contrast)]">
+              User Role <span className="text-red-500">*</span>
+            </label>
+            <Select
+              value={role}
+              onChange={(e) => {
+                setRole(e.target.value as 'student' | 'teacher');
+                setFieldErrors({});
+                setError(null);
+              }}
+              options={[
+                { label: 'Student', value: 'student' },
+                { label: 'Teacher', value: 'teacher' }
+              ]}
+            />
+          </div>
+
+          {/* Common Fields */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <AuthInput
+              label="Email"
+              name="email"
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                clearFieldError('email');
+              }}
+              placeholder="user@school.edu"
+              required
+              error={fieldErrors.email}
+            />
+            <AuthInput
+              label="Full Name"
+              name="fullName"
+              type="text"
+              value={fullName}
+              onChange={(e) => {
+                setFullName(e.target.value);
+                clearFieldError('fullName');
+              }}
+              placeholder="John Doe"
+              required
+              error={fieldErrors.fullName}
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <AuthInput
+              label="Password"
+              name="password"
+              type="password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                clearFieldError('password');
+              }}
+              placeholder="••••••••"
+              required
+              error={fieldErrors.password}
+            />
+            <AuthInput
+              label="Confirm Password"
+              name="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                clearFieldError('confirmPassword');
+              }}
+              placeholder="••••••••"
+              required
+              error={fieldErrors.confirmPassword}
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-[var(--brand-surface-contrast)]">
+                Gender
+              </label>
+              <Select
+                value={gender}
+                onChange={(e) => {
+                  setGender(e.target.value);
+                  clearFieldError('gender');
+                }}
+                options={[
+                  { label: 'Select gender', value: '' },
+                  { label: 'Male', value: 'male' },
+                  { label: 'Female', value: 'female' },
+                  { label: 'Other', value: 'other' }
+                ]}
+              />
+            </div>
+            <AuthInput
+              label="Address"
+              name="address"
+              type="text"
+              value={address}
+              onChange={(e) => {
+                setAddress(e.target.value);
+                clearFieldError('address');
+              }}
+              placeholder="123 Main St, City"
+              error={fieldErrors.address}
+            />
+          </div>
+
+          {/* Student-Specific Fields */}
+          {isStudent && (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <AuthDatePicker
+                  label="Date of Birth"
+                  value={dateOfBirth}
+                  onChange={(e) => {
+                    setDateOfBirth(e.target.value);
+                    clearFieldError('dateOfBirth');
+                  }}
+                  error={fieldErrors.dateOfBirth}
+                />
+                <AuthInput
+                  label="Student ID"
+                  name="studentId"
+                  type="text"
+                  value={studentId}
+                  onChange={(e) => {
+                    setStudentId(e.target.value);
+                    clearFieldError('studentId');
+                  }}
+                  placeholder="STU-2025-001"
+                  error={fieldErrors.studentId}
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <AuthInput
+                  label="Class/Grade"
+                  name="classId"
+                  type="text"
+                  value={classId}
+                  onChange={(e) => {
+                    setClassId(e.target.value);
+                    clearFieldError('classId');
+                  }}
+                  placeholder="Grade 10"
+                  error={fieldErrors.classId}
+                />
+                <AuthInput
+                  label="Parent/Guardian Name"
+                  name="parentGuardianName"
+                  type="text"
+                  value={parentGuardianName}
+                  onChange={(e) => {
+                    setParentGuardianName(e.target.value);
+                    clearFieldError('parentGuardianName');
+                  }}
+                  placeholder="Parent Name"
+                  error={fieldErrors.parentGuardianName}
+                />
+              </div>
+
+              <AuthInput
+                label="Parent/Guardian Contact"
+                name="parentGuardianContact"
+                type="tel"
+                value={parentGuardianContact}
+                onChange={(e) => {
+                  setParentGuardianContact(e.target.value);
+                  clearFieldError('parentGuardianContact');
+                }}
+                placeholder="+1234567890"
+                error={fieldErrors.parentGuardianContact}
+              />
+            </>
+          )}
+
+          {/* Teacher-Specific Fields */}
+          {!isStudent && (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <AuthInput
+                  label="Phone Number"
+                  name="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    clearFieldError('phone');
+                  }}
+                  placeholder="+1234567890"
+                  error={fieldErrors.phone}
+                />
+                <AuthInput
+                  label="Teacher ID"
+                  name="teacherId"
+                  type="text"
+                  value={teacherId}
+                  onChange={(e) => {
+                    setTeacherId(e.target.value);
+                    clearFieldError('teacherId');
+                  }}
+                  placeholder="TCH-2025-001"
+                  error={fieldErrors.teacherId}
+                />
+              </div>
+
+              <AuthInput
+                label="Qualifications"
+                name="qualifications"
+                type="text"
+                value={qualifications}
+                onChange={(e) => {
+                  setQualifications(e.target.value);
+                  clearFieldError('qualifications');
+                }}
+                placeholder="B.Ed, M.Sc Mathematics"
+                error={fieldErrors.qualifications}
+              />
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <AuthInput
+                  label="Years of Experience"
+                  name="yearsOfExperience"
+                  type="number"
+                  value={yearsOfExperience}
+                  onChange={(e) => {
+                    setYearsOfExperience(e.target.value);
+                    clearFieldError('yearsOfExperience');
+                  }}
+                  placeholder="5"
+                  min="0"
+                  max="50"
+                  error={fieldErrors.yearsOfExperience}
+                />
+                <AuthMultiSelect
+                  label="Subjects Taught"
+                  options={SUBJECT_OPTIONS}
+                  value={subjects}
+                  onChange={(value) => {
+                    setSubjects(value);
+                    clearFieldError('subjects');
+                  }}
+                  placeholder="Select subjects"
+                  error={fieldErrors.subjects}
+                />
+              </div>
+            </>
+          )}
+
+          {error && <AuthErrorBanner message={error} onDismiss={() => setError(null)} />}
+
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={submitting}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button type="submit" loading={submitting} disabled={submitting} className="flex-1">
+              Register User
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
-
-export default AdminUserRegistrationModal;
-

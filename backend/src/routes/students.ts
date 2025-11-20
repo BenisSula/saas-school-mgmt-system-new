@@ -25,44 +25,15 @@ const listStudentsQuerySchema = z.object({
   limit: z.string().optional(),
   offset: z.string().optional(),
   page: z.string().optional()
-}).passthrough();
+});
 
 router.get('/', requirePermission('users:manage'), validateInput(listStudentsQuerySchema, 'query'), async (req, res) => {
   const { classId } = req.query;
   const pagination = req.pagination!;
   
-  // Get user's department and class assignments for RBAC filtering
-  let departmentId: string | null = null;
-  let classIds: string[] | undefined = undefined;
+  const allStudents = await listStudents(req.tenantClient!, req.tenant!.schema);
   
-  if (req.user?.role === 'hod') {
-    // Get department ID from shared.users
-    const deptResult = await req.tenantClient!.query<{ department_id: string | null }>(
-      `SELECT department_id FROM shared.users WHERE id = $1`,
-      [req.user.id]
-    );
-    departmentId = deptResult.rows[0]?.department_id ?? null;
-  } else if (req.user?.role === 'teacher') {
-    // Get teacher's assigned classes
-    const classResult = await req.tenantClient!.query<{ class_id: string }>(
-      `SELECT DISTINCT class_id FROM ${req.tenant!.schema}.teacher_assignments WHERE teacher_id IN (
-        SELECT id FROM ${req.tenant!.schema}.teachers WHERE email = (
-          SELECT email FROM shared.users WHERE id = $1
-        )
-      )`,
-      [req.user.id]
-    );
-    classIds = classResult.rows.map((r) => r.class_id);
-  }
-  
-  const allStudents = await listStudents(req.tenantClient!, req.tenant!.schema, {
-    userId: req.user?.id,
-    userRole: req.user?.role,
-    departmentId,
-    classIds
-  });
-  
-  // Filter by class if specified (additional filter on top of RBAC)
+  // Filter by class if specified
   let filtered = allStudents;
   if (classId && typeof classId === 'string') {
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(classId);

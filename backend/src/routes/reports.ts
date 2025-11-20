@@ -6,10 +6,7 @@ import {
   getAttendanceSummary,
   getDepartmentAnalytics,
   getGradeDistribution,
-  getFeeOutstanding,
-  getUserGrowthTrends,
-  getTeachersPerDepartment,
-  getStudentsPerClass
+  getFeeOutstanding
 } from '../services/reportService';
 
 const router = Router();
@@ -70,43 +67,6 @@ router.get('/department-analytics', requirePermission('department-analytics'), a
     const { department_id: departmentId } = req.query as Record<string, string | undefined>;
     const analytics = await getDepartmentAnalytics(req.tenantClient, req.tenant.schema, departmentId);
     res.json(analytics);
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.get('/user-growth', requirePermission('reports:view'), async (req, res, next) => {
-  try {
-    if (!req.tenant || !req.tenantClient) {
-      return res.status(500).json({ message: 'Tenant context missing' });
-    }
-    const days = req.query.days ? parseInt(req.query.days as string, 10) : 30;
-    const trends = await getUserGrowthTrends(req.tenantClient, req.tenant.schema, days);
-    res.json(trends);
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.get('/teachers-per-department', requirePermission('reports:view'), async (req, res, next) => {
-  try {
-    if (!req.tenant || !req.tenantClient) {
-      return res.status(500).json({ message: 'Tenant context missing' });
-    }
-    const data = await getTeachersPerDepartment(req.tenantClient, req.tenant.schema);
-    res.json(data);
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.get('/students-per-class', requirePermission('reports:view'), async (req, res, next) => {
-  try {
-    if (!req.tenant || !req.tenantClient) {
-      return res.status(500).json({ message: 'Tenant context missing' });
-    }
-    const data = await getStudentsPerClass(req.tenantClient, req.tenant.schema);
-    res.json(data);
   } catch (error) {
     next(error);
   }

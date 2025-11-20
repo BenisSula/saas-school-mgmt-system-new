@@ -58,9 +58,8 @@ export async function processPendingProfile(
       const studentData = transformToStudentInput(pendingProfileData);
       const student = await createStudent(tenantClient, schemaName, studentData);
       recordId = student.id;
-    } else if ((userRole === 'teacher' || userRole === 'hod') && pendingProfileData) {
-      // Process teacher/HOD profile using shared transformation utility
-      // HODs are created as teachers with department assignment (department_id is in shared.users)
+    } else if (userRole === 'teacher' && pendingProfileData) {
+      // Process teacher profile using shared transformation utility
       const teacherData = transformToTeacherInput(pendingProfileData, userEmail);
       const teacher = await createTeacher(tenantClient, schemaName, teacherData);
       recordId = teacher.id;

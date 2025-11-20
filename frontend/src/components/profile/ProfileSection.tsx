@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { fadeIn } from '../../lib/utils/animations';
 import { Card } from '../ui/Card';
-import { EmptyState } from '../ui/EmptyState';
 
 interface ProfileSectionProps {
   title?: string;
@@ -28,11 +27,7 @@ export function ProfileSection({
           </h3>
         )}
         {description && <p className="mb-4 text-sm text-[var(--brand-muted)]">{description}</p>}
-        {isEmpty ? (
-          <EmptyState message={emptyMessage} />
-        ) : (
-          children
-        )}
+        {isEmpty ? <p className="text-sm text-[var(--brand-muted)]">{emptyMessage}</p> : children}
       </Card>
     </motion.div>
   );

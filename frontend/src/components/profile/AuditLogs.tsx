@@ -4,8 +4,7 @@ import { Select } from '../ui/Select';
 import { Input } from '../ui/Input';
 import type { AuditLogEntry } from '../../lib/api';
 
-// Re-export AuditLogEntry for convenience
-export type { AuditLogEntry };
+// AuditLogEntry is now exported from api.ts
 
 interface AuditLogsProps {
   logs: AuditLogEntry[];

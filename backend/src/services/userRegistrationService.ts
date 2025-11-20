@@ -12,7 +12,7 @@ import { Role } from '../config/permissions';
 export interface UserRegistrationInput {
   email: string;
   password: string;
-  role: 'student' | 'teacher' | 'hod' | 'admin';
+  role: 'student' | 'teacher' | 'admin';
   tenantId?: string;
   tenantName?: string; // For admin creating new tenant
   // Common profile fields
@@ -25,14 +25,12 @@ export interface UserRegistrationInput {
   parentGuardianContact?: string;
   studentId?: string;
   classId?: string;
-  // Teacher/HOD-specific fields
+  // Teacher-specific fields
   phone?: string;
   qualifications?: string;
   yearsOfExperience?: number;
   subjects?: string[];
   teacherId?: string;
-  // HOD-specific fields
-  departmentId?: string;
 }
 
 export interface UserRegistrationOptions {
@@ -88,7 +86,6 @@ export async function registerUser(
     tenantId: tenantId,
     status: userStatus,
     isVerified: isVerified,
-    departmentId: input.departmentId || null, // Set departmentId for HOD
     // Store profile data if not creating immediately (self-registration)
     pendingProfileData:
       !createProfileImmediately && input.role !== 'admin'
@@ -106,7 +103,6 @@ export async function registerUser(
             yearsOfExperience: input.yearsOfExperience,
             subjects: input.subjects,
             teacherId: input.teacherId,
-            departmentId: input.departmentId,
             role: input.role
           }
         : null
@@ -120,13 +116,10 @@ export async function registerUser(
       const studentData = transformToStudentInput(input);
       const student = await createStudent(tenantClient, schemaName, studentData);
       profileId = student.id;
-    } else if ((input.role === 'teacher' || input.role === 'hod') && input.fullName) {
-      // HODs are created as teachers with department assignment
+    } else if (input.role === 'teacher' && input.fullName) {
       const teacherData = transformToTeacherInput(input, input.email);
       const teacher = await createTeacher(tenantClient, schemaName, teacherData);
       profileId = teacher.id;
-      // Note: departmentId is already set in shared.users.department_id
-      // HOD profile is the same as teacher profile
     }
 
     if (actorId) {

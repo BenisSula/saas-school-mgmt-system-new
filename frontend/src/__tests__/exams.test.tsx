@@ -3,7 +3,7 @@ import type { ReactElement } from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import TeacherGradeEntryPage from '../pages/TeacherGradeEntryPage';
 import StudentResultsPage from '../pages/student/StudentResultsPage';
-import AdminExamConfigPage from '../pages/admin/AdminExamConfigPage';
+import AdminExamConfigPage from '../pages/AdminExamConfigPage';
 import { DashboardRouteProvider } from '../context/DashboardRouteContext';
 import { api } from '../lib/api';
 

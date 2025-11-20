@@ -1,10 +1,18 @@
-/**
- * @deprecated This script has been replaced by seedSuperUserOnly.ts
- * This script created extensive seed data (schools, teachers, students) which has been removed.
- * Use seedSuperUserOnly.ts to create only the superuser account.
- * To seed superuser, run: npm run seed:superuser
- */
-/* eslint-disable */
+import 'dotenv/config';
+import argon2 from 'argon2';
+import crypto from 'crypto';
+import type { PoolClient } from 'pg';
+import { getPool, closePool } from '../db/connection';
+import { runMigrations } from '../db/runMigrations';
+import {
+  createSchemaSlug,
+  createTenant,
+  runTenantMigrations,
+  seedTenant,
+  withTenantSearchPath
+} from '../db/tenantManager';
+import { rolePermissions, Role } from '../config/permissions';
+import { recordSharedAuditLog, recordTenantAuditLog } from '../services/auditLogService';
 
 type AdminSeed = {
   fullName: string;
@@ -2670,17 +2678,7 @@ async function seedNotifications(
   });
 }
 
-async function main(): Promise<void> {
-  console.warn('⚠️  WARNING: This script is deprecated and has been disabled.');
-  console.warn('⚠️  Seed data (schools, teachers, students) has been removed from the application.');
-  console.warn('⚠️  Use seedSuperUserOnly.ts to create only the superuser account.');
-  console.warn('⚠️  To seed superuser, run: npm run seed:superuser');
-  console.warn('⚠️  This script will exit without creating any data.');
-  process.exitCode = 0;
-  return;
-  
-  // DISABLED CODE BELOW - kept for reference only
-  /*
+async function main() {
   const pool = getPool();
   const summary: SeedSummary = {
     superuser: {
@@ -2726,7 +2724,6 @@ async function main(): Promise<void> {
   } finally {
     await closePool();
   }
-  */
 }
 
 main().catch((error) => {

@@ -1,12 +1,6 @@
-/**
- * Unified Pie Chart Component
- * Uses Recharts internally but maintains backward-compatible API
- * Consolidates custom SVG and Recharts implementations
- */
 import { useMemo } from 'react';
-import { PieChart as RechartsPieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useBrand } from '../ui/BrandProvider';
-import { Card } from '../ui/Card';
+import { motion } from 'framer-motion';
+import { fadeIn } from '../../lib/utils/animations';
 
 export interface PieChartData {
   label: string;
@@ -22,24 +16,6 @@ export interface PieChartProps {
   responsive?: boolean;
 }
 
-const getAccessibleColors = (tokens: ReturnType<typeof useBrand>['tokens'], index: number): string => {
-  const colors = [
-    tokens.primary,
-    tokens.accent,
-    '#3b82f6', // info blue
-    '#10b981', // success green
-    '#f59e0b', // warning amber
-    '#ef4444', // error red
-    '#8b5cf6', // purple
-    '#ec4899'  // pink
-  ];
-  return colors[index % colors.length];
-};
-
-/**
- * Unified Pie Chart - uses Recharts for better accessibility and features
- * Maintains backward compatibility with existing API
- */
 export function PieChart({
   data,
   title,
@@ -47,81 +23,84 @@ export function PieChart({
   showLegend = true,
   responsive = true
 }: PieChartProps) {
-  const { tokens } = useBrand();
+  const total = useMemo(() => data.reduce((sum, item) => sum + item.value, 0), [data]);
 
-  // Transform data to Recharts format
-  const rechartsData = useMemo(() => {
-    return data.map((item) => ({
-      name: item.label,
-      value: item.value
-    }));
-  }, [data]);
+  const segments = useMemo(() => {
+    let currentAngle = -90; // Start at top
+    return data.map((item) => {
+      const percentage = (item.value / total) * 100;
+      const angle = (percentage / 100) * 360;
+      const startAngle = currentAngle;
+      const endAngle = currentAngle + angle;
+      currentAngle = endAngle;
 
-  // Get colors - use provided colors or generate accessible ones
-  const colors = useMemo(() => {
-    return data.map((item, index) => 
-      item.color || getAccessibleColors(tokens, index)
-    );
-  }, [data, tokens]);
+      const startAngleRad = (startAngle * Math.PI) / 180;
+      const endAngleRad = (endAngle * Math.PI) / 180;
+      const radius = size / 2 - 10;
+      const centerX = size / 2;
+      const centerY = size / 2;
 
-  if (!data || data.length === 0) {
-    return (
-      <Card padding="lg">
-        {title && (
-          <h3 className="text-sm font-semibold text-[var(--brand-text-primary)] sm:text-base">
-            {title}
-          </h3>
-        )}
-        <p className="text-sm text-[var(--brand-muted)] text-center py-8">
-          No data available
-        </p>
-      </Card>
-    );
-  }
+      const x1 = centerX + radius * Math.cos(startAngleRad);
+      const y1 = centerY + radius * Math.sin(startAngleRad);
+      const x2 = centerX + radius * Math.cos(endAngleRad);
+      const y2 = centerY + radius * Math.sin(endAngleRad);
 
-  const outerRadius = size / 2 - 10;
+      const largeArcFlag = angle > 180 ? 1 : 0;
+
+      const pathData = [
+        `M ${centerX} ${centerY}`,
+        `L ${x1} ${y1}`,
+        `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+        'Z'
+      ].join(' ');
+
+      return {
+        ...item,
+        pathData,
+        percentage,
+        color: item.color || `hsl(${(data.indexOf(item) * 360) / data.length}, 70%, 50%)`
+      };
+    });
+  }, [data, total, size]);
 
   return (
-    <div className={`flex flex-col items-center gap-4 ${responsive ? 'w-full' : ''}`}>
+    <motion.div
+      className={`flex flex-col items-center gap-4 ${responsive ? 'w-full' : ''}`}
+      variants={fadeIn}
+      initial="hidden"
+      animate="visible"
+    >
       {title && (
         <h3 className="text-sm font-semibold text-[var(--brand-text-primary)] sm:text-base">
           {title}
         </h3>
       )}
       <div className="flex flex-col items-center gap-4 sm:flex-row">
-        <ResponsiveContainer width={size} height={size}>
-          <RechartsPieChart role="img" aria-label={title || 'Pie chart'}>
-            <Pie
-              data={rechartsData}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={({ name, percent }) => `${name}: ${percent ? (percent * 100).toFixed(0) : 0}%`}
-              outerRadius={outerRadius}
-              fill="#8884d8"
-              dataKey="value"
-            >
-              {rechartsData.map((_, index) => (
-                <Cell key={`cell-${index}`} fill={colors[index]} />
-              ))}
-            </Pie>
-            <Tooltip
-              contentStyle={{
-                backgroundColor: 'var(--brand-surface)',
-                border: '1px solid var(--brand-border)',
-                borderRadius: '8px',
-                color: 'var(--brand-surface-contrast)'
-              }}
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          {segments.map((segment, index) => (
+            <path
+              key={index}
+              d={segment.pathData}
+              fill={segment.color}
+              stroke="var(--brand-surface)"
+              strokeWidth="2"
+              className="transition-opacity hover:opacity-80"
             />
-            {showLegend && (
-              <Legend
-                wrapperStyle={{ paddingTop: '20px' }}
-                iconType="circle"
-              />
-            )}
-          </RechartsPieChart>
-        </ResponsiveContainer>
+          ))}
+        </svg>
+        {showLegend && (
+          <div className="space-y-2">
+            {segments.map((segment, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full" style={{ backgroundColor: segment.color }} />
+                <span className="text-xs text-[var(--brand-surface-contrast)]">
+                  {segment.label}: {segment.value} ({segment.percentage.toFixed(1)}%)
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
+    </motion.div>
   );
 }

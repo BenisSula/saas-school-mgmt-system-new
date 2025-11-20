@@ -17,7 +17,7 @@ export function createSchemaSlug(name: string): string {
     .replace(/^_+|_+$/g, '')}`;
 }
 
-export interface TenantInput {
+interface TenantInput {
   name: string;
   domain?: string;
   schemaName: string;
@@ -97,24 +97,30 @@ export async function runTenantMigrations(pool: Pool, schemaName: string): Promi
   }
 }
 
-/**
- * Initialize tenant schema with minimal structure (no seed data)
- * Seed data has been removed - tenants start with empty structure
- */
 export async function seedTenant(pool: Pool, schemaName: string): Promise<void> {
   const client = await pool.connect();
   try {
     assertValidSchemaName(schemaName);
-    // Only create empty branding_settings record if it doesn't exist
-    // No default colors or seed data
     await client.query(
       `
         INSERT INTO ${schemaName}.branding_settings (id, logo_url, primary_color, secondary_color, theme_flags)
-        VALUES (uuid_generate_v4(), NULL, NULL, NULL, '{}'::jsonb)
+        VALUES (uuid_generate_v4(), NULL, '#1d4ed8', '#0f172a', '{}'::jsonb)
         ON CONFLICT (id) DO NOTHING
       `
     );
-    // Grade scales removed - admins should configure their own grading system
+    await client.query(
+      `
+        INSERT INTO ${schemaName}.grade_scales (id, min_score, max_score, grade, remark)
+        VALUES
+          (uuid_generate_v4(), 90, 100, 'A+', 'Outstanding'),
+          (uuid_generate_v4(), 80, 89.99, 'A', 'Excellent'),
+          (uuid_generate_v4(), 70, 79.99, 'B', 'Very Good'),
+          (uuid_generate_v4(), 60, 69.99, 'C', 'Good'),
+          (uuid_generate_v4(), 50, 59.99, 'D', 'Satisfactory'),
+          (uuid_generate_v4(), 0, 49.99, 'F', 'Needs Improvement')
+        ON CONFLICT (grade) DO NOTHING
+      `
+    );
   } finally {
     client.release();
   }

@@ -3,8 +3,7 @@ import { useTenantAnalytics, useSchools } from '../../hooks/queries/useSuperuser
 import { BarChart, type BarChartData } from '../../components/charts/BarChart';
 import { LineChart, type LineChartDataPoint } from '../../components/charts/LineChart';
 import { PieChart, type PieChartData } from '../../components/charts/PieChart';
-import { StatCard, ChartContainer, PageHeader } from '../../components/charts';
-import { Card } from '../../components/ui/Card';
+import { StatCard } from '../../components/charts/StatCard';
 import { DataTable, type DataTableColumn } from '../../components/tables/DataTable';
 import { Select } from '../../components/ui/Select';
 import RouteMeta from '../../components/layout/RouteMeta';
@@ -136,24 +135,28 @@ export default function SuperuserTenantAnalyticsPage() {
   return (
     <RouteMeta title="Tenant Analytics">
       <div className="space-y-6">
-        <PageHeader
-          title="Tenant Analytics"
-          description="Platform-wide tenant statistics and insights"
-          action={
-            <div className="sm:w-48">
-              <Select
-                label="Filter Tenant"
-                value={selectedTenantId}
-                onChange={(e) => setSelectedTenantId(e.target.value)}
-                options={[
-                  { label: 'All Tenants', value: 'all' },
-                  ...schools.map((s) => ({ label: s.name, value: s.id }))
-                ]}
-                disabled={schoolsLoading}
-              />
-            </div>
-          }
-        />
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-[var(--brand-surface-contrast)]">
+              Tenant Analytics
+            </h1>
+            <p className="mt-1 text-sm text-[var(--brand-muted)]">
+              Platform-wide tenant statistics and insights
+            </p>
+          </div>
+          <div className="sm:w-48">
+            <Select
+              label="Filter Tenant"
+              value={selectedTenantId}
+              onChange={(e) => setSelectedTenantId(e.target.value)}
+              options={[
+                { label: 'All Tenants', value: 'all' },
+                ...schools.map((s) => ({ label: s.name, value: s.id }))
+              ]}
+              disabled={schoolsLoading}
+            />
+          </div>
+        </header>
 
         {/* Stats Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -185,27 +188,27 @@ export default function SuperuserTenantAnalyticsPage() {
 
         {/* Charts */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <ChartContainer>
+          <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
             <BarChart
               data={tenantDistribution}
               title="Tenant Distribution by Status"
               height={250}
             />
-          </ChartContainer>
-          <ChartContainer>
+          </div>
+          <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
             <PieChart
               data={subscriptionDistribution}
               title="Subscription Distribution"
               size={250}
             />
-          </ChartContainer>
-          <ChartContainer className="lg:col-span-2">
+          </div>
+          <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm lg:col-span-2">
             <LineChart data={growthTrend} title="Platform Growth Trend" height={200} />
-          </ChartContainer>
+          </div>
         </div>
 
         {/* Tenants Table */}
-        <Card padding="md">
+        <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
           <DataTable<PlatformSchool>
             data={schools}
             columns={tenantColumns}
@@ -213,7 +216,7 @@ export default function SuperuserTenantAnalyticsPage() {
             emptyMessage="No tenants found"
             loading={schoolsLoading}
           />
-        </Card>
+        </div>
       </div>
     </RouteMeta>
   );

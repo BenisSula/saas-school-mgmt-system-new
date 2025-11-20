@@ -70,21 +70,23 @@ export async function getPlatformOverview() {
     { free: 0, trial: 0, paid: 0 }
   );
 
-  // Only count superusers and admins (exclude students, teachers, HODs)
   const userCounts = await pool.query<{
     total_users: string;
     admins: string;
-    superadmins: string;
+    teachers: string;
+    hods: string;
+    students: string;
     pending: string;
   }>(
     `
       SELECT
         COUNT(*)::text AS total_users,
         COUNT(*) FILTER (WHERE role = 'admin')::text AS admins,
-        COUNT(*) FILTER (WHERE role = 'superadmin')::text AS superadmins,
+        COUNT(*) FILTER (WHERE role = 'hod')::text AS hods,
+        COUNT(*) FILTER (WHERE role = 'teacher')::text AS teachers,
+        COUNT(*) FILTER (WHERE role = 'student')::text AS students,
         COUNT(*) FILTER (WHERE is_verified = FALSE)::text AS pending
       FROM shared.users
-      WHERE role IN ('admin', 'superadmin')
     `
   );
 
@@ -127,10 +129,9 @@ export async function getPlatformOverview() {
     },
     roleDistribution: {
       admins: Number(userCounts.rows[0]?.admins ?? 0),
-      superadmins: Number(userCounts.rows[0]?.superadmins ?? 0),
-      hods: 0,
-      teachers: 0,
-      students: 0
+      hods: Number(userCounts.rows[0]?.hods ?? 0),
+      teachers: Number(userCounts.rows[0]?.teachers ?? 0),
+      students: Number(userCounts.rows[0]?.students ?? 0)
     },
     subscriptionBreakdown,
     revenue: {

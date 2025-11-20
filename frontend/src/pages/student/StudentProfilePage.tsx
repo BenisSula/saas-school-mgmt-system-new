@@ -3,12 +3,9 @@ import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ProfileLayout, type ProfileSection } from '../../components/profile/ProfileLayout';
 import { ProfileSection as Section } from '../../components/profile/ProfileSection';
-import {
-  AssignedSubjectsSection,
-  ActivityHistorySection,
-  FileUploadsSection,
-  AuditLogsSection
-} from '../../components/profile/sections';
+import { ActivityHistory } from '../../components/profile/ActivityHistory';
+import { AuditLogs } from '../../components/profile/AuditLogs';
+import { FileUploads } from '../../components/profile/FileUploads';
 import { useProfileData } from '../../hooks/useProfileData';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -16,12 +13,43 @@ import { Select } from '../../components/ui/Select';
 import {
   api,
   type StudentProfileDetail,
+  type StudentSubjectSummary,
   type SchoolClass
 } from '../../lib/api';
 import { deriveContacts } from '../../lib/utils/data';
 import { formatDateTime } from '../../lib/utils/date';
 
 type ContactField = { label: string; value: string };
+
+function SubjectChip({ subject }: { subject: StudentSubjectSummary }) {
+  const status =
+    subject.dropStatus === 'pending'
+      ? 'Drop requested'
+      : subject.dropStatus === 'approved'
+        ? 'Drop approved'
+        : subject.dropStatus === 'rejected'
+          ? 'Drop rejected'
+          : subject.dropRequested
+            ? 'Drop requested'
+            : 'Active';
+
+  return (
+    <div className="rounded-lg border border-[var(--brand-border)] bg-slate-950/40 p-4">
+      <p className="text-sm font-semibold text-[var(--brand-surface-contrast)]">
+        {subject.name}
+        {subject.code ? (
+          <span className="text-xs text-[var(--brand-muted)]"> ({subject.code})</span>
+        ) : null}
+      </p>
+      <p className="mt-2 text-xs uppercase tracking-wide text-[var(--brand-muted)]">{status}</p>
+      {subject.dropRequestedAt ? (
+        <p className="text-xs text-[var(--brand-muted)]">
+          Requested {formatDateTime(subject.dropRequestedAt)}
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
 export default function StudentProfilePage() {
   const [searchParams] = useSearchParams();
@@ -293,50 +321,18 @@ export default function StudentProfilePage() {
         description:
           'Subject drop requests submitted from the results page will appear as pending below',
         content: (
-          <AssignedSubjectsSection
-            subjects={
-              displayProfile?.subjects.map((s) => ({
-                id: s.subjectId,
-                name: s.name,
-                code: s.code,
-                status:
-                  s.dropStatus === 'pending'
-                    ? 'Drop requested'
-                    : s.dropStatus === 'approved'
-                      ? 'Drop approved'
-                      : s.dropStatus === 'rejected'
-                        ? 'Drop rejected'
-                        : s.dropRequested
-                          ? 'Drop requested'
-                          : 'Active',
-                metadata: {
-                  dropRequestedAt: s.dropRequestedAt
-                }
-              })) || []
-            }
+          <Section
+            isEmpty={!displayProfile || displayProfile.subjects.length === 0}
             emptyMessage="No subjects linked to your profile yet"
-            renderSubject={(subject) => (
-              <div className="rounded-lg border border-[var(--brand-border)] bg-slate-950/40 p-4">
-                <p className="text-sm font-semibold text-[var(--brand-surface-contrast)]">
-                  {subject.name}
-                  {subject.code && (
-                    <span className="text-xs text-[var(--brand-muted)]"> ({subject.code})</span>
-                  )}
-                </p>
-                {subject.status && (
-                  <p className="mt-2 text-xs uppercase tracking-wide text-[var(--brand-muted)]">
-                    {subject.status}
-                  </p>
-                )}
-                {subject.metadata &&
-                  typeof subject.metadata.dropRequestedAt === 'string' && (
-                    <p className="text-xs text-[var(--brand-muted)]">
-                      Requested {formatDateTime(subject.metadata.dropRequestedAt)}
-                    </p>
-                  )}
+          >
+            {displayProfile && displayProfile.subjects.length > 0 && (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {displayProfile.subjects.map((subject) => (
+                  <SubjectChip key={subject.subjectId} subject={subject} />
+                ))}
               </div>
             )}
-          />
+          </Section>
         )
       },
       {
@@ -356,14 +352,14 @@ export default function StudentProfilePage() {
         id: 'activity-history',
         title: 'Activity history',
         description: 'Recent actions and events',
-        content: <ActivityHistorySection activities={activities} />
+        content: <ActivityHistory activities={activities} />
       },
       {
         id: 'uploads',
         title: 'Uploads & attachments',
         description: 'Files and documents associated with your profile',
         content: (
-          <FileUploadsSection
+          <FileUploads
             uploads={uploads}
             canUpload={true}
             canDelete={true}
@@ -382,7 +378,7 @@ export default function StudentProfilePage() {
         title: 'Audit logs',
         description: 'Detailed log of all actions performed on your account',
         content: (
-          <AuditLogsSection
+          <AuditLogs
             logs={auditLogs}
             onRefresh={async () => {
               window.location.reload();

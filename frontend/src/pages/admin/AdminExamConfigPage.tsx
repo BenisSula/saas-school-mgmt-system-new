@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useMutationWithInvalidation, queryKeys } from '../../hooks/useQuery';
 import { useExams } from '../../hooks/queries/useAdminQueries';
-import { useQuery } from '../../hooks/useQuery';
 import { DataTable, type DataTableColumn } from '../../components/tables/DataTable';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { DatePicker } from '../../components/ui/DatePicker';
 import { Modal } from '../../components/ui/Modal';
-import { api, type ExamSummary, type GradeScale } from '../../lib/api';
+import { api, type ExamSummary } from '../../lib/api';
 import RouteMeta from '../../components/layout/RouteMeta';
 import type { FormEvent } from 'react';
 import { formatDate } from '../../lib/utils/date';
@@ -18,16 +17,12 @@ export default function AdminExamConfigPage() {
   const [examForm, setExamForm] = useState({ name: '', description: '', examDate: '' });
 
   const { data: examsData, isLoading: examsLoading } = useExams();
-  const { data: gradeScalesData, isLoading: scalesLoading } = useQuery(
-    queryKeys.admin.gradeScales(),
-    () => api.getGradeScales()
-  );
 
   const exams = useMemo(() => examsData || [], [examsData]);
-  const gradeScales = useMemo(() => gradeScalesData || [], [gradeScalesData]);
 
   const createExamMutation = useMutationWithInvalidation(
     async (payload: { name: string; description?: string; examDate?: string }) => {
+      // TODO: Implement backend endpoint
       await api.createExam(payload);
     },
     [queryKeys.admin.exams()] as unknown as unknown[][],
@@ -35,8 +30,10 @@ export default function AdminExamConfigPage() {
   );
 
   const deleteExamMutation = useMutationWithInvalidation(
-    async (examId: string) => {
-      await api.deleteExam(examId);
+    async () => {
+      // TODO: Implement backend endpoint
+      // Note: deleteExam API endpoint not yet implemented
+      throw new Error('Delete exam functionality not yet implemented');
     },
     [queryKeys.admin.exams()] as unknown as unknown[][],
     { successMessage: 'Exam deleted successfully' }
@@ -69,16 +66,7 @@ export default function AdminExamConfigPage() {
             <Button size="sm" variant="outline">
               Edit
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                if (window.confirm(`Delete exam "${row.name}"? This will also delete all associated exam sessions.`)) {
-                  deleteExamMutation.mutate(row.id);
-                }
-              }}
-              loading={deleteExamMutation.isPending}
-            >
+            <Button size="sm" variant="ghost" onClick={() => deleteExamMutation.mutate(row.id)}>
               Delete
             </Button>
           </div>
@@ -184,62 +172,9 @@ export default function AdminExamConfigPage() {
             onClose={() => setShowScaleModal(false)}
           >
             <div className="space-y-4">
-              {scalesLoading ? (
-                <p className="text-sm text-[var(--brand-muted)]">Loading grade scales...</p>
-              ) : gradeScales.length > 0 ? (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-[var(--brand-surface-contrast)] mb-3">
-                    Current Grade Scales
-                  </p>
-                  <div className="rounded-lg border border-[var(--brand-border)] overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead className="bg-[var(--brand-surface-secondary)]">
-                        <tr>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-[var(--brand-surface-contrast)]">
-                            Min Score
-                          </th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-[var(--brand-surface-contrast)]">
-                            Max Score
-                          </th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-[var(--brand-surface-contrast)]">
-                            Grade
-                          </th>
-                          <th className="px-4 py-2 text-left text-xs font-semibold text-[var(--brand-surface-contrast)]">
-                            Remark
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[var(--brand-border)]">
-                        {gradeScales.map((scale: GradeScale, idx: number) => (
-                          <tr key={idx} className="hover:bg-[var(--brand-surface-secondary)]/50">
-                            <td className="px-4 py-2 text-[var(--brand-surface-contrast)]">
-                              {scale.min_score}
-                            </td>
-                            <td className="px-4 py-2 text-[var(--brand-surface-contrast)]">
-                              {scale.max_score}
-                            </td>
-                            <td className="px-4 py-2 font-semibold text-[var(--brand-primary)]">
-                              {scale.grade}
-                            </td>
-                            <td className="px-4 py-2 text-[var(--brand-muted)]">
-                              {scale.remark || '—'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <p className="text-xs text-[var(--brand-muted)] mt-3">
-                    Grade scales are configured at the system level. Contact your administrator to
-                    modify grade scales.
-                  </p>
-                </div>
-              ) : (
-                <p className="text-sm text-[var(--brand-muted)]">
-                  No grade scales configured. Grade scales will be set up by the system
-                  administrator.
-                </p>
-              )}
+              <p className="text-sm text-[var(--brand-muted)]">
+                Grade scale management will be implemented here
+              </p>
               <div className="flex justify-end">
                 <Button variant="outline" onClick={() => setShowScaleModal(false)}>
                   Close

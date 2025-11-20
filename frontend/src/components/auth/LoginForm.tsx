@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLoginForm } from '../../hooks/useLoginForm';
-import { TextInput, PasswordInput, ErrorBanner } from '../shared';
+import { AuthInput } from './fields/AuthInput';
 import { AuthSubmitButton } from './fields/AuthSubmitButton';
+import { AuthErrorBanner } from './fields/AuthErrorBanner';
 
 export interface LoginFormProps {
   onSuccess?: () => void;
@@ -13,6 +14,7 @@ export interface LoginFormProps {
 }
 
 export function LoginForm({ onSuccess, onSwitchToRegister, initialValues }: LoginFormProps) {
+  const [showPassword, setShowPassword] = useState(false);
 
   const { values, setValue, fieldErrors, generalError, setGeneralError, submitting, handleSubmit } =
     useLoginForm({
@@ -32,12 +34,12 @@ export function LoginForm({ onSuccess, onSwitchToRegister, initialValues }: Logi
   }, [initialValues, setValue]);
 
   return (
-    <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit} noValidate>
+    <form className="space-y-6" onSubmit={handleSubmit} noValidate>
       {/* Server Error Banner */}
-      <ErrorBanner message={generalError || ''} onDismiss={() => setGeneralError(null)} />
+      <AuthErrorBanner message={generalError || ''} onDismiss={() => setGeneralError(null)} />
 
       {/* Email Field */}
-      <TextInput
+      <AuthInput
         id="auth-email"
         name="email"
         type="email"
@@ -52,7 +54,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister, initialValues }: Logi
       />
 
       {/* Password Field */}
-      <PasswordInput
+      <AuthInput
         id="auth-password"
         name="password"
         label="Password"
@@ -62,7 +64,9 @@ export function LoginForm({ onSuccess, onSwitchToRegister, initialValues }: Logi
         autoComplete="current-password"
         required
         error={fieldErrors.password}
-        showToggle={true}
+        showPasswordToggle
+        isPasswordVisible={showPassword}
+        onTogglePassword={() => setShowPassword((prev) => !prev)}
       />
 
       {/* Submit Button */}

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import AdminReportsPage from '../pages/admin/AdminReportsPage';
+import AdminReportsPage from '../pages/AdminReportsPage';
 
 describe('AdminReportsPage', () => {
   const fetchMock = vi.fn().mockResolvedValue({

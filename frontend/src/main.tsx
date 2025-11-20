@@ -21,21 +21,16 @@ if (!rootElement) {
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <BrowserRouter
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true
-      }}
-    >
+    <BrowserRouter>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <BrandProvider>
+        <BrandProvider>
+          <AuthProvider>
             <>
               <App />
               <Toaster position="top-center" richColors closeButton />
             </>
-          </BrandProvider>
-        </AuthProvider>
+          </AuthProvider>
+        </BrandProvider>
       </QueryClientProvider>
     </BrowserRouter>
   </React.StrictMode>

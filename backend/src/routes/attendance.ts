@@ -4,12 +4,6 @@ import tenantResolver from '../middleware/tenantResolver';
 import ensureTenantContext from '../middleware/ensureTenantContext';
 import verifyTeacherAssignment from '../middleware/verifyTeacherAssignment';
 import { requirePermission, requireSelfOrPermission } from '../middleware/rbac';
-import { validateInput } from '../middleware/validateInput';
-import {
-  attendanceMarksSchema,
-  attendanceQuerySchema,
-  studentIdParamSchema
-} from '../validators/attendanceValidator';
 import {
   AttendanceMark,
   getAttendanceSummary,
@@ -35,12 +29,15 @@ const extractClassIdForVerification = (req: Request, res: Response, next: NextFu
 router.post(
   '/mark',
   requirePermission('attendance:manage'),
-  validateInput(attendanceMarksSchema, 'body'),
   extractClassIdForVerification,
   verifyTeacherAssignment({ classIdParam: '_classIdForVerification', allowAdmins: true }),
   async (req, res, next) => {
     try {
       const payload = req.body.records as AttendanceMark[];
+      if (!Array.isArray(payload) || payload.length === 0) {
+        return res.status(400).json({ message: 'records array required' });
+      }
+
       await markAttendance(req.tenantClient!, req.tenant!.schema, payload, req.user?.id);
       res.status(204).send();
     } catch (error) {
@@ -52,8 +49,6 @@ router.post(
 router.get(
   '/:studentId',
   requireSelfOrPermission('students:manage', 'studentId'),
-  validateInput(studentIdParamSchema, 'params'),
-  validateInput(attendanceQuerySchema, 'query'),
   async (req, res, next) => {
     try {
       const history = await getStudentAttendance(

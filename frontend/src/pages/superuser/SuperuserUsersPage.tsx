@@ -108,7 +108,10 @@ export function SuperuserUsersPage() {
   const roleOptions: Array<{ label: string; value: FilterRole }> = [
     { label: 'All roles', value: 'all' },
     { label: 'SuperAdmin', value: 'superadmin' },
-    { label: 'Admin', value: 'admin' }
+    { label: 'Admin', value: 'admin' },
+    { label: 'HOD', value: 'hod' },
+    { label: 'Teacher', value: 'teacher' },
+    { label: 'Student', value: 'student' }
   ];
 
   const statusOptions: Array<{ label: string; value: FilterStatus }> = [

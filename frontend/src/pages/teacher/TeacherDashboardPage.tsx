@@ -5,8 +5,7 @@ import { StatusBanner } from '../../components/ui/StatusBanner';
 import { DataTable, type DataTableColumn } from '../../components/tables/DataTable';
 import { BarChart, type BarChartData } from '../../components/charts/BarChart';
 import { PieChart, type PieChartData } from '../../components/charts/PieChart';
-import { StatCard, ChartContainer } from '../../components/charts';
-import { Card } from '../../components/ui/Card';
+import { StatCard } from '../../components/charts/StatCard';
 import { useTeacherDashboard } from '../../hooks/queries/useDashboardQueries';
 import { Users, BookOpen, GraduationCap, AlertCircle } from 'lucide-react';
 import type { TeacherAssignmentSummary } from '../../lib/api';
@@ -186,24 +185,24 @@ export default function TeacherDashboardPage() {
         {/* Charts */}
         <div className="grid gap-6 lg:grid-cols-2">
           {classDistribution.length > 0 && (
-            <ChartContainer>
+            <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
               <BarChart data={classDistribution} title="Assignments by Class" height={250} />
-            </ChartContainer>
+            </div>
           )}
           {subjectDistribution.length > 0 && (
-            <ChartContainer>
+            <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
               <PieChart data={subjectDistribution} title="Subject Distribution" size={250} />
-            </ChartContainer>
+            </div>
           )}
           {roleDistribution.length > 0 && (
-            <ChartContainer className="lg:col-span-2">
+            <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm lg:col-span-2">
               <PieChart data={roleDistribution} title="Role Distribution" size={200} />
-            </ChartContainer>
+            </div>
           )}
         </div>
 
         {/* Active Assignments */}
-        <Card padding="md">
+        <section className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
           <header className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-[var(--brand-surface-contrast)]">
@@ -221,7 +220,7 @@ export default function TeacherDashboardPage() {
             pagination={{ pageSize: 10, showSizeSelector: true }}
             emptyMessage="No class assignments yet. Administrators will provision your teaching load."
           />
-        </Card>
+        </section>
       </div>
     </RouteMeta>
   );

@@ -11,7 +11,7 @@ import { api, type PlatformOverview } from '../lib/api';
 import { queryClient } from '../lib/react-query';
 import { useEffect } from 'react';
 
-vi.mock('../pages/admin/AdminReportsPage', () => ({
+vi.mock('../pages/AdminReportsPage', () => ({
   default: () => (
     <div>
       <h1 className="text-2xl font-semibold">Reports & Exports</h1>

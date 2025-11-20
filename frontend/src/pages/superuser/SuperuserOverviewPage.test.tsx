@@ -17,10 +17,9 @@ const overview: PlatformOverview = {
   },
   roleDistribution: {
     admins: 20,
-    superadmins: 1,
-    hods: 0,
-    teachers: 0,
-    students: 0
+    hods: 12,
+    teachers: 80,
+    students: 150
   },
   subscriptionBreakdown: {
     free: 1,
