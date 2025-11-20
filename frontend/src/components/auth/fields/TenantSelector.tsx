@@ -34,21 +34,33 @@ export function TenantSelector({
 
   // Load initial list of recent schools on mount
   useEffect(() => {
+    let mounted = true;
+
     const loadInitialSchools = async () => {
       setIsLoadingInitial(true);
       try {
         const data = await api.listSchools({ recent: true, limit: 20 });
-        setInitialSchools(data.schools || []);
+        if (mounted) {
+          setInitialSchools(data.schools || []);
+        }
       } catch (err) {
         console.error('[TenantSelector] Failed to load initial schools:', err);
         // Don't show error - just continue without initial list
-        setInitialSchools([]);
+        if (mounted) {
+          setInitialSchools([]);
+        }
       } finally {
-        setIsLoadingInitial(false);
+        if (mounted) {
+          setIsLoadingInitial(false);
+        }
       }
     };
 
     loadInitialSchools();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Sync with external value changes (if value is cleared externally)

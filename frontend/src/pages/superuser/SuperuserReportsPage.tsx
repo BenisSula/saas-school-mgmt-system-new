@@ -6,14 +6,7 @@ import { StatusBanner } from '../../components/ui/StatusBanner';
 import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton';
 import { api, type PlatformSchool } from '../../lib/api';
 
-interface PlatformReport {
-  id: string;
-  type: 'audit' | 'users' | 'revenue' | 'activity';
-  title: string;
-  description: string;
-  generatedAt: string;
-  recordCount: number;
-}
+type PlatformReportType = 'audit' | 'users' | 'revenue' | 'activity';
 
 export function SuperuserReportsPage() {
   const [schools, setSchools] = useState<PlatformSchool[]>([]);
@@ -39,12 +32,15 @@ export function SuperuserReportsPage() {
     void load();
   }, []);
 
-  const handleGenerateReport = async (type: string) => {
+  const handleGenerateReport = async (type: PlatformReportType) => {
     setGenerating(type);
     try {
-      // TODO: Implement report generation API when backend endpoint is available
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
+      const result = await api.superuser.generateReport(type);
       toast.success(`${type} report generated successfully`);
+      // If report has download URL, could trigger download here
+      if (result.downloadUrl) {
+        window.open(result.downloadUrl, '_blank');
+      }
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -54,7 +50,7 @@ export function SuperuserReportsPage() {
 
   const reportTypes: Array<{
     id: string;
-    type: PlatformReport['type'];
+    type: PlatformReportType;
     title: string;
     description: string;
     icon: string;

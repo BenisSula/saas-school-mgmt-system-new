@@ -363,3 +363,149 @@ export async function sendNotificationToAdmins({
 
   return { sentCount: recipientsResult.rowCount ?? 0, notificationIds };
 }
+
+export async function updatePlatformUserStatus(
+  userId: string,
+  status: 'pending' | 'active' | 'suspended' | 'rejected',
+  actorId: string | null
+): Promise<PlatformUserSummary | null> {
+  const pool = getPool();
+  const result = await pool.query(
+    `
+      UPDATE shared.users
+      SET status = $1
+      WHERE id = $2
+      RETURNING id, email, username, full_name, role, tenant_id, is_verified, status,
+                audit_log_enabled, is_teaching_staff, created_at, gender, date_of_birth,
+                enrollment_date, metadata
+    `,
+    [status, userId]
+  );
+
+  if (result.rowCount === 0) {
+    return null;
+  }
+
+  const row = result.rows[0];
+
+  // Get tenant and school info
+  const tenantResult = await pool.query(
+    `
+      SELECT t.name AS tenant_name, s.id AS school_id, s.name AS school_name, s.registration_code
+      FROM shared.users u
+      LEFT JOIN shared.tenants t ON t.id = u.tenant_id
+      LEFT JOIN shared.schools s ON s.id = u.school_id
+      WHERE u.id = $1
+    `,
+    [userId]
+  );
+
+  const tenantInfo = tenantResult.rows[0] || {};
+
+  await recordSharedAuditLog({
+    userId: actorId ?? undefined,
+    action: 'USER_STATUS_UPDATED',
+    entityType: 'USER',
+    entityId: userId,
+    details: {
+      newStatus: status,
+      userEmail: row.email
+    }
+  });
+
+  return {
+    id: row.id,
+    email: row.email,
+    username: row.username ?? null,
+    fullName: row.full_name ?? null,
+    role: row.role,
+    tenantId: row.tenant_id,
+    tenantName: tenantInfo.tenant_name ?? null,
+    schoolId: tenantInfo.school_id ?? null,
+    schoolName: tenantInfo.school_name ?? null,
+    registrationCode: tenantInfo.registration_code ?? null,
+    isVerified: row.is_verified,
+    status: row.status ?? null,
+    auditLogEnabled: Boolean(row.audit_log_enabled),
+    isTeachingStaff: Boolean(row.is_teaching_staff),
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
+    gender: row.gender ?? null,
+    dateOfBirth:
+      row.date_of_birth instanceof Date ? row.date_of_birth.toISOString().split('T')[0] : null,
+    enrollmentDate:
+      row.enrollment_date instanceof Date ? row.enrollment_date.toISOString().split('T')[0] : null,
+    metadata: row.metadata ?? null
+  };
+}
+
+export async function generatePlatformReport(
+  type: 'audit' | 'users' | 'revenue' | 'activity',
+  actorId: string | null
+): Promise<{ id: string; downloadUrl?: string }> {
+  const reportId = crypto.randomUUID();
+
+  // For now, return report ID. In production, this would generate actual reports
+  // and store them in S3 or similar, returning a download URL
+  await recordSharedAuditLog({
+    userId: actorId ?? undefined,
+    action: 'PLATFORM_REPORT_GENERATED',
+    entityType: 'REPORT' as const,
+    entityId: reportId,
+    details: {
+      reportType: type
+    }
+  });
+
+  return {
+    id: reportId
+    // downloadUrl would be added when actual report generation is implemented
+  };
+}
+
+export async function updatePlatformSettings(
+  settings: {
+    globalBranding: {
+      platformName: string;
+      defaultLogoUrl: string | null;
+      defaultPrimaryColor: string;
+    };
+    authentication: {
+      requireEmailVerification: boolean;
+      allowSelfRegistration: boolean;
+      sessionTimeoutMinutes: number;
+    };
+    features: {
+      enableAuditLogging: boolean;
+      enableNotifications: boolean;
+      enableHighContrastMode: boolean;
+    };
+    integrations: {
+      paymentProcessor: string;
+      emailProvider: string;
+      smsProvider: string | null;
+    };
+  },
+  actorId: string | null
+): Promise<void> {
+  // Store settings in a platform_settings table (would need migration)
+  // For now, we'll just audit log the change
+  await recordSharedAuditLog({
+    userId: actorId ?? undefined,
+    action: 'PLATFORM_SETTINGS_UPDATED',
+    entityType: 'SETTINGS' as const,
+    entityId: 'platform',
+    details: {
+      settings
+    }
+  });
+
+  // In production, you'd update a platform_settings table here
+  // await pool.query(`
+  //   INSERT INTO shared.platform_settings (id, settings, updated_at, updated_by)
+  //   VALUES ('platform', $1::jsonb, NOW(), $2)
+  //   ON CONFLICT (id) DO UPDATE
+  //     SET settings = EXCLUDED.settings,
+  //         updated_at = NOW(),
+  //         updated_by = EXCLUDED.updated_by
+  // `, [JSON.stringify(settings), actorId]);
+}

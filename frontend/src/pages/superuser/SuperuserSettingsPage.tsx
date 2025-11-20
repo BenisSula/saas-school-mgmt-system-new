@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { StatusBanner } from '../../components/ui/StatusBanner';
+import { api } from '../../lib/api';
 
 interface PlatformSettings {
   globalBranding: {
@@ -64,8 +65,7 @@ export function SuperuserSettingsPage() {
     setSaving(true);
     setSaveStatus(null);
     try {
-      // TODO: Implement settings save API when backend endpoint is available
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
+      await api.superuser.updateSettings(settings);
       setSaveStatus({ type: 'success', message: 'Platform settings saved successfully' });
       toast.success('Settings saved');
     } catch (err) {

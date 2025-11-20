@@ -69,7 +69,8 @@ describe('ProtectedRoute with Permissions', () => {
     );
 
     expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
-    expect(screen.getByText(/You do not have permission to view this page/i)).toBeInTheDocument();
+    // ProtectedRoute shows "Redirecting..." when redirecting due to permission denial
+    expect(screen.getByText(/Redirecting.../i)).toBeInTheDocument();
   });
 
   it('allows access when user has any of the required permissions (default behavior)', () => {

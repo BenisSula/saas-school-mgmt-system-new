@@ -244,7 +244,9 @@ describe('Auth Validation', () => {
           throw error;
         }
       }).toThrow();
-      expect(() => validateSignupInput(input)).toThrow(/requires creating a new organization/);
+      expect(() => validateSignupInput(input)).toThrow(
+        /requires either creating a new organization/
+      );
     });
 
     it('should reject student without tenantId', () => {
