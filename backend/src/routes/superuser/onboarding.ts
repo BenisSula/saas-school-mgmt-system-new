@@ -21,7 +21,7 @@ const createInvitationSchema = z.object({
   email: z.string().email(),
   role: z.enum(['admin', 'teacher', 'student']),
   expiresInHours: z.number().int().min(1).max(168).optional(),
-  metadata: z.record(z.unknown()).optional()
+  metadata: z.record(z.string(), z.unknown()).optional()
 });
 
 // Create invitation
@@ -117,7 +117,7 @@ router.patch('/wizard/:tenantId', async (req, res, next) => {
     const schema = z.object({
       currentStep: z.number().int().positive().optional(),
       completedSteps: z.array(z.number().int()).optional(),
-      wizardData: z.record(z.unknown()).optional(),
+      wizardData: z.record(z.string(), z.unknown()).optional(),
       isCompleted: z.boolean().optional()
     });
 

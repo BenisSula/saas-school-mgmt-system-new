@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
 import { RouteMeta } from '../../components/layout/RouteMeta';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -10,6 +11,7 @@ import { StatusBanner } from '../../components/ui/StatusBanner';
 import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton';
 import { api, type PlatformUserSummary, type Role, type UserStatus } from '../../lib/api';
 import { formatDate, formatDateTime } from '../../lib/utils/date';
+import { Eye, EyeOff, Key, Copy, Check } from 'lucide-react';
 
 type FilterRole = Role | 'all';
 type FilterStatus = UserStatus | 'all' | 'pending';
@@ -35,6 +37,40 @@ export function SuperuserUsersPage() {
   const [filters, setFilters] = useState<UserFilters>(defaultFilters);
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
   const [selectedUser, setSelectedUser] = useState<PlatformUserSummary | null>(null);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
+  const [passwordCopied, setPasswordCopied] = useState<boolean>(false);
+
+  // Fetch user details dynamically when modal opens
+  const { data: userDetails, refetch: refetchUserDetails } = useQuery({
+    queryKey: ['superuser', 'user-details', selectedUser?.id],
+    queryFn: async () => {
+      if (!selectedUser?.id) return null;
+      // Refresh user data from the list to get latest info
+      const updatedUsers = await api.superuser.listUsers();
+      const updatedUser = updatedUsers.find((u) => u.id === selectedUser.id);
+      return updatedUser || selectedUser;
+    },
+    enabled: !!selectedUser?.id && showEditModal,
+    staleTime: 0, // Always fetch fresh data when modal opens
+    refetchOnMount: true
+  });
+
+  // Get password history to check for temporary passwords
+  const { data: passwordHistory } = useQuery({
+    queryKey: ['superuser', 'password-history', selectedUser?.id],
+    queryFn: async () => {
+      if (!selectedUser?.id) return null;
+      try {
+        const result = await api.superuser.getPasswordHistory(selectedUser.id, { limit: 1 });
+        // API returns { history: PasswordChangeHistory[] }
+        return result.history && result.history.length > 0 ? result.history[0] : null;
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!selectedUser?.id && showEditModal
+  });
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -133,7 +169,35 @@ export function SuperuserUsersPage() {
   const handleEditUser = (user: PlatformUserSummary) => {
     setSelectedUser(user);
     setShowEditModal(true);
+    setShowPassword(false);
+    setTemporaryPassword(null);
+    setPasswordCopied(false);
   };
+
+  const handleResetPassword = async () => {
+    if (!selectedUser?.id) return;
+    try {
+      const result = await api.superuser.resetPassword(selectedUser.id);
+      setTemporaryPassword(result.temporaryPassword);
+      toast.success('Password reset successfully. Temporary password generated.');
+      // Refetch user details to get updated info
+      await refetchUserDetails();
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
+  const handleCopyPassword = () => {
+    if (temporaryPassword) {
+      navigator.clipboard.writeText(temporaryPassword);
+      setPasswordCopied(true);
+      toast.success('Password copied to clipboard');
+      setTimeout(() => setPasswordCopied(false), 2000);
+    }
+  };
+
+  // Use dynamically fetched user details or fallback to selectedUser
+  const displayUser = userDetails || selectedUser;
 
   const handleStatusUpdate = async (userId: string, newStatus: UserStatus) => {
     try {
@@ -309,69 +373,149 @@ export function SuperuserUsersPage() {
           emptyMessage="No users found matching the current filters."
         />
 
-        {showEditModal && selectedUser && (
+        {showEditModal && displayUser && (
           <Modal
             title="User details"
             isOpen={showEditModal}
             onClose={() => {
               setShowEditModal(false);
               setSelectedUser(null);
+              setShowPassword(false);
+              setTemporaryPassword(null);
+              setPasswordCopied(false);
             }}
           >
-            <div className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <p className="text-xs font-medium text-[var(--brand-muted)] mb-1">Email</p>
-                  <p className="text-sm text-[var(--brand-surface-contrast)]">
-                    {selectedUser.email}
+            <div className="space-y-6">
+              {/* User Information Grid - Fixed spacing to prevent overlapping */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Email</p>
+                  <p className="text-sm text-[var(--brand-text-primary)] break-words">
+                    {displayUser.email}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs font-medium text-[var(--brand-muted)] mb-1">Username</p>
-                  <p className="text-sm text-[var(--brand-surface-contrast)]">
-                    {selectedUser.username || 'Not set'}
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Username</p>
+                  <p className="text-sm text-[var(--brand-text-primary)] break-words">
+                    {displayUser.username || 'Not set'}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs font-medium text-[var(--brand-muted)] mb-1">Full name</p>
-                  <p className="text-sm text-[var(--brand-surface-contrast)]">
-                    {selectedUser.fullName || 'Not set'}
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Full name</p>
+                  <p className="text-sm text-[var(--brand-text-primary)] break-words">
+                    {displayUser.fullName || 'Not set'}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs font-medium text-[var(--brand-muted)] mb-1">Role</p>
-                  <p className="text-sm text-[var(--brand-surface-contrast)] capitalize">
-                    {selectedUser.role}
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Role</p>
+                  <p className="text-sm text-[var(--brand-text-primary)] capitalize">
+                    {displayUser.role}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs font-medium text-[var(--brand-muted)] mb-1">Tenant</p>
-                  <p className="text-sm text-[var(--brand-surface-contrast)]">
-                    {selectedUser.tenantName || selectedUser.schoolName || 'No tenant'}
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Tenant</p>
+                  <p className="text-sm text-[var(--brand-text-primary)] break-words">
+                    {displayUser.tenantName || displayUser.schoolName || 'No tenant'}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs font-medium text-[var(--brand-muted)] mb-1">Status</p>
-                  <p className="text-sm text-[var(--brand-surface-contrast)] capitalize">
-                    {selectedUser.isVerified ? selectedUser.status || 'active' : 'pending'}
-                    {!selectedUser.isVerified && ' (Unverified)'}
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Status</p>
+                  <p className="text-sm text-[var(--brand-text-primary)] capitalize">
+                    {displayUser.isVerified ? displayUser.status || 'active' : 'pending'}
+                    {!displayUser.isVerified && ' (Unverified)'}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs font-medium text-[var(--brand-muted)] mb-1">Created</p>
-                  <p className="text-sm text-[var(--brand-surface-contrast)]">
-                    {formatDateTime(selectedUser.createdAt)}
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Created</p>
+                  <p className="text-sm text-[var(--brand-text-primary)]">
+                    {formatDateTime(displayUser.createdAt)}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs font-medium text-[var(--brand-muted)] mb-1">User ID</p>
-                  <p className="text-xs font-mono text-[var(--brand-muted)] break-all">
-                    {selectedUser.id}
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">User ID</p>
+                  <p className="text-xs font-mono text-[var(--brand-text-secondary)] break-all">
+                    {displayUser.id}
                   </p>
                 </div>
               </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="ghost" onClick={() => setShowEditModal(false)}>
+
+              {/* Password Section */}
+              <div className="border-t border-[var(--brand-border)] pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)]">Password</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleResetPassword}
+                    className="flex items-center gap-1.5"
+                  >
+                    <Key className="h-3 w-3" />
+                    Reset Password
+                  </Button>
+                </div>
+                {temporaryPassword ? (
+                  <div className="rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-secondary)] p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-[var(--brand-text-secondary)] mb-1">Temporary Password</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-mono text-[var(--brand-text-primary)] break-all">
+                            {showPassword ? temporaryPassword : '•'.repeat(temporaryPassword.length)}
+                          </p>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="shrink-0"
+                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={handleCopyPassword}
+                            className="shrink-0"
+                            aria-label="Copy password"
+                          >
+                            {passwordCopied ? (
+                              <Check className="h-4 w-4 text-[var(--brand-success)]" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                        <p className="text-xs text-[var(--brand-warning)] mt-1">
+                          This password will only be shown once. Please copy it now.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : passwordHistory ? (
+                  <div className="rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-secondary)] p-3">
+                    <p className="text-xs text-[var(--brand-text-secondary)] mb-1">Last Password Change</p>
+                    <p className="text-sm text-[var(--brand-text-primary)]">
+                      {passwordHistory.changedAt ? formatDateTime(passwordHistory.changedAt) : 'N/A'}
+                    </p>
+                    <p className="text-xs text-[var(--brand-text-secondary)] mt-1">
+                      Type: {passwordHistory.changeType.replace(/_/g, ' ')}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-[var(--brand-text-secondary)] italic">
+                    No password information available. Click "Reset Password" to generate a temporary password.
+                  </p>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 pt-2 border-t border-[var(--brand-border)]">
+                <Button variant="ghost" onClick={() => {
+                  setShowEditModal(false);
+                  setSelectedUser(null);
+                  setShowPassword(false);
+                  setTemporaryPassword(null);
+                }}>
                   Close
                 </Button>
               </div>

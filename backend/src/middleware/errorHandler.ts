@@ -1,25 +1,67 @@
-import { Request, Response } from 'express';
+/**
+ * Enhanced Error Handler with Error Tracking
+ */
 
-type HttpError = Error & { status?: number; statusCode?: number; expose?: boolean };
+import { Request, Response, NextFunction } from 'express';
+import { errorTracker } from '../services/monitoring/errorTracking';
+import { metrics } from './metrics';
 
-export function errorHandler(err: Error, _req: Request, res: Response) {
-  const httpError = err as HttpError;
-  const status = httpError.status ?? httpError.statusCode ?? 500;
-  if (status >= 500) {
-    console.error('[error]', err);
-    // In test/dev mode, include error details
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('[error] Stack:', err.stack);
-    }
-  } else {
-    console.warn('[warn]', err.message);
+export interface ApiError extends Error {
+  statusCode?: number;
+  code?: string;
+  field?: string;
+  apiError?: {
+    message: string;
+    field?: string;
+    code?: string;
+  };
+}
+
+export function errorHandler(
+  error: ApiError,
+  req: Request,
+  res: Response,
+  _next: NextFunction
+) {
+  // Track error metrics (wrap in try-catch to prevent error handler from failing)
+  const statusCode = error.statusCode || 500;
+  const endpoint = req.path || 'unknown';
+  try {
+    metrics.incrementError(error.name || 'Error', endpoint, statusCode);
+  } catch (metricsError) {
+    console.error('[ErrorHandler] Failed to track error metrics:', metricsError);
   }
-  const message =
-    status >= 500 && httpError.expose !== true && process.env.NODE_ENV === 'production'
-      ? 'Internal server error'
-      : (httpError.message ?? 'Request failed');
-  res.status(status).json({
-    message,
-    ...(process.env.NODE_ENV !== 'production' ? { error: err.message, stack: err.stack } : {})
+
+  // Capture error in tracking system (wrap in try-catch to prevent error handler from failing)
+  try {
+    errorTracker.captureException(error, {
+      userId: (req as { user?: { id?: string } }).user?.id,
+      tenantId: (req as { tenant?: { id?: string } }).tenant?.id,
+      requestId: req.headers['x-request-id'] as string,
+      userAgent: req.get('user-agent'),
+      ip: req.ip,
+      url: req.url,
+      method: req.method
+    });
+  } catch (trackingError) {
+    console.error('[ErrorHandler] Failed to capture error in tracking system:', trackingError);
+  }
+
+  // Log error
+  console.error('[ErrorHandler]', {
+    message: error.message,
+    statusCode,
+    endpoint,
+    stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+  });
+
+  // Send error response
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
+  res.status(statusCode).json({
+    message: error.message || 'Internal server error',
+    code: error.code,
+    field: error.field,
+    ...(isDevelopment && { stack: error.stack })
   });
 }

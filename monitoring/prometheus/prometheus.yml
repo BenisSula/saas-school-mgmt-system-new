@@ -1,0 +1,56 @@
+# Prometheus Configuration
+# Scrapes metrics from backend services
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'saas-school-mgmt'
+    environment: 'production'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 'alertmanager:9093'
+
+# Load rules
+rule_files:
+  - 'alerts.yml'
+
+# Scrape configurations
+scrape_configs:
+  # Backend API
+  - job_name: 'backend-api'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['backend:3000']
+        labels:
+          service: 'backend'
+          component: 'api'
+
+  # Node.js metrics
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'infrastructure'
+          component: 'node'
+
+  # PostgreSQL metrics
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          service: 'database'
+          component: 'postgresql'
+
+  # Redis metrics (if used)
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          service: 'cache'
+          component: 'redis'
+

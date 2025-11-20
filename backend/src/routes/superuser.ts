@@ -25,6 +25,11 @@ import billingRouter from './superuser/billing';
 import onboardingRouter from './superuser/onboarding';
 import featureFlagsRouter from './superuser/featureFlags';
 import reportsRouter from './superuser/reports';
+import dataManagementRouter from './superuser/dataManagement';
+import sessionsRouter from './superuser/sessions';
+import passwordsRouter from './superuser/passwords';
+import auditRouter from './superuser/audit';
+import investigationsRouter from './superuser/investigations';
 
 const router = Router();
 
@@ -195,5 +200,20 @@ router.use('/feature-flags', featureFlagsRouter);
 
 // Reports routes
 router.use('/reports', reportsRouter);
+
+// Data Management routes
+router.use('/data', dataManagementRouter);
+
+// Session management routes
+router.use('/', sessionsRouter);
+
+// Password management routes
+router.use('/', passwordsRouter);
+
+// Audit log routes
+router.use('/', auditRouter);
+
+// Investigation routes
+router.use('/investigations', investigationsRouter);
 
 export default router;

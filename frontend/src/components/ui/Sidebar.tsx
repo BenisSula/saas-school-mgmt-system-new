@@ -37,7 +37,7 @@ function SidebarComponent({
   const shouldCollapse = collapsed && isDesktop;
   const isExpanded = !collapsed;
   const navRef = useRef<HTMLElement>(null);
-  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const buttonRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
   // Keyboard navigation: Arrow keys to navigate, Enter/Space to activate
   useEffect(() => {
@@ -46,7 +46,7 @@ function SidebarComponent({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!navRef.current) return;
 
-      const buttons = buttonRefs.current.filter((ref) => ref !== null) as HTMLButtonElement[];
+      const buttons = buttonRefs.current.filter((ref) => ref !== null) as HTMLAnchorElement[];
       if (buttons.length === 0) return;
 
       const currentIndex = buttons.findIndex((btn) => btn === document.activeElement);
@@ -102,6 +102,9 @@ function SidebarComponent({
     'aria-expanded': isExpanded
   } as React.ButtonHTMLAttributes<HTMLButtonElement>;
 
+  // Track if sidebar is hidden on mobile to prevent focus issues
+  const isHidden = !open && !isDesktop;
+
   return (
     <motion.aside
       className={`${
@@ -109,7 +112,7 @@ function SidebarComponent({
           ? 'sticky top-[var(--layout-header-height)] h-[calc(100vh-var(--layout-header-height))]'
           : 'fixed inset-y-0 left-0 z-50 h-screen'
       } flex-shrink-0 overflow-hidden border-r border-[var(--brand-border)] bg-[var(--brand-surface)]/95 shadow-xl backdrop-blur transition-colors duration-300`}
-      aria-hidden={!open && !isDesktop}
+      aria-hidden={isHidden ? true : undefined}
       data-collapsed={shouldCollapse}
       animate={shouldCollapse ? 'collapsed' : 'expanded'}
       variants={sidebarVariants}
@@ -118,6 +121,12 @@ function SidebarComponent({
         type: 'tween',
         duration: 0.3,
         ease: [0.4, 0, 0.2, 1]
+      }}
+      style={{
+        // Prevent interaction when hidden on mobile
+        pointerEvents: isHidden ? 'none' : 'auto',
+        // Hide visually when closed on mobile to prevent focus issues
+        ...(isHidden && !isDesktop ? { display: 'none' } : {})
       }}
     >
       <div className="flex h-full flex-col">
@@ -130,7 +139,7 @@ function SidebarComponent({
             {shouldCollapse ? 'Menu' : 'Navigation'}
           </motion.span>
           {isDesktop ? (
-            <button {...collapseButtonProps}>
+            <button {...collapseButtonProps} tabIndex={isHidden ? -1 : undefined}>
               {collapsed ? (
                 <ChevronsRight className="h-4 w-4" />
               ) : (
@@ -141,6 +150,7 @@ function SidebarComponent({
             <button
               type="button"
               onClick={onClose}
+              tabIndex={isHidden ? -1 : undefined}
               className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[var(--brand-surface-contrast)]"
               aria-label="Close navigation"
             >
@@ -159,21 +169,19 @@ function SidebarComponent({
             {links.map((link, index) => {
               const isActive = activePath === link.path;
               return (
-                <motion.li
+                <li
                   key={link.id}
                   className="list-none"
-                  variants={navItemVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="hidden"
                 >
-                  <button
+                  <motion.a
                     ref={(el) => {
                       buttonRefs.current[index] = el;
                     }}
-                    type="button"
+                    href={link.path}
                     aria-current={isActive ? 'page' : undefined}
-                    onClick={() => {
+                    tabIndex={isHidden ? -1 : undefined}
+                    onClick={(e) => {
+                      e.preventDefault();
                       onNavigate(link.path);
                       if (!isDesktop) {
                         onClose();
@@ -185,6 +193,10 @@ function SidebarComponent({
                         : 'hover:bg-[var(--brand-surface-secondary)] active:bg-[var(--brand-surface-tertiary)]'
                     }`}
                     title={shouldCollapse ? link.label : undefined}
+                    variants={navItemVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
                   >
                     <span className="text-lg" aria-hidden="true">
                       {link.icon}
@@ -207,8 +219,8 @@ function SidebarComponent({
                         className="absolute inset-y-2 right-1 w-[3px] rounded-full bg-[var(--brand-primary-contrast)]"
                       />
                     ) : null}
-                  </button>
-                </motion.li>
+                  </motion.a>
+                </li>
               );
             })}
           </ul>

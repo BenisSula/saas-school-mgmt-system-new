@@ -1,0 +1,91 @@
+# Alertmanager Configuration
+# Routes alerts to appropriate channels
+
+global:
+  resolve_timeout: 5m
+  slack_api_url: '${SLACK_WEBHOOK_URL}'
+
+# Route tree
+route:
+  receiver: 'default'
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      continue: true
+
+    # Database alerts
+    - match:
+        component: database
+      receiver: 'database-team'
+      group_wait: 30s
+
+    # Infrastructure alerts
+    - match:
+        component: infrastructure
+      receiver: 'ops-team'
+      group_wait: 1m
+
+    # Security alerts
+    - match:
+        component: security
+      receiver: 'security-team'
+      group_wait: 10s
+
+# Receivers
+receivers:
+  - name: 'default'
+    webhook_configs:
+      - url: 'http://incident-response:8080/webhook'
+        send_resolved: true
+
+  - name: 'critical-alerts'
+    slack_configs:
+      - channel: '#alerts-critical'
+        title: '🚨 Critical Alert'
+        text: '{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}{{ end }}'
+    webhook_configs:
+      - url: 'http://incident-response:8080/webhook'
+        send_resolved: true
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY}'
+
+  - name: 'database-team'
+    slack_configs:
+      - channel: '#alerts-database'
+        title: 'Database Alert'
+    email_configs:
+      - to: 'database-team@example.com'
+        from: 'alerts@example.com'
+        smarthost: 'smtp.example.com:587'
+        auth_username: '${SMTP_USERNAME}'
+        auth_password: '${SMTP_PASSWORD}'
+
+  - name: 'ops-team'
+    slack_configs:
+      - channel: '#alerts-infrastructure'
+        title: 'Infrastructure Alert'
+
+  - name: 'security-team'
+    slack_configs:
+      - channel: '#alerts-security'
+        title: 'Security Alert'
+    email_configs:
+      - to: 'security-team@example.com'
+        from: 'alerts@example.com'
+
+# Inhibition rules
+inhibit_rules:
+  # If service is down, inhibit other alerts for that service
+  - source_match:
+      severity: 'critical'
+      alertname: 'ServiceDown'
+    target_match:
+      severity: 'warning'
+    equal: ['service']
+

@@ -168,13 +168,14 @@ export default function SuperuserOverviewPage() {
 
   return (
     <RouteMeta title="Dashboard overview">
-      <div className="space-y-8">
-        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="space-section">
+        {/* Page Header */}
+        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-[var(--brand-surface-contrast)]">
+            <h1 className="text-heading-2 text-[var(--brand-text-primary)]">
               Platform Overview
             </h1>
-            <p className="text-sm text-[var(--brand-muted)]">
+            <p className="mt-2 text-body-small text-[var(--brand-text-secondary)]">
               Monitor platform-wide statistics and health metrics
             </p>
           </div>
@@ -183,7 +184,7 @@ export default function SuperuserOverviewPage() {
 
         {/* Stats Cards */}
         <section
-          className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+          className="grid-enterprise-4 mb-12"
           aria-label="Platform statistics"
         >
           {statTiles.map((tile) => (

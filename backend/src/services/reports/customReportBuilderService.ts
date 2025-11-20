@@ -45,18 +45,25 @@ function buildCustomReportQuery(
 
   let query = 'SELECT ';
 
+  // Check if any columns have aggregations
+  const hasAggregations = config.selectedColumns.some(col => col.aggregate);
+  
   // Build SELECT clause
   const selectParts: string[] = [];
+  const nonAggregatedColumns: string[] = [];
+  
   for (const col of config.selectedColumns) {
     let selectExpr = `${tenantSchema}.${col.table}.${col.column}`;
+    const columnAlias = col.alias || `${col.table}_${col.column}`;
+    
     if (col.aggregate) {
       selectExpr = `${col.aggregate.toUpperCase()}(${selectExpr})`;
-    }
-    if (col.alias) {
-      selectExpr += ` AS ${col.alias}`;
     } else {
-      selectExpr += ` AS ${col.table}_${col.column}`;
+      // Track non-aggregated columns for GROUP BY
+      nonAggregatedColumns.push(`${tenantSchema}.${col.table}.${col.column}`);
     }
+    
+    selectExpr += ` AS ${columnAlias}`;
     selectParts.push(selectExpr);
   }
   query += selectParts.join(', ');
@@ -78,17 +85,38 @@ function buildCustomReportQuery(
   if (config.filters && config.filters.length > 0) {
     const whereParts: string[] = [];
     for (const filter of config.filters) {
-      let condition = `${filter.column} ${filter.operator}`;
+      // Fully qualify column references in WHERE clause
+      let columnRef = filter.column;
+      // If column doesn't have schema.table prefix, try to find it from selectedColumns
+      if (!columnRef.includes('.')) {
+        const matchingCol = config.selectedColumns.find(c => c.column === filter.column);
+        if (matchingCol) {
+          columnRef = `${tenantSchema}.${matchingCol.table}.${filter.column}`;
+        } else {
+          // Default to first data source if not found
+          columnRef = `${tenantSchema}.${config.dataSources[0]}.${filter.column}`;
+        }
+      }
+      
+      let condition = `${columnRef} ${filter.operator}`;
       if (filter.operator === 'IN') {
         const values = Array.isArray(filter.value)
-          ? filter.value.map(v => `'${String(v)}'`).join(', ')
-          : `'${String(filter.value)}'`;
+          ? filter.value.map(v => `'${String(v).replace(/'/g, "''")}'`).join(', ')
+          : `'${String(filter.value).replace(/'/g, "''")}'`;
         condition += ` (${values})`;
       } else if (filter.operator === 'BETWEEN') {
         const values = Array.isArray(filter.value) ? filter.value : [filter.value, filter.value];
-        condition += ` '${String(values[0])}' AND '${String(values[1])}'`;
+        condition += ` '${String(values[0]).replace(/'/g, "''")}' AND '${String(values[1]).replace(/'/g, "''")}'`;
+      } else if (filter.operator === 'LIKE') {
+        condition += ` '${String(filter.value).replace(/'/g, "''")}'`;
       } else {
-        condition += ` '${String(filter.value)}'`;
+        // For numeric comparisons, don't quote
+        const numValue = Number(filter.value);
+        if (!isNaN(numValue) && filter.operator !== '=' && filter.operator !== '!=') {
+          condition += ` ${numValue}`;
+        } else {
+          condition += ` '${String(filter.value).replace(/'/g, "''")}'`;
+        }
       }
       whereParts.push(condition);
     }
@@ -96,15 +124,55 @@ function buildCustomReportQuery(
   }
 
   // Build GROUP BY clause
-  if (config.groupBy && config.groupBy.length > 0) {
-    query += ` GROUP BY ${config.groupBy.join(', ')}`;
+  // If aggregations are used, GROUP BY non-aggregated columns
+  if (hasAggregations) {
+    if (config.groupBy && config.groupBy.length > 0) {
+      // Use provided groupBy columns, fully qualify them
+      const groupByParts = config.groupBy.map(col => {
+        if (col.includes('.')) {
+          return col;
+        }
+        const matchingCol = config.selectedColumns.find(c => c.column === col);
+        if (matchingCol) {
+          return `${tenantSchema}.${matchingCol.table}.${col}`;
+        }
+        return `${tenantSchema}.${config.dataSources[0]}.${col}`;
+      });
+      query += ` GROUP BY ${groupByParts.join(', ')}`;
+    } else if (nonAggregatedColumns.length > 0) {
+      // Auto-GROUP BY non-aggregated columns
+      query += ` GROUP BY ${nonAggregatedColumns.join(', ')}`;
+    }
+  } else if (config.groupBy && config.groupBy.length > 0) {
+    // No aggregations but groupBy specified
+    const groupByParts = config.groupBy.map(col => {
+      if (col.includes('.')) {
+        return col;
+      }
+      const matchingCol = config.selectedColumns.find(c => c.column === col);
+      if (matchingCol) {
+        return `${tenantSchema}.${matchingCol.table}.${col}`;
+      }
+      return `${tenantSchema}.${config.dataSources[0]}.${col}`;
+    });
+    query += ` GROUP BY ${groupByParts.join(', ')}`;
   }
 
   // Build ORDER BY clause
   if (config.orderBy && config.orderBy.length > 0) {
-    const orderParts = config.orderBy.map(
-      order => `${order.column} ${order.direction}`
-    );
+    const orderParts = config.orderBy.map(order => {
+      let orderCol = order.column;
+      // Fully qualify column references
+      if (!orderCol.includes('.')) {
+        const matchingCol = config.selectedColumns.find(c => c.column === order.column);
+        if (matchingCol) {
+          orderCol = `${tenantSchema}.${matchingCol.table}.${order.column}`;
+        } else {
+          orderCol = `${tenantSchema}.${config.dataSources[0]}.${order.column}`;
+        }
+      }
+      return `${orderCol} ${order.direction}`;
+    });
     query += ` ORDER BY ${orderParts.join(', ')}`;
   }
 
@@ -170,7 +238,11 @@ export async function executeCustomReport(
   client: PoolClient,
   tenantSchema: string,
   customReportId: string
-): Promise<unknown[]> {
+): Promise<{
+  data: unknown[];
+  columns: Array<{ name: string; label: string }>;
+  rowCount: number;
+}> {
   // Get custom report
   const reportResult = await client.query(
     'SELECT * FROM shared.custom_reports WHERE id = $1',
@@ -198,8 +270,21 @@ export async function executeCustomReport(
   const query = buildCustomReportQuery(tenantSchema, config);
 
   // Execute query
+  const startTime = Date.now();
   const result = await client.query(query);
-  return result.rows;
+  const executionTimeMs = Date.now() - startTime;
+
+  // Build columns metadata from selectedColumns
+  const columns = config.selectedColumns.map(col => ({
+    name: col.alias || `${col.table}_${col.column}`,
+    label: col.alias || `${col.table}_${col.column}`.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+  }));
+
+  return {
+    data: result.rows,
+    columns,
+    rowCount: result.rowCount || 0
+  };
 }
 
 /**

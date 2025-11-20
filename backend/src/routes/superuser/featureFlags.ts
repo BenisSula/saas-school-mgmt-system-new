@@ -22,7 +22,7 @@ const createFeatureFlagSchema = z.object({
   description: z.string().optional(),
   isEnabledGlobally: z.boolean().optional(),
   rolloutPercentage: z.number().int().min(0).max(100).optional(),
-  metadata: z.record(z.unknown()).optional()
+  metadata: z.record(z.string(), z.unknown()).optional()
 });
 
 const updateFeatureFlagSchema = z.object({
@@ -30,7 +30,7 @@ const updateFeatureFlagSchema = z.object({
   description: z.string().optional(),
   isEnabledGlobally: z.boolean().optional(),
   rolloutPercentage: z.number().int().min(0).max(100).optional(),
-  metadata: z.record(z.unknown()).optional()
+  metadata: z.record(z.string(), z.unknown()).optional()
 });
 
 // Create feature flag

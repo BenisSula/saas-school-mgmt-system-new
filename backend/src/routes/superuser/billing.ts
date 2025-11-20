@@ -39,7 +39,7 @@ const createSubscriptionSchema = z.object({
   currency: z.string().optional(),
   trialDays: z.number().int().min(0).optional(),
   providerSubscriptionId: z.string().optional(),
-  metadata: z.record(z.unknown()).optional()
+  metadata: z.record(z.string(), z.unknown()).optional()
 });
 
 const updateSubscriptionSchema = z.object({
@@ -47,7 +47,7 @@ const updateSubscriptionSchema = z.object({
   planName: z.string().optional(),
   status: z.enum(['active', 'canceled', 'past_due', 'trialing', 'unpaid']).optional(),
   cancelAtPeriodEnd: z.boolean().optional(),
-  metadata: z.record(z.unknown()).optional()
+  metadata: z.record(z.string(), z.unknown()).optional()
 });
 
 // Subscription endpoints

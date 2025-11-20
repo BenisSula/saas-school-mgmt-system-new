@@ -10,10 +10,9 @@ import { StatusBanner } from '../../components/ui/StatusBanner';
 import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton';
 import { PaginatedTable } from '../../components/admin/PaginatedTable';
 import { ExportButtons } from '../../components/admin/ExportButtons';
-import { exportToCSV } from '../../lib/utils/export';
+import { createExportHandlers } from '../../hooks/useExport';
 import { api, type TeacherProfile, type TenantUser, type Subject } from '../../lib/api';
 import type { TableColumn } from '../../components/ui/Table';
-import { defaultDate } from '../../lib/utils/date';
 
 interface HODFilters {
   search: string;
@@ -198,7 +197,8 @@ export function HODsManagementPage() {
     }
   };
 
-  const handleExportCSV = () => {
+  // Consolidated export handlers using DRY principle
+  const exportHandlers = useMemo(() => {
     const exportData = filteredHODs.map((hod) => ({
       Name: hod.name,
       Email: hod.email,
@@ -206,16 +206,19 @@ export function HODsManagementPage() {
       Subjects: hod.subjects.join('; '),
       'Teachers Under Oversight': hod.teachersUnderOversight || 0
     }));
-    exportToCSV(exportData, `hods-${defaultDate()}`);
-  };
 
-  const handleExportPDF = () => {
-    toast.info('PDF export coming soon');
-  };
+    return createExportHandlers(exportData, 'hods', [
+      'Name',
+      'Email',
+      'Department',
+      'Subjects',
+      'Teachers Under Oversight'
+    ]);
+  }, [filteredHODs]);
 
-  const handleExportExcel = () => {
-    toast.info('Excel export coming soon');
-  };
+  const handleExportCSV = exportHandlers.exportCSV;
+  const handleExportPDF = exportHandlers.exportPDF;
+  const handleExportExcel = exportHandlers.exportExcel;
 
   const toggleRowSelection = (hodId: string) => {
     setSelectedRows((prev) => {

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../../context/AuthContext';
 import { api } from '../../../lib/api';
 
 interface ReportBuilderProps {
@@ -21,13 +20,11 @@ interface Filter {
 }
 
 export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }) => {
-  const { user } = useAuth();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [dataSources, setDataSources] = useState<string[]>([]);
   const [selectedColumns, setSelectedColumns] = useState<Column[]>([]);
   const [filters, setFilters] = useState<Filter[]>([]);
-  const [groupBy, setGroupBy] = useState<string[]>([]);
   const [visualizationType, setVisualizationType] = useState<'table' | 'bar' | 'line' | 'pie' | 'area'>('table');
   const [isShared, setIsShared] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -72,11 +69,29 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
       return;
     }
 
+    // Validate columns
+    const invalidColumns = selectedColumns.filter(col => !col.table || !col.column);
+    if (invalidColumns.length > 0) {
+      setError('All columns must have both table and column name selected');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const report = await api.createCustomReport({
+      // Auto-determine groupBy: if aggregations are used, group by non-aggregated columns
+      const hasAggregations = selectedColumns.some(col => col.aggregate);
+      let groupBy: string[] = [];
+      
+      if (hasAggregations) {
+        // Group by non-aggregated columns
+        groupBy = selectedColumns
+          .filter(col => !col.aggregate)
+          .map(col => col.column);
+      }
+
+      const report = await api.reports.createCustomReport({
         name,
         description,
         dataSources,
@@ -96,43 +111,43 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
   };
 
   return (
-    <div className="report-builder p-6 bg-white rounded-lg shadow">
-      <h2 className="text-2xl font-bold mb-4">Custom Report Builder</h2>
+    <div className="report-builder p-6 bg-[var(--brand-surface)] rounded-lg shadow-md border border-[var(--brand-border)]">
+      <h2 className="text-2xl font-bold mb-4 text-[var(--brand-text-primary)]">Custom Report Builder</h2>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
+        <div className="mb-4 p-3 bg-[var(--brand-error)]/10 text-[var(--brand-error)] border border-[var(--brand-error)]/20 rounded">
           {error}
         </div>
       )}
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Report Name *</label>
+          <label className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">Report Name *</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full px-3 py-2 border rounded"
+            className="w-full px-3 py-2 border border-[var(--brand-border)] rounded bg-[var(--brand-surface-secondary)] text-[var(--brand-text-primary)] placeholder:text-[var(--brand-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent"
             placeholder="Enter report name"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Description</label>
+          <label className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">Description</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-3 py-2 border rounded"
+            className="w-full px-3 py-2 border border-[var(--brand-border)] rounded bg-[var(--brand-surface-secondary)] text-[var(--brand-text-primary)] placeholder:text-[var(--brand-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent"
             rows={3}
             placeholder="Enter report description"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Data Sources *</label>
+          <label className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">Data Sources *</label>
           <div className="flex flex-wrap gap-2">
             {availableTables.map((table) => (
-              <label key={table} className="flex items-center">
+              <label key={table} className="flex items-center text-[var(--brand-text-primary)] cursor-pointer">
                 <input
                   type="checkbox"
                   checked={dataSources.includes(table)}
@@ -143,7 +158,7 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
                       setDataSources(dataSources.filter(t => t !== table));
                     }
                   }}
-                  className="mr-2"
+                  className="mr-2 accent-[var(--brand-primary)]"
                 />
                 {table}
               </label>
@@ -152,7 +167,7 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Columns *</label>
+          <label className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">Columns *</label>
           {selectedColumns.map((col, index) => (
             <div key={index} className="flex gap-2 mb-2">
               <select
@@ -162,7 +177,8 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
                   updated[index].table = e.target.value;
                   setSelectedColumns(updated);
                 }}
-                className="px-3 py-2 border rounded"
+                aria-label="Select table"
+                className="px-3 py-2 border border-[var(--brand-border)] rounded bg-[var(--brand-surface-secondary)] text-[var(--brand-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent"
               >
                 <option value="">Select table</option>
                 {dataSources.map(table => (
@@ -177,7 +193,7 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
                   updated[index].column = e.target.value;
                   setSelectedColumns(updated);
                 }}
-                className="flex-1 px-3 py-2 border rounded"
+                className="flex-1 px-3 py-2 border border-[var(--brand-border)] rounded bg-[var(--brand-surface-secondary)] text-[var(--brand-text-primary)] placeholder:text-[var(--brand-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent"
                 placeholder="Column name"
               />
               <select
@@ -187,7 +203,8 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
                   updated[index].aggregate = e.target.value as Column['aggregate'] | undefined;
                   setSelectedColumns(updated);
                 }}
-                className="px-3 py-2 border rounded"
+                aria-label="Select aggregate function"
+                className="px-3 py-2 border border-[var(--brand-border)] rounded bg-[var(--brand-surface-secondary)] text-[var(--brand-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent"
               >
                 <option value="">No aggregate</option>
                 <option value="sum">SUM</option>
@@ -198,7 +215,7 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
               </select>
               <button
                 onClick={() => handleRemoveColumn(index)}
-                className="px-3 py-2 bg-red-500 text-white rounded"
+                className="px-3 py-2 bg-[var(--brand-error)] text-[var(--brand-error-contrast)] rounded hover:opacity-90 transition-opacity"
               >
                 Remove
               </button>
@@ -206,14 +223,14 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
           ))}
           <button
             onClick={handleAddColumn}
-            className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
+            className="mt-2 px-4 py-2 bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)] rounded hover:bg-[var(--brand-primary-hover)] transition-colors"
           >
             Add Column
           </button>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Filters</label>
+          <label className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">Filters</label>
           {filters.map((filter, index) => (
             <div key={index} className="flex gap-2 mb-2">
               <input
@@ -224,7 +241,7 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
                   updated[index].column = e.target.value;
                   setFilters(updated);
                 }}
-                className="flex-1 px-3 py-2 border rounded"
+                className="flex-1 px-3 py-2 border border-[var(--brand-border)] rounded bg-[var(--brand-surface-secondary)] text-[var(--brand-text-primary)] placeholder:text-[var(--brand-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent"
                 placeholder="Column"
               />
               <select
@@ -234,7 +251,8 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
                   updated[index].operator = e.target.value as Filter['operator'];
                   setFilters(updated);
                 }}
-                className="px-3 py-2 border rounded"
+                aria-label="Select filter operator"
+                className="px-3 py-2 border border-[var(--brand-border)] rounded bg-[var(--brand-surface-secondary)] text-[var(--brand-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent"
               >
                 <option value="=">=</option>
                 <option value="!=">!=</option>
@@ -254,12 +272,12 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
                   updated[index].value = e.target.value;
                   setFilters(updated);
                 }}
-                className="flex-1 px-3 py-2 border rounded"
+                className="flex-1 px-3 py-2 border border-[var(--brand-border)] rounded bg-[var(--brand-surface-secondary)] text-[var(--brand-text-primary)] placeholder:text-[var(--brand-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent"
                 placeholder="Value"
               />
               <button
                 onClick={() => handleRemoveFilter(index)}
-                className="px-3 py-2 bg-red-500 text-white rounded"
+                className="px-3 py-2 bg-[var(--brand-error)] text-[var(--brand-error-contrast)] rounded hover:opacity-90 transition-opacity"
               >
                 Remove
               </button>
@@ -267,18 +285,19 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
           ))}
           <button
             onClick={handleAddFilter}
-            className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
+            className="mt-2 px-4 py-2 bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)] rounded hover:bg-[var(--brand-primary-hover)] transition-colors"
           >
             Add Filter
           </button>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Visualization Type</label>
+          <label className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">Visualization Type</label>
           <select
             value={visualizationType}
             onChange={(e) => setVisualizationType(e.target.value as typeof visualizationType)}
-            className="w-full px-3 py-2 border rounded"
+            aria-label="Select visualization type"
+            className="w-full px-3 py-2 border border-[var(--brand-border)] rounded bg-[var(--brand-surface-secondary)] text-[var(--brand-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent"
           >
             <option value="table">Table</option>
             <option value="bar">Bar Chart</option>
@@ -289,12 +308,12 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
         </div>
 
         <div>
-          <label className="flex items-center">
+          <label className="flex items-center text-[var(--brand-text-primary)] cursor-pointer">
             <input
               type="checkbox"
               checked={isShared}
               onChange={(e) => setIsShared(e.target.checked)}
-              className="mr-2"
+              className="mr-2 accent-[var(--brand-primary)]"
             />
             Share with other users
           </label>
@@ -304,14 +323,14 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
           <button
             onClick={handleSave}
             disabled={loading}
-            className="px-6 py-2 bg-green-500 text-white rounded disabled:opacity-50"
+            className="px-6 py-2 bg-[var(--brand-success)] text-white rounded hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
             {loading ? 'Saving...' : 'Save Report'}
           </button>
           {onCancel && (
             <button
               onClick={onCancel}
-              className="px-6 py-2 bg-gray-500 text-white rounded"
+              className="px-6 py-2 bg-[var(--brand-surface-tertiary)] text-[var(--brand-surface-contrast)] rounded hover:bg-[var(--brand-border-strong)] transition-colors"
             >
               Cancel
             </button>

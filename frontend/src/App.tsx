@@ -7,6 +7,7 @@ import { AdminShell } from './layouts/AdminShell';
 import { getDefaultDashboardPath } from './lib/roleLinks';
 import RouteMeta from './components/layout/RouteMeta';
 import { useProfileSync } from './hooks/useProfileSync';
+import { PasswordChangeModal } from './components/profile/PasswordChangeModal';
 
 const HomePage = lazy(() => import('./pages'));
 const TestLoginPage = lazy(() => import('./pages/TestLoginPage'));
@@ -29,6 +30,7 @@ const TeacherClassesPage = lazy(() => import('./pages/teacher/TeacherClassesPage
 const TeacherReportsPage = lazy(() => import('./pages/teacher/TeacherReportsPage'));
 const TeacherMessagesPage = lazy(() => import('./pages/teacher/TeacherMessagesPage'));
 const TeacherProfilePage = lazy(() => import('./pages/teacher/TeacherProfilePage'));
+const SuperuserDashboardPage = lazy(() => import('./pages/superuser/dashboard'));
 const SuperuserOverviewPage = lazy(() => import('./pages/superuser/SuperuserOverviewPage'));
 const SuperuserManageSchoolsPage = lazy(
   () => import('./pages/superuser/SuperuserManageSchoolsPage')
@@ -45,6 +47,11 @@ const SuperuserTenantAnalyticsPage = lazy(
 const SuperuserUsageMonitoringPage = lazy(
   () => import('./pages/superuser/SuperuserUsageMonitoringPage')
 );
+const SuperuserActivityPage = lazy(() => import('./pages/superuser/activity'));
+const UserActivityPage = lazy(() => import('./pages/superuser/users/[userId]/activity'));
+const InvestigationListPage = lazy(() => import('./pages/superuser/investigations'));
+const InvestigationDetailPage = lazy(() => import('./pages/superuser/investigations/[caseId]'));
+const InvestigationCreatePage = lazy(() => import('./pages/superuser/investigations/create'));
 const AdminClassesSubjectsPage = lazy(() => import('./pages/admin/AdminClassesSubjectsPage'));
 const AdminAttendancePage = lazy(() => import('./pages/admin/AdminAttendancePage'));
 const AdminOverviewPage = lazy(() => import('./pages/admin/AdminOverviewPage'));
@@ -61,7 +68,7 @@ const StudentDashboardPage = lazy(() => import('./pages/student/StudentDashboard
 const NotAuthorizedPage = lazy(() => import('./pages/NotAuthorizedPage'));
 
 function App() {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, mustChangePassword, clearMustChangePassword } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -88,10 +95,20 @@ function App() {
   }, [isAuthenticated, location.pathname, navigate, user?.role]);
 
   return (
-    <Suspense
-      fallback={
-        <div
-          className="flex min-h-screen items-center justify-center bg-slate-950 text-sm text-slate-300"
+    <>
+      {/* Password Change Modal - shows when user must change password */}
+      {isAuthenticated && (
+        <PasswordChangeModal
+          isOpen={mustChangePassword}
+          onClose={clearMustChangePassword}
+          isRequired={mustChangePassword}
+          onSuccess={clearMustChangePassword}
+        />
+      )}
+      <Suspense
+        fallback={
+          <div
+            className="flex min-h-screen items-center justify-center bg-slate-950 text-sm text-slate-300"
           role="status"
         >
           Loading application…
@@ -290,6 +307,17 @@ function App() {
           />
           <Route path="superuser">
             <Route
+              path="dashboard"
+              element={
+                <ProtectedRoute
+                  allowedRoles={['superadmin']}
+                  fallback={<Navigate to={getDefaultDashboardPath(user?.role)} replace />}
+                >
+                  <SuperuserDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="overview"
               element={
                 <ProtectedRoute
@@ -367,6 +395,39 @@ function App() {
               }
             />
             <Route
+              path="investigations"
+              element={
+                <ProtectedRoute
+                  allowedRoles={['superadmin']}
+                  fallback={<Navigate to={getDefaultDashboardPath(user?.role)} replace />}
+                >
+                  <InvestigationListPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="investigations/create"
+              element={
+                <ProtectedRoute
+                  allowedRoles={['superadmin']}
+                  fallback={<Navigate to={getDefaultDashboardPath(user?.role)} replace />}
+                >
+                  <InvestigationCreatePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="investigations/:caseId"
+              element={
+                <ProtectedRoute
+                  allowedRoles={['superadmin']}
+                  fallback={<Navigate to={getDefaultDashboardPath(user?.role)} replace />}
+                >
+                  <InvestigationDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="settings"
               element={
                 <ProtectedRoute
@@ -374,6 +435,28 @@ function App() {
                   fallback={<Navigate to={getDefaultDashboardPath(user?.role)} replace />}
                 >
                   <SuperuserSettingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="activity"
+              element={
+                <ProtectedRoute
+                  allowedRoles={['superadmin']}
+                  fallback={<Navigate to={getDefaultDashboardPath(user?.role)} replace />}
+                >
+                  <SuperuserActivityPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="users/:userId/activity"
+              element={
+                <ProtectedRoute
+                  allowedRoles={['superadmin']}
+                  fallback={<Navigate to={getDefaultDashboardPath(user?.role)} replace />}
+                >
+                  <UserActivityPage />
                 </ProtectedRoute>
               }
             />
@@ -566,6 +649,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
+    </>
   );
 }
 

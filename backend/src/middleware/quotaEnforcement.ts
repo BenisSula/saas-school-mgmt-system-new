@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { getPool } from '../db/pool';
+import { getPool } from '../db/connection';
 import { checkQuota, incrementQuotaUsage, type ResourceType } from '../services/quotas/quotaService';
 
 /**

@@ -31,7 +31,15 @@ export type Permission =
   | 'messages:receive'
   | 'fees:view_self'
   | 'profile:view_self'
-  | 'support:raise';
+  | 'support:raise'
+  | 'support:view'
+  | 'support:manage'
+  | 'announcements:manage'
+  | 'kb:manage'
+  | 'status:view'
+  | 'status:manage'
+  | 'reports:manage'
+  | 'notifications:send';
 
 export const rolePermissions: Record<Role, Permission[]> = {
   student: [
@@ -69,6 +77,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
   admin: [
     'dashboard:view',
     'attendance:manage',
+    'attendance:view',
     'exams:manage',
     'exams:view',
     'grades:manage',
@@ -86,11 +95,19 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'performance:generate',
     'messages:send',
     'messages:receive',
-    'school:manage'
+    'school:manage',
+    'support:raise',
+    'support:view',
+    'support:manage',
+    'announcements:manage',
+    'kb:manage',
+    'status:view',
+    'status:manage'
   ],
   superadmin: [
     'dashboard:view',
     'attendance:manage',
+    'attendance:view',
     'exams:manage',
     'exams:view',
     'grades:manage',
@@ -106,10 +123,18 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'students:view_own_class',
     'teachers:manage',
     'reports:view',
+    'reports:manage',
     'performance:generate',
     'messages:send',
     'messages:receive',
-    'school:manage'
+    'school:manage',
+    'support:raise',
+    'support:view',
+    'support:manage',
+    'announcements:manage',
+    'kb:manage',
+    'status:view',
+    'status:manage'
   ]
 };
 

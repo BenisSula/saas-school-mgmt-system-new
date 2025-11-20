@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { getPool } from '../db/pool';
+import { getPool } from '../db/connection';
 
 /**
  * Per-tenant rate limiting middleware

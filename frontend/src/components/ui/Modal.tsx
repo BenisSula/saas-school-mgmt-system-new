@@ -62,7 +62,11 @@ export function Modal({ title, isOpen, onClose, children, footer, initialFocusRe
       {isOpen && (
         <motion.div
           role="presentation"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--brand-surface)]/70 px-4 py-6 backdrop-blur-sm sm:px-6"
+          className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 backdrop-blur-sm sm:px-6"
+          style={{
+            backgroundColor: 'var(--modal-backdrop)',
+            backdropFilter: 'var(--modal-backdrop-blur)'
+          }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -78,14 +82,21 @@ export function Modal({ title, isOpen, onClose, children, footer, initialFocusRe
             aria-modal="true"
             aria-labelledby="modal-title"
             ref={dialogRef}
-            className="w-full max-w-lg rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)] text-[var(--brand-surface-contrast)] shadow-2xl focus-visible-ring"
+            className="w-full max-w-lg rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)] shadow-2xl focus-visible-ring"
+            style={{
+              borderRadius: 'var(--modal-radius)',
+              padding: 'var(--modal-padding)'
+            }}
             variants={modalAnimation}
             initial="hidden"
             animate="visible"
             exit="exit"
           >
-            <header className="flex items-center justify-between border-b border-[var(--brand-border)] px-4 py-3 sm:px-6 sm:py-4">
-              <h2 id="modal-title" className="text-base font-semibold sm:text-lg">
+            <header className="mb-6 flex items-center justify-between border-b border-[var(--brand-border)] pb-4">
+              <h2
+                id="modal-title"
+                className="text-heading-4 text-[var(--brand-text-primary)]"
+              >
                 {title}
               </h2>
               <Button
@@ -93,16 +104,16 @@ export function Modal({ title, isOpen, onClose, children, footer, initialFocusRe
                 size="sm"
                 onClick={onClose}
                 aria-label="Close modal"
-                className="text-[var(--brand-surface-contrast)] hover:bg-[var(--brand-surface-secondary)]"
+                className="ml-4 -mr-2 text-[var(--brand-text-secondary)] hover:bg-[var(--brand-surface-secondary)] hover:text-[var(--brand-text-primary)]"
               >
                 ✕
               </Button>
             </header>
-            <div className="px-4 py-4 text-sm text-[var(--brand-text-primary)] sm:px-6">
+            <div className="text-body text-[var(--brand-text-primary)]">
               {children}
             </div>
             {footer ? (
-              <footer className="flex flex-col items-stretch gap-2 border-t border-[var(--brand-border)] px-4 py-3 sm:flex-row sm:items-center sm:justify-end sm:px-6 sm:py-4">
+              <footer className="mt-6 flex flex-col items-stretch gap-3 border-t border-[var(--brand-border)] pt-4 sm:flex-row sm:items-center sm:justify-end">
                 {footer}
               </footer>
             ) : null}

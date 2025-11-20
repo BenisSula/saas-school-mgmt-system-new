@@ -5,6 +5,8 @@ import { getPool } from './db/connection';
 import { runMigrations } from './db/runMigrations';
 import { seedDemoTenant } from './seed/demoTenant';
 import { validateRequiredEnvVars } from './lib/envValidation';
+import { startSessionCleanupJob } from './services/superuser/sessionCleanupService';
+import { startMetricsCollection } from './services/monitoring/platformMetricsService';
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 
@@ -69,6 +71,23 @@ async function startServer(): Promise<void> {
     } catch {
       // noop
     }
+    
+    // Start session cleanup job
+    try {
+      startSessionCleanupJob();
+      console.log('✅ Session cleanup job started');
+    } catch (error) {
+      console.error('⚠️  Failed to start session cleanup job:', error);
+    }
+    
+    // Start platform metrics collection
+    try {
+      startMetricsCollection();
+      console.log('✅ Platform metrics collection started');
+    } catch (error) {
+      console.error('⚠️  Failed to start platform metrics collection:', error);
+    }
+    
     listenWithRetry(server, PORT, 5);
   } catch (error) {
     const err = error as Error & { code?: string };

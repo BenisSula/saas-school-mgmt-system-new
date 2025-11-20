@@ -17,10 +17,11 @@ export function calculatePercentage(numerator: number, denominator: number): num
   return Math.round((numerator / denominator) * 100);
 }
 
-export function formatCurrency(amount: number): string {
+export function formatCurrency(amount: number | null | undefined, currency: string = 'USD'): string {
+  if (amount === null || amount === undefined) return '—';
   return new Intl.NumberFormat(undefined, {
     style: 'currency',
-    currency: 'USD',
+    currency,
     maximumFractionDigits: 2
   }).format(amount);
 }

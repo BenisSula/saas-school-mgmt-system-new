@@ -10,7 +10,7 @@ import { StatusBanner } from '../../components/ui/StatusBanner';
 import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton';
 import { PaginatedTable } from '../../components/admin/PaginatedTable';
 import { ExportButtons } from '../../components/admin/ExportButtons';
-import { exportToCSV } from '../../lib/utils/export';
+import { createExportHandlers } from '../../hooks/useExport';
 import {
   api,
   type StudentRecord,
@@ -18,7 +18,6 @@ import {
   type StudentProfileDetail
 } from '../../lib/api';
 import type { TableColumn } from '../../components/ui/Table';
-import { defaultDate } from '../../lib/utils/date';
 
 interface StudentFilters {
   search: string;
@@ -265,23 +264,26 @@ export function StudentsManagementPage() {
     }
   };
 
-  const handleExportCSV = () => {
+  // Consolidated export handlers using DRY principle
+  const exportHandlers = useMemo(() => {
     const exportData = filteredStudents.map((s) => ({
       'First Name': s.first_name,
       'Last Name': s.last_name,
       'Admission Number': s.admission_number || 'N/A',
       Class: s.class_id || 'N/A'
     }));
-    exportToCSV(exportData, `students-${defaultDate()}`);
-  };
 
-  const handleExportPDF = () => {
-    toast.info('PDF export coming soon');
-  };
+    return createExportHandlers(exportData, 'students', [
+      'First Name',
+      'Last Name',
+      'Admission Number',
+      'Class'
+    ]);
+  }, [filteredStudents]);
 
-  const handleExportExcel = () => {
-    toast.info('Excel export coming soon');
-  };
+  const handleExportCSV = exportHandlers.exportCSV;
+  const handleExportPDF = exportHandlers.exportPDF;
+  const handleExportExcel = exportHandlers.exportExcel;
 
   const toggleRowSelection = (studentId: string) => {
     setSelectedRows((prev) => {

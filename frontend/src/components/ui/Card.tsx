@@ -1,6 +1,6 @@
 /**
- * Shared Card component
- * Consolidates duplicate card patterns across the codebase
+ * Enterprise Card Component
+ * Consistent card design with proper spacing and elevation
  */
 
 import type { ReactNode } from 'react';
@@ -13,12 +13,21 @@ export interface CardProps {
   hoverable?: boolean;
   onClick?: () => void;
   padding?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'elevated' | 'outlined';
+  header?: ReactNode;
+  footer?: ReactNode;
 }
 
 const paddingClasses = {
-  sm: 'p-3 sm:p-4',
-  md: 'p-4 sm:p-6',
-  lg: 'p-6 sm:p-8'
+  sm: 'p-4 sm:p-6',
+  md: 'p-6 sm:p-8',
+  lg: 'p-8 sm:p-10'
+};
+
+const variantClasses = {
+  default: 'card-enterprise',
+  elevated: 'card-enterprise shadow-md',
+  outlined: 'card-enterprise border-2'
 };
 
 export function Card({
@@ -26,10 +35,15 @@ export function Card({
   className = '',
   hoverable = false,
   onClick,
-  padding = 'md'
+  padding = 'md',
+  variant = 'default',
+  header,
+  footer
 }: CardProps) {
-  const baseClasses = `card-base ${paddingClasses[padding]} ${onClick ? 'cursor-pointer' : ''} ${className}`;
+  const baseClasses = `${variantClasses[variant]} ${onClick ? 'cursor-pointer' : ''} ${className}`;
   const Component = hoverable || onClick ? motion.div : 'div';
+
+  const contentPadding = paddingClasses[padding];
 
   const props =
     hoverable || onClick
@@ -44,5 +58,19 @@ export function Card({
         }
       : { className: baseClasses };
 
-  return <Component {...props}>{children}</Component>;
+  return (
+    <Component {...props}>
+      {header && (
+        <div className={`border-b border-[var(--brand-border)] ${contentPadding} pb-4`}>
+          {header}
+        </div>
+      )}
+      <div className={contentPadding}>{children}</div>
+      {footer && (
+        <div className={`border-t border-[var(--brand-border)] ${contentPadding} pt-4`}>
+          {footer}
+        </div>
+      )}
+    </Component>
+  );
 }

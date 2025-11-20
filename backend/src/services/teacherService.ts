@@ -1,19 +1,16 @@
 import type { PoolClient } from 'pg';
 import { TeacherInput } from '../validators/teacherValidator';
 import { getTableName, serializeJsonField } from '../lib/serviceUtils';
+import { listEntities, getEntityById, deleteEntityById } from '../lib/crudHelpers';
 
 const table = 'teachers';
 
 export async function listTeachers(client: PoolClient, schema: string) {
-  const tableName = getTableName(schema, table);
-  const result = await client.query(`SELECT * FROM ${tableName} ORDER BY created_at DESC`);
-  return result.rows;
+  return listEntities(client, schema, table);
 }
 
 export async function getTeacher(client: PoolClient, schema: string, id: string) {
-  const tableName = getTableName(schema, table);
-  const result = await client.query(`SELECT * FROM ${tableName} WHERE id = $1`, [id]);
-  return result.rows[0];
+  return getEntityById(client, schema, table, id);
 }
 
 export async function createTeacher(client: PoolClient, schema: string, payload: TeacherInput) {
@@ -41,7 +38,12 @@ export async function updateTeacher(
   id: string,
   payload: Partial<TeacherInput>
 ) {
-  const existing = await getTeacher(client, schema, id);
+  const existing = await getTeacher<{
+    name: string;
+    email: string;
+    subjects: unknown;
+    assigned_classes: unknown;
+  }>(client, schema, id);
   if (!existing) {
     return null;
   }
@@ -72,6 +74,5 @@ export async function updateTeacher(
 }
 
 export async function deleteTeacher(client: PoolClient, schema: string, id: string) {
-  const tableName = getTableName(schema, table);
-  await client.query(`DELETE FROM ${tableName} WHERE id = $1`, [id]);
+  return deleteEntityById(client, schema, table, id);
 }

@@ -37,28 +37,56 @@ export async function createAuditLog(
   client: PoolClient,
   entry: Omit<AuditLogEntry, 'id' | 'createdAt'>
 ): Promise<void> {
-  await client.query(
-    `
-      INSERT INTO shared.audit_logs (
-        tenant_id, user_id, action, resource_type, resource_id,
-        details, ip_address, user_agent, request_id, severity, tags
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-    `,
-    [
-      entry.tenantId || null,
-      entry.userId || null,
-      entry.action,
-      entry.resourceType || null,
-      entry.resourceId || null,
-      JSON.stringify(entry.details),
-      entry.ipAddress || null,
-      entry.userAgent || null,
-      entry.requestId || null,
-      entry.severity || 'info',
-      entry.tags || []
-    ]
-  );
+  try {
+    // Try with tenant_id column (newer schema)
+    await client.query(
+      `
+        INSERT INTO shared.audit_logs (
+          tenant_id, user_id, action, resource_type, resource_id,
+          details, ip_address, user_agent, request_id, severity, tags
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      `,
+      [
+        entry.tenantId || null,
+        entry.userId || null,
+        entry.action,
+        entry.resourceType || null,
+        entry.resourceId || null,
+        JSON.stringify(entry.details),
+        entry.ipAddress || null,
+        entry.userAgent || null,
+        entry.requestId || null,
+        entry.severity || 'info',
+        entry.tags || []
+      ]
+    );
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    // If tenant_id column doesn't exist, use older schema (migration 003)
+    if (errorMessage.includes('tenant_id') && (errorMessage.includes('does not exist') || errorMessage.includes('column'))) {
+      // Fallback to older schema without tenant_id
+      // Old schema: user_id, action, entity_type, entity_id, details, created_at
+      await client.query(
+        `
+          INSERT INTO shared.audit_logs (
+            user_id, action, entity_type, entity_id, details
+          )
+          VALUES ($1, $2, $3, $4, $5)
+        `,
+        [
+          entry.userId || null,
+          entry.action,
+          entry.resourceType || 'UNKNOWN',
+          entry.resourceId || null,
+          JSON.stringify(entry.details)
+        ]
+      );
+    } else {
+      // Re-throw other errors
+      throw error;
+    }
+  }
 }
 
 /**

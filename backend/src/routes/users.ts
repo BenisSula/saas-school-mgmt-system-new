@@ -11,10 +11,14 @@ import { adminCreateUser } from '../services/adminUserService';
 import { roleUpdateSchema } from '../validators/userValidator';
 import { getPool } from '../db/connection';
 import { z } from 'zod';
+import adminPasswordsRouter from './admin/passwords';
 
 const router = Router();
 
 router.use(authenticate, tenantResolver(), ensureTenantContext());
+
+// Mount admin password routes
+router.use('/admin', adminPasswordsRouter);
 
 // Admin user registration schema
 const adminCreateUserSchema = z.object({

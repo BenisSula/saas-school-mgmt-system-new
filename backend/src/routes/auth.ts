@@ -1,6 +1,8 @@
 import { Router } from 'express';
+import ssoRouter from './auth/sso';
 import rateLimit from 'express-rate-limit';
 import authenticate from '../middleware/authenticate';
+import { suspiciousLoginLimiter } from '../middleware/rateLimiter';
 import {
   login,
   refreshToken,
@@ -42,17 +44,37 @@ router.get('/health', async (_req, res) => {
   try {
     const { getPool } = await import('../db/connection');
     const pool = getPool();
-    await pool.query('SELECT 1');
-    res.status(200).json({
-      status: 'ok',
-      db: 'ok',
-      timestamp: new Date().toISOString()
-    });
-  } catch {
+    
+    // Simple health check query with timeout
+    const result = await Promise.race([
+      pool.query('SELECT 1'),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database query timeout')), 5000)
+      )
+    ]) as { rows: unknown[] };
+    
+    if (result && result.rows) {
+      res.status(200).json({
+        status: 'ok',
+        db: 'ok',
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      res.status(503).json({
+        status: 'error',
+        db: 'error',
+        message: 'Database query returned unexpected result',
+        timestamp: new Date().toISOString()
+      });
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Auth Health] Error:', errorMessage);
     res.status(503).json({
       status: 'error',
       db: 'error',
       message: 'Database connection failed',
+      error: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
       timestamp: new Date().toISOString()
     });
   }
@@ -117,7 +139,7 @@ router.post('/signup', async (req, res) => {
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', suspiciousLoginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -137,6 +159,16 @@ router.post('/login', async (req, res) => {
       { email, password },
       { ip: req.ip, userAgent: req.get('user-agent') ?? null }
     );
+    
+    // Track successful login attempt
+    try {
+      const { metrics } = await import('../middleware/metrics');
+      metrics.incrementAuthAttempt('password', true, req.ip);
+    } catch (metricsError) {
+      // Don't fail the request if metrics fail
+      console.error('[auth] Failed to track login metrics:', metricsError);
+    }
+    
     return res.status(200).json(response);
   } catch (error) {
     // Log full error for debugging
@@ -148,6 +180,29 @@ router.post('/login', async (req, res) => {
     });
 
     const errorMessage = errorObj.message;
+
+    // Log failed login attempt
+    try {
+      const { logLoginAttempt } = await import('../services/superuser/platformAuditService');
+      const { getPool } = await import('../db/connection');
+      const pool = getPool();
+      await logLoginAttempt(pool, {
+        email: req.body.email || 'unknown',
+        success: false,
+        ipAddress: req.ip || null,
+        userAgent: req.get('user-agent') || null,
+        userId: null,
+        tenantId: null,
+        failureReason: errorMessage
+      });
+      
+      // Track failed login attempt metrics
+      const { metrics } = await import('../middleware/metrics');
+      metrics.incrementAuthAttempt('password', false, req.ip || undefined);
+    } catch (logError) {
+      // Don't fail the request if logging fails
+      console.error('[auth] Failed to log login attempt:', logError);
+    }
 
     // Return 401 for authentication errors
     if (errorMessage.includes('Invalid credentials') || errorMessage.includes('not found')) {
@@ -199,6 +254,36 @@ router.post('/request-password-reset', async (req, res) => {
     return res.status(200).json({ message: 'If the email exists, a reset link has been sent.' });
   } catch (error) {
     return res.status(500).json({ message: (error as Error).message });
+  }
+});
+
+router.post('/change-password', authenticate, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(422).json(
+        createErrorResponse('currentPassword and newPassword are required', undefined, 'MISSING_REQUIRED_FIELDS')
+      );
+    }
+
+    const { changeOwnPassword } = await import('../services/userPasswordService');
+    const { extractIpAddress, extractUserAgent } = await import('../lib/superuserHelpers');
+
+    await changeOwnPassword(
+      getPool(),
+      req.user!.id,
+      currentPassword,
+      newPassword,
+      extractIpAddress(req),
+      extractUserAgent(req)
+    );
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    const statusCode = errorMessage.includes('not found') || errorMessage.includes('incorrect') ? 400 : 500;
+    res.status(statusCode).json(createErrorResponse(errorMessage));
   }
 });
 
@@ -349,5 +434,8 @@ router.post('/logout', authenticate, async (req, res) => {
     return res.status(400).json({ message: (error as Error).message });
   }
 });
+
+// SSO routes
+router.use('/sso', ssoRouter);
 
 export default router;

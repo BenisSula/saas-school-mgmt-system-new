@@ -20,7 +20,7 @@ const sendEmailSchema = z.object({
   templateKey: z.string(),
   recipientEmail: z.string().email(),
   recipientName: z.string().optional(),
-  variables: z.record(z.unknown()).optional(),
+  variables: z.record(z.string(), z.unknown()).optional(),
   priority: z.number().int().min(1).max(10).optional(),
   scheduledAt: z.string().datetime().optional()
 });
@@ -95,7 +95,7 @@ router.post('/templates', requirePermission('tenants:manage'), async (req, res, 
       subject: z.string(),
       bodyHtml: z.string(),
       bodyText: z.string().optional(),
-      variables: z.record(z.unknown()).optional(),
+      variables: z.record(z.string(), z.unknown()).optional(),
       tenantId: z.string().uuid().optional()
     });
 

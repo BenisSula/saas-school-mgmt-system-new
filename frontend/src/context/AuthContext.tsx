@@ -8,16 +8,26 @@ import {
   setAuthHandlers,
   setTenant
 } from '../lib/api';
-import type { AuthResponse, AuthUser, LoginPayload, RegisterPayload } from '../lib/api';
+import type { AuthResponse, AuthUser, LoginPayload, RegisterPayload, Role } from '../lib/api';
 import { normalizeUser, ensureActive, isActive } from '../lib/userUtils';
 
 interface AuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isSuperUser: boolean;
+  mustChangePassword: boolean; // Flag indicating user must change password
   login: (payload: LoginPayload) => Promise<AuthResponse>;
   register: (payload: RegisterPayload) => Promise<AuthResponse>;
   logout: () => void;
+  clearMustChangePassword: () => void; // Clear the must change password flag
+}
+
+/**
+ * Check if a role has superuser authority
+ */
+function isSuperUserRole(role: Role | string | undefined | null): boolean {
+  return role === 'superadmin';
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -25,6 +35,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [mustChangePassword, setMustChangePassword] = useState<boolean>(false);
 
   const handleUnauthorized = useCallback(() => {
     clearSession();
@@ -42,6 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       toast.error((error as Error).message);
       return;
     }
+    // Update user state (this automatically refreshes superuser permissions)
     setUser(normalised);
     setTenant(normalised.tenantId ?? null);
   }, []);
@@ -100,6 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!isActive(normalised)) {
         clearSession();
         setUser(null);
+        setMustChangePassword(false);
         const statusLabel = normalised.status === 'pending' ? 'pending admin approval' : 'inactive';
         throw new Error(`Account ${statusLabel}. Please contact an administrator.`);
       }
@@ -109,6 +122,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       initialiseSession(authWithStatus);
       setTenant(normalised.tenantId ?? null);
       setUser(normalised);
+      
+      // Set must change password flag if present in response
+      if (auth.mustChangePassword) {
+        setMustChangePassword(true);
+      }
+      
       return authWithStatus;
     } catch (error) {
       // Log error for debugging
@@ -156,20 +175,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
+    // clearSession() already handles clearing refresh timers
     clearSession();
     setUser(null);
+    setMustChangePassword(false);
   }, []);
+
+  const clearMustChangePassword = useCallback(() => {
+    setMustChangePassword(false);
+  }, []);
+
+  // Compute superuser status from current user
+  const isSuperUser = useMemo(() => isSuperUserRole(user?.role), [user?.role]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       isAuthenticated: Boolean(user),
       isLoading,
+      isSuperUser,
+      mustChangePassword,
       login,
       register,
-      logout
+      logout,
+      clearMustChangePassword
     }),
-    [user, isLoading, login, register, logout]
+    [user, isLoading, isSuperUser, mustChangePassword, login, register, logout, clearMustChangePassword]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

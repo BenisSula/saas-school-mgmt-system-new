@@ -14,7 +14,9 @@ import {
   CreditCard,
   ClipboardList,
   MessageCircle,
-  UserCircle
+  UserCircle,
+  Activity,
+  Shield
 } from 'lucide-react';
 import type { Role } from './api';
 import { filterSidebarLinksByPermission } from './rbac/filterSidebarLinks';
@@ -165,9 +167,15 @@ const studentLinks: SidebarLink[] = [
 
 const superAdminLinks: SidebarLink[] = [
   {
-    id: 'super-overview',
-    label: 'Dashboard Overview',
+    id: 'super-dashboard',
+    label: 'Dashboard',
     icon: <LayoutDashboard className="h-5 w-5" />,
+    path: '/dashboard/superuser/dashboard'
+  },
+  {
+    id: 'super-overview',
+    label: 'Platform Overview',
+    icon: <BarChart3 className="h-5 w-5" />,
     path: '/dashboard/superuser/overview'
   },
   {
@@ -193,6 +201,18 @@ const superAdminLinks: SidebarLink[] = [
     label: 'Reports',
     icon: <BarChart3 className="h-5 w-5" />,
     path: '/dashboard/superuser/reports'
+  },
+  {
+    id: 'super-activity',
+    label: 'Activity Monitoring',
+    icon: <Activity className="h-5 w-5" />,
+    path: '/dashboard/superuser/activity'
+  },
+  {
+    id: 'super-investigations',
+    label: 'Investigation Tools',
+    icon: <Shield className="h-5 w-5" />,
+    path: '/dashboard/superuser/investigations'
   },
   {
     id: 'super-settings',
@@ -243,8 +263,18 @@ export function getSidebarLinksForRole(role: Role | null | undefined): SidebarLi
 }
 
 export function getDefaultDashboardPath(role: Role | null | undefined): string {
+  if (role === 'superadmin') {
+    return '/dashboard/superuser/dashboard';
+  }
   const links = getSidebarLinksForRole(role);
   return links[0]?.path ?? '/dashboard/overview';
+}
+
+/**
+ * Get superuser links (alias for superadmin role)
+ */
+export function getSuperuserLinks(): SidebarLink[] {
+  return getSidebarLinksForRole('superadmin');
 }
 
 export const sidebarLinksByRole: RoleLinkMap = ROLE_LINKS;

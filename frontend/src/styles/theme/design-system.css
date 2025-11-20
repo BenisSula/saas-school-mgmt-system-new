@@ -1,0 +1,289 @@
+/**
+ * Enterprise SaaS Design System
+ * 3iAcademia Brand Colors & Typography
+ * Consistent spacing, grid alignment, and component patterns
+ */
+
+:root {
+  /* ============================================
+     SPACING SCALE (8px base unit)
+     ============================================ */
+  --spacing-0: 0;
+  --spacing-1: 0.25rem;  /* 4px */
+  --spacing-2: 0.5rem;   /* 8px */
+  --spacing-3: 0.75rem;  /* 12px */
+  --spacing-4: 1rem;     /* 16px */
+  --spacing-5: 1.25rem;  /* 20px */
+  --spacing-6: 1.5rem;   /* 24px */
+  --spacing-8: 2rem;     /* 32px */
+  --spacing-10: 2.5rem;  /* 40px */
+  --spacing-12: 3rem;    /* 48px */
+  --spacing-16: 4rem;    /* 64px */
+  --spacing-20: 5rem;    /* 80px */
+  --spacing-24: 6rem;    /* 96px */
+
+  /* ============================================
+     3iACADEMIA BRAND COLORS
+     ============================================ */
+  /* Primary Brand Color - Deep Navy Blue */
+  --brand-primary-50: #e8f0f5;
+  --brand-primary-100: #c4d9e6;
+  --brand-primary-200: #9bbfd4;
+  --brand-primary-300: #6fa5c1;
+  --brand-primary-400: #4d8fb3;
+  --brand-primary-500: #234e70;  /* Base primary */
+  --brand-primary-600: #1a3d57;
+  --brand-primary-700: #0f2a3f;
+  --brand-primary-800: #081a28;
+  --brand-primary-900: #040d14;
+
+  /* Accent Color - Teal/Turquoise */
+  --brand-accent-50: #d5f4ed;
+  --brand-accent-100: #aae9db;
+  --brand-accent-200: #7fdec9;
+  --brand-accent-300: #54d3b7;
+  --brand-accent-400: #2fc8a5;
+  --brand-accent-500: #1abc9c;  /* Base accent */
+  --brand-accent-600: #16a085;
+  --brand-accent-700: #11846e;
+  --brand-accent-800: #0d6857;
+  --brand-accent-900: #084c40;
+
+  /* Semantic Colors */
+  --brand-success-50: #d1fae5;
+  --brand-success-500: #10b981;
+  --brand-success-700: #047857;
+
+  --brand-warning-50: #fef3c7;
+  --brand-warning-500: #f59e0b;
+  --brand-warning-700: #b45309;
+
+  --brand-error-50: #fee2e2;
+  --brand-error-500: #ef4444;
+  --brand-error-700: #b91c1c;
+
+  --brand-info-50: #dbeafe;
+  --brand-info-500: #3b82f6;
+  --brand-info-700: #1d4ed8;
+
+  /* ============================================
+     TYPOGRAPHY SCALE
+     ============================================ */
+  --font-family-base: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px */
+  --font-size-2xl: 1.5rem;    /* 24px */
+  --font-size-3xl: 1.875rem;  /* 30px */
+  --font-size-4xl: 2.25rem;   /* 36px */
+  --font-size-5xl: 3rem;       /* 48px */
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* ============================================
+     BORDER RADIUS
+     ============================================ */
+  --radius-none: 0;
+  --radius-sm: 0.25rem;   /* 4px */
+  --radius-md: 0.5rem;    /* 8px */
+  --radius-lg: 0.75rem;   /* 12px */
+  --radius-xl: 1rem;      /* 16px */
+  --radius-2xl: 1.5rem;  /* 24px */
+  --radius-full: 9999px;
+
+  /* ============================================
+     SHADOWS (Elevation System)
+     ============================================ */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+  /* ============================================
+     GRID SYSTEM
+     ============================================ */
+  --grid-columns: 12;
+  --grid-gap-sm: var(--spacing-4);
+  --grid-gap-md: var(--spacing-6);
+  --grid-gap-lg: var(--spacing-8);
+
+  /* ============================================
+     COMPONENT SPECIFIC TOKENS
+     ============================================ */
+  /* Card */
+  --card-padding-sm: var(--spacing-4);
+  --card-padding-md: var(--spacing-6);
+  --card-padding-lg: var(--spacing-8);
+  --card-radius: var(--radius-xl);
+  --card-shadow: var(--shadow-sm);
+  --card-shadow-hover: var(--shadow-md);
+
+  /* Table */
+  --table-header-height: 3rem;
+  --table-row-height: 3.5rem;
+  --table-cell-padding-x: var(--spacing-4);
+  --table-cell-padding-y: var(--spacing-3);
+  --table-border-color: var(--brand-border);
+}
+
+/* Table cell styles */
+.table-header-cell {
+  height: var(--table-header-height);
+  padding-left: var(--table-cell-padding-x);
+  padding-right: var(--table-cell-padding-x);
+  padding-top: var(--table-cell-padding-y);
+  padding-bottom: var(--table-cell-padding-y);
+  text-align: left;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--brand-text-secondary);
+}
+
+.table-cell {
+  padding-left: var(--table-cell-padding-x);
+  padding-right: var(--table-cell-padding-x);
+  padding-top: var(--table-cell-padding-y);
+  padding-bottom: var(--table-cell-padding-y);
+  font-size: var(--font-size-sm);
+  color: var(--brand-text-primary);
+}
+
+:root {
+
+  /* Modal */
+  --modal-backdrop: rgba(0, 0, 0, 0.5);
+  --modal-backdrop-blur: blur(8px);
+  --modal-max-width-sm: 24rem;
+  --modal-max-width-md: 32rem;
+  --modal-max-width-lg: 42rem;
+  --modal-max-width-xl: 56rem;
+  --modal-padding: var(--spacing-6);
+  --modal-radius: var(--radius-xl);
+
+  /* Navigation */
+  --nav-item-height: 2.75rem;
+  --nav-item-padding-x: var(--spacing-4);
+  --nav-item-padding-y: var(--spacing-2);
+  --nav-item-gap: var(--spacing-2);
+
+  /* Page Layout */
+  --page-header-height: 4rem;
+  --page-padding-x: var(--spacing-6);
+  --page-padding-y: var(--spacing-8);
+  --page-max-width: 90rem; /* 1440px */
+}
+
+/* Dark mode adjustments */
+[data-theme='dark'] {
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.5);
+  --modal-backdrop: rgba(0, 0, 0, 0.7);
+}
+
+/* Utility classes for consistent spacing */
+@layer utilities {
+  /* Spacing utilities */
+  .space-section {
+    @apply mb-8 sm:mb-12 lg:mb-16;
+  }
+
+  .space-card {
+    @apply mb-6 sm:mb-8;
+  }
+
+  .space-element {
+    @apply mb-4 sm:mb-6;
+  }
+
+  /* Grid utilities */
+  .grid-enterprise {
+    @apply grid gap-6 sm:gap-8;
+  }
+
+  .grid-enterprise-2 {
+    @apply grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8;
+  }
+
+  .grid-enterprise-3 {
+    @apply grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 sm:gap-8;
+  }
+
+  .grid-enterprise-4 {
+    @apply grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 sm:gap-8;
+  }
+
+  /* Typography utilities */
+  .text-heading-1 {
+    @apply text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl;
+  }
+
+  .text-heading-2 {
+    @apply text-2xl font-semibold leading-tight tracking-tight sm:text-3xl;
+  }
+
+  .text-heading-3 {
+    @apply text-xl font-semibold leading-snug sm:text-2xl;
+  }
+
+  .text-heading-4 {
+    @apply text-lg font-semibold leading-snug sm:text-xl;
+  }
+
+  .text-body-large {
+    @apply text-base leading-relaxed sm:text-lg;
+  }
+
+  .text-body {
+    @apply text-sm leading-normal sm:text-base;
+  }
+
+  .text-body-small {
+    @apply text-xs leading-normal sm:text-sm;
+  }
+
+  /* Card utilities */
+  .card-enterprise {
+    @apply rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)] shadow-sm transition-all duration-200;
+  }
+
+  .card-enterprise-hover {
+    @apply card-enterprise hover:shadow-md hover:border-[var(--brand-border-strong)];
+  }
+
+  /* Consistent padding */
+  .padding-page {
+    @apply px-6 py-8 sm:px-8 sm:py-10 lg:px-12 lg:py-12;
+  }
+
+  .padding-section {
+    @apply px-6 py-6 sm:px-8 sm:py-8;
+  }
+
+  .padding-card {
+    @apply p-6 sm:p-8;
+  }
+
+  .padding-card-sm {
+    @apply p-4 sm:p-6;
+  }
+}
+
