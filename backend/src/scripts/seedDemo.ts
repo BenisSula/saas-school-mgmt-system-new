@@ -1,25 +1,16 @@
-import { closePool, getPool } from '../db/connection';
-import { runMigrations } from '../db/runMigrations';
-import { getDemoSeedContext, seedDemoTenant } from '../seed/demoTenant';
+/**
+ * @deprecated This script has been disabled - seed data removed from application
+ * Use seedSuperUserOnly.ts to create only the superuser account
+ * To seed superuser, run: npm run seed:superuser
+ */
 
 async function main(): Promise<void> {
-  const pool = getPool();
-
-  try {
-    await runMigrations(pool);
-    await seedDemoTenant(pool);
-    const context = getDemoSeedContext();
-    console.log('Demo tenant seeded successfully.');
-    console.log('SuperUser login:', context.superuserEmail, context.superuserPassword);
-    console.log('Admin login:', context.adminEmail, context.adminPassword);
-    console.log('Teacher login:', context.teacherEmail, context.teacherPassword);
-    console.log('Tenant schema:', context.tenantSchema);
-  } catch (error) {
-    console.error('Failed to seed demo tenant', error);
-    process.exitCode = 1;
-  } finally {
-    await closePool();
-  }
+  console.warn('⚠️  WARNING: Demo seed script is deprecated. Seed data has been removed.');
+  console.warn('⚠️  This script will not create any demo data.');
+  console.warn('⚠️  Use seedSuperUserOnly.ts to create only the superuser account.');
+  console.warn('⚠️  To seed superuser, run: npm run seed:superuser');
+  process.exitCode = 0;
+  return;
 }
 
 main();

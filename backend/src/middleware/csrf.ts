@@ -61,11 +61,18 @@ export function setCsrfToken(req: Request, res: Response, next: NextFunction) {
     const token = generateCsrfToken();
     // Non-httpOnly cookie so frontend JavaScript can read it
     // Security: Token is validated against header, and SameSite=Strict prevents CSRF
+    // Enforce HTTPS-only cookies in production
+    const isProduction = process.env.NODE_ENV === 'production';
     res.cookie(CSRF_TOKEN_COOKIE, token, {
       httpOnly: false, // Allow JavaScript to read for header submission
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction, // HTTPS-only in production
       sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      // Additional security headers
+      ...(isProduction && {
+        // In production, ensure cookie is only sent over HTTPS
+        secure: true
+      })
     });
   }
   next();

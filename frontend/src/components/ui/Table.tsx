@@ -1,6 +1,7 @@
 import { isValidElement, memo, type CSSProperties, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { useBrand } from './BrandProvider';
+import { Card } from './Card';
 import { fadeIn, staggerContainer, staggerItem } from '../../lib/utils/animations';
 
 export interface TableColumn<T> {
@@ -28,14 +29,9 @@ function TableComponent<T>({
   const { tokens } = useBrand();
   if (data.length === 0) {
     return (
-      <motion.div
-        className="card-base p-6 sm:p-8 text-center"
-        variants={fadeIn}
-        initial="hidden"
-        animate="visible"
-      >
+      <Card padding="lg" className="text-center">
         <p className="text-sm text-[var(--brand-muted)]">{emptyMessage}</p>
-      </motion.div>
+      </Card>
     );
   }
 

@@ -1,25 +1,25 @@
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAdminOverview } from '../../hooks/queries/useAdminQueries';
 import { StatCard } from '../../components/charts/StatCard';
-import { DataTable, type DataTableColumn } from '../../components/tables/DataTable';
 import { BarChart, type BarChartData } from '../../components/charts/BarChart';
 import { PieChart, type PieChartData } from '../../components/charts/PieChart';
+import { ChartContainer, PageHeader } from '../../components/charts';
 import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
 import RouteMeta from '../../components/layout/RouteMeta';
 import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton';
 import { StatusBanner } from '../../components/ui/StatusBanner';
-import { Users, GraduationCap, UserCheck, Shield, AlertCircle } from 'lucide-react';
-import type { TenantUser, TeacherProfile, StudentRecord } from '../../lib/api';
+import { Users, GraduationCap, UserCheck, Shield, AlertCircle, School, NotebookPen } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../hooks/useQuery';
-import { formatDate } from '../../lib/utils/date';
-import { StatusBadge } from '../../components/ui/StatusBadge';
 
 export default function AdminOverviewPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data, isLoading, error } = useAdminOverview();
 
-  const { school, users = [], teachers = [], students = [] } = data || {};
+  const { school, users = [], classes = [] } = data || {};
 
   const stats = useMemo(() => {
     const totalUsers = users.length;
@@ -65,97 +65,6 @@ export default function AdminOverviewPage() {
     }));
   }, [users]);
 
-  const userColumns: DataTableColumn<TenantUser>[] = useMemo(
-    () => [
-      {
-        key: 'email',
-        header: 'Email',
-        render: (row) => row.email,
-        sortable: true
-      },
-      {
-        key: 'role',
-        header: 'Role',
-        render: (row) => {
-          const additionalRoles = row.additional_roles?.map((r) => r.role).join(', ') || '';
-          return row.role === 'teacher' && additionalRoles.includes('hod')
-            ? 'Teacher (HOD)'
-            : row.role.charAt(0).toUpperCase() + row.role.slice(1);
-        },
-        sortable: true
-      },
-      {
-        key: 'status',
-        header: 'Status',
-        render: (row) => <StatusBadge status={row.status || 'active'} />,
-        sortable: true
-      },
-      {
-        key: 'is_verified',
-        header: 'Verified',
-        render: (row) => (row.is_verified ? 'Yes' : 'No')
-      },
-      {
-        key: 'created_at',
-        header: 'Created',
-        render: (row) => formatDate(row.created_at),
-        sortable: true
-      }
-    ],
-    []
-  );
-
-  const teacherColumns: DataTableColumn<TeacherProfile>[] = useMemo(
-    () => [
-      {
-        key: 'name',
-        header: 'Name',
-        render: (row) => row.name,
-        sortable: true
-      },
-      {
-        key: 'email',
-        header: 'Email',
-        render: (row) => row.email,
-        sortable: true
-      },
-      {
-        key: 'subjects',
-        header: 'Subjects',
-        render: (row) => row.subjects.join(', ') || 'None'
-      },
-      {
-        key: 'classes',
-        header: 'Classes',
-        render: (row) => row.assigned_classes.join(', ') || 'None'
-      }
-    ],
-    []
-  );
-
-  const studentColumns: DataTableColumn<StudentRecord>[] = useMemo(
-    () => [
-      {
-        key: 'name',
-        header: 'Name',
-        render: (row) => `${row.first_name} ${row.last_name}`,
-        sortable: true
-      },
-      {
-        key: 'admission_number',
-        header: 'Admission Number',
-        render: (row) => row.admission_number || 'N/A',
-        sortable: true
-      },
-      {
-        key: 'class_id',
-        header: 'Class',
-        render: (row) => row.class_id || 'N/A',
-        sortable: true
-      }
-    ],
-    []
-  );
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: queryKeys.admin.overview() });
@@ -180,29 +89,23 @@ export default function AdminOverviewPage() {
   return (
     <RouteMeta title="Admin Dashboard">
       <div className="space-y-6">
-        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-[var(--brand-surface-contrast)]">
-              Executive Dashboard
-            </h1>
-            <p className="text-sm text-[var(--brand-muted)]">
-              Overview of school information, users, and statistics for your organization.
-            </p>
-          </div>
-          <Button onClick={handleRefresh}>Refresh</Button>
-        </header>
+        <PageHeader
+          title="Executive Dashboard"
+          description="Overview of school information, users, and statistics for your organization."
+          action={<Button onClick={handleRefresh}>Refresh</Button>}
+        />
 
         {/* School Information */}
-        {school && (
-          <section className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
-            <h2 className="mb-4 text-xl font-semibold text-[var(--brand-surface-contrast)]">
-              School Information
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2">
+        <Card padding="md">
+          <h2 className="mb-4 text-xl font-semibold text-[var(--brand-surface-contrast)]">
+            School Information
+          </h2>
+          {school ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div>
                 <p className="text-sm font-medium text-[var(--brand-muted)]">School Name</p>
                 <p className="text-lg font-semibold text-[var(--brand-surface-contrast)]">
-                  {school.name}
+                  {school.name || 'Not configured'}
                 </p>
               </div>
               {school.address && typeof school.address === 'object' ? (
@@ -211,16 +114,36 @@ export default function AdminOverviewPage() {
                   <p className="text-lg font-semibold text-[var(--brand-surface-contrast)]">
                     {school.address.city && typeof school.address.city === 'string'
                       ? school.address.city
-                      : 'N/A'}
-                    {school.address.country && typeof school.address.country === 'string'
-                      ? `, ${school.address.country}`
                       : ''}
+                    {school.address.country && typeof school.address.country === 'string'
+                      ? `${school.address.city ? ', ' : ''}${school.address.country}`
+                      : ''}
+                    {!school.address.city && !school.address.country ? 'Not specified' : ''}
                   </p>
                 </div>
-              ) : null}
+              ) : (
+                <div>
+                  <p className="text-sm font-medium text-[var(--brand-muted)]">Address</p>
+                  <p className="text-lg font-semibold text-[var(--brand-surface-contrast)]">
+                    Not specified
+                  </p>
+                </div>
+              )}
+              <div>
+                <p className="text-sm font-medium text-[var(--brand-muted)]">Total Classes</p>
+                <p className="text-lg font-semibold text-[var(--brand-surface-contrast)]">
+                  {classes.length}
+                </p>
+              </div>
             </div>
-          </section>
-        )}
+          ) : (
+            <div className="rounded-lg border border-dashed border-[var(--brand-border)] p-4">
+              <p className="text-sm text-[var(--brand-muted)]">
+                School information not configured. Please configure school details in settings.
+              </p>
+            </div>
+          )}
+        </Card>
 
         {/* Stats Cards */}
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
@@ -264,56 +187,103 @@ export default function AdminOverviewPage() {
 
         {/* Charts */}
         <div className="grid gap-6 lg:grid-cols-2">
-          {roleDistribution.length > 0 && (
-            <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
+          {roleDistribution.length > 0 ? (
+            <ChartContainer>
               <PieChart data={roleDistribution} title="Role Distribution" size={250} />
-            </div>
+            </ChartContainer>
+          ) : (
+            <ChartContainer>
+              <p className="text-sm text-[var(--brand-muted)] text-center py-8">
+                No role distribution data available
+              </p>
+            </ChartContainer>
           )}
-          {statusDistribution.length > 0 && (
-            <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
+          {statusDistribution.length > 0 ? (
+            <ChartContainer>
               <BarChart data={statusDistribution} title="User Status Distribution" height={250} />
-            </div>
+            </ChartContainer>
+          ) : (
+            <ChartContainer>
+              <p className="text-sm text-[var(--brand-muted)] text-center py-8">
+                No status distribution data available
+              </p>
+            </ChartContainer>
           )}
         </div>
 
-        {/* Users Table */}
-        <section className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
+        {/* Quick Links to Management Pages */}
+        <Card padding="md">
           <h2 className="mb-4 text-xl font-semibold text-[var(--brand-surface-contrast)]">
-            All Users
+            Quick Access
           </h2>
-          <DataTable<TenantUser>
-            data={users}
-            columns={userColumns}
-            pagination={{ pageSize: 10, showSizeSelector: true }}
-            emptyMessage="No users found"
-          />
-        </section>
-
-        {/* Teachers Table */}
-        <section className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
-          <h2 className="mb-4 text-xl font-semibold text-[var(--brand-surface-contrast)]">
-            Teachers
-          </h2>
-          <DataTable<TeacherProfile>
-            data={teachers}
-            columns={teacherColumns}
-            pagination={{ pageSize: 10, showSizeSelector: true }}
-            emptyMessage="No teachers found"
-          />
-        </section>
-
-        {/* Students Table */}
-        <section className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
-          <h2 className="mb-4 text-xl font-semibold text-[var(--brand-surface-contrast)]">
-            Students
-          </h2>
-          <DataTable<StudentRecord>
-            data={students}
-            columns={studentColumns}
-            pagination={{ pageSize: 10, showSizeSelector: true }}
-            emptyMessage="No students found"
-          />
-        </section>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Button
+              variant="outline"
+              className="h-auto flex-col items-start gap-2 p-4"
+              onClick={() => navigate('/dashboard/users')}
+            >
+              <Users className="h-6 w-6" />
+              <div className="text-left">
+                <p className="font-semibold">User Management</p>
+                <p className="text-xs text-[var(--brand-muted)]">
+                  Approve users, manage roles
+                </p>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto flex-col items-start gap-2 p-4"
+              onClick={() => navigate('/dashboard/teachers')}
+            >
+              <School className="h-6 w-6" />
+              <div className="text-left">
+                <p className="font-semibold">Teachers Management</p>
+                <p className="text-xs text-[var(--brand-muted)]">
+                  {stats.totalTeachers} teachers
+                </p>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto flex-col items-start gap-2 p-4"
+              onClick={() => navigate('/dashboard/students')}
+            >
+              <GraduationCap className="h-6 w-6" />
+              <div className="text-left">
+                <p className="font-semibold">Students Management</p>
+                <p className="text-xs text-[var(--brand-muted)]">
+                  {stats.totalStudents} students
+                </p>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto flex-col items-start gap-2 p-4"
+              onClick={() => navigate('/dashboard/hods')}
+            >
+              <UserCheck className="h-6 w-6" />
+              <div className="text-left">
+                <p className="font-semibold">HODs Management</p>
+                <p className="text-xs text-[var(--brand-muted)]">
+                  {stats.totalHODs} HODs
+                </p>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto flex-col items-start gap-2 p-4"
+              onClick={() => navigate('/dashboard/classes')}
+            >
+              <NotebookPen className="h-6 w-6" />
+              <div className="text-left">
+                <p className="font-semibold">Classes & Subjects</p>
+                <p className="text-xs text-[var(--brand-muted)]">
+                  {classes.length} classes
+                </p>
+              </div>
+            </Button>
+          </div>
+        </Card>
       </div>
     </RouteMeta>
   );

@@ -8,55 +8,129 @@ import { Select } from '../../components/ui/Select';
 import { Modal } from '../../components/ui/Modal';
 import { StatusBanner } from '../../components/ui/StatusBanner';
 import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton';
-import { PaginatedTable } from '../../components/admin/PaginatedTable';
+import { PaginatedTable, type SortableTableColumn } from '../../components/admin/PaginatedTable';
 import { ExportButtons } from '../../components/admin/ExportButtons';
-import { exportToCSV } from '../../lib/utils/export';
-import { api, type TeacherProfile, type SchoolClass, type Subject } from '../../lib/api';
-import type { TableColumn } from '../../components/ui/Table';
+import { exportToCSV, exportToPDF, exportToExcel } from '../../lib/utils/export';
+import {
+  api,
+  type TeacherProfile,
+  type SchoolClass,
+  type Subject,
+  type TenantUser
+} from '../../lib/api';
+import { userApi } from '../../lib/api/userApi';
 import { defaultDate } from '../../lib/utils/date';
+import { AdminUserRegistrationModal } from '../../components/admin/AdminUserRegistrationModal';
 
 interface TeacherFilters {
   search: string;
   classId: string;
   subjectId: string;
+  qualifications: string;
+  experienceLevel: string;
+  minExperience: string;
+  maxExperience: string;
 }
 
 const defaultFilters: TeacherFilters = {
   search: '',
   classId: 'all',
-  subjectId: 'all'
+  subjectId: 'all',
+  qualifications: '',
+  experienceLevel: 'all',
+  minExperience: '',
+  maxExperience: ''
 };
 
 export function TeachersManagementPage() {
   const navigate = useNavigate();
   const [teachers, setTeachers] = useState<TeacherProfile[]>([]);
+  const [users, setUsers] = useState<TenantUser[]>([]);
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [school, setSchool] = useState<{ id: string; name: string; address?: Record<string, unknown> } | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<TeacherFilters>(defaultFilters);
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [showAssignmentModal, setShowAssignmentModal] = useState<boolean>(false);
+  const [showSubjectsModal, setShowSubjectsModal] = useState<boolean>(false);
+  const [showAssignmentsModal, setShowAssignmentsModal] = useState<boolean>(false);
+  const [showReportsModal, setShowReportsModal] = useState<boolean>(false);
+  const [showPasswordModal, setShowPasswordModal] = useState<boolean>(false);
+  const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [pendingTeachers, setPendingTeachers] = useState<TenantUser[]>([]);
   const [selectedTeacher, setSelectedTeacher] = useState<TeacherProfile | null>(null);
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedSubject, setSelectedSubject] = useState<string>('');
   const [isClassTeacher, setIsClassTeacher] = useState<boolean>(false);
+  const [assignmentRoom, setAssignmentRoom] = useState<string>('');
+  const [teacherAssignments, setTeacherAssignments] = useState<
+    Array<{
+      id: string;
+      classId: string;
+      className: string;
+      subjectId: string;
+      subjectName: string;
+      isClassTeacher: boolean;
+      room?: string;
+    }>
+  >([]);
+  const [editingAssignment, setEditingAssignment] = useState<string | null>(null);
+  const [editAssignmentClassTeacher, setEditAssignmentClassTeacher] = useState<boolean>(false);
+  const [editAssignmentRoom, setEditAssignmentRoom] = useState<string>('');
+  const [newPassword, setNewPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [updatingPassword, setUpdatingPassword] = useState<boolean>(false);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [teachersResult, classesResult, subjectsResult] = await Promise.allSettled([
-        api.listTeachers(),
-        api.listClasses(),
-        api.admin.listSubjects()
-      ]);
+      const [teachersResult, usersResult, pendingUsersResult, classesResult, subjectsResult, schoolResult] =
+        await Promise.allSettled([
+          api.listTeachers(),
+          userApi.listUsers(),
+          userApi.listPendingUsers(),
+          api.listClasses(),
+          api.admin.listSubjects(),
+          api.getSchool()
+        ]);
 
       if (teachersResult.status === 'fulfilled') {
-        setTeachers(teachersResult.value);
+        // Filter out HODs - they should be managed in HODsManagementPage
+        const allTeachers = teachersResult.value;
+        if (usersResult.status === 'fulfilled') {
+          const hodEmails = new Set(
+            usersResult.value
+              .filter((u) => u.role === 'teacher' && u.additional_roles?.some((r) => r.role === 'hod'))
+              .map((u) => u.email.toLowerCase())
+          );
+          const regularTeachers = allTeachers.filter(
+            (t) => !hodEmails.has(t.email?.toLowerCase() ?? '')
+          );
+          setTeachers(regularTeachers);
+        } else {
+          setTeachers(allTeachers);
+        }
       } else {
         throw new Error((teachersResult.reason as Error).message || 'Failed to load teachers');
+      }
+
+      if (usersResult.status === 'fulfilled') {
+        setUsers(usersResult.value);
+      }
+
+      if (pendingUsersResult.status === 'fulfilled') {
+        // Filter pending users by teacher role, excluding HODs
+        const pending = pendingUsersResult.value.filter(
+          (u) =>
+            u.role === 'teacher' &&
+            u.status === 'pending' &&
+            !u.additional_roles?.some((r) => r.role === 'hod')
+        );
+        setPendingTeachers(pending);
       }
 
       if (classesResult.status === 'fulfilled') {
@@ -65,6 +139,10 @@ export function TeachersManagementPage() {
 
       if (subjectsResult.status === 'fulfilled') {
         setSubjects(subjectsResult.value);
+      }
+
+      if (schoolResult.status === 'fulfilled' && schoolResult.value) {
+        setSchool(schoolResult.value);
       }
     } catch (err) {
       const message = (err as Error).message;
@@ -88,7 +166,8 @@ export function TeachersManagementPage() {
           teacher.name.toLowerCase().includes(searchLower) ||
           teacher.email.toLowerCase().includes(searchLower) ||
           teacher.subjects.some((s) => s.toLowerCase().includes(searchLower)) ||
-          teacher.assigned_classes.some((c) => c.toLowerCase().includes(searchLower));
+          teacher.assigned_classes.some((c) => c.toLowerCase().includes(searchLower)) ||
+          teacher.qualifications?.toLowerCase().includes(searchLower);
         if (!matchesSearch) return false;
       }
 
@@ -100,6 +179,42 @@ export function TeachersManagementPage() {
       // Subject filter
       if (filters.subjectId !== 'all') {
         if (!teacher.subjects.includes(filters.subjectId)) return false;
+      }
+
+      // Qualifications filter
+      if (filters.qualifications) {
+        const qualLower = filters.qualifications.toLowerCase();
+        if (!teacher.qualifications?.toLowerCase().includes(qualLower)) return false;
+      }
+
+      // Experience level filter
+      const experience = teacher.yearsOfExperience ?? 0;
+      if (filters.experienceLevel !== 'all') {
+        switch (filters.experienceLevel) {
+          case 'beginner':
+            if (experience >= 5) return false;
+            break;
+          case 'intermediate':
+            if (experience < 5 || experience >= 10) return false;
+            break;
+          case 'senior':
+            if (experience < 10) return false;
+            break;
+          case 'none':
+            if (experience > 0) return false;
+            break;
+        }
+      }
+
+      // Min/Max experience range filter
+      if (filters.minExperience) {
+        const minExp = parseInt(filters.minExperience, 10);
+        if (isNaN(minExp) || experience < minExp) return false;
+      }
+
+      if (filters.maxExperience) {
+        const maxExp = parseInt(filters.maxExperience, 10);
+        if (isNaN(maxExp) || experience > maxExp) return false;
       }
 
       return true;
@@ -130,7 +245,8 @@ export function TeachersManagementPage() {
       await api.admin.assignTeacher(selectedTeacher.id, {
         classId: selectedClass,
         subjectId: selectedSubject,
-        isClassTeacher
+        isClassTeacher,
+        metadata: assignmentRoom ? { room: assignmentRoom } : undefined
       });
 
       // Also update teacher's assigned_classes and subjects arrays
@@ -149,6 +265,100 @@ export function TeachersManagementPage() {
 
       toast.success('Teacher assigned successfully');
       setShowAssignmentModal(false);
+      setSelectedClass('');
+      setSelectedSubject('');
+      setIsClassTeacher(false);
+      setAssignmentRoom('');
+      await loadData();
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
+  const handleManageSubjects = async (teacher: TeacherProfile) => {
+    setSelectedTeacher(teacher);
+    setShowSubjectsModal(true);
+  };
+
+  const handleDeleteSubject = async (subjectId: string) => {
+    if (!selectedTeacher) return;
+    if (!window.confirm('Remove this subject from teacher?')) return;
+
+    try {
+      const updatedSubjects = selectedTeacher.subjects.filter((s) => s !== subjectId);
+      await api.updateTeacher(selectedTeacher.id, { subjects: updatedSubjects });
+      toast.success('Subject removed successfully');
+      await loadData();
+      setSelectedTeacher({ ...selectedTeacher, subjects: updatedSubjects });
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
+  const handleManageAssignments = async (teacher: TeacherProfile) => {
+    setSelectedTeacher(teacher);
+    try {
+      const allAssignments = await api.admin.listTeacherAssignments();
+      const teacherAssigns = allAssignments
+        .filter((a) => a.teacher_id === teacher.id)
+        .map((a) => ({
+          id: a.id,
+          classId: a.class_id,
+          className: a.class_name,
+          subjectId: a.subject_id,
+          subjectName: a.subject_name,
+          isClassTeacher: a.is_class_teacher,
+          room: (a.metadata as { room?: string })?.room
+        }));
+      setTeacherAssignments(teacherAssigns);
+      setShowAssignmentsModal(true);
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
+  const handleEditAssignment = (assignmentId: string) => {
+    const assignment = teacherAssignments.find((a) => a.id === assignmentId);
+    if (assignment) {
+      setEditingAssignment(assignmentId);
+      setEditAssignmentClassTeacher(assignment.isClassTeacher);
+      setEditAssignmentRoom(assignment.room || '');
+    }
+  };
+
+  const handleSaveAssignmentEdit = async () => {
+    if (!editingAssignment || !selectedTeacher) return;
+
+    try {
+      const assignment = teacherAssignments.find((a) => a.id === editingAssignment);
+      if (!assignment) return;
+
+      // Update assignment via admin API
+      await api.admin.assignTeacher(selectedTeacher.id, {
+        classId: assignment.classId,
+        subjectId: assignment.subjectId,
+        isClassTeacher: editAssignmentClassTeacher,
+        metadata: editAssignmentRoom ? { room: editAssignmentRoom } : undefined
+      });
+
+      toast.success('Assignment updated successfully');
+      setEditingAssignment(null);
+      setEditAssignmentClassTeacher(false);
+      setEditAssignmentRoom('');
+      await handleManageAssignments(selectedTeacher);
+      await loadData();
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
+  const handleDeleteAssignment = async (assignmentId: string) => {
+    if (!window.confirm('Remove this assignment?')) return;
+
+    try {
+      await api.admin.removeTeacherAssignment(assignmentId);
+      toast.success('Assignment removed successfully');
+      await handleManageAssignments(selectedTeacher!);
       await loadData();
     } catch (err) {
       toast.error((err as Error).message);
@@ -181,19 +391,113 @@ export function TeachersManagementPage() {
       Name: t.name,
       Email: t.email,
       Subjects: t.subjects.join('; '),
-      Classes: t.assigned_classes.join('; ')
+      Classes: t.assigned_classes.join('; '),
+      Qualifications: t.qualifications || 'N/A',
+      'Years of Experience': t.yearsOfExperience || 0
     }));
     exportToCSV(exportData, `teachers-${defaultDate()}`);
   };
 
+  const handleViewReports = (teacher: TeacherProfile) => {
+    setSelectedTeacher(teacher);
+    setShowReportsModal(true);
+  };
+
+  const handleManagePassword = (teacher: TeacherProfile) => {
+    setSelectedTeacher(teacher);
+    setNewPassword('');
+    setConfirmPassword('');
+    setShowPasswordModal(true);
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!selectedTeacher) return;
+
+    if (!newPassword || newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    // Find user ID by email
+    const user = users.find((u) => u.email === selectedTeacher.email && u.role === 'teacher');
+    if (!user) {
+      toast.error('User account not found for this teacher');
+      return;
+    }
+
+    setUpdatingPassword(true);
+    try {
+      await userApi.updateUserPassword({ userId: user.id, newPassword });
+      toast.success('Password updated successfully');
+      setShowPasswordModal(false);
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setUpdatingPassword(false);
+    }
+  };
+
+  const handleApproveTeacher = async (user: TenantUser) => {
+    try {
+      setLoading(true);
+      await userApi.approveUser(user.id);
+      toast.success(`${user.email} approved. Profile record created.`);
+      setPendingTeachers((current) => current.filter((u) => u.id !== user.id));
+      await loadData();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRejectTeacher = async (user: TenantUser) => {
+    if (!window.confirm(`Reject access for ${user.email}?`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await userApi.rejectUser(user.id);
+      toast.success(`${user.email} rejected.`);
+      setPendingTeachers((current) => current.filter((u) => u.id !== user.id));
+      await loadData();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleExportPDF = () => {
-    // TODO: Implement PDF export when backend endpoint is available
-    toast.info('PDF export coming soon');
+    const exportData = filteredTeachers.map((t) => ({
+      Name: t.name,
+      Email: t.email,
+      Subjects: t.subjects.join('; '),
+      Classes: t.assigned_classes.join('; '),
+      Qualifications: t.qualifications || 'N/A',
+      'Years of Experience': t.yearsOfExperience || 0
+    }));
+    exportToPDF(exportData, `teachers-${defaultDate()}`, 'Teachers Report');
   };
 
   const handleExportExcel = () => {
-    // TODO: Implement Excel export when backend endpoint is available
-    toast.info('Excel export coming soon');
+    const exportData = filteredTeachers.map((t) => ({
+      Name: t.name,
+      Email: t.email,
+      Subjects: t.subjects.join('; '),
+      Classes: t.assigned_classes.join('; '),
+      Qualifications: t.qualifications || 'N/A',
+      'Years of Experience': t.yearsOfExperience || 0
+    }));
+    exportToExcel(exportData, `teachers-${defaultDate()}.xls`);
   };
 
   const toggleRowSelection = (teacherId: string) => {
@@ -216,8 +520,9 @@ export function TeachersManagementPage() {
     }
   };
 
-  const teacherColumns: TableColumn<TeacherProfile>[] = [
+  const teacherColumns: SortableTableColumn<TeacherProfile>[] = [
     {
+      key: 'checkbox',
       header: (
         <input
           type="checkbox"
@@ -238,16 +543,27 @@ export function TeachersManagementPage() {
       align: 'center'
     },
     {
+      key: 'name',
       header: 'Name',
+      sortable: true,
+      sortKey: 'name',
       render: (row) => (
         <div>
           <p className="font-semibold text-[var(--brand-surface-contrast)]">{row.name}</p>
           <p className="text-xs text-[var(--brand-muted)]">{row.email}</p>
+          {school && (
+            <p className="text-xs text-[var(--brand-muted)] mt-1">
+              <span className="font-medium">School:</span> {school.name}
+            </p>
+          )}
         </div>
       )
     },
     {
+      key: 'subjects',
       header: 'Subjects',
+      sortable: true,
+      sortKey: 'subjects',
       render: (row) => (
         <div className="flex flex-wrap gap-1">
           {row.subjects.length > 0 ? (
@@ -266,7 +582,10 @@ export function TeachersManagementPage() {
       )
     },
     {
+      key: 'classes',
       header: 'Classes',
+      sortable: true,
+      sortKey: 'assigned_classes',
       render: (row) => (
         <div className="flex flex-wrap gap-1">
           {row.assigned_classes.length > 0 ? (
@@ -285,14 +604,49 @@ export function TeachersManagementPage() {
       )
     },
     {
+      key: 'qualifications',
+      header: 'Qualifications',
+      sortable: true,
+      sortKey: 'qualifications',
+      render: (row) => (
+        <span className="text-sm text-[var(--brand-surface-contrast)]">
+          {row.qualifications || 'N/A'}
+        </span>
+      )
+    },
+    {
+      key: 'experience',
+      header: 'Experience',
+      sortable: true,
+      sortKey: 'yearsOfExperience',
+      render: (row) => (
+        <span className="text-sm text-[var(--brand-surface-contrast)]">
+          {row.yearsOfExperience ? `${row.yearsOfExperience} years` : 'N/A'}
+        </span>
+      )
+    },
+    {
+      key: 'actions',
       header: 'Actions',
       render: (row) => (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" onClick={() => handleViewProfile(row)}>
             View
           </Button>
           <Button size="sm" variant="ghost" onClick={() => handleAssignClass(row)}>
             Assign
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => handleManageSubjects(row)}>
+            Subjects
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => handleManageAssignments(row)}>
+            Assignments
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => handleViewReports(row)}>
+            Reports
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => handleManagePassword(row)}>
+            Password
           </Button>
           <Button
             size="sm"
@@ -325,8 +679,14 @@ export function TeachersManagementPage() {
             <p className="text-sm text-[var(--brand-muted)]">
               Manage teachers, assign classes and subjects, view qualifications and reports.
             </p>
+            {school && (
+              <p className="text-xs text-[var(--brand-muted)] mt-1">
+                School: <span className="font-medium">{school.name}</span>
+              </p>
+            )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => setShowCreateModal(true)}>Create Teacher</Button>
             <ExportButtons
               onExportCSV={handleExportCSV}
               onExportPDF={handleExportPDF}
@@ -342,14 +702,61 @@ export function TeachersManagementPage() {
 
         {error ? <StatusBanner status="error" message={error} /> : null}
 
+        {pendingTeachers.length > 0 && (
+          <section className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-4 shadow-sm">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-[var(--brand-surface-contrast)]">
+                Pending Teacher Approvals ({pendingTeachers.length})
+              </h2>
+              <p className="text-sm text-[var(--brand-muted)]">
+                Review and approve teacher registrations
+              </p>
+            </div>
+            <div className="space-y-3">
+              {pendingTeachers.map((user) => (
+                <div
+                  key={user.id}
+                  className="flex flex-col gap-3 rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface)]/50 p-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex-1">
+                    <p className="font-semibold text-[var(--brand-surface-contrast)]">
+                      {user.email}
+                    </p>
+                    <p className="text-xs text-[var(--brand-muted)]">
+                      Requested on {new Date(user.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleApproveTeacher(user)}
+                      disabled={loading}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleRejectTeacher(user)}
+                      disabled={loading}
+                    >
+                      Reject
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         <section
           className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-4 shadow-sm"
           aria-label="Filters"
         >
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
             <Input
               label="Search"
-              placeholder="Search by name, email, subject, class..."
+              placeholder="Search by name, email, subject, class, qualifications..."
               value={filters.search}
               onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
             />
@@ -371,12 +778,52 @@ export function TeachersManagementPage() {
                 ...subjects.map((s) => ({ label: s.name, value: s.id }))
               ]}
             />
+            <Select
+              label="Experience Level"
+              value={filters.experienceLevel}
+              onChange={(e) => setFilters((f) => ({ ...f, experienceLevel: e.target.value }))}
+              options={[
+                { label: 'All levels', value: 'all' },
+                { label: 'No experience', value: 'none' },
+                { label: 'Beginner (< 5 years)', value: 'beginner' },
+                { label: 'Intermediate (5-10 years)', value: 'intermediate' },
+                { label: 'Senior (10+ years)', value: 'senior' }
+              ]}
+            />
+          </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            <Input
+              label="Qualifications"
+              placeholder="Filter by qualifications..."
+              value={filters.qualifications}
+              onChange={(e) => setFilters((f) => ({ ...f, qualifications: e.target.value }))}
+            />
+            <Input
+              label="Min Experience (years)"
+              type="number"
+              placeholder="Minimum years"
+              value={filters.minExperience}
+              onChange={(e) => setFilters((f) => ({ ...f, minExperience: e.target.value }))}
+            />
+            <Input
+              label="Max Experience (years)"
+              type="number"
+              placeholder="Maximum years"
+              value={filters.maxExperience}
+              onChange={(e) => setFilters((f) => ({ ...f, maxExperience: e.target.value }))}
+            />
           </div>
           <div className="mt-4 flex items-center justify-between text-sm text-[var(--brand-muted)]">
             <span>
               Showing {filteredTeachers.length} of {teachers.length} teachers
             </span>
-            {(filters.search || filters.classId !== 'all' || filters.subjectId !== 'all') && (
+            {(filters.search ||
+              filters.classId !== 'all' ||
+              filters.subjectId !== 'all' ||
+              filters.qualifications ||
+              filters.experienceLevel !== 'all' ||
+              filters.minExperience ||
+              filters.maxExperience) && (
               <Button size="sm" variant="ghost" onClick={() => setFilters(defaultFilters)}>
                 Clear filters
               </Button>
@@ -412,6 +859,22 @@ export function TeachersManagementPage() {
                   <p className="text-xs font-medium text-[var(--brand-muted)] mb-1">Email</p>
                   <p className="text-sm text-[var(--brand-surface-contrast)]">
                     {selectedTeacher.email}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-[var(--brand-muted)] mb-1">
+                    Qualifications
+                  </p>
+                  <p className="text-sm text-[var(--brand-surface-contrast)]">
+                    {selectedTeacher.qualifications || 'Not specified'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-[var(--brand-muted)] mb-1">
+                    Years of Experience
+                  </p>
+                  <p className="text-sm text-[var(--brand-surface-contrast)]">
+                    {selectedTeacher.yearsOfExperience || 'Not specified'}
                   </p>
                 </div>
                 <div>
@@ -467,6 +930,66 @@ export function TeachersManagementPage() {
           </Modal>
         )}
 
+        {showReportsModal && selectedTeacher && (
+          <Modal
+            title={`Teacher Reports: ${selectedTeacher.name}`}
+            isOpen={showReportsModal}
+            onClose={() => {
+              setShowReportsModal(false);
+              setSelectedTeacher(null);
+            }}
+          >
+            <div className="space-y-4">
+              <p className="text-sm text-[var(--brand-muted)]">
+                View and generate reports for this teacher's classes and students.
+              </p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    navigate(`/dashboard/reports/attendance?teacherId=${selectedTeacher.id}`);
+                    setShowReportsModal(false);
+                  }}
+                >
+                  Attendance Reports
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    navigate(`/dashboard/reports/grades?teacherId=${selectedTeacher.id}`);
+                    setShowReportsModal(false);
+                  }}
+                >
+                  Grade Reports
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    navigate(`/dashboard/reports/class-performance?teacherId=${selectedTeacher.id}`);
+                    setShowReportsModal(false);
+                  }}
+                >
+                  Class Performance
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    navigate(`/dashboard/teacher/profile?teacherId=${selectedTeacher.id}`);
+                    setShowReportsModal(false);
+                  }}
+                >
+                  Full Profile & Reports
+                </Button>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <Button variant="ghost" onClick={() => setShowReportsModal(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          </Modal>
+        )}
+
         {showAssignmentModal && selectedTeacher && (
           <Modal
             title={`Assign class/subject: ${selectedTeacher.name}`}
@@ -497,6 +1020,12 @@ export function TeachersManagementPage() {
                   ...subjects.map((s) => ({ label: s.name, value: s.id }))
                 ]}
               />
+              <Input
+                label="Room"
+                placeholder="Room number/name (optional)"
+                value={assignmentRoom}
+                onChange={(e) => setAssignmentRoom(e.target.value)}
+              />
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -504,6 +1033,7 @@ export function TeachersManagementPage() {
                   checked={isClassTeacher}
                   onChange={(e) => setIsClassTeacher(e.target.checked)}
                   className="rounded border-[var(--brand-border)]"
+                  aria-label="Assign as class teacher"
                 />
                 <label
                   htmlFor="isClassTeacher"
@@ -513,10 +1043,323 @@ export function TeachersManagementPage() {
                 </label>
               </div>
               <div className="flex justify-end gap-3 pt-2">
-                <Button variant="ghost" onClick={() => setShowAssignmentModal(false)}>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setShowAssignmentModal(false);
+                    setSelectedClass('');
+                    setSelectedSubject('');
+                    setIsClassTeacher(false);
+                    setAssignmentRoom('');
+                  }}
+                >
                   Cancel
                 </Button>
                 <Button onClick={handleSaveAssignment}>Assign</Button>
+              </div>
+            </div>
+          </Modal>
+        )}
+
+        {showPasswordModal && selectedTeacher && (
+          <Modal
+            title={`Change Password: ${selectedTeacher.name}`}
+            isOpen={showPasswordModal}
+            onClose={() => {
+              setShowPasswordModal(false);
+              setSelectedTeacher(null);
+              setNewPassword('');
+              setConfirmPassword('');
+            }}
+          >
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-[var(--brand-muted)] mb-2">
+                  Update password for {selectedTeacher.email}
+                </p>
+                <Input
+                  label="New Password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password (min 8 characters)"
+                  required
+                />
+                <Input
+                  label="Confirm Password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setShowPasswordModal(false);
+                    setNewPassword('');
+                    setConfirmPassword('');
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleUpdatePassword} loading={updatingPassword}>
+                  Update Password
+                </Button>
+              </div>
+            </div>
+          </Modal>
+        )}
+
+        {showCreateModal && (
+          <AdminUserRegistrationModal
+            defaultRole="teacher"
+            onClose={() => setShowCreateModal(false)}
+            onSuccess={async () => {
+              setShowCreateModal(false);
+              await loadData();
+              toast.success('Teacher created successfully');
+            }}
+          />
+        )}
+
+        {showSubjectsModal && selectedTeacher && (
+          <Modal
+            title={`Manage Subjects: ${selectedTeacher.name}`}
+            isOpen={showSubjectsModal}
+            onClose={() => {
+              setShowSubjectsModal(false);
+              setSelectedTeacher(null);
+              setSelectedSubject('');
+            }}
+          >
+            <div className="space-y-4">
+              <p className="text-sm text-[var(--brand-muted)]">
+                Manage subjects taught by this teacher. Add new subjects or remove existing ones.
+              </p>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {selectedTeacher.subjects.length > 0 ? (
+                  selectedTeacher.subjects.map((subjectId) => {
+                    const subject = subjects.find((s) => s.id === subjectId);
+                    return (
+                      <div
+                        key={subjectId}
+                        className="flex items-center justify-between rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface)]/50 p-3"
+                      >
+                        <div>
+                          <p className="font-semibold text-[var(--brand-surface-contrast)]">
+                            {subject?.name || subjectId}
+                          </p>
+                          {subject?.code && (
+                            <p className="text-xs text-[var(--brand-muted)]">{subject.code}</p>
+                          )}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeleteSubject(subjectId)}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-sm text-[var(--brand-muted)]">No subjects assigned</p>
+                )}
+              </div>
+              <div className="border-t border-[var(--brand-border)] pt-4">
+                <p className="mb-2 text-sm font-medium text-[var(--brand-surface-contrast)]">
+                  Add New Subject
+                </p>
+                <Select
+                  label="Select Subject"
+                  value={selectedSubject}
+                  onChange={(e) => setSelectedSubject(e.target.value)}
+                  options={[
+                    { label: 'Select a subject', value: '' },
+                    ...subjects
+                      .filter((s) => !selectedTeacher.subjects.includes(s.id))
+                      .map((s) => ({ label: `${s.name}${s.code ? ` (${s.code})` : ''}`, value: s.id }))
+                  ]}
+                />
+                <div className="mt-3 flex justify-end gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (selectedSubject) {
+                        const updatedSubjects = [...selectedTeacher.subjects, selectedSubject];
+                        api
+                          .updateTeacher(selectedTeacher.id, { subjects: updatedSubjects })
+                          .then(() => {
+                            toast.success('Subject added successfully');
+                            setSelectedSubject('');
+                            void loadData();
+                            setSelectedTeacher({
+                              ...selectedTeacher,
+                              subjects: updatedSubjects
+                            });
+                          })
+                          .catch((err) => {
+                            toast.error((err as Error).message);
+                          });
+                      }
+                    }}
+                    disabled={!selectedSubject}
+                  >
+                    Add Subject
+                  </Button>
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <Button variant="ghost" onClick={() => setShowSubjectsModal(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          </Modal>
+        )}
+
+        {showAssignmentsModal && selectedTeacher && (
+          <Modal
+            title={`Manage Assignments: ${selectedTeacher.name}`}
+            isOpen={showAssignmentsModal}
+            onClose={() => {
+              setShowAssignmentsModal(false);
+              setSelectedTeacher(null);
+              setTeacherAssignments([]);
+              setEditingAssignment(null);
+              setEditAssignmentClassTeacher(false);
+              setEditAssignmentRoom('');
+            }}
+          >
+            <div className="space-y-4">
+              <p className="text-sm text-[var(--brand-muted)]">
+                Manage class/subject assignments. Edit classroom teacher status, room assignments, or
+                remove assignments.
+              </p>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {teacherAssignments.length > 0 ? (
+                  teacherAssignments.map((assignment) => (
+                    <div
+                      key={assignment.id}
+                      className="rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface)]/50 p-3"
+                    >
+                      {editingAssignment === assignment.id ? (
+                        <div className="space-y-3">
+                          <div>
+                            <p className="font-semibold text-[var(--brand-surface-contrast)]">
+                              {assignment.className} - {assignment.subjectName}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id={`classTeacher-${assignment.id}`}
+                              checked={editAssignmentClassTeacher}
+                              onChange={(e) => setEditAssignmentClassTeacher(e.target.checked)}
+                              className="rounded border-[var(--brand-border)]"
+                            />
+                            <label
+                              htmlFor={`classTeacher-${assignment.id}`}
+                              className="text-sm text-[var(--brand-surface-contrast)]"
+                            >
+                              Class Teacher
+                            </label>
+                          </div>
+                          <Input
+                            label="Room"
+                            placeholder="Room number/name (optional)"
+                            value={editAssignmentRoom}
+                            onChange={(e) => setEditAssignmentRoom(e.target.value)}
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={handleSaveAssignmentEdit}
+                              disabled={!selectedTeacher}
+                            >
+                              Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingAssignment(null);
+                                setEditAssignmentClassTeacher(false);
+                                setEditAssignmentRoom('');
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="font-semibold text-[var(--brand-surface-contrast)]">
+                              {assignment.className} - {assignment.subjectName}
+                            </p>
+                            <div className="mt-1 flex flex-wrap gap-2 text-xs">
+                              {assignment.isClassTeacher && (
+                                <span className="rounded-full bg-[var(--brand-primary)]/20 px-2 py-1 text-[var(--brand-primary)]">
+                                  Class Teacher
+                                </span>
+                              )}
+                              {assignment.room && (
+                                <span className="text-[var(--brand-muted)]">
+                                  Room: {assignment.room}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditAssignment(assignment.id)}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDeleteAssignment(assignment.id)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-[var(--brand-muted)]">No assignments found</p>
+                )}
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setShowAssignmentsModal(false);
+                    setEditingAssignment(null);
+                    setEditAssignmentClassTeacher(false);
+                    setEditAssignmentRoom('');
+                  }}
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowAssignmentsModal(false);
+                    setEditingAssignment(null);
+                    handleAssignClass(selectedTeacher);
+                  }}
+                >
+                  Add Assignment
+                </Button>
               </div>
             </div>
           </Modal>

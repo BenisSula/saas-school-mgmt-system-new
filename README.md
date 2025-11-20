@@ -142,6 +142,7 @@ All demo accounts live on the generated tenant and are marked verified, so the d
 Environment variables of note:
 
 - `VITE_API_BASE_URL` (required) – API origin for the frontend build.
+- `EMAIL_PROVIDER` – Email service provider (`console`, `smtp`, or `ses`). See `docs/email-provider-setup-guide.md` for configuration.
 - `VITE_TENANT_ID` (optional) – default tenant when storage empty.
 - `CORS_ORIGIN` – comma-separated origins backend allows.
 - If you access the Vite dev server from a different host/port (for example `https://localhost:5173` or your LAN IP), add that origin to `CORS_ORIGIN` when starting the backend, or rely on the built-in localhost/127.0.0.1 allowances.

@@ -28,11 +28,26 @@ const listTeachersQuerySchema = z.object({
   limit: z.string().optional(),
   offset: z.string().optional(),
   page: z.string().optional()
-});
+}).passthrough();
 
 router.get('/', validateInput(listTeachersQuerySchema, 'query'), async (req, res) => {
   const pagination = req.pagination!;
-  const allTeachers = await listTeachers(req.tenantClient!, req.tenant!.schema);
+  
+  // Get department ID if user is HOD
+  let departmentId: string | null = null;
+  if (req.user?.role === 'hod') {
+    const deptResult = await req.tenantClient!.query<{ department_id: string | null }>(
+      `SELECT department_id FROM shared.users WHERE id = $1`,
+      [req.user.id]
+    );
+    departmentId = deptResult.rows[0]?.department_id ?? null;
+  }
+  
+  const allTeachers = await listTeachers(req.tenantClient!, req.tenant!.schema, {
+    userId: req.user?.id,
+    userRole: req.user?.role,
+    departmentId
+  });
   
   // Apply pagination
   const paginated = allTeachers.slice(pagination.offset, pagination.offset + pagination.limit);

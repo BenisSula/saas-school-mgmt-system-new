@@ -5,7 +5,7 @@ import { Role } from '../config/permissions';
 export interface AdminCreateUserInput {
   email: string;
   password: string;
-  role: 'student' | 'teacher';
+  role: 'student' | 'teacher' | 'hod';
   // Common profile fields
   fullName: string;
   gender?: 'male' | 'female' | 'other';
@@ -16,12 +16,14 @@ export interface AdminCreateUserInput {
   parentGuardianContact?: string;
   studentId?: string;
   classId?: string;
-  // Teacher-specific fields
+  // Teacher/HOD-specific fields
   phone?: string;
   qualifications?: string;
   yearsOfExperience?: number;
   subjects?: string[];
   teacherId?: string;
+  // HOD-specific fields
+  departmentId?: string;
 }
 
 export interface AdminCreateUserResult {
@@ -64,12 +66,14 @@ export async function adminCreateUser(
       parentGuardianContact: input.parentGuardianContact,
       studentId: input.studentId,
       classId: input.classId,
-      // Teacher fields
+      // Teacher/HOD fields
       phone: input.phone,
       qualifications: input.qualifications,
       yearsOfExperience: input.yearsOfExperience,
       subjects: input.subjects,
-      teacherId: input.teacherId
+      teacherId: input.teacherId,
+      // HOD fields
+      departmentId: input.departmentId
     };
 
     // Use unified registration service with admin options

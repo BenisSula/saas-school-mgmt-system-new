@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { sanitizeText } from '../lib/sanitize';
+import { isValidEmail } from '../lib/validators/validationConstants';
 import { useAuthForm } from './useAuthForm';
 
 export interface UseLoginFormOptions {
@@ -37,7 +38,7 @@ export function useLoginForm(options: UseLoginFormOptions = {}) {
 
         if (!email) {
           errors.email = 'Please enter your email address.';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        } else if (!isValidEmail(email)) {
           errors.email = 'Please enter a valid email address.';
         }
 

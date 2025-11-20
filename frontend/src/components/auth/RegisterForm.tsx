@@ -1,12 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import type { AuthResponse, Role } from '../../lib/api';
 import { useRegisterForm } from '../../hooks/useRegisterForm';
-import { AuthInput } from './fields/AuthInput';
+import { TextInput, PasswordInput, ErrorBanner } from '../shared';
 import { AuthSelect } from './fields/AuthSelect';
 import { AuthDatePicker } from './fields/AuthDatePicker';
 import { AuthMultiSelect } from './fields/AuthMultiSelect';
 import { AuthSubmitButton } from './fields/AuthSubmitButton';
-import { AuthErrorBanner } from './fields/AuthErrorBanner';
 import { TenantSelector } from './fields/TenantSelector';
 import { FormSection } from './FormSection';
 
@@ -64,8 +63,6 @@ export function RegisterForm({
   initialValues,
   submitLabel = 'Create account'
 }: RegisterFormProps) {
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const {
     values,
@@ -99,9 +96,9 @@ export function RegisterForm({
   }, [initialValues, setValue]);
 
   return (
-    <form className="space-y-6" onSubmit={handleSubmit} noValidate>
+    <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit} noValidate>
       {/* Server Error Banner */}
-      <AuthErrorBanner message={generalError || ''} onDismiss={() => setGeneralError(null)} />
+      <ErrorBanner message={generalError || ''} onDismiss={() => setGeneralError(null)} />
 
       {/* Tenant/School Selection - Required for student and teacher */}
       {(isStudent || isTeacher) && (
@@ -116,7 +113,7 @@ export function RegisterForm({
 
       {/* Common Fields Section */}
       <FormSection title="Account Information">
-        <AuthInput
+        <TextInput
           id="register-full-name"
           name="fullName"
           label="Full name"
@@ -129,7 +126,7 @@ export function RegisterForm({
           helperText="Enter your full name as it should appear on your account"
         />
 
-        <AuthInput
+        <TextInput
           id="register-email"
           name="email"
           type="email"
@@ -143,7 +140,7 @@ export function RegisterForm({
           helperText="Use your work or school email address"
         />
 
-        <AuthInput
+        <PasswordInput
           id="register-password"
           name="password"
           label="Password"
@@ -154,12 +151,10 @@ export function RegisterForm({
           required
           error={fieldErrors.password}
           helperText="Must be at least 8 characters with uppercase, lowercase, number, and special character"
-          showPasswordToggle
-          isPasswordVisible={showPassword}
-          onTogglePassword={() => setShowPassword((prev) => !prev)}
+          showToggle={true}
         />
 
-        <AuthInput
+        <PasswordInput
           id="register-confirm-password"
           name="confirmPassword"
           label="Confirm password"
@@ -170,9 +165,7 @@ export function RegisterForm({
           required
           error={fieldErrors.confirmPassword}
           helperText="Must match your password"
-          showPasswordToggle
-          isPasswordVisible={showConfirmPassword}
-          onTogglePassword={() => setShowConfirmPassword((prev) => !prev)}
+          showToggle={true}
         />
       </FormSection>
 
@@ -207,7 +200,7 @@ export function RegisterForm({
             }
           />
 
-          <AuthInput
+          <TextInput
             id="register-parent-guardian-name"
             name="parentGuardianName"
             label="Parent/Guardian name"
@@ -219,7 +212,7 @@ export function RegisterForm({
             helperText="Enter the name of your parent or guardian"
           />
 
-          <AuthInput
+          <TextInput
             id="register-parent-guardian-contact"
             name="parentGuardianContact"
             label="Parent/Guardian contact"
@@ -232,7 +225,7 @@ export function RegisterForm({
             helperText="Enter phone number with country code"
           />
 
-          <AuthInput
+          <TextInput
             id="register-student-id"
             name="studentId"
             label="Student ID (optional)"
@@ -243,7 +236,7 @@ export function RegisterForm({
             helperText="Leave blank to auto-generate"
           />
 
-          <AuthInput
+          <TextInput
             id="register-class-id"
             name="classId"
             label="Class / Grade"
@@ -255,7 +248,7 @@ export function RegisterForm({
             helperText="Enter your current class or grade"
           />
 
-          <AuthInput
+          <TextInput
             id="register-address"
             name="address"
             label="Address"
@@ -284,7 +277,7 @@ export function RegisterForm({
             helperText="Select your gender"
           />
 
-          <AuthInput
+          <TextInput
             id="register-phone"
             name="phone"
             label="Phone number"
@@ -297,7 +290,7 @@ export function RegisterForm({
             helperText="Enter phone number with country code"
           />
 
-          <AuthInput
+          <TextInput
             id="register-qualifications"
             name="qualifications"
             label="Qualifications"
@@ -309,7 +302,7 @@ export function RegisterForm({
             helperText="Enter your educational qualifications"
           />
 
-          <AuthInput
+          <TextInput
             id="register-years-of-experience"
             name="yearsOfExperience"
             label="Years of experience"
@@ -335,7 +328,7 @@ export function RegisterForm({
             helperText="Select all subjects you are qualified to teach"
           />
 
-          <AuthInput
+          <TextInput
             id="register-teacher-id"
             name="teacherId"
             label="Teacher ID (optional)"
@@ -346,7 +339,7 @@ export function RegisterForm({
             helperText="Leave blank to auto-generate"
           />
 
-          <AuthInput
+          <TextInput
             id="register-address"
             name="address"
             label="Address"

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import authenticate from '../middleware/authenticate';
 import {
   login,
@@ -13,6 +13,7 @@ import {
 } from '../services/authService';
 import { ValidationError } from '../middleware/validation';
 import { createErrorResponse } from '../lib/apiErrors';
+import { AuthError, AuthErrorCode } from '../lib/authErrorCodes';
 import {
   findTenantByRegistrationCode,
   findTenantByName,
@@ -21,16 +22,56 @@ import {
   getRecentSchools
 } from '../services/tenantLookupService';
 
-type ErrorWithCode = Error & { code?: string };
-
-const isErrorWithCode = (error: unknown): error is ErrorWithCode =>
-  error instanceof Error && typeof (error as { code?: unknown }).code === 'string';
-
 const router = Router();
 
+// Enhanced rate limiters for auth routes
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts per 15 minutes
+  message: 'Too many login attempts. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true, // Don't count successful logins
+  keyGenerator: (req) => {
+    // Use email if available, otherwise use IP helper for IPv6 safety
+    if (req.body?.email) {
+      return `login:${req.body.email}`;
+    }
+    // Use ipKeyGenerator helper for IPv6 compatibility
+    // ipKeyGenerator returns a string, so we need to call it properly
+    const ip = ipKeyGenerator(req as any);
+    return `ip:${ip}`;
+  }
+});
+
+const signupLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // 3 signups per hour per IP
+  message: 'Too many registration attempts. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const passwordResetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // 3 password reset requests per hour
+  message: 'Too many password reset requests. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const refreshLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // 30 refresh attempts per 15 minutes (allows normal usage)
+  message: 'Too many token refresh attempts. Please sign in again.',
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Apply general auth limiter to all routes
 const authLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 20,
+  windowMs: 60 * 1000, // 1 minute
+  max: 20, // 20 requests per minute
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -58,7 +99,7 @@ router.get('/health', async (_req, res) => {
   }
 });
 
-router.post('/signup', async (req, res) => {
+router.post('/signup', signupLimiter, async (req, res) => {
   try {
     const { email, password, role, tenantId, tenantName, profile } = req.body;
 
@@ -70,7 +111,7 @@ router.post('/signup', async (req, res) => {
           createErrorResponse(
             'email, password, and role are required',
             undefined,
-            'MISSING_REQUIRED_FIELDS'
+            AuthErrorCode.MISSING_REQUIRED_FIELDS
           )
         );
     }
@@ -78,14 +119,16 @@ router.post('/signup', async (req, res) => {
     const response = await signUp({ email, password, role, tenantId, tenantName, profile });
     return res.status(201).json(response);
   } catch (error) {
+    // Handle AuthError with standardized codes
+    if (error instanceof AuthError) {
+      return res.status(error.statusCode).json(
+        createErrorResponse(error.message, error.field, error.code)
+      );
+    }
+
     // Handle ValidationError (422 Unprocessable Entity)
     if (error instanceof ValidationError) {
       return res.status(422).json(createErrorResponse(error.message, error.field, error.code));
-    }
-
-    // Handle duplicate email (409 Conflict)
-    if (isErrorWithCode(error) && error.code === 'DUPLICATE_EMAIL') {
-      return res.status(409).json(createErrorResponse(error.message, 'email', 'DUPLICATE_EMAIL'));
     }
 
     // Handle known errors with appropriate status codes
@@ -94,12 +137,12 @@ router.post('/signup', async (req, res) => {
       if (message.includes('tenant not found')) {
         return res
           .status(404)
-          .json(createErrorResponse(error.message, 'tenantId', 'TENANT_NOT_FOUND'));
+          .json(createErrorResponse(error.message, 'tenantId', AuthErrorCode.TENANT_NOT_FOUND));
       }
       if (message.includes('validation') || message.includes('invalid')) {
         return res
           .status(422)
-          .json(createErrorResponse(error.message, undefined, 'VALIDATION_ERROR'));
+          .json(createErrorResponse(error.message, undefined, AuthErrorCode.VALIDATION_ERROR));
       }
     }
 
@@ -111,13 +154,13 @@ router.post('/signup', async (req, res) => {
         createErrorResponse(
           'An unexpected error occurred during registration',
           undefined,
-          'INTERNAL_ERROR'
+          AuthErrorCode.INTERNAL_ERROR
         )
       );
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -128,7 +171,7 @@ router.post('/login', async (req, res) => {
           createErrorResponse(
             'email and password are required',
             undefined,
-            'MISSING_REQUIRED_FIELDS'
+            AuthErrorCode.MISSING_REQUIRED_FIELDS
           )
         );
     }
@@ -139,6 +182,13 @@ router.post('/login', async (req, res) => {
     );
     return res.status(200).json(response);
   } catch (error) {
+    // Handle AuthError with standardized codes
+    if (error instanceof AuthError) {
+      return res.status(error.statusCode).json(
+        createErrorResponse(error.message, error.field, error.code)
+      );
+    }
+
     // Log full error for debugging
     const errorObj = error instanceof Error ? error : new Error(String(error));
     console.error('[auth] Login route error:', {
@@ -147,15 +197,6 @@ router.post('/login', async (req, res) => {
       name: errorObj.name
     });
 
-    const errorMessage = errorObj.message;
-
-    // Return 401 for authentication errors
-    if (errorMessage.includes('Invalid credentials') || errorMessage.includes('not found')) {
-      return res
-        .status(401)
-        .json(createErrorResponse('Invalid credentials', 'password', 'INVALID_CREDENTIALS'));
-    }
-
     // Return 500 for unexpected errors
     return res
       .status(500)
@@ -163,18 +204,20 @@ router.post('/login', async (req, res) => {
         createErrorResponse(
           'An unexpected error occurred during login',
           undefined,
-          'INTERNAL_ERROR'
+          AuthErrorCode.INTERNAL_ERROR
         )
       );
   }
 });
 
-router.post('/refresh', async (req, res) => {
+router.post('/refresh', refreshLimiter, async (req, res) => {
   try {
     const { refreshToken: token } = req.body;
 
     if (!token) {
-      return res.status(400).json({ message: 'refreshToken is required' });
+      return res.status(400).json(
+        createErrorResponse('refreshToken is required', undefined, AuthErrorCode.MISSING_REQUIRED_FIELDS)
+      );
     }
 
     const response = await refreshToken(token, {
@@ -183,37 +226,80 @@ router.post('/refresh', async (req, res) => {
     });
     return res.status(200).json(response);
   } catch (error) {
-    return res.status(401).json({ message: (error as Error).message });
+    // Handle AuthError with standardized codes
+    if (error instanceof AuthError) {
+      return res.status(error.statusCode).json(
+        createErrorResponse(error.message, error.field, error.code)
+      );
+    }
+
+    return res.status(401).json(
+      createErrorResponse(
+        (error as Error).message || 'Invalid refresh token',
+        undefined,
+        AuthErrorCode.REFRESH_TOKEN_INVALID
+      )
+    );
   }
 });
 
-router.post('/request-password-reset', async (req, res) => {
+router.post('/request-password-reset', passwordResetLimiter, async (req, res) => {
   try {
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({ message: 'email is required' });
+      return res.status(400).json(
+        createErrorResponse('email is required', 'email', AuthErrorCode.MISSING_REQUIRED_FIELDS)
+      );
     }
 
     await requestPasswordReset(email);
     return res.status(200).json({ message: 'If the email exists, a reset link has been sent.' });
   } catch (error) {
-    return res.status(500).json({ message: (error as Error).message });
+    if (error instanceof AuthError) {
+      return res.status(error.statusCode).json(
+        createErrorResponse(error.message, error.field, error.code)
+      );
+    }
+    return res.status(500).json(
+      createErrorResponse(
+        (error as Error).message || 'Failed to process password reset request',
+        undefined,
+        AuthErrorCode.INTERNAL_ERROR
+      )
+    );
   }
 });
 
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', passwordResetLimiter, async (req, res) => {
   try {
     const { token, password } = req.body;
 
     if (!token || !password) {
-      return res.status(400).json({ message: 'token and password are required' });
+      return res.status(400).json(
+        createErrorResponse(
+          'token and password are required',
+          undefined,
+          AuthErrorCode.MISSING_REQUIRED_FIELDS
+        )
+      );
     }
 
     await resetPassword(token, password);
     return res.status(200).json({ message: 'Password updated successfully' });
   } catch (error) {
-    return res.status(400).json({ message: (error as Error).message });
+    if (error instanceof AuthError) {
+      return res.status(error.statusCode).json(
+        createErrorResponse(error.message, error.field, error.code)
+      );
+    }
+    return res.status(400).json(
+      createErrorResponse(
+        (error as Error).message || 'Failed to reset password',
+        undefined,
+        AuthErrorCode.VALIDATION_ERROR
+      )
+    );
   }
 });
 
@@ -338,7 +424,9 @@ router.post('/logout', authenticate, async (req, res) => {
   try {
     const { refreshToken: token } = req.body;
     if (!token) {
-      return res.status(400).json({ message: 'refreshToken is required' });
+      return res.status(400).json(
+        createErrorResponse('refreshToken is required', undefined, AuthErrorCode.MISSING_REQUIRED_FIELDS)
+      );
     }
     await logout(req.user!.id, token, {
       ip: req.ip,
@@ -346,7 +434,18 @@ router.post('/logout', authenticate, async (req, res) => {
     });
     return res.status(200).json({ message: 'Logged out successfully' });
   } catch (error) {
-    return res.status(400).json({ message: (error as Error).message });
+    if (error instanceof AuthError) {
+      return res.status(error.statusCode).json(
+        createErrorResponse(error.message, error.field, error.code)
+      );
+    }
+    return res.status(400).json(
+      createErrorResponse(
+        (error as Error).message || 'Failed to logout',
+        undefined,
+        AuthErrorCode.INTERNAL_ERROR
+      )
+    );
   }
 });
 

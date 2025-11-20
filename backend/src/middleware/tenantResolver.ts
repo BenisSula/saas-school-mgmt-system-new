@@ -76,13 +76,20 @@ export function tenantResolver(options: TenantResolverOptions = {}) {
     }
 
     // Priority order for tenant resolution:
-    // 1. JWT token tenantId (for admins and other tenant-scoped users)
-    // 2. x-tenant-id header
-    // 3. Host header
+    // 1. JWT token tenantId (for admins and other tenant-scoped users) - PRIMARY SOURCE
+    // 2. x-tenant-id header (fallback)
+    // 3. Host header (fallback)
     const jwtTenantId = req.user?.tenantId;
     const headerTenant = req.header('x-tenant-id');
     const hostTenant = extractHostTenant(req.headers.host);
-    const identifier = jwtTenantId || headerTenant || hostTenant;
+    
+    // For non-superadmin users, prioritize JWT tenantId
+    let identifier = jwtTenantId || headerTenant || hostTenant;
+    
+    // If JWT has tenantId but it's empty string, try header/host
+    if (!jwtTenantId || jwtTenantId.trim() === '') {
+      identifier = headerTenant || hostTenant;
+    }
 
     if (!identifier || identifier === '') {
       if (optional || isSuperadmin) {

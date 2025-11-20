@@ -81,6 +81,8 @@ export function transformToTeacherInput(
     name: profileData.fullName || '',
     email: userEmail,
     subjects: profileData.subjects || [],
-    assignedClasses: [] // Can be assigned later by admin
+    assignedClasses: [], // Can be assigned later by admin
+    qualifications: profileData.qualifications,
+    yearsOfExperience: profileData.yearsOfExperience
   };
 }

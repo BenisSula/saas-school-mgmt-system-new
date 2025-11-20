@@ -4,6 +4,7 @@ import tenantResolver from '../middleware/tenantResolver';
 import ensureTenantContext from '../middleware/ensureTenantContext';
 import verifyTeacherAssignment from '../middleware/verifyTeacherAssignment';
 import { requirePermission } from '../middleware/rbac';
+import { validateInput } from '../middleware/validateInput';
 import { gradeBulkSchema } from '../validators/examValidator';
 import { bulkUpsertGrades } from '../services/examService';
 
@@ -28,20 +29,16 @@ const extractClassIdForVerification = (req: Request, res: Response, next: NextFu
 
 router.post(
   '/bulk',
+  validateInput(gradeBulkSchema, 'body'),
   extractClassIdForVerification,
   verifyTeacherAssignment({ classIdParam: '_classIdForVerification', allowAdmins: true }),
   async (req, res, next) => {
-    const parsed = gradeBulkSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ message: parsed.error.message });
-    }
-
     try {
       const grades = await bulkUpsertGrades(
         req.tenantClient!,
         req.tenant!.schema,
-        parsed.data.examId,
-        parsed.data.entries,
+        req.body.examId,
+        req.body.entries,
         req.user?.id
       );
       res.status(200).json({ saved: grades?.length ?? 0 });

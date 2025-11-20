@@ -1,6 +1,7 @@
 import type { PoolClient } from 'pg';
 import PDFDocument from 'pdfkit';
 import { assertValidSchemaName } from '../db/tenantManager';
+import { getTableName } from '../lib/serviceUtils';
 import { termReportSchema } from '../validators/subjectValidator';
 import { z } from 'zod';
 
@@ -19,6 +20,7 @@ export async function getAttendanceSummary(
   filters: AttendanceReportFilters
 ) {
   assertValidSchemaName(schema);
+  const attendanceTable = getTableName(schema, 'attendance_records');
   const result = await client.query(
     `
       SELECT
@@ -26,7 +28,7 @@ export async function getAttendanceSummary(
         class_id,
         status,
         COUNT(*)::int AS count
-      FROM ${schema}.attendance_records
+      FROM ${attendanceTable}
       WHERE ($1::date IS NULL OR attendance_date >= $1::date)
         AND ($2::date IS NULL OR attendance_date <= $2::date)
         AND ($3::text IS NULL OR class_id = $3::text)
@@ -41,6 +43,7 @@ export async function getAttendanceSummary(
 
 export async function getGradeDistribution(client: PoolClient, schema: string, examId: string) {
   assertValidSchemaName(schema);
+  const gradesTable = getTableName(schema, 'grades');
   const result = await client.query(
     `
       SELECT
@@ -48,7 +51,7 @@ export async function getGradeDistribution(client: PoolClient, schema: string, e
         grade,
         COUNT(*)::int AS count,
         AVG(score)::float AS average_score
-      FROM ${schema}.grades
+      FROM ${gradesTable}
       WHERE exam_id = $1
       GROUP BY subject, grade
       ORDER BY subject, grade
@@ -61,6 +64,8 @@ export async function getGradeDistribution(client: PoolClient, schema: string, e
 
 export async function getFeeOutstanding(client: PoolClient, schema: string, status?: string) {
   assertValidSchemaName(schema);
+  const invoicesTable = getTableName(schema, 'fee_invoices');
+  const paymentsTable = getTableName(schema, 'payments');
   const result = await client.query(
     `
       SELECT
@@ -68,10 +73,10 @@ export async function getFeeOutstanding(client: PoolClient, schema: string, stat
         COUNT(*)::int AS invoice_count,
         SUM(amount)::float AS total_amount,
         SUM(COALESCE(paid.total_paid, 0))::float AS total_paid
-      FROM ${schema}.fee_invoices fi
+      FROM ${invoicesTable} fi
       LEFT JOIN (
         SELECT invoice_id, SUM(amount) AS total_paid
-        FROM ${schema}.payments
+        FROM ${paymentsTable}
         WHERE status = 'succeeded'
         GROUP BY invoice_id
       ) AS paid ON paid.invoice_id = fi.id
@@ -92,23 +97,28 @@ export async function getDepartmentAnalytics(
 ) {
   assertValidSchemaName(schema);
   
+  const teachersTable = getTableName(schema, 'teachers');
+  const studentsTable = getTableName(schema, 'students');
+  const classesTable = getTableName(schema, 'classes');
+  const teacherAssignmentsTable = getTableName(schema, 'teacher_assignments');
+  
   // Get teachers in department
   const teachersQuery = departmentId
-    ? `SELECT COUNT(*)::int AS count FROM teachers WHERE department_id = $1`
-    : `SELECT COUNT(*)::int AS count FROM teachers`;
+    ? `SELECT COUNT(*)::int AS count FROM ${teachersTable} WHERE department_id = $1`
+    : `SELECT COUNT(*)::int AS count FROM ${teachersTable}`;
   const teachersResult = await client.query(teachersQuery, departmentId ? [departmentId] : []);
 
   // Get students in classes taught by department teachers
   const studentsQuery = departmentId
     ? `
       SELECT COUNT(DISTINCT s.id)::int AS count
-      FROM students s
-      JOIN classes c ON c.id = s.class_id
-      JOIN teacher_assignments ta ON ta.class_id = c.id
-      JOIN teachers t ON t.id = ta.teacher_id
+      FROM ${studentsTable} s
+      JOIN ${classesTable} c ON c.id = s.class_uuid
+      JOIN ${teacherAssignmentsTable} ta ON ta.class_id = c.id
+      JOIN ${teachersTable} t ON t.id = ta.teacher_id
       WHERE t.department_id = $1
     `
-    : `SELECT COUNT(*)::int AS count FROM students`;
+    : `SELECT COUNT(*)::int AS count FROM ${studentsTable}`;
   const studentsResult = await client.query(studentsQuery, departmentId ? [departmentId] : []);
 
   // Get average class size
@@ -117,10 +127,10 @@ export async function getDepartmentAnalytics(
       SELECT AVG(class_size)::float AS avg_size
       FROM (
         SELECT COUNT(s.id) AS class_size
-        FROM classes c
-        JOIN students s ON s.class_id = c.id
-        JOIN teacher_assignments ta ON ta.class_id = c.id
-        JOIN teachers t ON t.id = ta.teacher_id
+        FROM ${classesTable} c
+        JOIN ${studentsTable} s ON s.class_uuid = c.id
+        JOIN ${teacherAssignmentsTable} ta ON ta.class_id = c.id
+        JOIN ${teachersTable} t ON t.id = ta.teacher_id
         WHERE t.department_id = $1
         GROUP BY c.id
       ) sizes
@@ -129,8 +139,8 @@ export async function getDepartmentAnalytics(
       SELECT AVG(class_size)::float AS avg_size
       FROM (
         SELECT COUNT(s.id) AS class_size
-        FROM classes c
-        LEFT JOIN students s ON s.class_id = c.id
+        FROM ${classesTable} c
+        LEFT JOIN ${studentsTable} s ON s.class_uuid = c.id
         GROUP BY c.id
       ) sizes
     `;
@@ -387,4 +397,122 @@ export async function fetchReportPdf(
     return null;
   }
   return Buffer.from(result.rows[0].pdf as string, 'base64');
+}
+
+/**
+ * Get user growth trends over time
+ * Returns cumulative user counts grouped by date and role
+ */
+export async function getUserGrowthTrends(
+  client: PoolClient,
+  schema: string,
+  days: number = 30
+) {
+  assertValidSchemaName(schema);
+  const usersTable = 'shared.users';
+  
+  // Get date range
+  const fromDate = new Date();
+  fromDate.setDate(fromDate.getDate() - days);
+  
+  const result = await client.query(
+    `
+      SELECT 
+        DATE(created_at) AS date,
+        role,
+        COUNT(*)::int AS count
+      FROM ${usersTable}
+      WHERE tenant_id IN (
+        SELECT id FROM shared.tenants WHERE schema_name = $1
+      )
+        AND created_at >= $2
+      GROUP BY DATE(created_at), role
+      ORDER BY DATE(created_at) ASC, role
+    `,
+    [schema, fromDate.toISOString()]
+  );
+  
+  // Transform to cumulative format
+  const cumulative: Record<string, Record<string, number>> = {};
+  const dates: string[] = [];
+  
+  result.rows.forEach((row) => {
+    const date = row.date.toISOString().split('T')[0];
+    if (!dates.includes(date)) {
+      dates.push(date);
+    }
+    if (!cumulative[date]) {
+      cumulative[date] = {};
+    }
+    cumulative[date][row.role] = (cumulative[date][row.role] || 0) + row.count;
+  });
+  
+  // Calculate cumulative totals
+  const totals: Record<string, number> = {};
+  return dates.map((date) => {
+    const dayData: Record<string, string | number> = { date };
+    ['student', 'teacher', 'admin', 'hod'].forEach((role) => {
+      totals[role] = (totals[role] || 0) + (cumulative[date]?.[role] || 0);
+      dayData[role] = totals[role];
+    });
+    dayData.total = Object.values(totals).reduce((sum, val) => sum + val, 0);
+    return dayData;
+  });
+}
+
+/**
+ * Get teachers per department/subject
+ */
+export async function getTeachersPerDepartment(
+  client: PoolClient,
+  schema: string
+) {
+  assertValidSchemaName(schema);
+  const teachersTable = getTableName(schema, 'teachers');
+  
+  const result = await client.query(
+    `
+      SELECT 
+        subject,
+        COUNT(DISTINCT id)::int AS count
+      FROM ${teachersTable},
+      LATERAL jsonb_array_elements_text(subjects) AS subject
+      GROUP BY subject
+      ORDER BY count DESC
+    `
+  );
+  
+  return result.rows.map((row) => ({
+    department: row.subject,
+    count: row.count
+  }));
+}
+
+/**
+ * Get students per class/stream
+ */
+export async function getStudentsPerClass(
+  client: PoolClient,
+  schema: string
+) {
+  assertValidSchemaName(schema);
+  const studentsTable = getTableName(schema, 'students');
+  const classesTable = getTableName(schema, 'classes');
+  
+  const result = await client.query(
+    `
+      SELECT 
+        COALESCE(c.name, s.class_id, 'Unassigned') AS class_name,
+        COUNT(DISTINCT s.id)::int AS count
+      FROM ${studentsTable} s
+      LEFT JOIN ${classesTable} c ON c.id = s.class_uuid OR c.id::text = s.class_id
+      GROUP BY COALESCE(c.name, s.class_id, 'Unassigned')
+      ORDER BY count DESC
+    `
+  );
+  
+  return result.rows.map((row) => ({
+    className: row.class_name,
+    count: row.count
+  }));
 }

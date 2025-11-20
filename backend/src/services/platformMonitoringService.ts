@@ -215,6 +215,7 @@ export async function rotateSessionToken(
 
 export async function listAllPlatformUsers(): Promise<PlatformUserSummary[]> {
   const pool = getPool();
+  // Only return superusers and admins (exclude students, teachers, HODs)
   const result = await pool.query(
     `
       SELECT
@@ -240,6 +241,7 @@ export async function listAllPlatformUsers(): Promise<PlatformUserSummary[]> {
       FROM shared.users u
       LEFT JOIN shared.tenants t ON t.id = u.tenant_id
       LEFT JOIN shared.schools s ON s.id = u.school_id
+      WHERE u.role IN ('admin', 'superadmin')
       ORDER BY u.created_at DESC
     `
   );

@@ -4,6 +4,7 @@ export const studentSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   dateOfBirth: z.string().optional(),
+  enrollmentDate: z.string().optional(),
   classId: z.string().optional(),
   admissionNumber: z.string().optional(),
   parentContacts: z.array(

@@ -5,6 +5,7 @@
 import { Suspense, useEffect, useMemo, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { DashboardHeader } from '../components/layout/DashboardHeader';
 import { Sidebar } from '../components/ui/Sidebar';
 import { useSidebar } from '../hooks/useSidebar';
@@ -12,6 +13,7 @@ import type { AuthUser } from '../lib/api';
 import { getSidebarLinksForRole } from '../lib/roleLinks';
 import { DashboardRouteProvider, useDashboardRouteMeta } from '../context/DashboardRouteContext';
 import { DashboardSkeleton } from '../components/ui/DashboardSkeleton';
+import { pageTransition } from '../lib/utils/animations';
 
 export interface DashboardLayoutProps {
   children?: ReactNode;
@@ -127,14 +129,20 @@ function DashboardLayoutContent({
         onLogout={onLogout}
       />
 
-      <div className="relative mx-auto flex w-full gap-4 px-2 sm:px-4 lg:px-6">
-        {shouldShowOverlay && (
-          <div
-            className="fixed inset-0 z-30 bg-slate-950/70 backdrop-blur-sm transition-opacity sm:hidden pointer-events-auto opacity-100"
-            onClick={closeMobile}
-            aria-hidden="true"
-          />
-        )}
+      <div className="relative mx-auto flex w-full gap-2 sm:gap-4 px-2 sm:px-4 lg:px-6">
+        <AnimatePresence>
+          {shouldShowOverlay && (
+            <motion.div
+              className="fixed inset-0 z-30 bg-slate-950/70 backdrop-blur-sm sm:hidden pointer-events-auto"
+              onClick={closeMobile}
+              aria-hidden="true"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            />
+          )}
+        </AnimatePresence>
         {links.length > 0 && (
           <Sidebar
             links={links}
@@ -147,18 +155,23 @@ function DashboardLayoutContent({
             isDesktop={isDesktop}
           />
         )}
-        <main
+        <motion.main
           id="main-content"
           ref={mainRef}
           role="main"
           aria-labelledby={titleId || undefined}
           tabIndex={-1}
-          className="relative z-10 flex-1 overflow-x-hidden overflow-y-auto container-padding scrollbar-thin"
+          className="relative z-10 flex-1 overflow-x-hidden overflow-y-auto container-padding scrollbar-thin smooth-scroll"
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          variants={pageTransition}
+          key={location.pathname}
         >
           <div className="mx-auto w-full max-w-full">
             <Suspense fallback={<DashboardSkeleton />}>{content}</Suspense>
           </div>
-        </main>
+        </motion.main>
       </div>
     </div>
   );

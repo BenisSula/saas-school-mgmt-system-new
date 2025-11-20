@@ -1,13 +1,48 @@
 import type { PoolClient } from 'pg';
 import { StudentInput } from '../validators/studentValidator';
 import { getTableName, serializeJsonField } from '../lib/serviceUtils';
+import {
+  filterStudentsByDepartment,
+  filterStudentsByTeacherClasses,
+  getUserDepartmentId,
+  isUserHOD
+} from '../lib/rbacFilters';
+import type { Role } from '../config/permissions';
 
 const table = 'students';
 
-export async function listStudents(client: PoolClient, schema: string) {
+export interface ListStudentsOptions {
+  userId?: string;
+  userRole?: Role;
+  departmentId?: string | null;
+  classIds?: string[];
+}
+
+export async function listStudents(
+  client: PoolClient,
+  schema: string,
+  options?: ListStudentsOptions
+) {
   const tableName = getTableName(schema, table);
-  const result = await client.query(`SELECT * FROM ${tableName} ORDER BY created_at DESC`);
-  return result.rows;
+  let result = await client.query(`SELECT * FROM ${tableName} ORDER BY created_at DESC`);
+  let students = result.rows;
+
+  // Apply RBAC filtering
+  if (options?.userRole && options?.userId) {
+    // HOD: Filter by department classes
+    if (options.userRole === 'hod' || (await isUserHOD(client, options.userId))) {
+      const deptId = options.departmentId ?? (await getUserDepartmentId(client, options.userId));
+      students = await filterStudentsByDepartment(client, schema, deptId, students);
+    }
+    // Teacher: Filter by assigned classes
+    else if (options.userRole === 'teacher') {
+      students = await filterStudentsByTeacherClasses(client, schema, options.userId, students);
+    }
+    // Student: Can only see themselves (handled by permission check in routes)
+    // Admin/SuperAdmin: See all (no filtering needed)
+  }
+
+  return students;
 }
 
 export async function getStudent(client: PoolClient, schema: string, id: string) {
@@ -56,14 +91,15 @@ export async function createStudent(client: PoolClient, schema: string, payload:
   const tableName = getTableName(schema, table);
   const result = await client.query(
     `
-      INSERT INTO ${tableName} (first_name, last_name, date_of_birth, class_id, class_uuid, admission_number, parent_contacts)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO ${tableName} (first_name, last_name, date_of_birth, enrollment_date, class_id, class_uuid, admission_number, parent_contacts)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
     `,
     [
       payload.firstName,
       payload.lastName,
       payload.dateOfBirth ?? null,
+      payload.enrollmentDate ?? null,
       classIdName,
       classUuid,
       payload.admissionNumber ?? null,
@@ -126,6 +162,7 @@ export async function updateStudent(
     first_name: payload.firstName ?? existing.first_name,
     last_name: payload.lastName ?? existing.last_name,
     date_of_birth: payload.dateOfBirth ?? existing.date_of_birth,
+    enrollment_date: payload.enrollmentDate ?? existing.enrollment_date,
     class_id: classIdName,
     class_uuid: classUuid,
     admission_number: payload.admissionNumber ?? existing.admission_number,
@@ -139,18 +176,20 @@ export async function updateStudent(
       SET first_name = $1,
           last_name = $2,
           date_of_birth = $3,
-          class_id = $4,
-          class_uuid = $5,
-          admission_number = $6,
-          parent_contacts = $7,
+          enrollment_date = $4,
+          class_id = $5,
+          class_uuid = $6,
+          admission_number = $7,
+          parent_contacts = $8,
           updated_at = NOW()
-      WHERE id = $8
+      WHERE id = $9
       RETURNING *
     `,
     [
       next.first_name,
       next.last_name,
       next.date_of_birth,
+      next.enrollment_date,
       next.class_id,
       next.class_uuid,
       next.admission_number,

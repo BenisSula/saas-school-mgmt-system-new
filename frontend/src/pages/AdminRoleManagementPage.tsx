@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { api, type TenantUser } from '../lib/api';
+import { userApi } from '../lib/api/userApi';
 
 // Helper to safely convert unknown to string for display
 const safeString = (value: unknown): string => {
@@ -8,53 +10,38 @@ const safeString = (value: unknown): string => {
   if (typeof value === 'string') return value;
   return String(value);
 };
-import { Table } from '../components/ui/Table';
 import { Button } from '../components/ui/Button';
-import { Select } from '../components/ui/Select';
 import { StatusBanner } from '../components/ui/StatusBanner';
 import { useAsyncFeedback } from '../hooks/useAsyncFeedback';
 import { AdminUserRegistrationModal } from '../components/admin/AdminUserRegistrationModal';
 
-const ROLES: TenantUser['role'][] = ['student', 'teacher', 'admin', 'superadmin'];
-
 function AdminRoleManagementPage() {
-  const [users, setUsers] = useState<TenantUser[]>([]);
+  const navigate = useNavigate();
   const [pendingUsers, setPendingUsers] = useState<TenantUser[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<TenantUser[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState<boolean>(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [sortBy, setSortBy] = useState<'date' | 'role' | 'email'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [filterRole, setFilterRole] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const { status, message, setInfo, setSuccess, setError, clear } = useAsyncFeedback();
 
   const loadUsers = useCallback(async () => {
     try {
       setLoading(true);
       clear();
-      const [allResult, pendingResult] = await Promise.allSettled([
-        api.listUsers(),
-        api.listPendingUsers()
-      ]);
+      const pendingResult = await Promise.allSettled([userApi.listPendingUsers()]);
 
-      if (allResult.status === 'fulfilled') {
-        const data = allResult.value;
-        setUsers(data);
-        if (data.length === 0) {
-          setInfo('No users found for this tenant.');
-        } else {
-          toast.success('Loaded latest users.');
-        }
-      } else {
-        const errorMessage = (allResult.reason as Error).message ?? 'Unable to load users.';
-        setError(errorMessage);
-        toast.error(errorMessage);
-      }
-
-      if (pendingResult.status === 'fulfilled') {
+      if (pendingResult[0].status === 'fulfilled') {
         // Only show users with status='pending' in pending approvals
-        setPendingUsers(pendingResult.value.filter((user) => user.status === 'pending'));
-      } else if (allResult.status === 'fulfilled') {
-        // Fallback: filter from all users
-        setPendingUsers(allResult.value.filter((user) => user.status === 'pending'));
+        const pending = pendingResult[0].value.filter((user) => user.status === 'pending');
+        setPendingUsers(pending);
+        applyFiltersAndSort(pending, filterRole, searchQuery, sortBy, sortOrder);
       } else {
         setPendingUsers([]);
+        setFilteredUsers([]);
       }
     } catch (error) {
       const errorMessage = (error as Error).message;
@@ -70,7 +57,7 @@ function AdminRoleManagementPage() {
       try {
         setLoading(true);
         clear();
-        const updated = await api.approveUser(user.id);
+        await userApi.approveUser(user.id);
         setSuccess(
           `${user.email} approved. Profile record created. You can now edit and assign classes.`
         );
@@ -78,17 +65,6 @@ function AdminRoleManagementPage() {
           description: 'You can now edit the profile to assign classes or make corrections.'
         });
         setPendingUsers((current) => current.filter((candidate) => candidate.id !== user.id));
-        setUsers((current) => {
-          const normalised = {
-            ...updated,
-            status: updated.status ?? 'active'
-          };
-          const exists = current.some((candidate) => candidate.id === user.id);
-          if (exists) {
-            return current.map((candidate) => (candidate.id === user.id ? normalised : candidate));
-          }
-          return [...current, normalised];
-        });
       } catch (error) {
         const errorMessage = (error as Error).message;
         setError(errorMessage);
@@ -114,18 +90,8 @@ function AdminRoleManagementPage() {
       try {
         setLoading(true);
         clear();
-        const updated = await api.rejectUser(user.id);
+        await userApi.rejectUser(user.id);
         setPendingUsers((current) => current.filter((candidate) => candidate.id !== user.id));
-        setUsers((current) =>
-          current.map((candidate) =>
-            candidate.id === user.id
-              ? {
-                  ...candidate,
-                  status: updated.status ?? 'rejected'
-                }
-              : candidate
-          )
-        );
         setSuccess(`${user.email} rejected.`);
         toast.success(`${user.email} rejected.`);
       } catch (error) {
@@ -139,60 +105,143 @@ function AdminRoleManagementPage() {
     [clear, setError, setSuccess]
   );
 
+  // Apply filters and sorting
+  const applyFiltersAndSort = useCallback((
+    users: TenantUser[],
+    roleFilter: string,
+    query: string,
+    sortField: 'date' | 'role' | 'email',
+    order: 'asc' | 'desc'
+  ) => {
+    let filtered = [...users];
+
+    // Filter by role
+    if (roleFilter !== 'all') {
+      filtered = filtered.filter((u) => u.role === roleFilter);
+    }
+
+    // Filter by search query
+    if (query.trim()) {
+      const lowerQuery = query.toLowerCase();
+      filtered = filtered.filter((u) =>
+        u.email.toLowerCase().includes(lowerQuery) ||
+        (u.pending_profile_data?.fullName && 
+         String(u.pending_profile_data.fullName).toLowerCase().includes(lowerQuery))
+      );
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      if (sortField === 'date') {
+        comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      } else if (sortField === 'role') {
+        comparison = a.role.localeCompare(b.role);
+      } else if (sortField === 'email') {
+        comparison = a.email.localeCompare(b.email);
+      }
+      return order === 'asc' ? comparison : -comparison;
+    });
+
+    setFilteredUsers(filtered);
+  }, []);
+
+  // Update filtered list when filters change
+  useEffect(() => {
+    applyFiltersAndSort(pendingUsers, filterRole, searchQuery, sortBy, sortOrder);
+  }, [pendingUsers, filterRole, searchQuery, sortBy, sortOrder, applyFiltersAndSort]);
+
+  const handleBulkApprove = useCallback(async () => {
+    if (selectedUsers.size === 0) return;
+
+    try {
+      setLoading(true);
+      clear();
+      const userIds = Array.from(selectedUsers);
+      const result = await api.bulkApproveUsers(userIds);
+      
+      if (result.successful > 0) {
+        setSuccess(`Successfully approved ${result.successful} user(s)`);
+        toast.success(`Approved ${result.successful} user(s)`, {
+          description: result.failed > 0 ? `${result.failed} failed` : undefined
+        });
+        setSelectedUsers(new Set());
+        await loadUsers();
+      } else {
+        setError('Failed to approve users');
+        toast.error('Failed to approve users');
+      }
+    } catch (error) {
+      const errorMessage = (error as Error).message;
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedUsers, clear, setSuccess, setError, loadUsers]);
+
+  const handleBulkReject = useCallback(async () => {
+    if (selectedUsers.size === 0) return;
+
+    if (typeof window !== 'undefined') {
+      const confirmed = window.confirm(
+        `Reject ${selectedUsers.size} user(s)? They will remain unable to sign in.`
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    try {
+      setLoading(true);
+      clear();
+      const userIds = Array.from(selectedUsers);
+      const result = await api.bulkRejectUsers(userIds);
+      
+      if (result.successful > 0) {
+        setSuccess(`Successfully rejected ${result.successful} user(s)`);
+        toast.success(`Rejected ${result.successful} user(s)`, {
+          description: result.failed > 0 ? `${result.failed} failed` : undefined
+        });
+        setSelectedUsers(new Set());
+        await loadUsers();
+      } else {
+        setError('Failed to reject users');
+        toast.error('Failed to reject users');
+      }
+    } catch (error) {
+      const errorMessage = (error as Error).message;
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedUsers, clear, setSuccess, setError, loadUsers]);
+
+  const toggleUserSelection = useCallback((userId: string) => {
+    setSelectedUsers((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) {
+        next.delete(userId);
+      } else {
+        next.add(userId);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    if (selectedUsers.size === filteredUsers.length) {
+      setSelectedUsers(new Set());
+    } else {
+      setSelectedUsers(new Set(filteredUsers.map((u) => u.id)));
+    }
+  }, [filteredUsers, selectedUsers.size]);
+
   useEffect(() => {
     void loadUsers();
   }, [loadUsers]);
 
-  const columns = useMemo(
-    () => [
-      { header: 'Email', key: 'email' as const },
-      { header: 'Role', key: 'role' as const },
-      { header: 'Status', key: 'status' as const },
-      { header: 'Verified', key: 'is_verified' as const },
-      { header: 'Created', key: 'created_at' as const },
-      { header: 'Actions', key: 'actions' as const }
-    ],
-    []
-  );
-
-  const roleOptions = ROLES.map((role) => ({ label: role, value: role }));
-
-  const rows = users.map((user) => ({
-    ...user,
-    status: user.status ?? 'active',
-    is_verified: user.is_verified ? 'Yes' : 'No',
-    actions: (
-      <Select
-        aria-label={`Update role for ${user.email}`}
-        value={user.role}
-        options={roleOptions}
-        className="min-w-[160px]"
-        onChange={async (event) => {
-          const nextRole = event.target.value as TenantUser['role'];
-          try {
-            setLoading(true);
-            clear();
-            const updated = await api.updateUserRole(user.id, nextRole);
-            setUsers((current) =>
-              current.map((entry) =>
-                entry.id === user.id
-                  ? { ...entry, role: updated.role, status: updated.status ?? entry.status }
-                  : entry
-              )
-            );
-            setSuccess(`Role updated for ${user.email}`);
-            toast.success(`Role updated for ${user.email}`);
-          } catch (error) {
-            const errorMessage = (error as Error).message;
-            setError(errorMessage);
-            toast.error(errorMessage);
-          } finally {
-            setLoading(false);
-          }
-        }}
-      />
-    )
-  }));
 
   return (
     <div className="space-y-6">
@@ -237,23 +286,135 @@ function AdminRoleManagementPage() {
           </Button>
         </header>
 
-        {pendingUsers.length === 0 ? (
+        {/* Filters and Sorting */}
+        {pendingUsers.length > 0 && (
+          <div className="space-y-4 rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface)]/50 p-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-[var(--brand-surface-contrast)]">
+                  Search
+                </label>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by email or name..."
+                  className="w-full rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface)] px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-[var(--brand-surface-contrast)]">
+                  Filter by Role
+                </label>
+                <select
+                  value={filterRole}
+                  onChange={(e) => setFilterRole(e.target.value)}
+                  className="w-full rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface)] px-3 py-2 text-sm"
+                >
+                  <option value="all">All Roles</option>
+                  <option value="student">Student</option>
+                  <option value="teacher">Teacher</option>
+                  <option value="hod">HOD</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-[var(--brand-surface-contrast)]">
+                  Sort By
+                </label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as 'date' | 'role' | 'email')}
+                  className="w-full rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface)] px-3 py-2 text-sm"
+                >
+                  <option value="date">Date</option>
+                  <option value="role">Role</option>
+                  <option value="email">Email</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-[var(--brand-surface-contrast)]">
+                  Order
+                </label>
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+                  className="w-full rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface)] px-3 py-2 text-sm"
+                >
+                  <option value="desc">Descending</option>
+                  <option value="asc">Ascending</option>
+                </select>
+              </div>
+            </div>
+            {selectedUsers.size > 0 && (
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={handleBulkApprove}
+                  disabled={loading}
+                  size="sm"
+                >
+                  Approve Selected ({selectedUsers.size})
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleBulkReject}
+                  disabled={loading}
+                  size="sm"
+                >
+                  Reject Selected ({selectedUsers.size})
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedUsers(new Set())}
+                  size="sm"
+                >
+                  Clear Selection
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {filteredUsers.length === 0 && pendingUsers.length > 0 ? (
+          <p className="rounded-lg border border-dashed border-[var(--brand-border)] px-4 py-6 text-sm text-[var(--brand-muted)]">
+            No users match the current filters. Try adjusting your search or filter criteria.
+          </p>
+        ) : filteredUsers.length === 0 ? (
           <p className="rounded-lg border border-dashed border-[var(--brand-border)] px-4 py-6 text-sm text-[var(--brand-muted)]">
             No pending approvals right now. New registrations will appear here for review.
           </p>
         ) : (
           <ul className="space-y-4" role="list">
-            {pendingUsers.map((user) => (
+            {pendingUsers.length > 0 && (
+              <li className="flex items-center gap-2 rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface)]/50 p-2">
+                <input
+                  type="checkbox"
+                  checked={selectedUsers.size === filteredUsers.length && filteredUsers.length > 0}
+                  onChange={toggleSelectAll}
+                  className="h-4 w-4 rounded border-[var(--brand-border)]"
+                />
+                <span className="text-sm text-[var(--brand-muted)]">
+                  Select All ({filteredUsers.length} users)
+                </span>
+              </li>
+            )}
+            {filteredUsers.map((user) => (
               <li
                 key={user.id}
                 role="listitem"
                 className="flex flex-col gap-4 rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/90 p-4"
               >
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-[var(--brand-surface-contrast)]">
-                      {user.email}
-                    </p>
+                  <div className="flex items-start gap-3 flex-1">
+                    <input
+                      type="checkbox"
+                      checked={selectedUsers.has(user.id)}
+                      onChange={() => toggleUserSelection(user.id)}
+                      className="mt-1 h-4 w-4 rounded border-[var(--brand-border)]"
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-[var(--brand-surface-contrast)]">
+                        {user.email}
+                      </p>
                     <p className="text-xs uppercase tracking-wide text-[var(--brand-muted)]">
                       {user.role} · {user.is_verified ? 'Verified' : 'Not verified'} · Requested on{' '}
                       {new Date(user.created_at).toLocaleString()}
@@ -299,7 +460,7 @@ function AdminRoleManagementPage() {
                               )}
                             </>
                           )}
-                          {user.role === 'teacher' && (
+                          {(user.role === 'teacher' || user.role === 'hod') && (
                             <>
                               {user.pending_profile_data.phone && (
                                 <p>
@@ -332,6 +493,7 @@ function AdminRoleManagementPage() {
                         </div>
                       </div>
                     )}
+                    </div>
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
                     <div className="flex flex-wrap gap-2">
@@ -368,7 +530,31 @@ function AdminRoleManagementPage() {
 
       {message ? <StatusBanner status={status} message={message} onDismiss={clear} /> : null}
 
-      <Table columns={columns} data={rows} caption="Tenant user roles" />
+      {/* Quick Links to Management Pages */}
+      <section className="space-y-4 rounded-2xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
+        <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-[var(--brand-surface-contrast)]">
+              User Management
+            </h2>
+            <p className="text-sm text-[var(--brand-muted)]">
+              Approve pending user registrations and manage user access. For detailed management of
+              specific user types, use the dedicated management pages.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => navigate('/dashboard/teachers')}>
+              Manage Teachers
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/dashboard/students')}>
+              Manage Students
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/dashboard/hods')}>
+              Manage HODs
+            </Button>
+          </div>
+        </header>
+      </section>
 
       {/* Admin User Registration Modal */}
       {showRegisterModal && (

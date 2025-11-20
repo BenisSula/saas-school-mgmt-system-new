@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api, type BrandingConfig } from '../../lib/api';
+import { useAuth } from '../../context/AuthContext';
 
 export type ThemeMode = 'light' | 'dark';
 
@@ -163,6 +164,7 @@ function getInitialTheme(): ThemeMode {
 }
 
 export function BrandProvider({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuth();
   const [theme, setTheme] = useState<ThemeMode>(getInitialTheme);
   const [branding, setBranding] = useState<BrandingConfig | null>(null);
   const [tokens, setTokens] = useState<BrandTokens>(() => deriveTokens(null, getInitialTheme()));
@@ -170,6 +172,14 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   const fetchBranding = useCallback(async () => {
+    // Only fetch branding if user is authenticated
+    if (!isAuthenticated) {
+      setBranding(null);
+      setTokens(deriveTokens(null, theme));
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -177,13 +187,21 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
       setBranding(brandingResponse);
       setTokens(deriveTokens(brandingResponse, theme));
     } catch (err) {
-      setBranding(null);
-      setError((err as Error).message);
-      setTokens(deriveTokens(null, theme));
+      // Silently handle 401 errors (user not authenticated or no permission)
+      const error = err as Error & { apiError?: { status?: number } };
+      if (error.apiError?.status === 401) {
+        setBranding(null);
+        setTokens(deriveTokens(null, theme));
+        setError(null); // Don't show error for expected auth failures
+      } else {
+        setBranding(null);
+        setError((err as Error).message);
+        setTokens(deriveTokens(null, theme));
+      }
     } finally {
       setLoading(false);
     }
-  }, [theme]);
+  }, [theme, isAuthenticated]);
 
   useEffect(() => {
     let cancelled = false;

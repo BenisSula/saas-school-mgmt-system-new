@@ -12,6 +12,7 @@ export const queryKeys = {
     students: () => ['admin', 'students'] as const,
     hods: () => ['admin', 'hods'] as const,
     exams: () => ['admin', 'exams'] as const,
+    gradeScales: () => ['admin', 'grade-scales'] as const,
     attendance: (filters?: { from?: string; to?: string; classId?: string }) =>
       ['admin', 'attendance', filters] as const,
     reports: (type?: string) => ['admin', 'reports', type] as const,
@@ -37,9 +38,35 @@ export function useQuery<T>(
 ) {
   return useReactQuery({
     queryKey,
-    queryFn,
+    queryFn: async () => {
+      try {
+        return await queryFn();
+      } catch (error) {
+        // Suppress console errors for expected failures
+        const apiError = error as Error & { suppressLog?: boolean };
+        if (apiError?.suppressLog) {
+          // Re-throw but mark it so React Query doesn't log it
+          const silentError = new Error(apiError.message);
+          (silentError as Error & { suppressLog?: boolean }).suppressLog = true;
+          throw silentError;
+        }
+        // Log unexpected errors in dev mode
+        if (import.meta.env.DEV) {
+          console.error('[Query Error]', queryKey, error);
+        }
+        throw error;
+      }
+    },
     enabled: options?.enabled !== false,
-    staleTime: options?.staleTime
+    staleTime: options?.staleTime,
+    // Don't retry expected errors
+    retry: (failureCount, error) => {
+      const apiError = error as Error & { suppressLog?: boolean };
+      if (apiError?.suppressLog) {
+        return false;
+      }
+      return failureCount < 1;
+    }
   });
 }
 

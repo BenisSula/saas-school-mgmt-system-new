@@ -20,7 +20,7 @@ const searchQuerySchema = z.object({
     .optional()
     .transform((val) => (val ? val.split(',') : undefined))
     .pipe(z.array(z.enum(['student', 'teacher', 'class', 'subject'])).optional())
-});
+}).passthrough();
 
 router.get(
   '/',
@@ -35,7 +35,18 @@ router.get(
 
       const parsed = searchQuerySchema.safeParse(req.query);
       if (!parsed.success) {
-        return res.status(400).json({ message: parsed.error.message });
+        return res.status(400).json({ 
+          message: 'Invalid search parameters',
+          errors: parsed.error.issues.map((err) => ({
+            field: err.path.join('.'),
+            message: err.message
+          }))
+        });
+      }
+      
+      // Validate that query parameter is present
+      if (!parsed.data.q || parsed.data.q.trim().length === 0) {
+        return res.status(400).json({ message: 'Search query (q) is required' });
       }
 
       const results = await search(req.tenantClient, req.tenant.schema, parsed.data.q, {

@@ -17,7 +17,7 @@ const router = Router();
 
 const limitSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional()
-});
+}).passthrough();
 
 router.use(authenticate, tenantResolver());
 

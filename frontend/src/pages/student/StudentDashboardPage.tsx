@@ -6,7 +6,8 @@ import { Button } from '../../components/ui/Button';
 import { DataTable, type DataTableColumn } from '../../components/tables/DataTable';
 import { BarChart, type BarChartData } from '../../components/charts/BarChart';
 import { LineChart, type LineChartDataPoint } from '../../components/charts/LineChart';
-import { StatCard } from '../../components/charts/StatCard';
+import { StatCard, ChartContainer } from '../../components/charts';
+import { Card } from '../../components/ui/Card';
 import { useStudentDashboard } from '../../hooks/queries/useDashboardQueries';
 import { useAuth } from '../../context/AuthContext';
 import { TrendingUp, Calendar, DollarSign, GraduationCap } from 'lucide-react';
@@ -192,7 +193,7 @@ export default function StudentDashboardPage() {
 
         {/* Profile Snapshot */}
         {profile && (
-          <section className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
+          <Card padding="md">
             <header className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-[var(--brand-surface-contrast)]">
@@ -241,7 +242,7 @@ export default function StudentDashboardPage() {
                 )}
               </div>
             </div>
-          </section>
+          </Card>
         )}
 
         {/* Stats Cards */}
@@ -297,23 +298,23 @@ export default function StudentDashboardPage() {
         {/* Charts */}
         <div className="grid gap-6 lg:grid-cols-2">
           {attendanceTrend.length > 0 && (
-            <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
+            <ChartContainer>
               <LineChart
                 data={attendanceTrend}
                 title="Attendance Trend (Last 30 Days)"
                 height={200}
               />
-            </div>
+            </ChartContainer>
           )}
           {subjectPerformance.length > 0 && (
-            <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
+            <ChartContainer>
               <BarChart data={subjectPerformance} title="Subject Performance" height={200} />
-            </div>
+            </ChartContainer>
           )}
           {feeBreakdown.length > 0 && (
-            <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm lg:col-span-2">
+            <ChartContainer className="lg:col-span-2">
               <BarChart data={feeBreakdown} title="Fee Status Breakdown" height={200} />
-            </div>
+            </ChartContainer>
           )}
         </div>
 

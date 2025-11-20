@@ -20,7 +20,16 @@ export function TopSchools({ limit = 5 }: { limit?: number }) {
         }
       } catch (err) {
         if (mounted) {
-          setError((err as Error).message);
+          // Handle errors gracefully - suppress console errors for expected failures
+          const error = err as Error & { apiError?: { status?: number } };
+          if (error.apiError?.status === 401 || error.apiError?.status === 500) {
+            // Expected errors: user not authenticated or server issue
+            // Don't show error message, just show empty state
+            setError(null);
+            setSchools([]);
+          } else {
+            setError((err as Error).message);
+          }
         }
       } finally {
         if (mounted) {

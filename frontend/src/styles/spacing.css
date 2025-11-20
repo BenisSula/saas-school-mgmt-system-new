@@ -1,0 +1,107 @@
+/**
+ * Spacing System
+ * 
+ * Consistent spacing utilities based on 8px grid system
+ * Following design system best practices for UI/UX consistency
+ */
+
+@layer utilities {
+  /* Spacing Scale: 8px, 12px, 16px, 24px, 32px, 48px, 64px */
+  
+  /* Gap utilities (8px grid) */
+  .gap-2 { gap: 0.5rem; } /* 8px */
+  .gap-3 { gap: 0.75rem; } /* 12px */
+  .gap-4 { gap: 1rem; } /* 16px */
+  .gap-6 { gap: 1.5rem; } /* 24px */
+  .gap-8 { gap: 2rem; } /* 32px */
+  
+  /* Padding utilities (8px grid) */
+  .p-2 { padding: 0.5rem; } /* 8px */
+  .p-3 { padding: 0.75rem; } /* 12px */
+  .p-4 { padding: 1rem; } /* 16px */
+  .p-6 { padding: 1.5rem; } /* 24px */
+  .p-8 { padding: 2rem; } /* 32px */
+  
+  /* Padding X (horizontal) */
+  .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; } /* 8px */
+  .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; } /* 12px */
+  .px-4 { padding-left: 1rem; padding-right: 1rem; } /* 16px */
+  .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; } /* 24px */
+  .px-8 { padding-left: 2rem; padding-right: 2rem; } /* 32px */
+  
+  /* Padding Y (vertical) */
+  .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; } /* 8px */
+  .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; } /* 12px */
+  .py-4 { padding-top: 1rem; padding-bottom: 1rem; } /* 16px */
+  .py-6 { padding-top: 1.5rem; padding-bottom: 1.5rem; } /* 24px */
+  .py-8 { padding-top: 2rem; padding-bottom: 2rem; } /* 32px */
+  
+  /* Margin utilities (8px grid) */
+  .m-2 { margin: 0.5rem; } /* 8px */
+  .m-3 { margin: 0.75rem; } /* 12px */
+  .m-4 { margin: 1rem; } /* 16px */
+  .m-6 { margin: 1.5rem; } /* 24px */
+  .m-8 { margin: 2rem; } /* 32px */
+  
+  /* Margin X (horizontal) */
+  .mx-2 { margin-left: 0.5rem; margin-right: 0.5rem; } /* 8px */
+  .mx-3 { margin-left: 0.75rem; margin-right: 0.75rem; } /* 12px */
+  .mx-4 { margin-left: 1rem; margin-right: 1rem; } /* 16px */
+  .mx-6 { margin-left: 1.5rem; margin-right: 1.5rem; } /* 24px */
+  .mx-8 { margin-left: 2rem; margin-right: 2rem; } /* 32px */
+  
+  /* Margin Y (vertical) */
+  .my-2 { margin-top: 0.5rem; margin-bottom: 0.5rem; } /* 8px */
+  .my-3 { margin-top: 0.75rem; margin-bottom: 0.75rem; } /* 12px */
+  .my-4 { margin-top: 1rem; margin-bottom: 1rem; } /* 16px */
+  .my-6 { margin-top: 1.5rem; margin-bottom: 1.5rem; } /* 24px */
+  .my-8 { margin-top: 2rem; margin-bottom: 2rem; } /* 32px */
+  
+  /* Space Y (vertical spacing between children) */
+  .space-y-2 > * + * { margin-top: 0.5rem; } /* 8px */
+  .space-y-3 > * + * { margin-top: 0.75rem; } /* 12px */
+  .space-y-4 > * + * { margin-top: 1rem; } /* 16px */
+  .space-y-6 > * + * { margin-top: 1.5rem; } /* 24px */
+  .space-y-8 > * + * { margin-top: 2rem; } /* 32px */
+  
+  /* Space X (horizontal spacing between children) */
+  .space-x-2 > * + * { margin-left: 0.5rem; } /* 8px */
+  .space-x-3 > * + * { margin-left: 0.75rem; } /* 12px */
+  .space-x-4 > * + * { margin-left: 1rem; } /* 16px */
+  .space-x-6 > * + * { margin-left: 1.5rem; } /* 24px */
+  .space-x-8 > * + * { margin-left: 2rem; } /* 32px */
+  
+  /* Responsive spacing utilities */
+  .gap-responsive-sm { gap: 0.5rem; } /* 8px mobile */
+  @media (min-width: 640px) {
+    .gap-responsive-sm { gap: 0.75rem; } /* 12px tablet */
+  }
+  @media (min-width: 1024px) {
+    .gap-responsive-sm { gap: 1rem; } /* 16px desktop */
+  }
+  
+  .gap-responsive { gap: 1rem; } /* 16px mobile */
+  @media (min-width: 640px) {
+    .gap-responsive { gap: 1.5rem; } /* 24px tablet */
+  }
+  @media (min-width: 1024px) {
+    .gap-responsive { gap: 2rem; } /* 32px desktop */
+  }
+  
+  .p-responsive-sm { padding: 0.5rem; } /* 8px mobile */
+  @media (min-width: 640px) {
+    .p-responsive-sm { padding: 0.75rem; } /* 12px tablet */
+  }
+  @media (min-width: 1024px) {
+    .p-responsive-sm { padding: 1rem; } /* 16px desktop */
+  }
+  
+  .p-responsive { padding: 1rem; } /* 16px mobile */
+  @media (min-width: 640px) {
+    .p-responsive { padding: 1.5rem; } /* 24px tablet */
+  }
+  @media (min-width: 1024px) {
+    .p-responsive { padding: 2rem; } /* 32px desktop */
+  }
+}
+

@@ -43,23 +43,23 @@ export function AuthFormLayout({
           className={`relative overflow-hidden rounded-2xl border border-[var(--brand-border)] bg-[var(--brand-surface)] shadow-2xl transition-colors duration-300 ${className}`}
         >
           {/* Card Header */}
-          <div className="border-b border-[var(--brand-border)] bg-gradient-to-r from-[var(--brand-primary)]/10 to-[var(--brand-accent)]/10 px-6 py-8 sm:px-8">
-            <h1 className="text-center text-2xl font-bold text-[var(--brand-surface-contrast)] sm:text-3xl">
+          <div className="border-b border-[var(--brand-border)] bg-gradient-to-r from-[var(--brand-primary)]/10 to-[var(--brand-accent)]/10 px-4 py-6 sm:px-6 sm:py-8">
+            <h1 className="text-center text-xl font-bold text-[var(--brand-surface-contrast)] sm:text-2xl lg:text-3xl">
               {title}
             </h1>
             {subtitle && (
-              <p className="mt-2 text-center text-sm text-[var(--brand-muted)] sm:text-base">
+              <p className="mt-2 text-center text-xs text-[var(--brand-muted)] sm:text-sm lg:text-base">
                 {subtitle}
               </p>
             )}
           </div>
 
           {/* Card Body */}
-          <div className="px-6 py-6 sm:px-8 sm:py-8">{children}</div>
+          <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">{children}</div>
 
           {/* Card Footer */}
           {footer && (
-            <div className="border-t border-[var(--brand-border)] bg-[var(--brand-surface)]/50 px-6 py-4 sm:px-8">
+            <div className="border-t border-[var(--brand-border)] bg-[var(--brand-surface)]/50 px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
               {footer}
             </div>
           )}

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, LogOut, Settings, User, UserCircle } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
+import { MobileMenuButton } from './MobileMenuButton';
 import { useBrand } from './BrandProvider';
 import type { AuthUser, Role } from '../../lib/api';
 
@@ -64,22 +65,20 @@ function NavbarComponent({
 
   return (
     <motion.header
-      className="sticky top-0 z-40 border-b border-[var(--brand-border)] bg-[var(--brand-surface)]/85 backdrop-blur"
+      className="sticky top-0 z-40 border-b border-[var(--brand-border)] bg-[var(--brand-surface)]/95 backdrop-blur-md shadow-sm"
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 120, damping: 20 }}
     >
-      <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between px-3 sm:px-6">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-transparent text-[var(--brand-surface-contrast)] transition hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-primary)] lg:hidden"
-            onClick={onToggleSidebar}
-            aria-label="Toggle navigation"
-            aria-expanded={sidebarOpen}
-          >
-            <span className="text-2xl leading-none">☰</span>
-          </button>
+      <div className="mx-auto flex h-14 sm:h-16 w-full max-w-[1400px] items-center justify-between px-3 sm:px-6">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="lg:hidden">
+            <MobileMenuButton
+              isOpen={sidebarOpen}
+              onClick={onToggleSidebar}
+              aria-label="Toggle navigation"
+            />
+          </div>
           <div className="flex items-center gap-2">
             <motion.div
               className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-semibold uppercase text-white shadow-lg"
@@ -93,11 +92,11 @@ function NavbarComponent({
               {brandInitials}
             </motion.div>
             <div className="hidden sm:block">
-              <p className="text-sm font-semibold text-[var(--brand-surface-contrast)]">
+              <p className="text-sm font-semibold text-[var(--brand-text-primary)]">
                 {brandName}
               </p>
               {brandSubtitle ? (
-                <p className="text-xs text-[var(--brand-muted)]">{brandSubtitle}</p>
+                <p className="text-xs text-[var(--brand-text-secondary)]">{brandSubtitle}</p>
               ) : null}
             </div>
           </div>
@@ -114,10 +113,10 @@ function NavbarComponent({
                 type="button"
                 onClick={link.onSelect}
                 aria-pressed={link.isActive}
-                className={`interactive-button group relative inline-flex items-center gap-2 rounded-lg px-3 py-2 ${
+                className={`interactive-button group relative inline-flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-200 ${
                   link.isActive
-                    ? 'bg-[var(--brand-primary)]/90 text-[var(--brand-primary-contrast)] shadow-sm'
-                    : 'text-[var(--brand-surface-contrast)] hover:bg-white/10'
+                    ? 'bg-[var(--brand-primary)] text-[var(--brand-primary-contrast)] shadow-sm'
+                    : 'text-[var(--brand-text-primary)] hover:bg-[var(--brand-surface-secondary)]'
                 }`}
                 variants={navItemVariants}
                 initial="hidden"
@@ -144,7 +143,7 @@ function NavbarComponent({
               <motion.button
                 type="button"
                 onClick={() => setAvatarMenuOpen((prev) => !prev)}
-                className="flex items-center gap-2 rounded-full border border-transparent bg-white/10 px-2 py-1 text-[var(--brand-surface-contrast)] transition hover:border-white/20 hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-primary)]"
+                className="flex items-center gap-2 rounded-full border border-[var(--brand-border)] bg-[var(--brand-surface-secondary)] px-2 py-1 text-[var(--brand-text-primary)] transition-all duration-200 hover:border-[var(--brand-border-strong)] hover:bg-[var(--brand-surface-tertiary)] focus-visible-ring"
                 whileTap={{ scale: 0.97 }}
               >
                 <UserCircle className="h-8 w-8" />
@@ -166,12 +165,12 @@ function NavbarComponent({
                     transition={{ type: 'spring', stiffness: 200, damping: 18 }}
                   >
                     <div className="border-b border-[var(--brand-border)] px-4 py-3 text-sm">
-                      <p className="font-semibold text-[var(--brand-surface-contrast)]">
+                      <p className="font-semibold text-[var(--brand-text-primary)]">
                         {user.email}
                       </p>
-                      <p className="text-xs capitalize text-[var(--brand-muted)]">{user.role}</p>
+                      <p className="text-xs capitalize text-[var(--brand-text-secondary)]">{user.role}</p>
                     </div>
-                    <ul className="space-y-1 p-2 text-sm text-[var(--brand-surface-contrast)]">
+                    <ul className="space-y-1 p-2 text-sm text-[var(--brand-text-primary)]">
                       <li>
                         <button className="nav-item-button" type="button">
                           <User className="h-4 w-4" />
@@ -206,7 +205,7 @@ function NavbarComponent({
             <button
               type="button"
               onClick={onShowAuthPanel}
-              className="interactive-button inline-flex items-center rounded-md border border-transparent bg-[var(--brand-primary)]/90 px-4 py-2 text-sm font-medium text-[var(--brand-primary-contrast)] hover:bg-[var(--brand-primary)]"
+              className="interactive-button inline-flex items-center rounded-md border border-transparent bg-[var(--brand-primary)] px-4 py-2 text-sm font-medium text-[var(--brand-primary-contrast)] hover:bg-[var(--brand-primary-hover)] transition-colors duration-200"
             >
               Sign in
             </button>

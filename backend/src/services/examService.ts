@@ -131,6 +131,49 @@ export async function createExam(
   return result.rows[0];
 }
 
+export async function deleteExam(
+  client: PoolClient,
+  schema: string,
+  examId: string,
+  actorId?: string
+) {
+  // Check if exam has grades - if so, we might want to prevent deletion or warn
+  const gradesCheck = await client.query(
+    `SELECT COUNT(*) as count FROM ${qualified(schema, GRADE_TABLE)} WHERE exam_id = $1`,
+    [examId]
+  );
+  const gradeCount = Number(gradesCheck.rows[0]?.count || 0);
+
+  if (gradeCount > 0) {
+    throw new Error(
+      `Cannot delete exam: ${gradeCount} grade record(s) exist. Please remove grades first or archive the exam.`
+    );
+  }
+
+  // Delete exam sessions first (cascade)
+  await client.query(`DELETE FROM ${qualified(schema, SESSION_TABLE)} WHERE exam_id = $1`, [
+    examId
+  ]);
+
+  // Delete the exam
+  const result = await client.query(
+    `DELETE FROM ${qualified(schema, EXAM_TABLE)} WHERE id = $1 RETURNING id`,
+    [examId]
+  );
+
+  if (result.rowCount === 0) {
+    throw new Error('Exam not found');
+  }
+
+  console.info('[audit] exam_deleted', {
+    tenantSchema: schema,
+    examId,
+    actorId: actorId ?? null
+  });
+
+  return { id: examId, deleted: true };
+}
+
 export async function createExamSession(
   client: PoolClient,
   schema: string,

@@ -6,6 +6,8 @@ import { DataTable, type DataTableColumn } from '../../components/tables/DataTab
 import { BarChart, type BarChartData } from '../../components/charts/BarChart';
 import { PieChart, type PieChartData } from '../../components/charts/PieChart';
 import { StatCard } from '../../components/charts/StatCard';
+import { ChartContainer, PageHeader } from '../../components/charts';
+import { Card } from '../../components/ui/Card';
 import { useSuperuserOverview } from '../../hooks/queries/useSuperuserQueries';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../hooks/useQuery';
@@ -40,7 +42,7 @@ export default function SuperuserOverviewPage() {
       {
         title: 'Total users',
         value: overview.totals.users,
-        description: `${overview.roleDistribution.admins} admins • ${overview.roleDistribution.hods} HODs • ${overview.roleDistribution.teachers} teachers • ${overview.roleDistribution.students} students`,
+        description: `${overview.roleDistribution.superadmins} superusers • ${overview.roleDistribution.admins} admins`,
         icon: <Users className="h-5 w-5" />
       },
       {
@@ -69,18 +71,12 @@ export default function SuperuserOverviewPage() {
       }));
   }, [overview]);
 
-  // Role distribution chart
+  // Role distribution chart (only superusers and admins)
   const roleDistribution: BarChartData[] = useMemo(() => {
     if (!overview) return [];
     return [
-      { label: 'Admins', value: overview.roleDistribution.admins, color: 'var(--brand-primary)' },
-      { label: 'HODs', value: overview.roleDistribution.hods, color: 'var(--brand-accent)' },
-      { label: 'Teachers', value: overview.roleDistribution.teachers, color: 'var(--brand-info)' },
-      {
-        label: 'Students',
-        value: overview.roleDistribution.students,
-        color: 'var(--brand-success)'
-      }
+      { label: 'Superusers', value: overview.roleDistribution.superadmins, color: 'var(--brand-primary)' },
+      { label: 'Admins', value: overview.roleDistribution.admins, color: 'var(--brand-accent)' }
     ].filter((item) => item.value > 0);
   }, [overview]);
 
@@ -169,17 +165,11 @@ export default function SuperuserOverviewPage() {
   return (
     <RouteMeta title="Dashboard overview">
       <div className="space-y-8">
-        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-[var(--brand-surface-contrast)]">
-              Platform Overview
-            </h1>
-            <p className="text-sm text-[var(--brand-muted)]">
-              Monitor platform-wide statistics and health metrics
-            </p>
-          </div>
-          <Button onClick={handleRefresh}>Refresh</Button>
-        </header>
+        <PageHeader
+          title="Platform Overview"
+          description="Monitor platform-wide statistics and health metrics"
+          action={<Button onClick={handleRefresh}>Refresh</Button>}
+        />
 
         {/* Stats Cards */}
         <section
@@ -207,14 +197,14 @@ export default function SuperuserOverviewPage() {
           aria-label="Subscription and revenue insights"
         >
           {subscriptionBreakdown.length > 0 && (
-            <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
+            <ChartContainer>
               <h2 className="mb-4 text-lg font-semibold text-[var(--brand-surface-contrast)]">
                 Subscription Mix
               </h2>
               <PieChart data={subscriptionBreakdown} title="" size={250} />
-            </div>
+            </ChartContainer>
           )}
-          <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
+          <ChartContainer>
             <h2 className="mb-4 text-lg font-semibold text-[var(--brand-surface-contrast)]">
               Revenue Snapshot
             </h2>
@@ -236,20 +226,20 @@ export default function SuperuserOverviewPage() {
                 </div>
               )}
             </div>
-          </div>
+          </ChartContainer>
         </section>
 
         {/* Role Distribution and Health Metrics */}
         <section className="grid gap-6 lg:grid-cols-2" aria-label="Platform activity and growth">
           {roleDistribution.length > 0 && (
-            <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
+            <ChartContainer>
               <h2 className="mb-4 text-lg font-semibold text-[var(--brand-surface-contrast)]">
                 Role Distribution
               </h2>
               <BarChart data={roleDistribution} title="" height={250} />
-            </div>
+            </ChartContainer>
           )}
-          <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
+          <ChartContainer>
             <h2 className="mb-4 text-lg font-semibold text-[var(--brand-surface-contrast)]">
               Platform Health
             </h2>
@@ -277,7 +267,7 @@ export default function SuperuserOverviewPage() {
                 </p>
               </div>
             </div>
-          </div>
+          </ChartContainer>
         </section>
 
         {/* Recent Schools */}
@@ -285,12 +275,14 @@ export default function SuperuserOverviewPage() {
           <h2 className="mb-4 text-lg font-semibold text-[var(--brand-surface-contrast)]">
             Recently provisioned schools
           </h2>
-          <DataTable
+          <Card padding="md">
+            <DataTable
             data={overview.recentSchools}
             columns={recentColumns}
             pagination={{ pageSize: 10, showSizeSelector: true }}
             emptyMessage="No schools have been provisioned yet."
           />
+          </Card>
         </section>
       </div>
     </RouteMeta>

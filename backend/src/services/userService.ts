@@ -1,4 +1,6 @@
-import argon2 from 'argon2';
+import { hashPassword } from '../lib/passwordHashing';
+import { validatePassword } from '../lib/passwordPolicy';
+import { AuthError, AuthErrorCode } from '../lib/authErrorCodes';
 import crypto from 'crypto';
 import { Pool } from 'pg';
 import { getPool } from '../db/connection';
@@ -177,6 +179,7 @@ export interface CreateUserInput {
   fullName?: string;
   phone?: string | null;
   schoolId?: string | null;
+  departmentId?: string | null;
   createdBy?: string | null;
   auditLogEnabled?: boolean;
   isTeachingStaff?: boolean;
@@ -203,7 +206,20 @@ export interface CreatedUser {
  */
 export async function createUser(pool: Pool, input: CreateUserInput): Promise<CreatedUser> {
   const normalizedEmail = input.email.toLowerCase();
-  const passwordHash = await argon2.hash(input.password);
+
+  // Validate password policy
+  const passwordValidation = validatePassword(input.password);
+  if (!passwordValidation.isValid) {
+    throw new AuthError(
+      `Password does not meet requirements: ${passwordValidation.errors.join('; ')}`,
+      AuthErrorCode.PASSWORD_POLICY_VIOLATION,
+      'password',
+      422
+    );
+  }
+
+  // Use secure password hashing
+  const passwordHash = await hashPassword(input.password);
   const userId = crypto.randomUUID();
 
   // Determine status - default to 'pending' if not provided
@@ -247,6 +263,10 @@ export async function createUser(pool: Pool, input: CreateUserInput): Promise<Cr
     fields.push('school_id');
     values.push(input.schoolId);
   }
+  if (input.departmentId !== undefined) {
+    fields.push('department_id');
+    values.push(input.departmentId);
+  }
   if (input.createdBy !== undefined) {
     fields.push('created_by');
     values.push(input.createdBy);
@@ -276,6 +296,100 @@ export async function createUser(pool: Pool, input: CreateUserInput): Promise<Cr
   );
 
   return result.rows[0] as CreatedUser;
+}
+
+export async function updateUserPassword(
+  tenantId: string,
+  userId: string,
+  newPassword: string,
+  actorId: string
+): Promise<TenantUser | null> {
+  const pool = getPool();
+  const client = await pool.connect();
+  try {
+    // Verify user belongs to tenant
+    const userCheck = await client.query(
+      `
+        SELECT id, email, role
+        FROM shared.users
+        WHERE id = $1 AND tenant_id = $2
+      `,
+      [userId, tenantId]
+    );
+
+    if (userCheck.rowCount === 0) {
+      return null;
+    }
+
+    // Hash the new password
+    // Validate password policy
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+      throw new AuthError(
+        `Password does not meet requirements: ${passwordValidation.errors.join('; ')}`,
+        AuthErrorCode.PASSWORD_POLICY_VIOLATION,
+        'password',
+        422
+      );
+    }
+
+    // Use secure password hashing
+    const passwordHash = await hashPassword(newPassword);
+
+    // Update password
+    await client.query(
+      `
+        UPDATE shared.users
+        SET password_hash = $1
+        WHERE id = $2 AND tenant_id = $3
+      `,
+      [passwordHash, userId, tenantId]
+    );
+
+    // Get updated user
+    const result = await client.query(
+      `
+        SELECT id, email, role, is_verified, status, created_at
+        FROM shared.users
+        WHERE id = $1 AND tenant_id = $2
+      `,
+      [userId, tenantId]
+    );
+
+    const user = result.rows[0];
+
+    const rolesResult = await client.query(
+      `
+        SELECT 
+          role_name,
+          metadata
+        FROM shared.user_roles
+        WHERE user_id = $1
+      `,
+      [userId]
+    );
+
+    console.info('[audit] user_password_updated', {
+      tenantId,
+      userId,
+      actorId
+    });
+
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      is_verified: user.is_verified,
+      status: user.status,
+      created_at: user.created_at,
+      additional_roles: rolesResult.rows.map((row) => ({
+        role: row.role_name,
+        metadata: row.metadata || {}
+      }))
+    };
+  } finally {
+    client.release();
+  }
 }
 
 export async function updateUserStatus(

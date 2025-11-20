@@ -12,15 +12,15 @@
   --brand-surface-contrast: #1a1a1a;
 
   --brand-text-primary: #0f172a;
-  --brand-text-secondary: #475569;
+  --brand-text-secondary: #334155; /* Improved contrast from #475569 */
   --brand-muted: #64748b;
 
   --brand-border: #e2e8f0;
   --brand-border-strong: #cbd5e1;
 
-  --brand-primary: #234e70;
-  --brand-primary-hover: #1a3d57;
-  --brand-primary-light: #e8f0f5;
+  --brand-primary: #1e40af; /* Improved contrast from #234e70 */
+  --brand-primary-hover: #1e3a8a;
+  --brand-primary-light: #dbeafe;
   --brand-primary-contrast: #ffffff;
 
   --brand-accent: #1abc9c;
@@ -67,17 +67,17 @@
   --brand-surface-tertiary: #334155;
   --brand-surface-contrast: #f8fafc;
 
-  --brand-text-primary: #f1f5f9;
+  --brand-text-primary: #f8fafc; /* Improved contrast from #f1f5f9 */
   --brand-text-secondary: #e2e8f0;
   --brand-muted: #cbd5e1;
 
   --brand-border: #475569;
   --brand-border-strong: #64748b;
 
-  --brand-primary: #3b82f6;
-  --brand-primary-hover: #60a5fa;
+  --brand-primary: #60a5fa; /* Improved contrast from #3b82f6 */
+  --brand-primary-hover: #93c5fd;
   --brand-primary-light: #1e3a5f;
-  --brand-primary-contrast: #ffffff;
+  --brand-primary-contrast: #0f172a; /* Better contrast on light backgrounds */
 
   --brand-accent: #1abc9c;
   --brand-accent-hover: #20d9b8;

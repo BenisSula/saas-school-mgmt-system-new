@@ -4,7 +4,8 @@ import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton';
 import { StatusBanner } from '../../components/ui/StatusBanner';
 import { BarChart, type BarChartData } from '../../components/charts/BarChart';
 import { PieChart, type PieChartData } from '../../components/charts/PieChart';
-import { StatCard } from '../../components/charts/StatCard';
+import { StatCard, ChartContainer } from '../../components/charts';
+import { Card } from '../../components/ui/Card';
 import { DataTable, type DataTableColumn } from '../../components/tables/DataTable';
 import { useHODDashboard } from '../../hooks/queries/useDashboardQueries';
 import { Users, GraduationCap, BookOpen, TrendingUp } from 'lucide-react';
@@ -158,19 +159,19 @@ export default function HODDashboardPage() {
         {/* Charts */}
         <div className="grid gap-6 lg:grid-cols-2">
           {teacherDistribution.length > 0 && (
-            <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
+            <ChartContainer>
               <BarChart data={teacherDistribution} title="Teachers by Subject Count" height={250} />
-            </div>
+            </ChartContainer>
           )}
           {subjectCoverage.length > 0 && (
-            <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
+            <ChartContainer>
               <PieChart data={subjectCoverage} title="Subject Coverage" size={250} />
-            </div>
+            </ChartContainer>
           )}
         </div>
 
         {/* Department Teachers */}
-        <section className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
+        <Card padding="md">
           <header className="mb-4">
             <h2 className="text-lg font-semibold text-[var(--brand-surface-contrast)]">
               Department Teachers
@@ -185,7 +186,7 @@ export default function HODDashboardPage() {
             pagination={{ pageSize: 10, showSizeSelector: true }}
             emptyMessage="No teachers found in this department."
           />
-        </section>
+        </Card>
       </div>
     </RouteMeta>
   );
