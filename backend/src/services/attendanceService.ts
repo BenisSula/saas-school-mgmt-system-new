@@ -1,6 +1,7 @@
 import type { PoolClient } from 'pg';
 import { assertValidSchemaName } from '../db/tenantManager';
 import { checkTeacherAssignment } from '../middleware/verifyTeacherAssignment';
+import { createAuditLog } from './audit/enhancedAuditService';
 
 export interface AttendanceMark {
   studentId: string;
@@ -91,6 +92,32 @@ export async function markAttendance(
       record.date,
       JSON.stringify(record.metadata ?? {})
     ]);
+  }
+
+  // Create audit log for attendance marking
+  if (actorId && records.length > 0) {
+    const firstRecord = records[0];
+    try {
+      await createAuditLog(
+        client,
+        {
+          tenantId: undefined, // Will be set by tenant context
+          userId: actorId,
+          action: 'ATTENDANCE_MARKED',
+          resourceType: 'attendance',
+          resourceId: undefined,
+          details: {
+            classId: firstRecord.classId,
+            date: firstRecord.date,
+            studentCount: records.length,
+            attendanceRecordsCount: records.length
+          },
+          severity: 'info'
+        }
+      );
+    } catch (auditError) {
+      console.error('[attendanceService] Failed to create audit log for attendance marking:', auditError);
+    }
   }
 
   console.info('[audit] attendance_mark', {

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import authenticate from '../middleware/authenticate';
 import tenantResolver from '../middleware/tenantResolver';
 import ensureTenantContext from '../middleware/ensureTenantContext';
-import { requirePermission } from '../middleware/rbac';
+import { requireAnyPermission, requirePermission } from '../middleware/rbac';
 import { validateInput } from '../middleware/validateInput';
 import { createPaginatedResponse } from '../middleware/pagination';
 import { studentSchema } from '../validators/studentValidator';
@@ -27,7 +27,7 @@ const listStudentsQuerySchema = z.object({
   page: z.string().optional()
 });
 
-router.get('/', requirePermission('users:manage'), validateInput(listStudentsQuerySchema, 'query'), async (req, res) => {
+router.get('/', requireAnyPermission('users:manage', 'students:view_own_class'), validateInput(listStudentsQuerySchema, 'query'), async (req, res) => {
   const { classId } = req.query;
   const pagination = req.pagination!;
   
@@ -64,7 +64,7 @@ router.get('/:id', requirePermission('users:manage'), async (req, res) => {
 
 router.post('/', requirePermission('users:manage'), validateInput(studentSchema, 'body'), async (req, res, next) => {
   try {
-    const student = await createStudent(req.tenantClient!, req.tenant!.schema, req.body);
+    const student = await createStudent(req.tenantClient!, req.tenant!.schema, req.body, req.user?.id, req.tenant!.id);
     res.status(201).json(student);
   } catch (error) {
     next(error);

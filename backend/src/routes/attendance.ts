@@ -3,7 +3,7 @@ import authenticate from '../middleware/authenticate';
 import tenantResolver from '../middleware/tenantResolver';
 import ensureTenantContext from '../middleware/ensureTenantContext';
 import verifyTeacherAssignment from '../middleware/verifyTeacherAssignment';
-import { requirePermission, requireSelfOrPermission } from '../middleware/rbac';
+import { requireAnyPermission, requireSelfOrPermission } from '../middleware/rbac';
 import {
   AttendanceMark,
   getAttendanceSummary,
@@ -28,7 +28,7 @@ const extractClassIdForVerification = (req: Request, res: Response, next: NextFu
 
 router.post(
   '/mark',
-  requirePermission('attendance:manage'),
+  requireAnyPermission('attendance:manage', 'attendance:mark'),
   extractClassIdForVerification,
   verifyTeacherAssignment({ classIdParam: '_classIdForVerification', allowAdmins: true }),
   async (req, res, next) => {

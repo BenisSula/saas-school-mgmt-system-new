@@ -1,5 +1,6 @@
 import type { PoolClient } from 'pg';
 import { registerUser, type UserRegistrationInput } from './userRegistrationService';
+import { createAuditLog } from './audit/enhancedAuditService';
 import { Role } from '../config/permissions';
 
 export interface AdminCreateUserInput {
@@ -87,6 +88,30 @@ export async function adminCreateUser(
 
     if (!result.profileId) {
       throw new Error('Failed to create profile record');
+    }
+
+    // Create audit log for teacher creation
+    if (input.role === 'teacher') {
+      try {
+        await createAuditLog(
+          tenantClient,
+          {
+            tenantId: tenantId,
+            userId: actorId,
+            action: 'TEACHER_CREATED',
+            resourceType: 'teacher',
+            resourceId: result.userId,
+            details: {
+              teacherEmail: result.email,
+              teacherId: result.profileId,
+              assignedClasses: input.subjects || []
+            },
+            severity: 'info'
+          }
+        );
+      } catch (auditError) {
+        console.error('[adminUserService] Failed to create audit log for teacher creation:', auditError);
+      }
     }
 
     return {

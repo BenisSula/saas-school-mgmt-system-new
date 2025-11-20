@@ -72,7 +72,9 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'department-analytics',
     'reports:view',
     'performance:charts',
-    'messages:send'
+    'messages:send',
+    'users:manage',
+    'teachers:manage'
   ],
   admin: [
     'dashboard:view',

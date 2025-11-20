@@ -104,6 +104,163 @@ export async function listTenantUsers(
   }));
 }
 
+/**
+ * Assign an additional role to a user (e.g., 'hod' to a teacher).
+ * Maintains backward compatibility if additional_roles table doesn't exist.
+ */
+export async function assignAdditionalRole(
+  userId: string,
+  role: string,
+  grantedBy: string,
+  tenantId: string
+): Promise<void> {
+  const pool = getPool();
+  const client = await pool.connect();
+  try {
+    // Check if additional_roles table exists
+    const tableCheck = await client.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'shared' 
+        AND table_name = 'additional_roles'
+      )
+    `);
+
+    const tableExists = tableCheck.rows[0]?.exists ?? false;
+
+    if (tableExists) {
+      // Insert or update additional role
+      await client.query(
+        `
+          INSERT INTO shared.additional_roles (user_id, role, granted_by, tenant_id)
+          VALUES ($1, $2, $3, $4)
+          ON CONFLICT (user_id, role, tenant_id)
+          DO UPDATE SET granted_by = EXCLUDED.granted_by, granted_at = NOW()
+        `,
+        [userId, role, grantedBy, tenantId]
+      );
+    } else {
+      // Fallback: log warning for legacy support
+      console.warn('[userService] additional_roles table does not exist, falling back to legacy role update');
+    }
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Remove an additional role from a user.
+ * Maintains backward compatibility if additional_roles table doesn't exist.
+ */
+export async function removeAdditionalRole(
+  userId: string,
+  role: string,
+  tenantId: string
+): Promise<void> {
+  const pool = getPool();
+  const client = await pool.connect();
+  try {
+    // Check if additional_roles table exists
+    const tableCheck = await client.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'shared' 
+        AND table_name = 'additional_roles'
+      )
+    `);
+
+    const tableExists = tableCheck.rows[0]?.exists ?? false;
+
+    if (tableExists) {
+      // Delete additional role
+      await client.query(
+        `
+          DELETE FROM shared.additional_roles
+          WHERE user_id = $1 AND role = $2 AND tenant_id = $3
+        `,
+        [userId, role, tenantId]
+      );
+    } else {
+      // Fallback: log warning for legacy support
+      console.warn('[userService] additional_roles table does not exist, skipping role removal');
+    }
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Get user with additional roles populated.
+ * Returns user object with additional_roles array.
+ */
+export async function getUserWithAdditionalRoles(
+  userId: string,
+  tenantId: string
+): Promise<TenantUser & { additional_roles?: Array<{ role: string; granted_at: string; granted_by?: string }> }> {
+  const pool = getPool();
+  const client = await pool.connect();
+  try {
+    // Get user
+    const userResult = await client.query(
+      `
+        SELECT id, email, role, is_verified, status, created_at
+        FROM shared.users
+        WHERE id = $1 AND tenant_id = $2
+      `,
+      [userId, tenantId]
+    );
+
+    if (userResult.rowCount === 0) {
+      throw new Error('User not found');
+    }
+
+    const user = userResult.rows[0];
+
+    // Check if additional_roles table exists
+    const tableCheck = await client.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'shared' 
+        AND table_name = 'additional_roles'
+      )
+    `);
+
+    const tableExists = tableCheck.rows[0]?.exists ?? false;
+
+    let additionalRoles: Array<{ role: string; granted_at: string; granted_by?: string }> = [];
+
+    if (tableExists) {
+      // Get additional roles
+      const rolesResult = await client.query(
+        `
+          SELECT role, granted_at, granted_by
+          FROM shared.additional_roles
+          WHERE user_id = $1 AND tenant_id = $2
+        `,
+        [userId, tenantId]
+      );
+
+      additionalRoles = rolesResult.rows.map((row) => ({
+        role: row.role,
+        granted_at: row.granted_at.toISOString(),
+        granted_by: row.granted_by ?? undefined
+      }));
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      is_verified: user.is_verified,
+      status: user.status,
+      created_at: user.created_at,
+      additional_roles: additionalRoles
+    };
+  } finally {
+    client.release();
+  }
+}
+
 export async function updateTenantUserRole(
   tenantId: string,
   userId: string,
@@ -113,6 +270,32 @@ export async function updateTenantUserRole(
   const pool = getPool();
   const client = await pool.connect();
   try {
+    // If assigning HOD role, use additional_roles table instead of direct role update
+    if (role === 'hod') {
+      // Verify user's current role is 'teacher' (HODs must be teachers)
+      const currentUserResult = await client.query(
+        `SELECT role FROM shared.users WHERE id = $1 AND tenant_id = $2`,
+        [userId, tenantId]
+      );
+
+      if (currentUserResult.rowCount === 0) {
+        return null;
+      }
+
+      const currentRole = currentUserResult.rows[0].role;
+      if (currentRole !== 'teacher') {
+        throw new Error('HOD role can only be assigned to teachers');
+      }
+
+      // Assign HOD as additional role, keep role = 'teacher'
+      await assignAdditionalRole(userId, 'hod', actorId, tenantId);
+
+      // Return user with additional roles
+      return await getUserWithAdditionalRoles(userId, tenantId);
+    }
+
+    // DEPRECATED: Direct role update for non-HOD roles
+    // TODO: Consider migrating all role updates to use additional_roles in future
     const updateResult = await client.query(
       `
         UPDATE shared.users

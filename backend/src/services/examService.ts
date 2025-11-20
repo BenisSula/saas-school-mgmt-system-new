@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { PoolClient } from 'pg';
 import PDFDocument from 'pdfkit';
 import { checkTeacherAssignment } from '../middleware/verifyTeacherAssignment';
+import { createAuditLog } from './audit/enhancedAuditService';
 
 export interface ExamInput {
   name: string;
@@ -209,7 +210,8 @@ export async function bulkUpsertGrades(
   schema: string,
   examId: string,
   entries: GradeEntryInput[],
-  actorId?: string
+  actorId?: string,
+  tenantId?: string
 ) {
   // Service-level verification: if actor is a teacher, verify assignment to class
   // This provides defense-in-depth even if route-level checks are bypassed
@@ -255,6 +257,31 @@ export async function bulkUpsertGrades(
       ]
     );
     upserted.push(result.rows[0]);
+  }
+
+  // Create audit log for grade entry
+  if (actorId && entries.length > 0) {
+    const firstEntry = entries[0];
+    try {
+      await createAuditLog(
+        client,
+        {
+          tenantId: tenantId || undefined,
+          userId: actorId,
+          action: 'GRADES_ENTERED',
+          resourceType: 'grades',
+          resourceId: examId,
+          details: {
+            examId: examId,
+            classId: firstEntry.classId,
+            gradeCount: entries.length
+          },
+          severity: 'info'
+        }
+      );
+    } catch (auditError) {
+      console.error('[examService] Failed to create audit log for grade entry:', auditError);
+    }
   }
 
   console.info('[audit] grades_saved', {

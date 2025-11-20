@@ -3,7 +3,7 @@ import authenticate from '../middleware/authenticate';
 import tenantResolver from '../middleware/tenantResolver';
 import ensureTenantContext from '../middleware/ensureTenantContext';
 import verifyTeacherAssignment from '../middleware/verifyTeacherAssignment';
-import { requirePermission } from '../middleware/rbac';
+import { requireAnyPermission } from '../middleware/rbac';
 import { gradeBulkSchema } from '../validators/examValidator';
 import { bulkUpsertGrades } from '../services/examService';
 
@@ -12,8 +12,7 @@ const router = Router();
 router.use(
   authenticate,
   tenantResolver(),
-  ensureTenantContext(),
-  requirePermission('grades:manage')
+  ensureTenantContext()
 );
 
 // Middleware to extract classId from request body for teacher assignment verification
@@ -28,6 +27,7 @@ const extractClassIdForVerification = (req: Request, res: Response, next: NextFu
 
 router.post(
   '/bulk',
+  requireAnyPermission('grades:manage', 'grades:enter'),
   extractClassIdForVerification,
   verifyTeacherAssignment({ classIdParam: '_classIdForVerification', allowAdmins: true }),
   async (req, res, next) => {
@@ -42,7 +42,8 @@ router.post(
         req.tenant!.schema,
         parsed.data.examId,
         parsed.data.entries,
-        req.user?.id
+        req.user?.id,
+        req.tenant!.id
       );
       res.status(200).json({ saved: grades?.length ?? 0 });
     } catch (error) {

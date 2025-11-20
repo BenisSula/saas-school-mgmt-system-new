@@ -142,6 +142,51 @@ export function requireSelfOrPermission(permission?: Permission, idParam = 'stud
   };
 }
 
-export default requireRole;
+/**
+ * Requires the user to have ANY of the specified permissions.
+ * Allows access if user has at least one of the permissions.
+ */
+export function requireAnyPermission(...permissions: Permission[]) {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const role = req.user?.role;
 
+    if (!role) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    // Check if user has ANY of the specified permissions
+    const hasAnyPermission = permissions.some((permission) => hasPermission(role, permission));
+
+    if (!hasAnyPermission) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    return next();
+  };
+}
+
+/**
+ * Requires the user to have ALL of the specified permissions.
+ * Allows access only if user has all permissions.
+ */
+export function requireAllPermissions(...permissions: Permission[]) {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const role = req.user?.role;
+
+    if (!role) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    // Check if user has ALL of the specified permissions
+    const hasAllPermissions = permissions.every((permission) => hasPermission(role, permission));
+
+    if (!hasAllPermissions) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    return next();
+  };
+}
+
+export default requireRole;
 

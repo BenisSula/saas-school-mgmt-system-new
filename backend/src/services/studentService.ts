@@ -2,6 +2,7 @@ import type { PoolClient } from 'pg';
 import { StudentInput } from '../validators/studentValidator';
 import { getTableName, serializeJsonField } from '../lib/serviceUtils';
 import { resolveClassId, listEntities, getEntityById, deleteEntityById } from '../lib/crudHelpers';
+import { createAuditLog } from './audit/enhancedAuditService';
 
 const table = 'students';
 
@@ -13,7 +14,13 @@ export async function getStudent(client: PoolClient, schema: string, id: string)
   return getEntityById(client, schema, table, id);
 }
 
-export async function createStudent(client: PoolClient, schema: string, payload: StudentInput) {
+export async function createStudent(
+  client: PoolClient,
+  schema: string,
+  payload: StudentInput,
+  actorId?: string,
+  tenantId?: string
+) {
   // Resolve classId to both class_id (name) and class_uuid (UUID)
   const { classIdName, classUuid } = await resolveClassId(client, schema, payload.classId);
 
@@ -34,6 +41,32 @@ export async function createStudent(client: PoolClient, schema: string, payload:
       serializeJsonField(payload.parentContacts ?? [])
     ]
   );
+
+  const studentId = result.rows[0].id;
+
+  // Create audit log for student creation
+  if (actorId && tenantId) {
+    try {
+      await createAuditLog(
+        client,
+        {
+          tenantId: tenantId,
+          userId: actorId,
+          action: 'STUDENT_CREATED',
+          resourceType: 'student',
+          resourceId: studentId,
+          details: {
+            studentEmail: (payload as any).email,
+            classId: classIdName,
+            classUuid: classUuid
+          },
+          severity: 'info'
+        }
+      );
+    } catch (auditError) {
+      console.error('[studentService] Failed to create audit log for student creation:', auditError);
+    }
+  }
 
   return result.rows[0];
 }
