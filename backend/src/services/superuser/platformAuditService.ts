@@ -1,7 +1,16 @@
 import { Pool, PoolClient } from 'pg';
 import { requireSuperuser } from '../../lib/superuserHelpers';
 import { Role } from '../../config/permissions';
-import { createAuditLog, searchAuditLogs, AuditLogFilters, AuditLogEntry } from '../audit/enhancedAuditService';
+import {
+  createAuditLog,
+  searchAuditLogs,
+  AuditLogFilters,
+  AuditLogEntry
+} from '../audit/enhancedAuditService';
+import {
+  normalizeDeviceInfo,
+  type NormalizedDeviceInfo
+} from '../../lib/serializers/deviceInfoSerializer';
 
 /**
  * Log a platform-level audit event
@@ -93,18 +102,18 @@ export async function logLoginAttempt(
     const auditClient = await pool.connect();
     try {
       await logAuditEvent(auditClient, {
-      tenantId: entry.tenantId || null,
-      userId: entry.userId || null,
-      action: 'LOGIN_ATTEMPT_FAILED',
-      resourceType: 'authentication',
-      details: {
-        email: entry.email,
-        failureReason: entry.failureReason || 'Unknown'
-      },
-      ipAddress: entry.ipAddress || null,
-      userAgent: entry.userAgent || null,
-      severity: 'warning',
-      tags: ['security', 'authentication']
+        tenantId: entry.tenantId || null,
+        userId: entry.userId || null,
+        action: 'LOGIN_ATTEMPT_FAILED',
+        resourceType: 'authentication',
+        details: {
+          email: entry.email,
+          failureReason: entry.failureReason || 'Unknown'
+        },
+        ipAddress: entry.ipAddress || null,
+        userAgent: entry.userAgent || null,
+        severity: 'warning',
+        tags: ['security', 'authentication']
       });
     } finally {
       auditClient.release();
@@ -221,7 +230,7 @@ function mapLoginAttemptRow(row: {
 }): LoginAttemptRecord {
   // Normalize device info from userAgent
   const deviceInfo = normalizeDeviceInfo(null, row.user_agent);
-  
+
   return {
     id: row.id,
     email: row.email,
@@ -248,4 +257,3 @@ export interface LoginAttemptRecord {
   failureReason: string | null;
   attemptedAt: Date;
 }
-

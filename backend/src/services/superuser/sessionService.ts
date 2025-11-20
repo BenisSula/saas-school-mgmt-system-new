@@ -2,6 +2,10 @@ import crypto from 'crypto';
 import { Pool } from 'pg';
 import { isSuperuser } from '../../lib/superuserHelpers';
 import { Role } from '../../config/permissions';
+import {
+  normalizeDeviceInfo,
+  type NormalizedDeviceInfo
+} from '../../lib/serializers/deviceInfoSerializer';
 
 export interface CreateSessionInput {
   userId: string;
@@ -78,10 +82,7 @@ export async function createSession(
 /**
  * End a user session (logout)
  */
-export async function endSession(
-  pool: Pool,
-  sessionId: string
-): Promise<void> {
+export async function endSession(pool: Pool, sessionId: string): Promise<void> {
   await pool.query(
     `
       UPDATE shared.user_sessions
@@ -352,10 +353,10 @@ function mapRowToSession(row: {
   updated_at: Date;
 }): UserSession {
   const rawDeviceInfo = (row.device_info as Record<string, unknown>) || {};
-  
+
   // Normalize device info (use existing deviceInfo if available, otherwise parse userAgent)
   const normalizedDeviceInfo = normalizeDeviceInfo(rawDeviceInfo, row.user_agent);
-  
+
   return {
     id: row.id,
     userId: row.user_id,
@@ -372,4 +373,3 @@ function mapRowToSession(row: {
     updatedAt: row.updated_at
   };
 }
-
