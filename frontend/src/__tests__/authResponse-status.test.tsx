@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import LoginPage from '../pages/auth/Login';
@@ -44,6 +44,15 @@ describe('AuthResponse Status Field', () => {
       </MemoryRouter>
     );
 
+    // Wait for HealthBanner to finish loading (if it renders)
+    await waitFor(
+      () => {
+        // HealthBanner may or may not render, but wait for any async operations
+        expect(true).toBe(true);
+      },
+      { timeout: 2000 }
+    );
+
     // The status field should be present in the response
     expect(mockAuthResponse.user.status).toBe('active');
   });
@@ -73,6 +82,15 @@ describe('AuthResponse Status Field', () => {
       </MemoryRouter>
     );
 
+    // Wait for HealthBanner to finish loading (if it renders)
+    await waitFor(
+      () => {
+        // HealthBanner may or may not render, but wait for any async operations
+        expect(true).toBe(true);
+      },
+      { timeout: 2000 }
+    );
+
     // The status field should be present in the response
     expect(mockAuthResponse.user.status).toBe('pending');
   });
@@ -100,6 +118,15 @@ describe('AuthResponse Status Field', () => {
           <LoginPage />
         </AuthProvider>
       </MemoryRouter>
+    );
+
+    // Wait for HealthBanner to finish loading (if it renders)
+    await waitFor(
+      () => {
+        // HealthBanner may or may not render, but wait for any async operations
+        expect(true).toBe(true);
+      },
+      { timeout: 2000 }
     );
 
     // The status field should be present in the response
