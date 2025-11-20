@@ -21,6 +21,7 @@ import {
   listAllPlatformUsers,
   sendNotificationToAdmins
 } from '../services/platformMonitoringService';
+import billingRouter from './superuser/billing';
 
 const router = Router();
 
@@ -179,5 +180,8 @@ router.put('/settings', async (req, res, next) => {
     next(error);
   }
 });
+
+// Billing routes
+router.use('/billing', billingRouter);
 
 export default router;

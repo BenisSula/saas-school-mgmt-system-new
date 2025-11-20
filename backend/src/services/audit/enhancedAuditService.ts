@@ -1,0 +1,419 @@
+import type { PoolClient } from 'pg';
+
+export interface AuditLogFilters {
+  tenantId?: string;
+  userId?: string;
+  action?: string;
+  resourceType?: string;
+  resourceId?: string;
+  severity?: 'info' | 'warning' | 'error' | 'critical';
+  tags?: string[];
+  startDate?: Date;
+  endDate?: Date;
+  limit?: number;
+  offset?: number;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  tenantId?: string;
+  userId?: string;
+  action: string;
+  resourceType?: string;
+  resourceId?: string;
+  details: Record<string, unknown>;
+  ipAddress?: string;
+  userAgent?: string;
+  requestId?: string;
+  severity?: 'info' | 'warning' | 'error' | 'critical';
+  tags?: string[];
+  createdAt: Date;
+}
+
+/**
+ * Create audit log entry
+ */
+export async function createAuditLog(
+  client: PoolClient,
+  entry: Omit<AuditLogEntry, 'id' | 'createdAt'>
+): Promise<void> {
+  await client.query(
+    `
+      INSERT INTO shared.audit_logs (
+        tenant_id, user_id, action, resource_type, resource_id,
+        details, ip_address, user_agent, request_id, severity, tags
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    `,
+    [
+      entry.tenantId || null,
+      entry.userId || null,
+      entry.action,
+      entry.resourceType || null,
+      entry.resourceId || null,
+      JSON.stringify(entry.details),
+      entry.ipAddress || null,
+      entry.userAgent || null,
+      entry.requestId || null,
+      entry.severity || 'info',
+      entry.tags || []
+    ]
+  );
+}
+
+/**
+ * Search audit logs with filters
+ */
+export async function searchAuditLogs(
+  client: PoolClient,
+  filters: AuditLogFilters
+): Promise<{ logs: AuditLogEntry[]; total: number }> {
+  const conditions: string[] = [];
+  const values: unknown[] = [];
+  let paramIndex = 1;
+
+  if (filters.tenantId) {
+    conditions.push(`tenant_id = $${paramIndex++}`);
+    values.push(filters.tenantId);
+  }
+
+  if (filters.userId) {
+    conditions.push(`user_id = $${paramIndex++}`);
+    values.push(filters.userId);
+  }
+
+  if (filters.action) {
+    conditions.push(`action LIKE $${paramIndex++}`);
+    values.push(`%${filters.action}%`);
+  }
+
+  if (filters.resourceType) {
+    conditions.push(`resource_type = $${paramIndex++}`);
+    values.push(filters.resourceType);
+  }
+
+  if (filters.resourceId) {
+    conditions.push(`resource_id = $${paramIndex++}`);
+    values.push(filters.resourceId);
+  }
+
+  if (filters.severity) {
+    conditions.push(`severity = $${paramIndex++}`);
+    values.push(filters.severity);
+  }
+
+  if (filters.tags && filters.tags.length > 0) {
+    conditions.push(`tags && $${paramIndex++}`);
+    values.push(filters.tags);
+  }
+
+  if (filters.startDate) {
+    conditions.push(`created_at >= $${paramIndex++}`);
+    values.push(filters.startDate);
+  }
+
+  if (filters.endDate) {
+    conditions.push(`created_at <= $${paramIndex++}`);
+    values.push(filters.endDate);
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  // Get total count
+  const countResult = await client.query(
+    `SELECT COUNT(*) as total FROM shared.audit_logs ${whereClause}`,
+    values
+  );
+  const total = parseInt(countResult.rows[0].total, 10);
+
+  // Get logs
+  const limit = filters.limit || 50;
+  const offset = filters.offset || 0;
+  values.push(limit, offset);
+
+  const logsResult = await client.query(
+    `
+      SELECT * FROM shared.audit_logs
+      ${whereClause}
+      ORDER BY created_at DESC
+      LIMIT $${paramIndex++} OFFSET $${paramIndex}
+    `,
+    values
+  );
+
+  const logs: AuditLogEntry[] = logsResult.rows.map(row => ({
+    id: row.id,
+    tenantId: row.tenant_id,
+    userId: row.user_id,
+    action: row.action,
+    resourceType: row.resource_type,
+    resourceId: row.resource_id,
+    details: row.details,
+    ipAddress: row.ip_address,
+    userAgent: row.user_agent,
+    requestId: row.request_id,
+    severity: row.severity,
+    tags: row.tags,
+    createdAt: row.created_at
+  }));
+
+  return { logs, total };
+}
+
+/**
+ * Export audit logs to CSV/JSON
+ */
+export async function exportAuditLogs(
+  client: PoolClient,
+  filters: AuditLogFilters,
+  format: 'csv' | 'json' = 'json'
+): Promise<string> {
+  const { logs } = await searchAuditLogs(client, { ...filters, limit: 10000 });
+
+  if (format === 'csv') {
+    const headers = ['ID', 'Tenant ID', 'User ID', 'Action', 'Resource Type', 'Resource ID', 'Severity', 'IP Address', 'Created At'];
+    const rows = logs.map(log => [
+      log.id,
+      log.tenantId || '',
+      log.userId || '',
+      log.action,
+      log.resourceType || '',
+      log.resourceId || '',
+      log.severity || '',
+      log.ipAddress || '',
+      log.createdAt.toISOString()
+    ]);
+
+    return [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+  }
+
+  return JSON.stringify(logs, null, 2);
+}
+
+/**
+ * Apply data retention policies
+ */
+export async function applyRetentionPolicies(
+  client: PoolClient
+): Promise<number> {
+  const policiesResult = await client.query(
+    `
+      SELECT * FROM shared.audit_retention_policies
+      WHERE is_active = TRUE
+    `
+  );
+
+  let archivedCount = 0;
+
+  for (const policy of policiesResult.rows) {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - policy.retention_days);
+
+    const conditions: string[] = ['created_at < $1'];
+    const values: unknown[] = [cutoffDate];
+    let paramIndex = 2;
+
+    if (policy.tenant_id) {
+      conditions.push(`tenant_id = $${paramIndex++}`);
+      values.push(policy.tenant_id);
+    }
+
+    if (policy.resource_type) {
+      conditions.push(`resource_type = $${paramIndex++}`);
+      values.push(policy.resource_type);
+    }
+
+    if (policy.action_pattern) {
+      conditions.push(`action LIKE $${paramIndex++}`);
+      values.push(policy.action_pattern.replace('*', '%'));
+    }
+
+    if (policy.archive_before_delete) {
+      // Archive logs
+      await client.query(
+        `
+          INSERT INTO shared.audit_logs_archive
+          SELECT *, NOW() as archived_at
+          FROM shared.audit_logs
+          WHERE ${conditions.join(' AND ')}
+        `,
+        values
+      );
+    }
+
+    // Delete logs
+    const deleteResult = await client.query(
+      `
+        DELETE FROM shared.audit_logs
+        WHERE ${conditions.join(' AND ')}
+      `,
+      values
+    );
+
+    archivedCount += deleteResult.rowCount || 0;
+  }
+
+  return archivedCount;
+}
+
+/**
+ * Create GDPR export request
+ */
+export async function createGdprExportRequest(
+  client: PoolClient,
+  tenantId: string,
+  userId: string,
+  requestType: 'export' | 'erasure' | 'rectification',
+  requestedBy: string
+): Promise<unknown> {
+  const result = await client.query(
+    `
+      INSERT INTO shared.gdpr_export_requests (
+        tenant_id, user_id, request_type, status, requested_by
+      )
+      VALUES ($1, $2, $3, 'pending', $4)
+      RETURNING *
+    `,
+    [tenantId, userId, requestType, requestedBy]
+  );
+
+  return result.rows[0];
+}
+
+/**
+ * Process GDPR data export
+ */
+export async function processGdprExport(
+  client: PoolClient,
+  requestId: string
+): Promise<{ exportUrl: string; expiresAt: Date }> {
+  const requestResult = await client.query(
+    'SELECT * FROM shared.gdpr_export_requests WHERE id = $1',
+    [requestId]
+  );
+
+  if (requestResult.rowCount === 0) {
+    throw new Error('GDPR export request not found');
+  }
+
+  const request = requestResult.rows[0];
+
+  // Collect all user data
+  const userData = {
+    user: await client.query('SELECT * FROM shared.users WHERE id = $1', [request.user_id]),
+    auditLogs: await client.query(
+      'SELECT * FROM shared.audit_logs WHERE user_id = $1',
+      [request.user_id]
+    ),
+    sessions: await client.query(
+      'SELECT id, ip_address, user_agent, created_at, last_activity_at FROM shared.sessions WHERE user_id = $1',
+      [request.user_id]
+    ),
+    mfaDevices: await client.query(
+      'SELECT id, type, name, created_at FROM shared.mfa_devices WHERE user_id = $1',
+      [request.user_id]
+    )
+  };
+
+  // TODO: Upload to S3 or similar storage
+  const exportUrl = `/api/gdpr/exports/${requestId}/download`;
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 30); // Expires in 30 days
+
+  await client.query(
+    `
+      UPDATE shared.gdpr_export_requests
+      SET status = 'completed',
+          export_url = $1,
+          export_expires_at = $2,
+          completed_at = NOW()
+      WHERE id = $3
+    `,
+    [exportUrl, expiresAt, requestId]
+  );
+
+  return { exportUrl, expiresAt };
+}
+
+/**
+ * Process GDPR data erasure
+ */
+export async function processGdprErasure(
+  client: PoolClient,
+  requestId: string,
+  executedBy: string
+): Promise<number> {
+  const requestResult = await client.query(
+    'SELECT * FROM shared.gdpr_export_requests WHERE id = $1',
+    [requestId]
+  );
+
+  if (requestResult.rowCount === 0) {
+    throw new Error('GDPR erasure request not found');
+  }
+
+  const request = requestResult.rows[0];
+  let totalDeleted = 0;
+
+  await client.query('BEGIN');
+  try {
+    // Anonymize or delete user data
+    // Note: In production, you may want to anonymize instead of delete for compliance
+
+    // Delete sessions
+    const sessionsResult = await client.query(
+      'DELETE FROM shared.sessions WHERE user_id = $1',
+      [request.user_id]
+    );
+    totalDeleted += sessionsResult.rowCount || 0;
+
+    // Delete MFA devices
+    const mfaResult = await client.query(
+      'DELETE FROM shared.mfa_devices WHERE user_id = $1',
+      [request.user_id]
+    );
+    totalDeleted += mfaResult.rowCount || 0;
+
+    // Anonymize audit logs
+    const auditResult = await client.query(
+      `
+        UPDATE shared.audit_logs
+        SET user_id = NULL, details = jsonb_set(details, '{user}', '"ANONYMIZED"')
+        WHERE user_id = $1
+      `,
+      [request.user_id]
+    );
+    totalDeleted += auditResult.rowCount || 0;
+
+    // Log erasure
+    await client.query(
+      `
+        INSERT INTO shared.gdpr_erasure_log (
+          tenant_id, user_id, request_id, data_type, records_deleted, executed_by
+        )
+        VALUES ($1, $2, $3, 'user_data', $4, $5)
+      `,
+      [request.tenant_id, request.user_id, requestId, totalDeleted, executedBy]
+    );
+
+    // Update request status
+    await client.query(
+      `
+        UPDATE shared.gdpr_export_requests
+        SET status = 'completed', completed_at = NOW()
+        WHERE id = $1
+      `,
+      [requestId]
+    );
+
+    await client.query('COMMIT');
+    return totalDeleted;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  }
+}
+
