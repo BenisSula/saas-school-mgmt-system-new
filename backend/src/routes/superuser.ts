@@ -22,6 +22,8 @@ import {
   sendNotificationToAdmins
 } from '../services/platformMonitoringService';
 import billingRouter from './superuser/billing';
+import onboardingRouter from './superuser/onboarding';
+import featureFlagsRouter from './superuser/featureFlags';
 
 const router = Router();
 
@@ -183,5 +185,11 @@ router.put('/settings', async (req, res, next) => {
 
 // Billing routes
 router.use('/billing', billingRouter);
+
+// Onboarding routes
+router.use('/onboarding', onboardingRouter);
+
+// Feature flags routes
+router.use('/feature-flags', featureFlagsRouter);
 
 export default router;

@@ -24,6 +24,7 @@ import studentPortalRouter from './routes/studentPortal';
 import auditRouter from './routes/audit';
 import searchRouter from './routes/search';
 import notificationsRouter from './routes/notifications';
+import emailNotificationsRouter from './routes/notifications/email';
 import { errorHandler } from './middleware/errorHandler';
 import authenticate from './middleware/authenticate';
 import { requirePermission } from './middleware/rbac';
@@ -124,6 +125,7 @@ app.use('/student', authenticate, tenantResolver(), enhancedTenantIsolation, par
 app.use('/audit', authenticate, tenantResolver({ optional: true }), parsePagination, cachePolicies.sensitive, auditRouter);
 app.use('/search', authenticate, tenantResolver(), enhancedTenantIsolation, parsePagination, cachePolicies.user, searchRouter);
 app.use('/notifications', authenticate, tenantResolver(), enhancedTenantIsolation, parsePagination, cachePolicies.user, notificationsRouter);
+app.use('/api/notifications/email', emailNotificationsRouter);
 
 app.get(
   '/admin/overview',

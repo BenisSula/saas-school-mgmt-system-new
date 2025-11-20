@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import authenticate from '../../middleware/authenticate';
 import { requirePermission } from '../../middleware/rbac';
-import { getPool } from '../../db/pool';
+import { getPool } from '../../db/connection';
 import {
   createSubscription,
   updateSubscription,
