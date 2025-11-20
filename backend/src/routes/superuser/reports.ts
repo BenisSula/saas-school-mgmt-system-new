@@ -1,0 +1,718 @@
+import { Router } from 'express';
+import authenticate from '../../middleware/authenticate';
+import { requirePermission } from '../../middleware/rbac';
+import tenantResolver from '../../middleware/tenantResolver';
+import { getPool } from '../../db/connection';
+import {
+  getReportDefinition,
+  executeReport,
+  getHistoricalTrend,
+  compareWithHistory
+} from '../../services/reports/reportGenerationService';
+import {
+  createScheduledReport,
+  getScheduledReports,
+  updateScheduledReport,
+  deleteScheduledReport,
+  getScheduledReportsReadyToRun
+} from '../../services/reports/reportSchedulingService';
+import {
+  generateExport,
+  sendReportViaEmail
+} from '../../services/reports/reportExportService';
+import {
+  createCustomReport,
+  executeCustomReport,
+  getCustomReports,
+  updateCustomReport,
+  deleteCustomReport
+} from '../../services/reports/customReportBuilderService';
+import { z } from 'zod';
+
+const router = Router();
+
+router.use(authenticate, tenantResolver({ optional: true }));
+
+// Report Definitions
+const createReportDefinitionSchema = z.object({
+  tenantId: z.string().uuid().optional(),
+  name: z.string().min(1),
+  description: z.string().optional(),
+  reportType: z.enum(['attendance', 'grades', 'fees', 'users', 'analytics', 'custom']),
+  dataSource: z.string(),
+  queryTemplate: z.string(),
+  parameters: z.record(z.unknown()).optional(),
+  columns: z.array(z.object({
+    name: z.string(),
+    type: z.string(),
+    label: z.string()
+  })).optional(),
+  filters: z.record(z.unknown()).optional(),
+  rolePermissions: z.array(z.string()).optional()
+});
+
+router.post('/definitions', requirePermission('reports:manage'), async (req, res, next) => {
+  try {
+    const parsed = createReportDefinitionSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: parsed.error.message });
+    }
+
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      const result = await client.query(
+        `
+          INSERT INTO shared.report_definitions (
+            tenant_id, name, description, report_type, data_source,
+            query_template, parameters, columns, filters, role_permissions, created_by
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          RETURNING *
+        `,
+        [
+          parsed.data.tenantId || null,
+          parsed.data.name,
+          parsed.data.description || null,
+          parsed.data.reportType,
+          parsed.data.dataSource,
+          parsed.data.queryTemplate,
+          JSON.stringify(parsed.data.parameters || {}),
+          JSON.stringify(parsed.data.columns || []),
+          JSON.stringify(parsed.data.filters || {}),
+          parsed.data.rolePermissions || [],
+          req.user?.id || null
+        ]
+      );
+      res.status(201).json(result.rows[0]);
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/definitions', async (req, res, next) => {
+  try {
+    const tenantId = req.query.tenantId as string | undefined;
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      const conditions: string[] = ['is_active = TRUE'];
+      const values: unknown[] = [];
+      let paramIndex = 1;
+
+      if (tenantId) {
+        conditions.push(`(tenant_id = $${paramIndex++} OR tenant_id IS NULL)`);
+        values.push(tenantId);
+      }
+
+      const result = await client.query(
+        `
+          SELECT * FROM shared.report_definitions
+          WHERE ${conditions.join(' AND ')}
+          ORDER BY created_at DESC
+        `,
+        values
+      );
+      res.json({ reports: result.rows });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/definitions/:id', async (req, res, next) => {
+  try {
+    const tenantId = req.query.tenantId as string | undefined;
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      const report = await getReportDefinition(client, req.params.id, tenantId);
+      if (!report) {
+        return res.status(404).json({ message: 'Report definition not found' });
+      }
+      res.json(report);
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Execute Report
+router.post('/definitions/:id/execute', requirePermission('reports:view'), async (req, res, next) => {
+  try {
+    if (!req.tenant || !req.tenantClient) {
+      return res.status(500).json({ message: 'Tenant context missing' });
+    }
+
+    const schema = z.object({
+      parameters: z.record(z.unknown()).optional()
+    });
+
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: parsed.error.message });
+    }
+
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      const reportDefinition = await getReportDefinition(
+        client,
+        req.params.id,
+        req.tenant.id
+      );
+
+      if (!reportDefinition) {
+        return res.status(404).json({ message: 'Report definition not found' });
+      }
+
+      // Check role permissions
+      if (reportDefinition.rolePermissions.length > 0) {
+        const userRole = req.user?.role || '';
+        if (!reportDefinition.rolePermissions.includes(userRole)) {
+          return res.status(403).json({ message: 'Insufficient permissions' });
+        }
+      }
+
+      const result = await executeReport(
+        req.tenantClient,
+        req.tenant.schema,
+        reportDefinition,
+        parsed.data.parameters,
+        req.user?.id
+      );
+
+      res.json(result);
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Historical Trends
+router.get('/definitions/:id/trends', requirePermission('reports:view'), async (req, res, next) => {
+  try {
+    if (!req.tenant) {
+      return res.status(500).json({ message: 'Tenant context missing' });
+    }
+
+    const days = req.query.days ? parseInt(req.query.days as string, 10) : 30;
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      const trends = await getHistoricalTrend(
+        client,
+        req.tenant.id,
+        req.params.id,
+        days
+      );
+      res.json({ trends });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/definitions/:id/compare', requirePermission('reports:view'), async (req, res, next) => {
+  try {
+    if (!req.tenant || !req.tenantClient) {
+      return res.status(500).json({ message: 'Tenant context missing' });
+    }
+
+    const schema = z.object({
+      parameters: z.record(z.unknown()).optional(),
+      comparisonDays: z.number().int().min(1).max(365).optional()
+    });
+
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: parsed.error.message });
+    }
+
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      const reportDefinition = await getReportDefinition(
+        client,
+        req.params.id,
+        req.tenant.id
+      );
+
+      if (!reportDefinition) {
+        return res.status(404).json({ message: 'Report definition not found' });
+      }
+
+      // Execute current report
+      const currentResult = await executeReport(
+        req.tenantClient,
+        req.tenant.schema,
+        reportDefinition,
+        parsed.data.parameters,
+        req.user?.id
+      );
+
+      // Compare with history
+      const comparison = await compareWithHistory(
+        client,
+        req.tenant.id,
+        req.params.id,
+        currentResult.data,
+        parsed.data.comparisonDays || 7
+      );
+
+      res.json({
+        current: currentResult,
+        comparison
+      });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Scheduled Reports
+router.post('/scheduled', requirePermission('reports:manage'), async (req, res, next) => {
+  try {
+    if (!req.tenant) {
+      return res.status(500).json({ message: 'Tenant context missing' });
+    }
+
+    const schema = z.object({
+      reportDefinitionId: z.string().uuid(),
+      name: z.string().min(1),
+      scheduleType: z.enum(['daily', 'weekly', 'monthly', 'custom']),
+      scheduleConfig: z.object({
+        cron: z.string().optional(),
+        dayOfWeek: z.number().int().min(0).max(6).optional(),
+        dayOfMonth: z.number().int().min(1).max(31).optional(),
+        time: z.string().optional()
+      }),
+      parameters: z.record(z.unknown()).optional(),
+      exportFormat: z.enum(['csv', 'pdf', 'excel', 'json']),
+      recipients: z.array(z.string().email())
+    });
+
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: parsed.error.message });
+    }
+
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      const scheduledReport = await createScheduledReport(client, {
+        tenantId: req.tenant.id,
+        ...parsed.data,
+        createdBy: req.user?.id
+      });
+      res.status(201).json(scheduledReport);
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/scheduled', requirePermission('reports:view'), async (req, res, next) => {
+  try {
+    if (!req.tenant) {
+      return res.status(500).json({ message: 'Tenant context missing' });
+    }
+
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      const scheduledReports = await getScheduledReports(client, req.tenant.id);
+      res.json({ scheduledReports });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch('/scheduled/:id', requirePermission('reports:manage'), async (req, res, next) => {
+  try {
+    if (!req.tenant) {
+      return res.status(500).json({ message: 'Tenant context missing' });
+    }
+
+    const schema = z.object({
+      name: z.string().optional(),
+      scheduleType: z.enum(['daily', 'weekly', 'monthly', 'custom']).optional(),
+      scheduleConfig: z.record(z.unknown()).optional(),
+      parameters: z.record(z.unknown()).optional(),
+      exportFormat: z.enum(['csv', 'pdf', 'excel', 'json']).optional(),
+      recipients: z.array(z.string().email()).optional(),
+      isActive: z.boolean().optional()
+    });
+
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: parsed.error.message });
+    }
+
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      const scheduledReport = await updateScheduledReport(
+        client,
+        req.params.id,
+        parsed.data
+      );
+      res.json(scheduledReport);
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete('/scheduled/:id', requirePermission('reports:manage'), async (req, res, next) => {
+  try {
+    if (!req.tenant) {
+      return res.status(500).json({ message: 'Tenant context missing' });
+    }
+
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      await deleteScheduledReport(client, req.params.id, req.tenant.id);
+      res.status(204).send();
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Process scheduled reports (cron endpoint)
+router.post('/scheduled/process', requirePermission('tenants:manage'), async (req, res, next) => {
+  try {
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      const readyReports = await getScheduledReportsReadyToRun(client, 10);
+      const results = [];
+
+      for (const scheduledReport of readyReports) {
+        try {
+          // Execute report
+          const reportDefinition = await getReportDefinition(
+            client,
+            scheduledReport.report_definition_id,
+            scheduledReport.tenant_id
+          );
+
+          if (!reportDefinition) {
+            continue;
+          }
+
+          // Get tenant schema
+          const tenantResult = await client.query(
+            'SELECT schema_name FROM shared.tenants WHERE id = $1',
+            [scheduledReport.tenant_id]
+          );
+
+          if (tenantResult.rowCount === 0) {
+            continue;
+          }
+
+          const tenantSchema = tenantResult.rows[0].schema_name;
+          const tenantClient = await pool.connect();
+
+          try {
+            await tenantClient.query(`SET search_path TO ${tenantSchema}`);
+
+            const executionResult = await executeReport(
+              tenantClient,
+              tenantSchema,
+              reportDefinition,
+              scheduledReport.parameters || {},
+              scheduledReport.created_by
+            );
+
+            // Generate export and send email
+            await sendReportViaEmail(
+              client,
+              executionResult.executionId,
+              scheduledReport.recipients,
+              scheduledReport.export_format,
+              scheduledReport.tenant_id
+            );
+
+            // Update next run time
+            await updateScheduledReportNextRun(client, scheduledReport.id);
+
+            results.push({ id: scheduledReport.id, status: 'success' });
+          } finally {
+            tenantClient.release();
+          }
+        } catch (error) {
+          results.push({
+            id: scheduledReport.id,
+            status: 'failed',
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+      }
+
+      res.json({ processed: results.length, results });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Custom Reports
+router.post('/custom', requirePermission('reports:manage'), async (req, res, next) => {
+  try {
+    if (!req.tenant || !req.tenantClient) {
+      return res.status(500).json({ message: 'Tenant context missing' });
+    }
+
+    const schema = z.object({
+      name: z.string().min(1),
+      description: z.string().optional(),
+      baseTemplateId: z.string().uuid().optional(),
+      dataSources: z.array(z.string()).min(1),
+      joins: z.array(z.object({
+        type: z.enum(['inner', 'left', 'right', 'full']),
+        table: z.string(),
+        on: z.string()
+      })).optional(),
+      selectedColumns: z.array(z.object({
+        table: z.string(),
+        column: z.string(),
+        alias: z.string().optional(),
+        aggregate: z.enum(['sum', 'avg', 'count', 'min', 'max']).optional()
+      })).min(1),
+      filters: z.array(z.object({
+        column: z.string(),
+        operator: z.enum(['=', '!=', '>', '<', '>=', '<=', 'LIKE', 'IN', 'BETWEEN']),
+        value: z.unknown()
+      })).optional(),
+      groupBy: z.array(z.string()).optional(),
+      orderBy: z.array(z.object({
+        column: z.string(),
+        direction: z.enum(['ASC', 'DESC'])
+      })).optional(),
+      visualizationType: z.enum(['table', 'bar', 'line', 'pie', 'area']).optional(),
+      rolePermissions: z.array(z.string()).optional(),
+      isShared: z.boolean().optional()
+    });
+
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: parsed.error.message });
+    }
+
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      const customReport = await createCustomReport(
+        req.tenantClient,
+        req.tenant.schema,
+        {
+          tenantId: req.tenant.id,
+          ...parsed.data,
+          createdBy: req.user?.id
+        }
+      );
+      res.status(201).json(customReport);
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/custom', requirePermission('reports:view'), async (req, res, next) => {
+  try {
+    if (!req.tenant) {
+      return res.status(500).json({ message: 'Tenant context missing' });
+    }
+
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      const customReports = await getCustomReports(client, req.tenant.id, req.user?.id);
+      res.json({ customReports });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/custom/:id/execute', requirePermission('reports:view'), async (req, res, next) => {
+  try {
+    if (!req.tenant || !req.tenantClient) {
+      return res.status(500).json({ message: 'Tenant context missing' });
+    }
+
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      const data = await executeCustomReport(
+        req.tenantClient,
+        req.tenant.schema,
+        req.params.id
+      );
+      res.json({ data });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch('/custom/:id', requirePermission('reports:manage'), async (req, res, next) => {
+  try {
+    if (!req.tenant || !req.tenantClient) {
+      return res.status(500).json({ message: 'Tenant context missing' });
+    }
+
+    const schema = z.object({
+      name: z.string().optional(),
+      description: z.string().optional(),
+      selectedColumns: z.array(z.unknown()).optional(),
+      filters: z.array(z.unknown()).optional(),
+      groupBy: z.array(z.string()).optional(),
+      orderBy: z.array(z.unknown()).optional(),
+      visualizationType: z.enum(['table', 'bar', 'line', 'pie', 'area']).optional(),
+      isShared: z.boolean().optional()
+    });
+
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: parsed.error.message });
+    }
+
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      const customReport = await updateCustomReport(
+        req.tenantClient,
+        req.tenant.schema,
+        req.params.id,
+        parsed.data
+      );
+      res.json(customReport);
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete('/custom/:id', requirePermission('reports:manage'), async (req, res, next) => {
+  try {
+    if (!req.tenant) {
+      return res.status(500).json({ message: 'Tenant context missing' });
+    }
+
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      await deleteCustomReport(client, req.params.id, req.tenant.id, req.user?.id);
+      res.status(204).send();
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Export Reports
+router.post('/executions/:id/export', requirePermission('reports:view'), async (req, res, next) => {
+  try {
+    const schema = z.object({
+      format: z.enum(['csv', 'pdf', 'excel', 'json']),
+      title: z.string().optional()
+    });
+
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: parsed.error.message });
+    }
+
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      const exportResult = await generateExport(
+        client,
+        req.params.id,
+        parsed.data.format,
+        parsed.data.title
+      );
+      res.json(exportResult);
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/executions/:id/email', requirePermission('reports:manage'), async (req, res, next) => {
+  try {
+    if (!req.tenant) {
+      return res.status(500).json({ message: 'Tenant context missing' });
+    }
+
+    const schema = z.object({
+      recipients: z.array(z.string().email()),
+      format: z.enum(['csv', 'pdf', 'excel', 'json']).optional()
+    });
+
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: parsed.error.message });
+    }
+
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      await sendReportViaEmail(
+        client,
+        req.params.id,
+        parsed.data.recipients,
+        parsed.data.format || 'pdf',
+        req.tenant.id
+      );
+      res.json({ success: true });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+export default router;
+

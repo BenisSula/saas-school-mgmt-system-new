@@ -1722,6 +1722,150 @@ export const api = {
       totalStudents: number;
       averageClassSize: number;
     }>(`/reports/department-analytics${params}`);
+  },
+  // Advanced Reports
+  reports: {
+    // Report Definitions
+    createReportDefinition: (payload: {
+      tenantId?: string;
+      name: string;
+      description?: string;
+      reportType: 'attendance' | 'grades' | 'fees' | 'users' | 'analytics' | 'custom';
+      dataSource: string;
+      queryTemplate: string;
+      parameters?: Record<string, unknown>;
+      columns?: Array<{ name: string; type: string; label: string }>;
+      filters?: Record<string, unknown>;
+      rolePermissions?: string[];
+    }) =>
+      apiFetch<{ id: string }>('/superuser/reports/definitions', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    getReportDefinitions: (tenantId?: string) => {
+      const params = tenantId ? `?tenantId=${tenantId}` : '';
+      return apiFetch<{ reports: unknown[] }>(`/superuser/reports/definitions${params}`);
+    },
+    getReportDefinition: (id: string, tenantId?: string) => {
+      const params = tenantId ? `?tenantId=${tenantId}` : '';
+      return apiFetch<unknown>(`/superuser/reports/definitions/${id}${params}`);
+    },
+    executeReport: (reportId: string, parameters?: Record<string, unknown>) =>
+      apiFetch<{
+        executionId: string;
+        data: unknown[];
+        rowCount: number;
+        executionTimeMs: number;
+        columns: Array<{ name: string; type: string; label: string }>;
+      }>(`/superuser/reports/definitions/${reportId}/execute`, {
+        method: 'POST',
+        body: JSON.stringify({ parameters })
+      }),
+    getHistoricalTrend: (reportId: string, days?: number) => {
+      const params = days ? `?days=${days}` : '';
+      return apiFetch<{ trends: unknown[] }>(`/superuser/reports/definitions/${reportId}/trends${params}`);
+    },
+    compareWithHistory: (reportId: string, payload: {
+      parameters?: Record<string, unknown>;
+      comparisonDays?: number;
+    }) =>
+      apiFetch<{
+        current: unknown;
+        comparison: unknown;
+      }>(`/superuser/reports/definitions/${reportId}/compare`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    // Scheduled Reports
+    createScheduledReport: (payload: {
+      reportDefinitionId: string;
+      name: string;
+      scheduleType: 'daily' | 'weekly' | 'monthly' | 'custom';
+      scheduleConfig: Record<string, unknown>;
+      parameters?: Record<string, unknown>;
+      exportFormat: 'csv' | 'pdf' | 'excel' | 'json';
+      recipients: string[];
+    }) =>
+      apiFetch<{ id: string }>('/superuser/reports/scheduled', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    getScheduledReports: () =>
+      apiFetch<{ scheduledReports: unknown[] }>('/superuser/reports/scheduled'),
+    updateScheduledReport: (id: string, updates: {
+      name?: string;
+      scheduleType?: 'daily' | 'weekly' | 'monthly' | 'custom';
+      scheduleConfig?: Record<string, unknown>;
+      parameters?: Record<string, unknown>;
+      exportFormat?: 'csv' | 'pdf' | 'excel' | 'json';
+      recipients?: string[];
+      isActive?: boolean;
+    }) =>
+      apiFetch<unknown>(`/superuser/reports/scheduled/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates)
+      }),
+    deleteScheduledReport: (id: string) =>
+      apiFetch<void>(`/superuser/reports/scheduled/${id}`, {
+        method: 'DELETE'
+      }),
+    // Custom Reports
+    createCustomReport: (payload: {
+      name: string;
+      description?: string;
+      baseTemplateId?: string;
+      dataSources: string[];
+      joins?: Array<{ type: 'inner' | 'left' | 'right' | 'full'; table: string; on: string }>;
+      selectedColumns: Array<{ table: string; column: string; alias?: string; aggregate?: 'sum' | 'avg' | 'count' | 'min' | 'max' }>;
+      filters?: Array<{ column: string; operator: string; value: unknown }>;
+      groupBy?: string[];
+      orderBy?: Array<{ column: string; direction: 'ASC' | 'DESC' }>;
+      visualizationType?: 'table' | 'bar' | 'line' | 'pie' | 'area';
+      rolePermissions?: string[];
+      isShared?: boolean;
+    }) =>
+      apiFetch<{ id: string }>('/superuser/reports/custom', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    getCustomReports: () =>
+      apiFetch<{ customReports: unknown[] }>('/superuser/reports/custom'),
+    executeCustomReport: (id: string) =>
+      apiFetch<{ data: unknown[] }>(`/superuser/reports/custom/${id}/execute`, {
+        method: 'POST'
+      }),
+    updateCustomReport: (id: string, updates: {
+      name?: string;
+      description?: string;
+      selectedColumns?: unknown[];
+      filters?: unknown[];
+      groupBy?: string[];
+      orderBy?: unknown[];
+      visualizationType?: 'table' | 'bar' | 'line' | 'pie' | 'area';
+      isShared?: boolean;
+    }) =>
+      apiFetch<unknown>(`/superuser/reports/custom/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates)
+      }),
+    deleteCustomReport: (id: string) =>
+      apiFetch<void>(`/superuser/reports/custom/${id}`, {
+        method: 'DELETE'
+      }),
+    // Exports
+    exportReport: (executionId: string, format: 'csv' | 'pdf' | 'excel' | 'json', title?: string) =>
+      apiFetch<{ url: string; expiresAt: string }>(`/superuser/reports/executions/${executionId}/export`, {
+        method: 'POST',
+        body: JSON.stringify({ format, title })
+      }),
+    sendReportViaEmail: (executionId: string, payload: {
+      recipients: string[];
+      format?: 'csv' | 'pdf' | 'excel' | 'json';
+    }) =>
+      apiFetch<{ success: boolean }>(`/superuser/reports/executions/${executionId}/email`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })
   }
 };
 

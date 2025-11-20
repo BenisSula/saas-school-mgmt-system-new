@@ -24,6 +24,7 @@ import {
 import billingRouter from './superuser/billing';
 import onboardingRouter from './superuser/onboarding';
 import featureFlagsRouter from './superuser/featureFlags';
+import reportsRouter from './superuser/reports';
 
 const router = Router();
 
@@ -191,5 +192,8 @@ router.use('/onboarding', onboardingRouter);
 
 // Feature flags routes
 router.use('/feature-flags', featureFlagsRouter);
+
+// Reports routes
+router.use('/reports', reportsRouter);
 
 export default router;

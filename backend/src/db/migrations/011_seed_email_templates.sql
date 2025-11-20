@@ -218,6 +218,49 @@ To continue using this service, please upgrade your plan: {{upgradeUrl}}
 If you have any questions, please contact support.',
     '{"adminName": "string", "resourceType": "string", "currentUsage": "number", "limit": "number", "upgradeUrl": "string"}'::jsonb,
     TRUE
+  ),
+  (
+    'report_delivery',
+    'Report Delivery',
+    'Your scheduled report: {{reportName}}',
+    '<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .button { display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Your Report is Ready</h1>
+    <p>Hello,</p>
+    <p>Your scheduled report <strong>{{reportName}}</strong> has been generated.</p>
+    <p><strong>Report Details:</strong></p>
+    <ul>
+      <li>Rows: {{rowCount}}</li>
+      <li>Format: {{format}}</li>
+      <li>Generated: {{generatedAt}}</li>
+    </ul>
+    <a href="{{downloadUrl}}" class="button">Download Report</a>
+    <p>This link will expire in 7 days.</p>
+  </div>
+</body>
+</html>',
+    'Your scheduled report {{reportName}} has been generated.
+
+Report Details:
+- Rows: {{rowCount}}
+- Format: {{format}}
+- Generated: {{generatedAt}}
+
+Download: {{downloadUrl}}
+
+This link will expire in 7 days.',
+    '{"reportName": "string", "reportDescription": "string", "rowCount": "number", "generatedAt": "string", "downloadUrl": "string", "format": "string"}'::jsonb,
+    TRUE
   )
 ON CONFLICT (template_key, tenant_id, version) DO NOTHING;
 
