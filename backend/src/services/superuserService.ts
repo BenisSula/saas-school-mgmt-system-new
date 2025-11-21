@@ -205,6 +205,43 @@ export async function listSchools() {
   }));
 }
 
+export async function getSchoolById(schoolId: string) {
+  const pool = getPool();
+  const result = await pool.query(`
+    SELECT 
+      t.id,
+      t.name,
+      t.domain,
+      t.schema_name,
+      t.subscription_type,
+      t.status,
+      t.created_at,
+      t.billing_email,
+      COUNT(DISTINCT u.id) as user_count
+    FROM shared.tenants t
+    LEFT JOIN shared.users u ON u.tenant_id = t.id
+    WHERE t.id = $1 AND t.status != 'deleted'
+    GROUP BY t.id, t.name, t.domain, t.schema_name, t.subscription_type, t.status, t.created_at, t.billing_email
+  `, [schoolId]);
+  
+  if (result.rowCount === 0) {
+    return null;
+  }
+  
+  const row = result.rows[0];
+  return {
+    id: row.id,
+    name: row.name,
+    domain: row.domain,
+    schemaName: row.schema_name,
+    status: row.status,
+    subscriptionType: row.subscription_type,
+    billingEmail: row.billing_email,
+    createdAt: row.created_at,
+    userCount: Number(row.user_count ?? 0)
+  };
+}
+
 export async function createSchool(input: CreateSchoolInput, actorId?: string | null) {
   if (!input.name?.trim()) {
     throw new Error('School name is required');
@@ -222,8 +259,38 @@ export async function createSchool(input: CreateSchoolInput, actorId?: string | 
     throw new Error('School registration code is required');
   }
   const pool = getPool();
+  
+  // Check for duplicate registration code
+  const existingSchool = await pool.query(
+    `SELECT id FROM shared.schools WHERE registration_code = $1`,
+    [input.registrationCode.trim()]
+  );
+  if (existingSchool.rows.length > 0) {
+    throw new Error('A school with this registration code already exists');
+  }
+  
+  // Check for duplicate domain if provided
+  if (input.domain?.trim()) {
+    const existingTenant = await pool.query(
+      `SELECT id FROM shared.tenants WHERE domain = $1`,
+      [input.domain.trim()]
+    );
+    if (existingTenant.rows.length > 0) {
+      throw new Error('A school with this domain already exists');
+    }
+  }
+  
   const schemaName = createSchemaSlug(input.name);
   assertValidSchemaName(schemaName);
+  
+  // Check for duplicate schema name
+  const existingSchema = await pool.query(
+    `SELECT id FROM shared.tenants WHERE schema_name = $1`,
+    [schemaName]
+  );
+  if (existingSchema.rows.length > 0) {
+    throw new Error('A school with a similar name already exists. Please use a different name.');
+  }
 
   const tenant = await createTenant(
     {

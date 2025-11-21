@@ -111,6 +111,128 @@ router.get('/audit-logs/export', async (req, res, next) => {
 });
 
 /**
+ * GET /superuser/audit-logs/school/:schoolId
+ * Get school-level audit logs
+ */
+router.get('/audit-logs/school/:schoolId', async (req, res, next) => {
+  try {
+    const pool = getPool();
+    const client = await pool.connect();
+    
+    try {
+      const queryResult = auditLogsQuerySchema.safeParse(req.query);
+      if (!queryResult.success) {
+        return res.status(400).json({ message: queryResult.error.message });
+      }
+
+      const filters = {
+        tenantId: req.params.schoolId,
+        userId: queryResult.data.userId,
+        action: queryResult.data.action,
+        resourceType: queryResult.data.resourceType,
+        resourceId: queryResult.data.resourceId,
+        severity: queryResult.data.severity,
+        tags: queryResult.data.tags,
+        startDate: queryResult.data.startDate,
+        endDate: queryResult.data.endDate,
+        limit: queryResult.data.limit || 50,
+        offset: queryResult.data.offset || 0
+      };
+
+      const result = await getPlatformAuditLogs(
+        client,
+        filters,
+        req.user!.role as Role
+      );
+      res.json(result);
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /superuser/audit-logs/stats
+ * Get audit log statistics
+ */
+router.get('/audit-logs/stats', async (req, res, next) => {
+  try {
+    const pool = getPool();
+    const client = await pool.connect();
+    
+    try {
+      const schoolId = req.query.schoolId as string | undefined;
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      
+      let whereConditions: string[] = [];
+      const params: unknown[] = [];
+      let paramIndex = 1;
+      
+      if (schoolId) {
+        whereConditions.push(`tenant_id = $${paramIndex++}`);
+        params.push(schoolId);
+      }
+      
+      if (startDate) {
+        whereConditions.push(`created_at >= $${paramIndex++}`);
+        params.push(startDate);
+      }
+      
+      if (endDate) {
+        whereConditions.push(`created_at <= $${paramIndex++}`);
+        params.push(endDate);
+      }
+      
+      const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+      
+      // Get total count
+      const totalResult = await client.query(
+        `SELECT COUNT(*) as total FROM shared.audit_logs ${whereClause}`,
+        params
+      );
+      const total = parseInt(totalResult.rows[0].total, 10);
+      
+      // Get count by severity
+      const severityResult = await client.query(
+        `SELECT severity, COUNT(*) as count FROM shared.audit_logs ${whereClause} GROUP BY severity`,
+        params
+      );
+      const bySeverity: Record<string, number> = {};
+      severityResult.rows.forEach(row => {
+        bySeverity[row.severity] = parseInt(row.count, 10);
+      });
+      
+      // Get count by action type (top 10)
+      const actionResult = await client.query(
+        `SELECT action, COUNT(*) as count FROM shared.audit_logs ${whereClause} GROUP BY action ORDER BY count DESC LIMIT 10`,
+        params
+      );
+      const byAction: Record<string, number> = {};
+      actionResult.rows.forEach(row => {
+        byAction[row.action] = parseInt(row.count, 10);
+      });
+      
+      res.json({
+        total,
+        bySeverity,
+        byAction,
+        period: {
+          startDate: startDate?.toISOString(),
+          endDate: endDate?.toISOString()
+        }
+      });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
  * GET /superuser/login-attempts
  * Get login attempts (successful and failed)
  */

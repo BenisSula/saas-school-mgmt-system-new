@@ -11,6 +11,54 @@ import { logger } from '../../lib/logger';
 // Store previous IP counts to reset gauges
 let previousIPCounts: Map<string, number> = new Map();
 
+// Cache table existence checks to avoid repeated queries
+let tableExistenceCache: Map<string, boolean> = new Map();
+const TABLE_EXISTENCE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+let tableExistenceCacheTime: Map<string, number> = new Map();
+
+/**
+ * Check if a table exists (with caching)
+ */
+async function tableExists(pool: Pool, schema: string, tableName: string): Promise<boolean> {
+  const cacheKey = `${schema}.${tableName}`;
+  const now = Date.now();
+  
+  // Check cache
+  if (tableExistenceCache.has(cacheKey)) {
+    const cacheTime = tableExistenceCacheTime.get(cacheKey) || 0;
+    if (now - cacheTime < TABLE_EXISTENCE_CACHE_TTL) {
+      return tableExistenceCache.get(cacheKey)!;
+    }
+  }
+  
+  // Query database
+  try {
+    const result = await pool.query(
+      `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = $1 
+          AND table_name = $2
+        )
+      `,
+      [schema, tableName]
+    );
+    
+    const exists = result.rows[0]?.exists || false;
+    
+    // Update cache
+    tableExistenceCache.set(cacheKey, exists);
+    tableExistenceCacheTime.set(cacheKey, now);
+    
+    return exists;
+  } catch (error) {
+    // On error, assume table doesn't exist and cache negative result
+    tableExistenceCache.set(cacheKey, false);
+    tableExistenceCacheTime.set(cacheKey, now);
+    return false;
+  }
+}
+
 /**
  * Collect and update platform metrics
  * Should be called periodically (e.g., every 30 seconds)
@@ -35,6 +83,12 @@ export async function collectPlatformMetrics(): Promise<void> {
  * Update active sessions count
  */
 async function updateActiveSessionsCount(pool: Pool): Promise<void> {
+  // Check if table exists first (silently skip if not)
+  const exists = await tableExists(pool, 'shared', 'user_sessions');
+  if (!exists) {
+    return; // Silently skip - table doesn't exist (expected when migrations haven't run)
+  }
+  
   try {
     const result = await pool.query(
       `
@@ -48,9 +102,11 @@ async function updateActiveSessionsCount(pool: Pool): Promise<void> {
     const count = parseInt(result.rows[0]?.count || '0', 10);
     metrics.setActiveSessions(count);
   } catch (error) {
-    // Table might not exist in older migrations
-    if (error instanceof Error && error.message.includes('does not exist')) {
-      logger.debug('[platformMetricsService] user_sessions table does not exist, skipping active sessions metric');
+    // Only log actual errors, not expected missing table/column errors
+    if (error instanceof Error && 
+        (error.message.includes('does not exist') || 
+         (error.message.includes('column') && error.message.includes('does not exist')))) {
+      // Silently skip - expected when migrations haven't run
       return;
     }
     logger.error({ err: error }, '[platformMetricsService] Failed to update active sessions count');
@@ -82,23 +138,13 @@ async function updateTenantCount(pool: Pool): Promise<void> {
  * Update login attempts metrics (success/fail counts)
  */
 async function updateLoginAttemptsMetrics(pool: Pool): Promise<void> {
+  // Check if table exists first (silently skip if not)
+  const exists = await tableExists(pool, 'shared', 'login_attempts');
+  if (!exists) {
+    return; // Silently skip - table doesn't exist (expected when migrations haven't run)
+  }
+  
   try {
-    // Check if login_attempts table exists
-    const tableExists = await pool.query(
-      `
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'shared' 
-          AND table_name = 'login_attempts'
-        )
-      `
-    );
-    
-    if (!tableExists.rows[0]?.exists) {
-      logger.debug('[platformMetricsService] login_attempts table does not exist, skipping login attempts metrics');
-      return;
-    }
-    
     // Get success/fail counts from last hour
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     
@@ -119,6 +165,11 @@ async function updateLoginAttemptsMetrics(pool: Pool): Promise<void> {
     // For accurate counts, we'd need to use a Gauge instead
     // For now, we'll track via the authAttempts counter which is incremented on each attempt
   } catch (error) {
+    // Only log actual errors, not expected missing table errors
+    if (error instanceof Error && error.message.includes('does not exist')) {
+      // Silently skip - expected when migrations haven't run
+      return;
+    }
     logger.error({ err: error }, '[platformMetricsService] Failed to update login attempts metrics');
   }
 }
@@ -127,23 +178,13 @@ async function updateLoginAttemptsMetrics(pool: Pool): Promise<void> {
  * Update failed login IP metrics for heatmap
  */
 async function updateFailedLoginIPMetrics(pool: Pool): Promise<void> {
+  // Check if table exists first (silently skip if not)
+  const exists = await tableExists(pool, 'shared', 'login_attempts');
+  if (!exists) {
+    return; // Silently skip - table doesn't exist (expected when migrations haven't run)
+  }
+  
   try {
-    // Check if login_attempts table exists
-    const tableExists = await pool.query(
-      `
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'shared' 
-          AND table_name = 'login_attempts'
-        )
-      `
-    );
-    
-    if (!tableExists.rows[0]?.exists) {
-      logger.debug('[platformMetricsService] login_attempts table does not exist, skipping failed login IP metrics');
-      return;
-    }
-    
     // Get failed login attempts by IP from last 24 hours
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     
@@ -182,14 +223,19 @@ async function updateFailedLoginIPMetrics(pool: Pool): Promise<void> {
     
     previousIPCounts = currentIPCounts;
     
-    // Log top IPs for monitoring
-    if (result.rows.length > 0) {
+    // Log top IPs for monitoring (only in development or when DEBUG is enabled)
+    if (result.rows.length > 0 && (process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true')) {
       logger.debug(
         { topFailedIPs: result.rows.slice(0, 10).map(r => ({ ip: r.ip_address, count: r.attempt_count })) },
         '[platformMetricsService] Top failed login IPs'
       );
     }
   } catch (error) {
+    // Only log actual errors, not expected missing table errors
+    if (error instanceof Error && error.message.includes('does not exist')) {
+      // Silently skip - expected when migrations haven't run
+      return;
+    }
     logger.error({ err: error }, '[platformMetricsService] Failed to update failed login IP metrics');
   }
 }

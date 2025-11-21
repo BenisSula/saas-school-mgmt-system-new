@@ -10,8 +10,8 @@ export async function listStudents(client: PoolClient, schema: string) {
   return listEntities(client, schema, table);
 }
 
-export async function getStudent(client: PoolClient, schema: string, id: string) {
-  return getEntityById(client, schema, table, id);
+export async function getStudent<T = Record<string, unknown>>(client: PoolClient, schema: string, id: string): Promise<T | null> {
+  return getEntityById<T>(client, schema, table, id);
 }
 
 export async function createStudent(

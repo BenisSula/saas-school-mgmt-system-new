@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import RouteMeta from '../../components/layout/RouteMeta';
 import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton';
 import { StatusBanner } from '../../components/ui/StatusBanner';
@@ -9,6 +10,7 @@ import { StatCard } from '../../components/charts/StatCard';
 import { useTeacherDashboard } from '../../hooks/queries/useDashboardQueries';
 import { Users, BookOpen, GraduationCap, AlertCircle } from 'lucide-react';
 import type { TeacherAssignmentSummary } from '../../lib/api';
+import { Button } from '../../components/ui/Button';
 
 export default function TeacherDashboardPage() {
   const { overview, loading, error } = useTeacherDashboard();
@@ -42,6 +44,14 @@ export default function TeacherDashboardPage() {
       }
     ];
   }, [overview]);
+
+  const quickActions = useMemo(() => {
+    return [
+      { label: 'View Students', path: '/dashboard/teacher/students', icon: Users },
+      { label: 'Mark Attendance', path: '/dashboard/teacher/attendance', icon: BookOpen },
+      { label: 'Enter Grades', path: '/dashboard/teacher/grades', icon: GraduationCap }
+    ];
+  }, []);
 
   // Class distribution chart
   const classDistribution: BarChartData[] = useMemo(() => {
@@ -157,13 +167,27 @@ export default function TeacherDashboardPage() {
     <RouteMeta title="Teacher dashboard">
       <div className="space-y-8">
         <header className="space-y-2">
-          <h1 className="text-2xl font-semibold text-[var(--brand-surface-contrast)]">
-            Welcome back, {greetingName}
-          </h1>
-          <p className="text-sm text-[var(--brand-muted)]">
-            Monitor your classes, track assessments, and stay on top of homeroom duties from one
-            dashboard.
-          </p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-[var(--brand-surface-contrast)]">
+                Welcome back, {greetingName}
+              </h1>
+              <p className="text-sm text-[var(--brand-muted)]">
+                Monitor your classes, track assessments, and stay on top of homeroom duties from one
+                dashboard.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {quickActions.map((action) => (
+                <Link key={action.path} to={action.path}>
+                  <Button variant="outline" size="sm">
+                    <action.icon className="h-4 w-4 mr-2" />
+                    {action.label}
+                  </Button>
+                </Link>
+              ))}
+            </div>
+          </div>
         </header>
 
         {/* Stats Cards */}

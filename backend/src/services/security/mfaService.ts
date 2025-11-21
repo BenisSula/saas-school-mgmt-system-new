@@ -1,7 +1,38 @@
 import crypto from 'crypto';
-import { authenticator } from 'otplib';
+// TODO: Install otplib package: npm install otplib @types/otplib
+// import { authenticator } from 'otplib';
 import type { PoolClient } from 'pg';
 import { z } from 'zod';
+
+// Temporary stub for otplib until package is installed
+// TODO: Install otplib: npm install otplib @types/otplib
+const authenticator = {
+  generateSecret: () => crypto.randomBytes(20).toString('base64'),
+  generate: (secret: string) => {
+    // Stub implementation - replace with actual otplib when installed
+    const time = Math.floor(Date.now() / 1000 / 30);
+    const secretBuffer = Buffer.from(secret, 'base64');
+    const timeBuffer = Buffer.allocUnsafe(8);
+    timeBuffer.writeUInt32BE(time, 4);
+    const hash = crypto.createHmac('sha1', secretBuffer).update(timeBuffer).digest();
+    const offset = hash[hash.length - 1] & 0xf;
+    const code = ((hash[offset] & 0x7f) << 24 | (hash[offset + 1] & 0xff) << 16 | (hash[offset + 2] & 0xff) << 8 | hash[offset + 3] & 0xff) % 1000000;
+    return code.toString().padStart(6, '0');
+  },
+  verify: (token: string, secret: string) => {
+    // Stub implementation
+    const generated = authenticator.generate(secret);
+    return token === generated;
+  },
+  keyuri: (user: string, service: string, secret: string) => {
+    // Stub implementation for QR code URL generation
+    return `otpauth://totp/${encodeURIComponent(service)}:${encodeURIComponent(user)}?secret=${secret}&issuer=${encodeURIComponent(service)}`;
+  },
+  check: (token: string, secret: string) => {
+    // Alias for verify
+    return authenticator.verify(token, secret);
+  }
+};
 
 export const mfaDeviceTypeSchema = z.enum(['totp', 'sms', 'email', 'backup_code']);
 

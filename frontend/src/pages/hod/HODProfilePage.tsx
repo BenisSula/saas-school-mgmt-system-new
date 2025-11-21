@@ -6,6 +6,7 @@ import { AuditLogs } from '../../components/profile/AuditLogs';
 import { FileUploads } from '../../components/profile/FileUploads';
 import { useProfileData } from '../../hooks/useProfileData';
 import { api, type TeacherProfileDetail, type TeacherProfile } from '../../lib/api';
+import { isHOD } from '../../lib/utils/userHelpers';
 
 interface HODProfileData extends TeacherProfileDetail {
   department?: string;
@@ -28,9 +29,8 @@ export default function HODProfilePage() {
         // Check if user has HOD role
         if (usersData.status === 'fulfilled') {
           const user = usersData.value.find((u) => u.email === teacherProfile.email);
-          const isHOD = user?.additional_roles?.some((r) => r.role === 'hod');
 
-          if (isHOD && user) {
+          if (user && isHOD(user)) {
             // Extract department from metadata
             const hodRole = user.additional_roles?.find((r) => r.role === 'hod');
             const department =

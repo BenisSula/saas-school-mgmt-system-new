@@ -81,7 +81,7 @@ export async function changeOwnPassword(
 
   // Record password change history
   try {
-    const deviceInfo = normalizeDeviceInfo(userAgent || null, ipAddress || null);
+    const deviceInfo = normalizeDeviceInfo(null, userAgent || null);
     await pool.query(
       `
         INSERT INTO shared.password_change_history (

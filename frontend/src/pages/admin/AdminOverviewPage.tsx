@@ -14,6 +14,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../hooks/useQuery';
 import { formatDate } from '../../lib/utils/date';
 import { StatusBadge } from '../../components/ui/StatusBadge';
+import { isHOD } from '../../lib/utils/userHelpers';
 
 export default function AdminOverviewPage() {
   const queryClient = useQueryClient();
@@ -25,9 +26,7 @@ export default function AdminOverviewPage() {
     const totalUsers = users.length;
     const totalTeachers = users.filter((u) => u.role === 'teacher').length;
     const totalStudents = users.filter((u) => u.role === 'student').length;
-    const totalHODs = users.filter(
-      (u) => u.role === 'teacher' && u.additional_roles?.some((r) => r.role === 'hod')
-    ).length;
+    const totalHODs = users.filter((u) => isHOD(u)).length;
     const totalAdmins = users.filter((u) => u.role === 'admin').length;
     const pendingUsers = users.filter((u) => u.status === 'pending').length;
 
@@ -77,8 +76,7 @@ export default function AdminOverviewPage() {
         key: 'role',
         header: 'Role',
         render: (row) => {
-          const additionalRoles = row.additional_roles?.map((r) => r.role).join(', ') || '';
-          return row.role === 'teacher' && additionalRoles.includes('hod')
+          return isHOD(row)
             ? 'Teacher (HOD)'
             : row.role.charAt(0).toUpperCase() + row.role.slice(1);
         },

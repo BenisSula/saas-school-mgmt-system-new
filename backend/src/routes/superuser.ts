@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import authenticate from '../middleware/authenticate';
-import { requirePermission } from '../middleware/rbac';
+import { requirePermission, requireSuperuser } from '../middleware/rbac';
 import {
   createAdminForSchool,
   createSchool,
@@ -30,10 +30,17 @@ import sessionsRouter from './superuser/sessions';
 import passwordsRouter from './superuser/passwords';
 import auditRouter from './superuser/audit';
 import investigationsRouter from './superuser/investigations';
+import subscriptionsRouter from './superuser/subscriptions';
+import overridesRouter from './superuser/overrides';
+import permissionOverridesRouter from './superuser/permissionOverrides';
+import schoolsRouter from './superuser/schools';
+import usersRouter from './superuser/users';
+import rolesRouter from './superuser/roles';
 
 const router = Router();
 
-router.use(authenticate, requirePermission('tenants:manage'));
+// Apply superuser middleware to all routes
+router.use(authenticate, requireSuperuser());
 
 router.get('/overview', async (req, res, next) => {
   try {
@@ -57,7 +64,11 @@ router.post('/schools', async (req, res, next) => {
   try {
     const parsed = createSchoolSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: parsed.error.message });
+      const { formatValidationErrors } = await import('../lib/validationHelpers');
+      return res.status(400).json({ 
+        message: formatValidationErrors(parsed.error),
+        errors: parsed.error.issues
+      });
     }
     const school = await createSchool(parsed.data, req.user?.id ?? null);
     res.status(201).json(school);
@@ -70,7 +81,11 @@ router.patch('/schools/:id', async (req, res, next) => {
   try {
     const parsed = updateSchoolSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: parsed.error.message });
+      const { formatValidationErrors } = await import('../lib/validationHelpers');
+      return res.status(400).json({ 
+        message: formatValidationErrors(parsed.error),
+        errors: parsed.error.issues
+      });
     }
     const updated = await updateSchool(req.params.id, parsed.data, req.user?.id ?? null);
     if (!updated) {
@@ -95,7 +110,11 @@ router.post('/schools/:id/admins', async (req, res, next) => {
   try {
     const parsed = createAdminSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: parsed.error.message });
+      const { formatValidationErrors } = await import('../lib/validationHelpers');
+      return res.status(400).json({ 
+        message: formatValidationErrors(parsed.error),
+        errors: parsed.error.issues
+      });
     }
     const admin = await createAdminForSchool(req.params.id, parsed.data, req.user?.id ?? null);
     res.status(201).json(admin);
@@ -215,5 +234,23 @@ router.use('/', auditRouter);
 
 // Investigation routes
 router.use('/investigations', investigationsRouter);
+
+// Subscription routes
+router.use('/subscriptions', subscriptionsRouter);
+
+// Override routes
+router.use('/overrides', overridesRouter);
+
+// Permission override routes
+router.use('/permission-overrides', permissionOverridesRouter);
+
+// School-specific routes
+router.use('/schools', schoolsRouter);
+
+// User-specific routes
+router.use('/users', usersRouter);
+
+// Role management routes
+router.use('/roles', rolesRouter);
 
 export default router;

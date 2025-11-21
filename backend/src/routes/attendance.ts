@@ -3,7 +3,7 @@ import authenticate from '../middleware/authenticate';
 import tenantResolver from '../middleware/tenantResolver';
 import ensureTenantContext from '../middleware/ensureTenantContext';
 import verifyTeacherAssignment from '../middleware/verifyTeacherAssignment';
-import { requireAnyPermission, requireSelfOrPermission } from '../middleware/rbac';
+import { requireAnyPermission, requireSelfOrPermission, requirePermission } from '../middleware/rbac';
 import {
   AttendanceMark,
   getAttendanceSummary,

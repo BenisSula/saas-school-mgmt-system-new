@@ -22,7 +22,10 @@ export const AUDIT_ENTITY_TYPES = [
   'NOTIFICATION',
   'DEPARTMENT',
   'REPORT',
-  'SETTINGS'
+  'SETTINGS',
+  'OVERRIDE',
+  'PERMISSION_OVERRIDE',
+  'SUBSCRIPTION'
 ] as const;
 
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];

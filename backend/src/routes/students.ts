@@ -15,6 +15,7 @@ import {
   deleteStudent,
   getStudentClassRoster
 } from '../services/studentService';
+import { safeAuditLogFromRequest } from '../lib/auditHelpers';
 
 const router = Router();
 
@@ -54,12 +55,32 @@ router.get('/', requireAnyPermission('users:manage', 'students:view_own_class'),
   res.json(response);
 });
 
-router.get('/:id', requirePermission('users:manage'), async (req, res) => {
-  const student = await getStudent(req.tenantClient!, req.tenant!.schema, req.params.id);
-  if (!student) {
-    return res.status(404).json({ message: 'Student not found' });
+router.get('/:id', requirePermission('users:manage'), async (req, res, next) => {
+  try {
+    const student = await getStudent(req.tenantClient!, req.tenant!.schema, req.params.id);
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    // Audit log for sensitive read operation
+    await safeAuditLogFromRequest(
+      req,
+      {
+        action: 'STUDENT_VIEWED',
+        resourceType: 'student',
+        resourceId: req.params.id,
+        details: {
+          studentId: req.params.id
+        },
+        severity: 'info'
+      },
+      'students'
+    );
+
+    res.json(student);
+  } catch (error) {
+    next(error);
   }
-  res.json(student);
 });
 
 router.post('/', requirePermission('users:manage'), validateInput(studentSchema, 'body'), async (req, res, next) => {
@@ -71,17 +92,38 @@ router.post('/', requirePermission('users:manage'), validateInput(studentSchema,
   }
 });
 
-router.put('/:id', requirePermission('users:manage'), validateInput(studentSchema.partial(), 'body'), async (req, res) => {
-  const student = await updateStudent(
-    req.tenantClient!,
-    req.tenant!.schema,
-    req.params.id,
-    req.body
-  );
-  if (!student) {
-    return res.status(404).json({ message: 'Student not found' });
+router.put('/:id', requirePermission('users:manage'), validateInput(studentSchema.partial(), 'body'), async (req, res, next) => {
+  try {
+    const student = await updateStudent(
+      req.tenantClient!,
+      req.tenant!.schema,
+      req.params.id,
+      req.body
+    );
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    // Audit log for profile update
+    await safeAuditLogFromRequest(
+      req,
+      {
+        action: 'STUDENT_UPDATED',
+        resourceType: 'student',
+        resourceId: req.params.id,
+        details: {
+          studentId: req.params.id,
+          updatedFields: Object.keys(req.body)
+        },
+        severity: 'info'
+      },
+      'students'
+    );
+
+    res.json(student);
+  } catch (error) {
+    next(error);
   }
-  res.json(student);
 });
 
 router.delete('/:id', requirePermission('users:manage'), async (req, res) => {

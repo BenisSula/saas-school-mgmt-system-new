@@ -71,7 +71,7 @@ export async function verifyGdprErasureRequest(
     [requestId, verificationToken]
   );
 
-  return result.rowCount > 0;
+  return (result.rowCount ?? 0) > 0;
 }
 
 /**
@@ -130,8 +130,8 @@ export async function processGdprErasure(
           `DELETE FROM tenant_${request.tenant_id}.${table} WHERE user_id = $1 OR id = $1`,
           [request.user_id]
         );
-        erasureReport.recordsDeleted += deleteResult.rowCount || 0;
-        if (deleteResult.rowCount > 0) {
+        erasureReport.recordsDeleted += deleteResult.rowCount ?? 0;
+        if ((deleteResult.rowCount ?? 0) > 0) {
           erasureReport.tablesAffected.push(table);
         }
       } catch (error) {
@@ -183,8 +183,8 @@ export async function processGdprErasure(
           `,
           [anonymizedName, anonymizedEmail, request.user_id]
         );
-        erasureReport.recordsAnonymized += updateResult.rowCount || 0;
-        if (updateResult.rowCount > 0) {
+        erasureReport.recordsAnonymized += updateResult.rowCount ?? 0;
+        if ((updateResult.rowCount ?? 0) > 0) {
           erasureReport.tablesAffected.push(table);
         }
       } catch (error) {
@@ -302,7 +302,7 @@ export async function cancelGdprErasureRequest(
     [requestId]
   );
 
-  if (result.rowCount === 0) {
+  if ((result.rowCount ?? 0) === 0) {
     throw new Error('Request not found or cannot be cancelled');
   }
 }

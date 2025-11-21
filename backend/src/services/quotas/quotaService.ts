@@ -11,6 +11,7 @@ export interface QuotaLimit {
   resetPeriod: ResetPeriod;
   warningThreshold?: number;
   isEnforced: boolean;
+  last_reset_at?: Date | string | null;
 }
 
 export interface CheckQuotaResult {

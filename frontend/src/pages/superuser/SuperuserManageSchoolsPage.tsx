@@ -145,38 +145,94 @@ export function SuperuserManageSchoolsPage() {
   };
 
   const handleSaveSchool = async () => {
+    // Client-side validation
+    if (!formState.name.trim()) {
+      toast.error('School name is required');
+      return;
+    }
+    if (!formState.address.trim()) {
+      toast.error('School address is required');
+      return;
+    }
+    if (!formState.contactPhone.trim()) {
+      toast.error('Contact phone is required');
+      return;
+    }
+    if (!formState.contactEmail.trim()) {
+      toast.error('Contact email is required');
+      return;
+    }
+    if (!formState.registrationCode.trim()) {
+      toast.error('Registration code is required');
+      return;
+    }
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formState.contactEmail)) {
+      toast.error('Please enter a valid contact email address');
+      return;
+    }
+    if (formState.billingEmail && !emailRegex.test(formState.billingEmail)) {
+      toast.error('Please enter a valid billing email address');
+      return;
+    }
+
     try {
+      // Prepare payload - convert empty strings to undefined for optional fields
+      const prepareOptionalField = (value: string | undefined): string | undefined => {
+        const trimmed = value?.trim();
+        return trimmed && trimmed.length > 0 ? trimmed : undefined;
+      };
+
       if (formMode === 'create') {
         await api.superuser.createSchool({
-          name: formState.name,
-          address: formState.address,
-          contactPhone: formState.contactPhone,
-          contactEmail: formState.contactEmail,
-          registrationCode: formState.registrationCode,
-          domain: formState.domain || undefined,
+          name: formState.name.trim(),
+          address: formState.address.trim(),
+          contactPhone: formState.contactPhone.trim(),
+          contactEmail: formState.contactEmail.trim(),
+          registrationCode: formState.registrationCode.trim(),
+          domain: prepareOptionalField(formState.domain),
           subscriptionType: formState.subscriptionType,
-          billingEmail: formState.billingEmail || undefined
+          billingEmail: prepareOptionalField(formState.billingEmail)
         });
-        toast.success(`School “${formState.name}” created`);
+        toast.success(`School "${formState.name}" created successfully`);
       } else if (formState.id) {
         await api.superuser.updateSchool(formState.id, {
-          name: formState.name,
-          address: formState.address || undefined,
-          contactPhone: formState.contactPhone || undefined,
-          contactEmail: formState.contactEmail || undefined,
-          registrationCode: formState.registrationCode || undefined,
-          domain: formState.domain || null,
+          name: formState.name.trim(),
+          address: prepareOptionalField(formState.address),
+          contactPhone: prepareOptionalField(formState.contactPhone),
+          contactEmail: prepareOptionalField(formState.contactEmail),
+          registrationCode: prepareOptionalField(formState.registrationCode),
+          domain: prepareOptionalField(formState.domain),
           subscriptionType: formState.subscriptionType,
-          billingEmail: formState.billingEmail || null,
+          billingEmail: prepareOptionalField(formState.billingEmail),
           status: formState.status
         });
-        toast.success(`School “${formState.name}” updated`);
+        toast.success(`School "${formState.name}" updated successfully`);
       }
       setShowSchoolModal(false);
       await loadSchools();
     } catch (err) {
-      const message = (err as Error).message;
-      toast.error(message);
+      // Handle API errors with user-friendly messages
+      let errorMessage = 'Failed to save school. Please try again.';
+      
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === 'object' && err !== null) {
+        const apiError = err as { message?: string; errors?: Array<{ message: string; path: string[] }> };
+        if (apiError.message) {
+          errorMessage = apiError.message;
+        } else if (apiError.errors && Array.isArray(apiError.errors) && apiError.errors.length > 0) {
+          // Format Zod validation errors
+          const formattedErrors = apiError.errors.map((e) => {
+            const field = e.path.join(' ');
+            return `${field}: ${e.message}`;
+          });
+          errorMessage = formattedErrors.join('; ');
+        }
+      }
+      
+      toast.error(errorMessage);
     }
   };
 
@@ -328,101 +384,179 @@ export function SuperuserManageSchoolsPage() {
       </div>
 
       <Modal
-        title={formMode === 'create' ? 'Create school' : 'Edit school'}
+        title={formMode === 'create' ? 'Create New School' : 'Edit School'}
         isOpen={showSchoolModal}
         onClose={() => setShowSchoolModal(false)}
       >
-        <div className="space-y-4">
-          <Input
-            label="Name"
-            required
-            value={formState.name}
-            onChange={(event) => setFormState((state) => ({ ...state, name: event.target.value }))}
-          />
-          <Input
-            label="Address"
-            required
-            value={formState.address}
-            onChange={(event) =>
-              setFormState((state) => ({ ...state, address: event.target.value }))
-            }
-          />
-          <Input
-            label="Contact phone"
-            required
-            value={formState.contactPhone}
-            onChange={(event) =>
-              setFormState((state) => ({ ...state, contactPhone: event.target.value }))
-            }
-          />
-          <Input
-            label="Contact email"
-            type="email"
-            required
-            value={formState.contactEmail}
-            onChange={(event) =>
-              setFormState((state) => ({ ...state, contactEmail: event.target.value }))
-            }
-          />
-          <Input
-            label="Registration code"
-            required
-            value={formState.registrationCode}
-            onChange={(event) =>
-              setFormState((state) => ({ ...state, registrationCode: event.target.value }))
-            }
-          />
-          <Input
-            label="Domain"
-            placeholder="school.example.com"
-            value={formState.domain}
-            onChange={(event) =>
-              setFormState((state) => ({ ...state, domain: event.target.value }))
-            }
-          />
-          <Input
-            label="Billing email"
-            placeholder="billing@example.com"
-            value={formState.billingEmail}
-            onChange={(event) =>
-              setFormState((state) => ({ ...state, billingEmail: event.target.value }))
-            }
-          />
-          <Select
-            label="Subscription"
-            value={formState.subscriptionType}
-            onChange={(event) =>
-              setFormState((state) => ({
-                ...state,
-                subscriptionType: event.target.value as SubscriptionTier
-              }))
-            }
-            options={subscriptionOptions.map((option) => ({
-              label: option.label,
-              value: option.value
-            }))}
-          />
-          {formMode === 'edit' ? (
-            <Select
-              label="Status"
-              value={formState.status}
-              onChange={(event) =>
-                setFormState((state) => ({
-                  ...state,
-                  status: event.target.value as TenantLifecycleStatus
-                }))
-              }
-              options={statusOptions.map((option) => ({
-                label: option.label,
-                value: option.value
-              }))}
-            />
-          ) : null}
-          <div className="flex justify-end gap-3 pt-2">
+        <div className="space-y-6 max-h-[80vh] overflow-y-auto">
+          {/* Basic Information Section */}
+          <div className="space-y-4">
+            <div className="border-b border-[var(--brand-border)]/60 pb-2">
+              <h3 className="text-sm font-semibold text-[var(--brand-surface-contrast)] uppercase tracking-wide">
+                Basic Information
+              </h3>
+              <p className="text-xs text-[var(--brand-muted)] mt-1">
+                Essential details about the school
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <Input
+                  label="School Name"
+                  required
+                  placeholder="Enter school name"
+                  value={formState.name}
+                  onChange={(event) => setFormState((state) => ({ ...state, name: event.target.value }))}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Input
+                  label="Registration Code"
+                  required
+                  placeholder="Enter unique registration code"
+                  value={formState.registrationCode}
+                  onChange={(event) =>
+                    setFormState((state) => ({ ...state, registrationCode: event.target.value }))
+                  }
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-[var(--brand-surface-contrast)] mb-2">
+                  Address <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  className="w-full px-3 py-2 text-sm bg-[var(--brand-surface)] border border-[var(--brand-border)] rounded-md text-[var(--brand-surface-contrast)] placeholder-[var(--brand-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent"
+                  rows={3}
+                  placeholder="Enter complete school address"
+                  value={formState.address}
+                  onChange={(event) =>
+                    setFormState((state) => ({ ...state, address: event.target.value }))
+                  }
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Information Section */}
+          <div className="space-y-4">
+            <div className="border-b border-[var(--brand-border)]/60 pb-2">
+              <h3 className="text-sm font-semibold text-[var(--brand-surface-contrast)] uppercase tracking-wide">
+                Contact Information
+              </h3>
+              <p className="text-xs text-[var(--brand-muted)] mt-1">
+                Primary contact details for the school
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input
+                label="Contact Email"
+                type="email"
+                required
+                placeholder="contact@school.com"
+                value={formState.contactEmail}
+                onChange={(event) =>
+                  setFormState((state) => ({ ...state, contactEmail: event.target.value }))
+                }
+              />
+              <Input
+                label="Contact Phone"
+                type="tel"
+                required
+                placeholder="+1 (555) 123-4567"
+                value={formState.contactPhone}
+                onChange={(event) =>
+                  setFormState((state) => ({ ...state, contactPhone: event.target.value }))
+                }
+              />
+            </div>
+          </div>
+
+          {/* Subscription & Billing Section */}
+          <div className="space-y-4">
+            <div className="border-b border-[var(--brand-border)]/60 pb-2">
+              <h3 className="text-sm font-semibold text-[var(--brand-surface-contrast)] uppercase tracking-wide">
+                Subscription & Billing
+              </h3>
+              <p className="text-xs text-[var(--brand-muted)] mt-1">
+                Configure subscription tier and billing preferences
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Select
+                label="Subscription Tier"
+                value={formState.subscriptionType}
+                onChange={(event) =>
+                  setFormState((state) => ({
+                    ...state,
+                    subscriptionType: event.target.value as SubscriptionTier
+                  }))
+                }
+                options={subscriptionOptions.map((option) => ({
+                  label: option.label,
+                  value: option.value
+                }))}
+              />
+              <Input
+                label="Billing Email"
+                type="email"
+                placeholder="billing@school.com"
+                value={formState.billingEmail}
+                onChange={(event) =>
+                  setFormState((state) => ({ ...state, billingEmail: event.target.value }))
+                }
+              />
+            </div>
+          </div>
+
+          {/* Domain & Status Section */}
+          <div className="space-y-4">
+            <div className="border-b border-[var(--brand-border)]/60 pb-2">
+              <h3 className="text-sm font-semibold text-[var(--brand-surface-contrast)] uppercase tracking-wide">
+                Advanced Settings
+              </h3>
+              <p className="text-xs text-[var(--brand-muted)] mt-1">
+                Optional configuration and status management
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input
+                label="Custom Domain"
+                placeholder="school.example.com"
+                value={formState.domain}
+                onChange={(event) =>
+                  setFormState((state) => ({ ...state, domain: event.target.value }))
+                }
+              />
+              {formMode === 'edit' ? (
+                <Select
+                  label="Status"
+                  value={formState.status}
+                  onChange={(event) =>
+                    setFormState((state) => ({
+                      ...state,
+                      status: event.target.value as TenantLifecycleStatus
+                    }))
+                  }
+                  options={statusOptions.map((option) => ({
+                    label: option.label,
+                    value: option.value
+                  }))}
+                />
+              ) : (
+                <div />
+              )}
+            </div>
+          </div>
+
+          {/* Form Actions */}
+          <div className="flex justify-end gap-3 pt-4 border-t border-[var(--brand-border)]/60">
             <Button variant="ghost" onClick={() => setShowSchoolModal(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSaveSchool}>{formMode === 'create' ? 'Create' : 'Save'}</Button>
+            <Button onClick={handleSaveSchool}>
+              {formMode === 'create' ? 'Create School' : 'Save Changes'}
+            </Button>
           </div>
         </div>
       </Modal>

@@ -208,7 +208,7 @@ describe('Dashboard routing', () => {
     expect(main).toBeInTheDocument();
     expect(main).toHaveAttribute('tabindex', '-1');
 
-    const reportsLink = screen.getByRole('button', { name: /Reports \(printable\)/i });
+    const reportsLink = screen.getByRole('link', { name: /Reports \(printable\)/i });
     await user.click(reportsLink);
 
     const reportsHeading = await within(screen.getByRole('main')).findByRole('heading', {

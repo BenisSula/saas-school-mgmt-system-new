@@ -27,6 +27,7 @@ const StudentReportsPage = lazy(() => import('./pages/student/StudentReportsPage
 const AdminExamConfigPage = lazy(() => import('./pages/admin/AdminExamConfigPage'));
 const TeacherDashboardPage = lazy(() => import('./pages/teacher/TeacherDashboardPage'));
 const TeacherClassesPage = lazy(() => import('./pages/teacher/TeacherClassesPage'));
+const TeacherStudentsPage = lazy(() => import('./pages/teacher/TeacherStudentsPage'));
 const TeacherReportsPage = lazy(() => import('./pages/teacher/TeacherReportsPage'));
 const TeacherMessagesPage = lazy(() => import('./pages/teacher/TeacherMessagesPage'));
 const TeacherProfilePage = lazy(() => import('./pages/teacher/TeacherProfilePage'));
@@ -489,9 +490,12 @@ function App() {
               element={
                 <ProtectedRoute
                   allowedRoles={['teacher', 'admin', 'superadmin']}
+                  allowedPermissions={['attendance:mark']}
                   fallback={<Navigate to={getDefaultDashboardPath(user?.role)} replace />}
                 >
-                  <TeacherAttendancePage />
+                  <RouteMeta title="Mark Attendance">
+                    <TeacherAttendancePage />
+                  </RouteMeta>
                 </ProtectedRoute>
               }
             />
@@ -500,10 +504,25 @@ function App() {
               element={
                 <ProtectedRoute
                   allowedRoles={['teacher', 'admin', 'superadmin']}
+                  allowedPermissions={['grades:enter']}
                   fallback={<Navigate to={getDefaultDashboardPath(user?.role)} replace />}
                 >
-                  <RouteMeta title="Exams & grades">
+                  <RouteMeta title="Enter Grades">
                     <TeacherGradeEntryPage />
+                  </RouteMeta>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="students"
+              element={
+                <ProtectedRoute
+                  allowedRoles={['teacher', 'admin', 'superadmin']}
+                  allowedPermissions={['students:view_own_class']}
+                  fallback={<Navigate to={getDefaultDashboardPath(user?.role)} replace />}
+                >
+                  <RouteMeta title="My Students">
+                    <TeacherStudentsPage />
                   </RouteMeta>
                 </ProtectedRoute>
               }

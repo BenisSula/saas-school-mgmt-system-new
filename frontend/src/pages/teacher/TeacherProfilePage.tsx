@@ -30,7 +30,20 @@ export default function TeacherProfilePage() {
           }))
         } as TeacherProfileDetail;
       }
-      return api.teacher.getProfile();
+      // Convert TeacherProfile to TeacherProfileDetail format
+      const profile = await api.teachers.getMe();
+      return {
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        subjects: profile.subjects,
+        classes: profile.assigned_classes.map((className) => ({
+          id: className,
+          name: className,
+          subjects: [],
+          isClassTeacher: false
+        }))
+      } as TeacherProfileDetail;
     },
     [teacherId]
   );

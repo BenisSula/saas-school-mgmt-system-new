@@ -9,8 +9,8 @@ export async function listTeachers(client: PoolClient, schema: string) {
   return listEntities(client, schema, table);
 }
 
-export async function getTeacher(client: PoolClient, schema: string, id: string) {
-  return getEntityById(client, schema, table, id);
+export async function getTeacher<T extends Record<string, unknown> = Record<string, unknown>>(client: PoolClient, schema: string, id: string): Promise<T | null> {
+  return getEntityById<T>(client, schema, table, id);
 }
 
 export async function getTeacherByEmail(client: PoolClient, schema: string, email: string) {
@@ -19,7 +19,7 @@ export async function getTeacherByEmail(client: PoolClient, schema: string, emai
     `SELECT * FROM ${tableName} WHERE email = $1 LIMIT 1`,
     [email]
   );
-  return result.rowCount > 0 ? result.rows[0] : null;
+  return (result.rowCount ?? 0) > 0 ? result.rows[0] : null;
 }
 
 export async function createTeacher(client: PoolClient, schema: string, payload: TeacherInput) {

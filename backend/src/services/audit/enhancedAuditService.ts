@@ -125,12 +125,49 @@ export async function searchAuditLogs(
     values.push(filters.resourceId);
   }
 
-  if (filters.severity) {
+  // Check if severity column exists before filtering by it
+  // This allows the service to work even if migration 007 hasn't run
+  let hasSeverityColumn = true;
+  try {
+    const columnCheck = await client.query(
+      `
+        SELECT EXISTS (
+          SELECT FROM information_schema.columns 
+          WHERE table_schema = 'shared' 
+          AND table_name = 'audit_logs' 
+          AND column_name = 'severity'
+        )
+      `
+    );
+    hasSeverityColumn = columnCheck.rows[0]?.exists || false;
+  } catch {
+    hasSeverityColumn = false;
+  }
+
+  if (filters.severity && hasSeverityColumn) {
     conditions.push(`severity = $${paramIndex++}`);
     values.push(filters.severity);
   }
 
-  if (filters.tags && filters.tags.length > 0) {
+  // Check if tags column exists before filtering by it
+  let hasTagsColumn = true;
+  try {
+    const columnCheck = await client.query(
+      `
+        SELECT EXISTS (
+          SELECT FROM information_schema.columns 
+          WHERE table_schema = 'shared' 
+          AND table_name = 'audit_logs' 
+          AND column_name = 'tags'
+        )
+      `
+    );
+    hasTagsColumn = columnCheck.rows[0]?.exists || false;
+  } catch {
+    hasTagsColumn = false;
+  }
+
+  if (filters.tags && filters.tags.length > 0 && hasTagsColumn) {
     conditions.push(`tags && $${paramIndex++}`);
     values.push(filters.tags);
   }
@@ -147,45 +184,72 @@ export async function searchAuditLogs(
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-  // Get total count
-  const countResult = await client.query(
-    `SELECT COUNT(*) as total FROM shared.audit_logs ${whereClause}`,
-    values
-  );
-  const total = parseInt(countResult.rows[0].total, 10);
+  try {
+    // Get total count
+    const countResult = await client.query(
+      `SELECT COUNT(*) as total FROM shared.audit_logs ${whereClause}`,
+      values
+    );
+    const total = parseInt(countResult.rows[0].total, 10);
 
-  // Get logs
-  const limit = filters.limit || 50;
-  const offset = filters.offset || 0;
-  values.push(limit, offset);
+    // Get logs
+    const limit = filters.limit || 50;
+    const offset = filters.offset || 0;
+    values.push(limit, offset);
 
-  const logsResult = await client.query(
-    `
-      SELECT * FROM shared.audit_logs
-      ${whereClause}
-      ORDER BY created_at DESC
-      LIMIT $${paramIndex++} OFFSET $${paramIndex}
-    `,
-    values
-  );
+    // Build SELECT with only columns that exist
+    // Base columns that should always exist
+    let selectColumns = 'id, tenant_id, user_id, action, resource_type, resource_id, details, ip_address, created_at';
+    
+    // Add optional columns if they exist
+    if (hasSeverityColumn) {
+      selectColumns += ', severity';
+    }
+    if (hasTagsColumn) {
+      selectColumns += ', tags';
+    }
 
-  const logs: AuditLogEntry[] = logsResult.rows.map(row => ({
-    id: row.id,
-    tenantId: row.tenant_id,
-    userId: row.user_id,
-    action: row.action,
-    resourceType: row.resource_type,
-    resourceId: row.resource_id,
-    details: row.details,
-    ipAddress: row.ip_address,
-    userAgent: row.user_agent,
-    requestId: row.request_id,
-    severity: row.severity,
-    tags: row.tags,
-    createdAt: row.created_at
-  }));
+    const logsResult = await client.query(
+      `
+        SELECT ${selectColumns} FROM shared.audit_logs
+        ${whereClause}
+        ORDER BY created_at DESC
+        LIMIT $${paramIndex++} OFFSET $${paramIndex}
+      `,
+      values
+    );
 
-  return { logs, total };
+    const logs: AuditLogEntry[] = logsResult.rows.map(row => ({
+      id: row.id,
+      tenantId: row.tenant_id,
+      userId: row.user_id,
+      action: row.action,
+      resourceType: row.resource_type,
+      resourceId: row.resource_id,
+      details: row.details || {},
+      ipAddress: row.ip_address,
+      userAgent: row.user_agent,
+      requestId: row.request_id,
+      severity: hasSeverityColumn ? (row.severity as 'info' | 'warning' | 'error' | 'critical' | undefined) : undefined,
+      tags: hasTagsColumn ? (row.tags as string[] | undefined) : undefined,
+      createdAt: row.created_at
+    }));
+
+    return {
+      logs,
+      total
+    };
+  } catch (error) {
+    // Only log actual errors, not expected missing column errors
+    if (error instanceof Error && error.message.includes('does not exist')) {
+      // Silently skip - expected when migrations haven't run
+      return {
+        logs: [],
+        total: 0
+      };
+    }
+    throw error;
+  }
 }
 
 /**

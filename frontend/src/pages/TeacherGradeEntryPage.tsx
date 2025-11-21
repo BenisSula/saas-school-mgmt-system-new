@@ -139,11 +139,12 @@ export function TeacherGradeEntryPage() {
     setLoading(true);
     setError(null);
     try {
+      // Use deprecated API for now as it provides subjects data needed for grade entry
       const data = await api.teacher.listClasses();
       setClasses(data);
       if (data.length > 0) {
         setSelectedClassId((current) => current || data[0].id);
-        const firstSubject = data[0].subjects[0];
+        const firstSubject = data[0].subjects?.[0];
         if (firstSubject) {
           setSelectedSubjectId(firstSubject.id);
         }

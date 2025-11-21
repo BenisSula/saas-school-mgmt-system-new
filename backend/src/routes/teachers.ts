@@ -17,7 +17,7 @@ import {
 } from '../services/teacherService';
 import { listStudents } from '../services/studentService';
 import verifyTeacherAssignment from '../middleware/verifyTeacherAssignment';
-import { createAuditLog } from '../services/audit/enhancedAuditService';
+import { safeAuditLogFromRequest } from '../lib/auditHelpers';
 
 const router = Router();
 
@@ -26,7 +26,6 @@ router.use(
   tenantResolver(),
   ensureTenantContext()
 );
-// DEPRECATED: Router-level permission check - individual routes now use requireAnyPermission
 
 const listTeachersQuerySchema = z.object({
   limit: z.string().optional(),
@@ -45,12 +44,32 @@ router.get('/', validateInput(listTeachersQuerySchema, 'query'), async (req, res
   res.json(response);
 });
 
-router.get('/:id', async (req, res) => {
-  const teacher = await getTeacher(req.tenantClient!, req.tenant!.schema, req.params.id);
-  if (!teacher) {
-    return res.status(404).json({ message: 'Teacher not found' });
+router.get('/:id', async (req, res, next) => {
+  try {
+    const teacher = await getTeacher(req.tenantClient!, req.tenant!.schema, req.params.id);
+    if (!teacher) {
+      return res.status(404).json({ message: 'Teacher not found' });
+    }
+
+    // Audit log for sensitive read operation
+    await safeAuditLogFromRequest(
+      req,
+      {
+        action: 'TEACHER_VIEWED',
+        resourceType: 'teacher',
+        resourceId: req.params.id,
+        details: {
+          teacherId: req.params.id
+        },
+        severity: 'info'
+      },
+      'teachers'
+    );
+
+    res.json(teacher);
+  } catch (error) {
+    next(error);
   }
-  res.json(teacher);
 });
 
 router.post('/', validateInput(teacherSchema, 'body'), async (req, res, next) => {
@@ -75,27 +94,41 @@ router.put('/:id', requirePermission('users:manage'), validateInput(teacherSchem
     }
 
     // Create audit log for class assignment if classes were updated
-    if (req.body.assigned_classes && req.user && req.tenant) {
-      try {
-        await createAuditLog(
-          req.tenantClient!,
-          {
-            tenantId: req.tenant.id,
-            userId: req.user.id,
-            action: 'CLASS_ASSIGNED',
-            resourceType: 'teacher',
-            resourceId: req.params.id,
-            details: {
-              teacherId: req.params.id,
-              assignedClasses: req.body.assigned_classes,
-              assignmentType: 'class_teacher'
-            },
-            severity: 'info'
-          }
-        );
-      } catch (auditError) {
-        console.error('[teachers] Failed to create audit log for class assignment:', auditError);
-      }
+    if (req.body.assigned_classes) {
+      await safeAuditLogFromRequest(
+        req,
+        {
+          action: 'CLASS_ASSIGNED',
+          resourceType: 'teacher',
+          resourceId: req.params.id,
+          details: {
+            teacherId: req.params.id,
+            assignedClasses: req.body.assigned_classes,
+            assignmentType: 'class_teacher'
+          },
+          severity: 'info'
+        },
+        'teachers'
+      );
+    }
+
+    // Audit log for general profile update
+    const updatedFields = Object.keys(req.body).filter(key => key !== 'assigned_classes');
+    if (updatedFields.length > 0) {
+      await safeAuditLogFromRequest(
+        req,
+        {
+          action: 'TEACHER_UPDATED',
+          resourceType: 'teacher',
+          resourceId: req.params.id,
+          details: {
+            teacherId: req.params.id,
+            updatedFields: updatedFields
+          },
+          severity: 'info'
+        },
+        'teachers'
+      );
     }
 
     res.json(teacher);
@@ -147,10 +180,68 @@ router.get('/me/classes', requirePermission('dashboard:view'), async (req, res, 
     }
 
     const assignedClasses = teacher.assigned_classes || [];
+    if (assignedClasses.length === 0) {
+      return res.json([]);
+    }
+
+    const schema = req.tenant.schema;
+    const client = req.tenantClient;
+
+    // Query classes table to get class names
+    // Handle both UUID and text class IDs
+    const isUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    
+    const classIds = assignedClasses.filter((id: string) => isUUID(id));
+    const classNameIds = assignedClasses.filter((id: string) => !isUUID(id));
+
+    // Query classes by UUID
+    let classMap = new Map<string, string>();
+    if (classIds.length > 0) {
+      const placeholders = classIds.map((_: string, i: number) => `$${i + 1}`).join(',');
+      const classResult = await client.query(
+        `SELECT id::text, name FROM ${schema}.classes WHERE id::text IN (${placeholders})`,
+        classIds
+      );
+      classResult.rows.forEach((row: { id: string; name: string }) => {
+        classMap.set(row.id, row.name);
+      });
+    }
+
+    // Query classes by name (text ID)
+    if (classNameIds.length > 0) {
+      const placeholders = classNameIds.map((_: string, i: number) => `$${i + 1}`).join(',');
+      const classResult = await client.query(
+        `SELECT name, name as id FROM ${schema}.classes WHERE name IN (${placeholders})`,
+        classNameIds
+      );
+      classResult.rows.forEach((row: { id: string; name: string }) => {
+        classMap.set(row.id, row.name);
+      });
+    }
+
+    // Query student counts per class
+    const studentCounts = new Map<string, number>();
+    const allStudents = await listStudents(client, schema) as Array<{
+      class_uuid?: string | null;
+      class_id?: string | null;
+    }>;
+
+    assignedClasses.forEach((classId: string) => {
+      const count = allStudents.filter((s) => {
+        if (isUUID(classId)) {
+          return s.class_uuid === classId;
+        } else {
+          return s.class_id === classId;
+        }
+      }).length;
+      studentCounts.set(classId, count);
+    });
+
+    // Build response with actual class names and student counts
     const classes = assignedClasses.map((classId: string) => ({
       id: classId,
-      name: classId, // TODO: Query actual class name from classes table
-      studentCount: 0 // TODO: Query actual student count
+      name: classMap.get(classId) || classId, // Fallback to classId if not found in classes table
+      studentCount: studentCounts.get(classId) || 0
     }));
 
     res.json(classes);

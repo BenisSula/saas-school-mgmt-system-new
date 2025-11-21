@@ -99,8 +99,15 @@ router.post('/saml/initiate', tenantResolver({ optional: true }), async (req, re
     const pool = getPool();
     const client = await pool.connect();
     try {
-      const providers = await getSamlProviders(client, req.tenant?.id) as Array<{ id: string }>;
-      const provider = providers.find((p) => p.id === providerId);
+      const providers = await getSamlProviders(client, req.tenant?.id);
+      const provider = providers.find((p: unknown) => {
+        const typed = p as { id: string };
+        return typed.id === providerId;
+      }) as {
+        id: string;
+        entity_id: string;
+        sso_url: string;
+      } | undefined;
 
       if (!provider) {
         return res.status(404).json({ message: 'SAML provider not found' });
@@ -109,8 +116,8 @@ router.post('/saml/initiate', tenantResolver({ optional: true }), async (req, re
       // Generate SAML AuthnRequest
       const acsUrl = `${req.protocol}://${req.get('host')}/api/auth/sso/saml/acs`;
       const samlRequest = generateSamlAuthnRequest(
-        (provider as { entity_id: string }).entity_id,
-        (provider as { sso_url: string }).sso_url,
+        provider.entity_id,
+        provider.sso_url,
         acsUrl,
         relayState
       );
@@ -120,7 +127,7 @@ router.post('/saml/initiate', tenantResolver({ optional: true }), async (req, re
 
       res.json({
         samlRequest,
-        ssoUrl: (provider as { sso_url: string }).sso_url,
+        ssoUrl: provider.sso_url,
         relayState: state
       });
     } finally {
@@ -222,13 +229,20 @@ router.get('/oauth/authorize', tenantResolver({ optional: true }), async (req, r
         return res.status(404).json({ message: 'OAuth provider not found' });
       }
 
+      const typedProvider = provider as {
+        id: string;
+        scopes?: string[];
+        authorization_url: string;
+        client_id: string;
+      };
+
       const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/sso/oauth/callback`;
       const state = crypto.randomBytes(16).toString('hex');
-      const scopes = (provider as { scopes: string[] }).scopes || ['openid', 'profile', 'email'];
+      const scopes = typedProvider.scopes || ['openid', 'profile', 'email'];
 
       const authUrl = generateOAuthAuthorizationUrl(
-        (provider as { authorization_url: string }).authorization_url,
-        (provider as { client_id: string }).client_id,
+        typedProvider.authorization_url,
+        typedProvider.client_id,
         redirectUri,
         scopes,
         state

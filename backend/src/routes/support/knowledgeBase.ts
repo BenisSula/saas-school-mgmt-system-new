@@ -86,7 +86,8 @@ router.post('/categories', requirePermission('kb:manage'), async (req, res, next
     try {
       const category = await createKbCategory(client, {
         ...parsed.data,
-        tenantId: req.tenant?.id
+        tenantId: req.tenant?.id,
+        slug: parsed.data.slug || parsed.data.name.toLowerCase().replace(/\s+/g, '-')
       });
       res.status(201).json(category);
     } finally {
@@ -155,7 +156,8 @@ router.post('/articles', requirePermission('kb:manage'), async (req, res, next) 
       const article = await createKbArticle(client, {
         ...parsed.data,
         tenantId: req.tenant?.id,
-        authorId: req.user?.id
+        authorId: req.user?.id,
+        slug: parsed.data.slug || parsed.data.title.toLowerCase().replace(/\s+/g, '-')
       });
       res.status(201).json(article);
     } finally {

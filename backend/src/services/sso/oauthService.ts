@@ -79,7 +79,12 @@ export async function exchangeAuthorizationCode(
     throw new Error(`Token exchange failed: ${response.statusText}`);
   }
 
-  const tokens = await response.json();
+  const tokens = (await response.json()) as {
+    access_token: string;
+    refresh_token?: string;
+    id_token?: string;
+    expires_in?: number;
+  };
   return {
     accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token,
@@ -105,7 +110,7 @@ export async function getUserInfo(
     throw new Error(`UserInfo request failed: ${response.statusText}`);
   }
 
-  return await response.json();
+  return (await response.json()) as Record<string, unknown>;
 }
 
 /**
@@ -389,7 +394,11 @@ export async function refreshOAuthToken(
     throw new Error(`Token refresh failed: ${response.statusText}`);
   }
 
-  const tokens = await response.json();
+  const tokens = (await response.json()) as {
+    access_token: string;
+    refresh_token?: string;
+    expires_in?: number;
+  };
   return {
     accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token,

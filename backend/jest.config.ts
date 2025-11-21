@@ -25,13 +25,29 @@ const config: Config = {
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
     // Map node: specifiers to bare built-ins for Jest
-    '^node:(.*)$': '$1'
+    '^node:(.*)$': '$1',
+    // Explicitly map Node built-ins to prevent Jest from trying to resolve them as file paths
+    '^fs$': 'fs',
+    '^util$': 'util',
+    '^constants$': 'constants',
+    '^path$': 'path',
+    '^stream$': 'stream',
+    '^events$': 'events',
+    '^http$': 'http',
+    '^https$': 'https',
+    '^url$': 'url',
+    '^querystring$': 'querystring',
+    '^os$': 'os',
+    '^crypto$': 'crypto',
+    // Mock formidable to avoid module resolution issues
+    '^formidable$': '<rootDir>/tests/mocks/formidable.js'
   },
-  // Don't transform formidable - it's ESM and causes issues with Node built-ins
-  // Instead, let Node handle it natively
+  // Transform superagent and supertest, but not formidable
+  // formidable is CommonJS and should work as-is, but we need to handle its fs import
   transformIgnorePatterns: [
     '/node_modules/(?!(superagent|@jest|supertest)/)',
-    '/node_modules/formidable/'
+    '/node_modules/formidable/',
+    '/node_modules/.pnpm/'
   ],
   // Setup file to handle Node built-in module resolution
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],

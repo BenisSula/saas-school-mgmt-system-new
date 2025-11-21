@@ -40,6 +40,10 @@ const LINK_PERMISSIONS: Record<string, LinkPermission> = {
     linkId: 'teacher-classes',
     requiredPermissions: ['students:view_own_class']
   },
+  'teacher-students': {
+    linkId: 'teacher-students',
+    requiredPermissions: ['students:view_own_class']
+  },
   'teacher-attendance': { linkId: 'teacher-attendance', requiredPermissions: ['attendance:mark'] },
   'teacher-grades': { linkId: 'teacher-grades', requiredPermissions: ['grades:enter'] },
   'teacher-reports': { linkId: 'teacher-reports', requiredPermissions: ['reports:view'] },

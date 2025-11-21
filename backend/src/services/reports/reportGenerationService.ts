@@ -169,7 +169,7 @@ export async function executeReport(
     return {
       executionId,
       data: dataResult.rows,
-      rowCount: dataResult.rowCount,
+      rowCount: dataResult.rowCount ?? 0,
       executionTimeMs,
       columns: reportDefinition.columns.length > 0
         ? reportDefinition.columns

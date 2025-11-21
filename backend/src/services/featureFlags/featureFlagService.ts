@@ -50,7 +50,7 @@ export async function isFeatureEnabled(
       [tenantId, flagKey]
     );
 
-    if (tenantOverrideResult.rowCount > 0) {
+    if ((tenantOverrideResult.rowCount ?? 0) > 0) {
       return tenantOverrideResult.rows[0].is_enabled;
     }
 

@@ -39,7 +39,16 @@ export type Permission =
   | 'status:view'
   | 'status:manage'
   | 'reports:manage'
-  | 'notifications:send';
+  | 'notifications:send'
+  | 'subscriptions:manage'
+  | 'subscriptions:view'
+  | 'subscriptions:update'
+  | 'overrides:manage'
+  | 'overrides:view'
+  | 'overrides:create'
+  | 'overrides:revoke'
+  | 'permission_overrides:manage'
+  | 'permission_overrides:view';
 
 export const rolePermissions: Record<Role, Permission[]> = {
   student: [
@@ -136,7 +145,16 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'announcements:manage',
     'kb:manage',
     'status:view',
-    'status:manage'
+    'status:manage',
+    'subscriptions:manage',
+    'subscriptions:view',
+    'subscriptions:update',
+    'overrides:manage',
+    'overrides:view',
+    'overrides:create',
+    'overrides:revoke',
+    'permission_overrides:manage',
+    'permission_overrides:view'
   ]
 };
 

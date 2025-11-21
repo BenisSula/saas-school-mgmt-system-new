@@ -83,10 +83,11 @@ export async function createInvitation(
   });
 
   // Record audit log
-  await recordSharedAuditLog(client, {
-    tenantId: input.tenantId,
+  await recordSharedAuditLog({
     userId: input.invitedBy,
     action: 'invitation_created',
+    entityType: 'USER',
+    entityId: invitationId,
     details: {
       invitationId,
       email: input.email,

@@ -126,7 +126,14 @@ export function useRBAC(_options?: UseRBACOptions): UseRBACReturn {
   const isSuperAdmin = useMemo(() => role === 'superadmin', [role]);
   const isAdmin = useMemo(() => role === 'admin', [role]);
   const isTeacher = useMemo(() => role === 'teacher', [role]);
-  const isHOD = useMemo(() => role === 'hod', [role]);
+  // HODs have role='teacher' with additional_roles containing 'hod'
+  // Note: AuthUser doesn't include additional_roles, so we can't check HOD status here
+  // Components should use the isHOD helper from userHelpers with TenantUser data
+  const isHOD = useMemo(() => {
+    // For now, return false as AuthUser doesn't have additional_roles
+    // Components needing HOD check should fetch TenantUser data
+    return false;
+  }, [user, role]);
   const isStudent = useMemo(() => role === 'student', [role]);
 
   return {

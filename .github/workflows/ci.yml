@@ -24,6 +24,7 @@ jobs:
       - name: Install root dependencies
         run: npm install --prefix ..
       - run: npm install
+      - run: npm run build
       - run: npm run lint
       - run: npm run test
 
@@ -42,6 +43,7 @@ jobs:
       - name: Install root dependencies
         run: npm install --prefix ..
       - run: npm install
+      - run: npm run build
       - run: npm run lint
       - run: npm run test
 

@@ -188,5 +188,96 @@ export function requireAllPermissions(...permissions: Permission[]) {
   };
 }
 
+/**
+ * Requires the user to be a superadmin (superuser).
+ * Only superadmin role can access SuperUser endpoints.
+ */
+export function requireSuperuser() {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const user = req.user as GuardedUser | undefined;
+
+    if (!user) {
+      return res.status(401).json({ message: 'Unauthenticated' });
+    }
+
+    if (user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Superuser access required' });
+    }
+
+    return next();
+  };
+}
+
+/**
+ * Enforces role hierarchy when modifying user roles.
+ * Prevents lower-privileged users from assigning higher-privileged roles.
+ * 
+ * Role hierarchy (highest to lowest):
+ * - superadmin
+ * - admin
+ * - hod
+ * - teacher
+ * - student
+ * 
+ * @param targetRoleParam - Parameter name for the target role being assigned (default: 'role')
+ */
+export function enforceRoleHierarchy(targetRoleParam = 'role') {
+  return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user as GuardedUser | undefined;
+      if (!user) {
+        return res.status(401).json({ message: 'Unauthenticated' });
+      }
+
+      // Superadmin can assign any role
+      if (user.role === 'superadmin') {
+        return next();
+      }
+
+      const targetRole = req.body[targetRoleParam] || req.params[targetRoleParam] || req.query[targetRoleParam];
+      
+      if (!targetRole) {
+        return next(); // No role assignment, skip check
+      }
+
+      // Define role hierarchy (higher number = higher privilege)
+      const roleHierarchy: Record<Role, number> = {
+        superadmin: 5,
+        admin: 4,
+        hod: 3,
+        teacher: 2,
+        student: 1
+      };
+
+      const userLevel = roleHierarchy[user.role] ?? 0;
+      const targetLevel = roleHierarchy[targetRole as Role] ?? 0;
+
+      // User cannot assign roles equal to or higher than their own
+      if (targetLevel >= userLevel) {
+        await logUnauthorizedAttempt(req.tenantClient, req.tenant?.schema, {
+          userId: user.id,
+          path: req.originalUrl ?? req.path,
+          method: req.method,
+          reason: 'Role hierarchy violation',
+          details: {
+            userRole: user.role,
+            attemptedRole: targetRole,
+            userLevel,
+            targetLevel
+          }
+        });
+
+        return res.status(403).json({
+          message: 'Cannot assign role equal to or higher than your own'
+        });
+      }
+
+      return next();
+    } catch (error) {
+      return next(error);
+    }
+  };
+}
+
 export default requireRole;
 

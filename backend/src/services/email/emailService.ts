@@ -55,7 +55,7 @@ export async function getEmailTemplate(
       [templateKey, tenantId]
     );
 
-    if (tenantResult.rowCount > 0) {
+    if ((tenantResult.rowCount ?? 0) > 0) {
       const row = tenantResult.rows[0];
       return {
         templateKey: row.template_key,
@@ -307,7 +307,7 @@ export async function processEmailQueue(
   }
 
   return {
-    processed: queueResult.rowCount,
+    processed: queueResult.rowCount ?? 0,
     succeeded,
     failed
   };

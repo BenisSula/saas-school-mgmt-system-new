@@ -1,6 +1,7 @@
 import { useQuery } from '../useQuery';
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import { isHOD, hasAdditionalRole } from '../../lib/utils/userHelpers';
 
 // Student Dashboard Queries
 export function useStudentDashboard() {
@@ -111,9 +112,13 @@ export function useHODDashboard() {
       const teacherProfile = await api.teacher.getProfile();
       const users = await api.listUsers();
       const currentUser = users.find((u) => u.id === user?.id);
-      const hodRole = currentUser?.additional_roles?.find((r) => r.role === 'hod');
+      const isUserHOD = currentUser && isHOD(currentUser);
       const department =
-        (hodRole?.metadata as { department?: string })?.department ||
+        (isUserHOD && hasAdditionalRole(currentUser, 'hod')
+          ? (currentUser.additional_roles?.find((r) => r.role === 'hod')?.metadata as {
+              department?: string;
+            })?.department
+          : undefined) ||
         teacherProfile.subjects[0] ||
         'General';
 

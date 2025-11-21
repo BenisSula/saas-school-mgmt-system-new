@@ -19,6 +19,7 @@ export interface IncidentAlert {
   description: string;
   labels: Record<string, string>;
   startsAt: string;
+  status?: 'firing' | 'resolved';
 }
 
 /**
@@ -51,7 +52,7 @@ export async function processAlert(alert: IncidentAlert): Promise<void> {
       [alert.alertname]
     );
 
-    if (existingIncident.rowCount > 0) {
+    if ((existingIncident.rowCount ?? 0) > 0) {
       logger.info('Incident already exists for alert', {
         alertname: alert.alertname,
         incidentId: existingIncident.rows[0].id
@@ -62,15 +63,10 @@ export async function processAlert(alert: IncidentAlert): Promise<void> {
     // Create incident
     const incident = await createIncident(client, {
       title: `[${alert.severity.toUpperCase()}] ${alert.summary}`,
-      description: alert.description,
+      description: `${alert.description}\n\nAlert: ${alert.alertname}\nLabels: ${JSON.stringify(alert.labels)}`,
       status: 'investigating',
       severity: alert.severity === 'critical' ? 'critical' : 'major',
-      affectedServices: [alert.component],
-      metadata: {
-        alertname: alert.alertname,
-        labels: alert.labels,
-        automated: true
-      }
+      affectedServices: [alert.component]
     });
 
     logger.info('Incident created from alert', {
@@ -142,7 +138,7 @@ async function resolveIncidentFromAlert(alert: IncidentAlert): Promise<void> {
       [alert.alertname]
     );
 
-    if (result.rowCount > 0) {
+    if ((result.rowCount ?? 0) > 0) {
       const incidentId = result.rows[0].id;
       await addIncidentUpdate(client, {
         incidentId,

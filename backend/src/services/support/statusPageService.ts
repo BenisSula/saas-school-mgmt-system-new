@@ -387,7 +387,7 @@ export async function getUptimeStatistics(
     serviceName?: string;
     days?: number;
   }
-): Promise<{
+): Promise<Array<{
   serviceName: string;
   uptimePercentage: number;
   totalChecks: number;
@@ -397,7 +397,7 @@ export async function getUptimeStatistics(
   averageResponseTime: number;
   lastStatus: string;
   lastChecked: Date;
-}> {
+}>> {
   const days = filters.days || 30;
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - days);
@@ -451,17 +451,7 @@ export async function getUptimeStatistics(
     averageResponseTime: parseFloat(row.average_response_time) || 0,
     lastStatus: row.last_status,
     lastChecked: row.last_checked
-  })) as unknown as {
-    serviceName: string;
-    uptimePercentage: number;
-    totalChecks: number;
-    upChecks: number;
-    downChecks: number;
-    degradedChecks: number;
-    averageResponseTime: number;
-    lastStatus: string;
-    lastChecked: Date;
-  };
+  }));
 }
 
 /**
@@ -528,7 +518,7 @@ export async function getStatusPageSummary(
 
   return {
     overallStatus,
-    services: uptimeStats.map(stat => ({
+    services: uptimeStats.map((stat: { serviceName: string; lastStatus: string; uptimePercentage: number }) => ({
       name: stat.serviceName,
       status: stat.lastStatus as 'up' | 'down' | 'degraded',
       uptimePercentage: stat.uptimePercentage

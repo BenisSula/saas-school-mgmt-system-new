@@ -33,7 +33,8 @@ export function useApi<TData, TError = Error>(
   // Handle errors using useEffect since onError is deprecated
   React.useEffect(() => {
     if (queryResult.error && options?.onError) {
-      const message = options?.errorMessage || (queryResult.error as Error).message || 'Failed to fetch data';
+      const errorObj = queryResult.error instanceof Error ? queryResult.error : new Error(String(queryResult.error));
+      const message = options?.errorMessage || errorObj.message || 'Failed to fetch data';
       toast.error(message);
       options.onError(queryResult.error);
     }

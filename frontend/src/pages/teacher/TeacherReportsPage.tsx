@@ -4,7 +4,7 @@ import { StatusBanner } from '../../components/ui/StatusBanner';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
 import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton';
-import { api, type TeacherClassReport, type TeacherClassSummary } from '../../lib/api';
+import { api, type TeacherClassReport, type TeacherClassInfo } from '../../lib/api';
 import { toast } from 'sonner';
 
 interface StatPair {
@@ -30,7 +30,7 @@ function buildFeeStats(report: TeacherClassReport): StatPair[] {
 }
 
 export default function TeacherReportsPage() {
-  const [classes, setClasses] = useState<TeacherClassSummary[]>([]);
+  const [classes, setClasses] = useState<TeacherClassInfo[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [report, setReport] = useState<TeacherClassReport | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,7 +46,7 @@ export default function TeacherReportsPage() {
     let cancelled = false;
     void (async () => {
       try {
-        const data = await api.teacher.listClasses();
+        const data = await api.teachers.getMyClasses();
         if (cancelled) return;
         setClasses(data);
         if (data.length > 0) {

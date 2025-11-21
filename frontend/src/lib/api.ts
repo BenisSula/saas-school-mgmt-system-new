@@ -246,6 +246,22 @@ async function extractError(
   try {
     const payload = await response.json();
 
+    // Handle Zod validation errors with user-friendly formatting
+    if (payload?.errors && Array.isArray(payload.errors) && payload.errors.length > 0) {
+      const formattedErrors = payload.errors.map((e: { message: string; path: string[] }) => {
+        const field = e.path.join(' ');
+        const fieldLabel = field
+          .replace(/([A-Z])/g, ' $1')
+          .replace(/^./, (str) => str.toUpperCase())
+          .trim();
+        return `${fieldLabel}: ${e.message}`;
+      });
+      return {
+        message: payload.message || formattedErrors.join('; '),
+        error: payload as ApiErrorResponse
+      };
+    }
+
     // Check for standardized error format
     if (payload?.status === 'error' && typeof payload?.message === 'string') {
       return {
@@ -624,7 +640,7 @@ export interface TenantUser {
   is_verified: boolean;
   created_at: string;
   status?: UserStatus;
-  additional_roles?: Array<{ role: string; metadata?: Record<string, unknown> }>;
+  additional_roles?: Array<{ role: string; granted_at?: string; granted_by?: string; metadata?: Record<string, unknown> }>;
   pending_profile_data?: Record<string, unknown> | null; // Profile data for pending users (available for admin review)
 }
 
@@ -726,6 +742,22 @@ export interface TeacherProfile {
   assigned_classes: string[];
   created_at?: string;
   updated_at?: string;
+}
+
+export interface TeacherClassInfo {
+  id: string;
+  name: string;
+  studentCount: number;
+}
+
+export interface TeacherStudent {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  class_id?: string | null;
+  class_uuid?: string | null;
+  admission_number?: string | null;
 }
 
 // Backend returns snake_case with JSON strings, transform to frontend format
@@ -1578,6 +1610,306 @@ export const api = {
         method: 'PUT',
         body: JSON.stringify(settings)
       }),
+    // Subscriptions
+    createSubscription: (payload: {
+      tenantId: string;
+      tier: 'free' | 'trial' | 'paid';
+      status?: 'active' | 'suspended' | 'cancelled' | 'expired';
+      billingPeriod?: 'monthly' | 'yearly' | 'quarterly' | 'annually';
+      currentPeriodStart?: string;
+      currentPeriodEnd?: string;
+      trialEndDate?: string;
+      customLimits?: Record<string, unknown>;
+    }) =>
+      apiFetch<{
+        id: string;
+        tenantId: string;
+        tier: 'free' | 'trial' | 'paid';
+        status: 'active' | 'suspended' | 'cancelled' | 'expired';
+        billingPeriod: 'monthly' | 'yearly' | 'quarterly' | 'annually' | null;
+        currentPeriodStart: Date | null;
+        currentPeriodEnd: Date | null;
+        trialEndDate: Date | null;
+        customLimits: Record<string, unknown>;
+        createdAt: Date;
+        updatedAt: Date;
+      }>('/superuser/subscriptions', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    listSubscriptions: (filters?: {
+      tier?: 'free' | 'trial' | 'paid';
+      status?: 'active' | 'suspended' | 'cancelled' | 'expired';
+      tenantId?: string;
+    }) => {
+      const params = buildQuery(filters);
+      return apiFetch<Array<{
+        id: string;
+        tenantId: string;
+        tier: 'free' | 'trial' | 'paid';
+        status: 'active' | 'suspended' | 'cancelled' | 'expired';
+        billingPeriod: 'monthly' | 'yearly' | 'quarterly' | 'annually' | null;
+        currentPeriodStart: Date | null;
+        currentPeriodEnd: Date | null;
+        trialEndDate: Date | null;
+        customLimits: Record<string, unknown>;
+        createdAt: Date;
+        updatedAt: Date;
+      }>>(`/superuser/subscriptions${params}`);
+    },
+    getSubscription: (id: string) =>
+      apiFetch<{
+        id: string;
+        tenantId: string;
+        tier: 'free' | 'trial' | 'paid';
+        status: 'active' | 'suspended' | 'cancelled' | 'expired';
+        billingPeriod: 'monthly' | 'yearly' | 'quarterly' | 'annually' | null;
+        currentPeriodStart: Date | null;
+        currentPeriodEnd: Date | null;
+        trialEndDate: Date | null;
+        customLimits: Record<string, unknown>;
+        createdAt: Date;
+        updatedAt: Date;
+      }>(`/superuser/subscriptions/${id}`),
+    getSubscriptionByTenant: (tenantId: string) =>
+      apiFetch<{
+        id: string;
+        tenantId: string;
+        tier: 'free' | 'trial' | 'paid';
+        status: 'active' | 'suspended' | 'cancelled' | 'expired';
+        billingPeriod: 'monthly' | 'yearly' | 'quarterly' | 'annually' | null;
+        currentPeriodStart: Date | null;
+        currentPeriodEnd: Date | null;
+        trialEndDate: Date | null;
+        customLimits: Record<string, unknown>;
+        createdAt: Date;
+        updatedAt: Date;
+      }>(`/superuser/subscriptions/tenant/${tenantId}`),
+    updateSubscription: (id: string, payload: {
+      tier?: 'free' | 'trial' | 'paid';
+      status?: 'active' | 'suspended' | 'cancelled' | 'expired';
+      billingPeriod?: 'monthly' | 'yearly' | 'quarterly' | 'annually';
+      currentPeriodStart?: string;
+      currentPeriodEnd?: string;
+      trialEndDate?: string;
+      customLimits?: Record<string, unknown>;
+    }) =>
+      apiFetch<{
+        id: string;
+        tenantId: string;
+        tier: 'free' | 'trial' | 'paid';
+        status: 'active' | 'suspended' | 'cancelled' | 'expired';
+        billingPeriod: 'monthly' | 'yearly' | 'quarterly' | 'annually' | null;
+        currentPeriodStart: Date | null;
+        currentPeriodEnd: Date | null;
+        trialEndDate: Date | null;
+        customLimits: Record<string, unknown>;
+        createdAt: Date;
+        updatedAt: Date;
+      }>(`/superuser/subscriptions/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      }),
+    suspendSubscription: (id: string, reason?: string) =>
+      apiFetch<{
+        id: string;
+        tenantId: string;
+        tier: 'free' | 'trial' | 'paid';
+        status: 'active' | 'suspended' | 'cancelled' | 'expired';
+        billingPeriod: 'monthly' | 'yearly' | 'quarterly' | 'annually' | null;
+        currentPeriodStart: Date | null;
+        currentPeriodEnd: Date | null;
+        trialEndDate: Date | null;
+        customLimits: Record<string, unknown>;
+        createdAt: Date;
+        updatedAt: Date;
+      }>(`/superuser/subscriptions/${id}/suspend`, {
+        method: 'POST',
+        body: JSON.stringify({ reason })
+      }),
+    cancelSubscription: (id: string, reason?: string) =>
+      apiFetch<{
+        id: string;
+        tenantId: string;
+        tier: 'free' | 'trial' | 'paid';
+        status: 'active' | 'suspended' | 'cancelled' | 'expired';
+        billingPeriod: 'monthly' | 'yearly' | 'quarterly' | 'annually' | null;
+        currentPeriodStart: Date | null;
+        currentPeriodEnd: Date | null;
+        trialEndDate: Date | null;
+        customLimits: Record<string, unknown>;
+        createdAt: Date;
+        updatedAt: Date;
+      }>(`/superuser/subscriptions/${id}/cancel`, {
+        method: 'POST',
+        body: JSON.stringify({ reason })
+      }),
+    getSubscriptionHistory: (id: string, limit?: number) => {
+      const params = limit ? `?limit=${limit}` : '';
+      return apiFetch<Array<{
+        id: string;
+        subscriptionId: string;
+        changedBy: string | null;
+        changeType: string;
+        oldValue: Record<string, unknown> | null;
+        newValue: Record<string, unknown> | null;
+        reason: string | null;
+        changedAt: Date;
+      }>>(`/superuser/subscriptions/${id}/history${params}`);
+    },
+    // Overrides
+    createOverride: (payload: {
+      overrideType: 'user_status' | 'tenant_status' | 'subscription_limit' | 'feature_access' | 'quota_override' | 'rate_limit' | 'other';
+      targetId: string;
+      action: string;
+      reason: string;
+      expiresAt?: string;
+      metadata?: Record<string, unknown>;
+    }) =>
+      apiFetch<{
+        id: string;
+        overrideType: string;
+        targetId: string;
+        action: string;
+        reason: string;
+        createdBy: string;
+        expiresAt: Date | null;
+        metadata: Record<string, unknown>;
+        isActive: boolean;
+        createdAt: Date;
+        revokedAt: Date | null;
+        revokedBy: string | null;
+      }>('/superuser/overrides', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    listOverrides: (filters?: {
+      overrideType?: string;
+      targetId?: string;
+      isActive?: boolean;
+      createdBy?: string;
+    }) => {
+      const params = buildQuery(filters);
+      return apiFetch<Array<{
+        id: string;
+        overrideType: string;
+        targetId: string;
+        action: string;
+        reason: string;
+        createdBy: string;
+        expiresAt: Date | null;
+        metadata: Record<string, unknown>;
+        isActive: boolean;
+        createdAt: Date;
+        revokedAt: Date | null;
+        revokedBy: string | null;
+      }>>(`/superuser/overrides${params}`);
+    },
+    getOverride: (id: string) =>
+      apiFetch<{
+        id: string;
+        overrideType: string;
+        targetId: string;
+        action: string;
+        reason: string;
+        createdBy: string;
+        expiresAt: Date | null;
+        metadata: Record<string, unknown>;
+        isActive: boolean;
+        createdAt: Date;
+        revokedAt: Date | null;
+        revokedBy: string | null;
+      }>(`/superuser/overrides/${id}`),
+    getActiveOverridesForTarget: (overrideType: string, targetId: string) =>
+      apiFetch<Array<{
+        id: string;
+        overrideType: string;
+        targetId: string;
+        action: string;
+        reason: string;
+        createdBy: string;
+        expiresAt: Date | null;
+        metadata: Record<string, unknown>;
+        isActive: boolean;
+        createdAt: Date;
+        revokedAt: Date | null;
+        revokedBy: string | null;
+      }>>(`/superuser/overrides/target/${overrideType}/${targetId}`),
+    revokeOverride: (id: string, reason?: string) =>
+      apiFetch<{
+        id: string;
+        overrideType: string;
+        targetId: string;
+        action: string;
+        reason: string;
+        createdBy: string;
+        expiresAt: Date | null;
+        metadata: Record<string, unknown>;
+        isActive: boolean;
+        createdAt: Date;
+        revokedAt: Date | null;
+        revokedBy: string | null;
+      }>(`/superuser/overrides/${id}/revoke`, {
+        method: 'POST',
+        body: JSON.stringify({ reason })
+      }),
+    // Permission Overrides
+    grantPermissionOverride: (payload: {
+      userId: string;
+      permission: string;
+      reason?: string;
+      expiresAt?: string;
+    }) =>
+      apiFetch<{
+        id: string;
+        userId: string;
+        permission: string;
+        granted: boolean;
+        grantedBy: string;
+        reason: string | null;
+        expiresAt: Date | null;
+        createdAt: Date;
+      }>('/superuser/permission-overrides/grant', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    revokePermissionOverride: (payload: {
+      userId: string;
+      permission: string;
+      reason?: string;
+    }) =>
+      apiFetch<void>('/superuser/permission-overrides/revoke', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    listPermissionOverrides: (filters?: {
+      userId?: string;
+      permission?: string;
+      grantedBy?: string;
+    }) => {
+      const params = buildQuery(filters);
+      return apiFetch<Array<{
+        id: string;
+        userId: string;
+        permission: string;
+        granted: boolean;
+        grantedBy: string;
+        reason: string | null;
+        expiresAt: Date | null;
+        createdAt: Date;
+      }>>(`/superuser/permission-overrides${params}`);
+    },
+    getPermissionOverridesForUser: (userId: string) =>
+      apiFetch<Array<{
+        id: string;
+        userId: string;
+        permission: string;
+        granted: boolean;
+        grantedBy: string;
+        reason: string | null;
+        expiresAt: Date | null;
+        createdAt: Date;
+      }>>(`/superuser/permission-overrides/user/${userId}`),
     // Session Management
     getLoginHistory: (userId: string, filters?: {
       tenantId?: string | null;
@@ -1945,9 +2277,23 @@ export const api = {
         responseType: 'blob'
       })
   },
+  /**
+   * @deprecated Legacy teacher API endpoints.
+   * 
+   * Migration guide:
+   * - getOverview() → Still needed for assignments data. Consider combining with teachers.getMe() in future.
+   * - listClasses() → Use teachers.getMyClasses() instead
+   * - getClassRoster() → Use teachers.getMyStudents({ classId }) instead
+   * - getProfile() → Use teachers.getMe() instead
+   * 
+   * These methods will be removed in a future version once all consumers are migrated.
+   */
   teacher: {
+    /** @deprecated Still needed for assignments. Consider migrating to combined endpoint. */
     getOverview: () => apiFetch<TeacherOverview>('/teacher/overview'),
+    /** @deprecated Use teachers.getMyClasses() instead */
     listClasses: () => apiFetch<TeacherClassSummary[]>('/teacher/classes'),
+    /** @deprecated Use teachers.getMyStudents({ classId }) instead */
     getClassRoster: (classId: string) =>
       apiFetch<TeacherClassRosterEntry[]>(`/teacher/classes/${classId}/roster`),
     dropSubject: (assignmentId: string) =>
@@ -1961,7 +2307,22 @@ export const api = {
         responseType: 'blob'
       }),
     getMessages: () => apiFetch<TeacherMessage[]>('/teacher/messages'),
+    /** @deprecated Use teachers.getMe() instead */
     getProfile: () => apiFetch<TeacherProfileDetail>('/teacher/profile')
+  },
+  teachers: {
+    getMe: () => apiFetch<TeacherProfile>('/teachers/me'),
+    getMyClasses: () => apiFetch<TeacherClassInfo[]>('/teachers/me/classes'),
+    getMyStudents: (params?: { classId?: string; limit?: number; offset?: number }) => {
+      const queryParams = new URLSearchParams();
+      if (params?.classId) queryParams.append('classId', params.classId);
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.offset) queryParams.append('offset', params.offset.toString());
+      const queryString = queryParams.toString();
+      return apiFetch<PaginatedResponse<TeacherStudent>>(
+        `/teachers/me/students${queryString ? `?${queryString}` : ''}`
+      );
+    }
   },
   // Audit and activity endpoints
   getActivityHistory: (userId?: string) => {

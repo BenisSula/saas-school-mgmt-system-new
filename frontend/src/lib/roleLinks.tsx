@@ -101,6 +101,12 @@ const teacherLinks: SidebarLink[] = [
     path: '/dashboard/teacher/classes'
   },
   {
+    id: 'teacher-students',
+    label: 'My Students',
+    icon: <Users className="h-5 w-5" />,
+    path: '/dashboard/teacher/students'
+  },
+  {
     id: 'teacher-attendance',
     label: 'Attendance',
     icon: <UserCheck className="h-5 w-5" />,

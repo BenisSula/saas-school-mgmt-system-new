@@ -163,7 +163,7 @@ router.post('/invoices', async (req, res, next) => {
       tenantId: z.string().uuid(),
       amount: z.number().positive(),
       currency: z.string().optional(),
-      dueDate: z.string().datetime().optional(),
+      dueDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid datetime format' }).optional(),
       description: z.string().optional(),
       lineItems: z.array(z.object({
         description: z.string(),

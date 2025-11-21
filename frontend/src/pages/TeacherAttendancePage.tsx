@@ -6,7 +6,7 @@ import {
   api,
   type AttendanceMark,
   type TeacherClassRosterEntry,
-  type TeacherClassSummary
+  type TeacherClassInfo
 } from '../lib/api';
 import { defaultDate } from '../lib/utils/date';
 import { DatePicker } from '../components/ui/DatePicker';
@@ -26,7 +26,7 @@ interface AttendanceRow {
 
 export function TeacherAttendancePage() {
   const { user } = useAuth();
-  const [classes, setClasses] = useState<TeacherClassSummary[]>([]);
+  const [classes, setClasses] = useState<TeacherClassInfo[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [date, setDate] = useState<string>(defaultDate);
   const [rows, setRows] = useState<AttendanceRow[]>([]);
@@ -44,7 +44,7 @@ export function TeacherAttendancePage() {
     setLoadingClasses(true);
     setError(null);
     try {
-      const summaries = await api.teacher.listClasses();
+      const summaries = await api.teachers.getMyClasses();
       setClasses(summaries);
       if (summaries.length > 0) {
         setSelectedClassId((current) => current || summaries[0].id);

@@ -12,6 +12,7 @@ import { PaginatedTable } from '../../components/admin/PaginatedTable';
 import { ExportButtons } from '../../components/admin/ExportButtons';
 import { createExportHandlers } from '../../hooks/useExport';
 import { api, type TeacherProfile, type TenantUser, type Subject } from '../../lib/api';
+import { isHOD } from '../../lib/utils/userHelpers';
 import type { TableColumn } from '../../components/ui/Table';
 
 interface HODFilters {
@@ -80,10 +81,7 @@ export function HODsManagementPage() {
 
   // Filter HODs: teachers with additional_roles containing 'hod'
   const hodUsers = useMemo(
-    () =>
-      users.filter(
-        (u) => u.role === 'teacher' && u.additional_roles?.some((r) => r.role === 'hod')
-      ),
+    () => users.filter((u) => isHOD(u)),
     [users]
   );
 

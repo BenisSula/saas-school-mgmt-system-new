@@ -121,10 +121,11 @@ describe('Auth flows', () => {
     };
 
     // Setup mock to resolve with pending response
-    // Setup mocks
+    // Setup mocks - ensure mock is properly configured before use
+    mockRegister.mockReset();
+    mockRegister.mockClear();
     mockRegister.mockResolvedValueOnce(pendingResponse);
     mockLogin.mockReset();
-    mockRegister.mockClear();
 
     // Verify mock is set up correctly
     expect(vi.isMockFunction(mockRegister)).toBe(true);

@@ -28,13 +28,30 @@ export type Permission =
   | 'school:manage'
   | 'department-analytics'
   | 'reports:view'
+  | 'reports:manage'
   | 'performance:charts'
   | 'performance:generate'
   | 'messages:send'
   | 'messages:receive'
   | 'fees:view_self'
   | 'profile:view_self'
-  | 'support:raise';
+  | 'support:raise'
+  | 'support:view'
+  | 'support:manage'
+  | 'announcements:manage'
+  | 'kb:manage'
+  | 'status:view'
+  | 'status:manage'
+  | 'notifications:send'
+  | 'subscriptions:manage'
+  | 'subscriptions:view'
+  | 'subscriptions:update'
+  | 'overrides:manage'
+  | 'overrides:view'
+  | 'overrides:create'
+  | 'overrides:revoke'
+  | 'permission_overrides:manage'
+  | 'permission_overrides:view';
 
 export const rolePermissions: Record<Role, Permission[]> = {
   student: [
@@ -69,11 +86,14 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'department-analytics',
     'reports:view',
     'performance:charts',
-    'messages:send'
+    'messages:send',
+    'users:manage',
+    'teachers:manage'
   ],
   admin: [
     'dashboard:view',
     'attendance:manage',
+    'attendance:view',
     'exams:manage',
     'exams:view',
     'grades:manage',
@@ -91,11 +111,19 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'performance:generate',
     'messages:send',
     'messages:receive',
-    'school:manage'
+    'school:manage',
+    'support:raise',
+    'support:view',
+    'support:manage',
+    'announcements:manage',
+    'kb:manage',
+    'status:view',
+    'status:manage'
   ],
   superadmin: [
     'dashboard:view',
     'attendance:manage',
+    'attendance:view',
     'exams:manage',
     'exams:view',
     'grades:manage',
@@ -111,10 +139,27 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'students:view_own_class',
     'teachers:manage',
     'reports:view',
+    'reports:manage',
     'performance:generate',
     'messages:send',
     'messages:receive',
-    'school:manage'
+    'school:manage',
+    'support:raise',
+    'support:view',
+    'support:manage',
+    'announcements:manage',
+    'kb:manage',
+    'status:view',
+    'status:manage',
+    'subscriptions:manage',
+    'subscriptions:view',
+    'subscriptions:update',
+    'overrides:manage',
+    'overrides:view',
+    'overrides:create',
+    'overrides:revoke',
+    'permission_overrides:manage',
+    'permission_overrides:view'
   ]
 };
 

@@ -59,17 +59,27 @@ export async function listTenantUsers(
   );
 
   // Get additional roles for all users in one query
+  // Check if additional_roles table exists
+  const tableCheck = await pool.query(`
+    SELECT EXISTS (
+      SELECT FROM information_schema.tables 
+      WHERE table_schema = 'shared' 
+      AND table_name = 'additional_roles'
+    )
+  `);
+  const tableExists = tableCheck.rows[0]?.exists ?? false;
+
   const userIds = usersResult.rows.map((row) => row.id);
-  let rolesResult: { rows: Array<{ user_id: string; role_name: string; metadata: unknown }> } = {
+  let rolesResult: { rows: Array<{ user_id: string; role: string; granted_at: Date; granted_by?: string }> } = {
     rows: []
   };
 
-  if (userIds.length > 0) {
+  if (userIds.length > 0 && tableExists) {
     const placeholders = userIds.map((_, i) => `$${i + 1}`).join(', ');
     rolesResult = await pool.query(
       `
-        SELECT user_id, role_name, metadata
-        FROM shared.user_roles
+        SELECT user_id, role, granted_at, granted_by
+        FROM shared.additional_roles
         WHERE user_id IN (${placeholders})
       `,
       userIds
@@ -79,15 +89,16 @@ export async function listTenantUsers(
   // Group roles by user_id
   const rolesByUserId = new Map<
     string,
-    Array<{ role: string; metadata: Record<string, unknown> }>
+    Array<{ role: string; granted_at?: string; granted_by?: string }>
   >();
   for (const roleRow of rolesResult.rows) {
     if (!rolesByUserId.has(roleRow.user_id)) {
       rolesByUserId.set(roleRow.user_id, []);
     }
     rolesByUserId.get(roleRow.user_id)!.push({
-      role: roleRow.role_name,
-      metadata: (roleRow.metadata as Record<string, unknown>) || {}
+      role: roleRow.role,
+      granted_at: roleRow.granted_at?.toISOString(),
+      granted_by: roleRow.granted_by ?? undefined
     });
   }
 
