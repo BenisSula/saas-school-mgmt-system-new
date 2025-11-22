@@ -2,6 +2,7 @@
  * Reusable timeline/stepper component for displaying chronological events
  */
 
+import React from 'react';
 import { CheckCircle2, Circle, Clock, AlertCircle } from 'lucide-react';
 
 export interface TimelineEvent {

@@ -3,7 +3,6 @@ import { Button } from '../ui/Button';
 import {
   UserPlus,
   GraduationCap,
-  Users,
   BookOpen,
   Upload,
   FileText,

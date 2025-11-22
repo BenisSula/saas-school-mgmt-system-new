@@ -25,7 +25,6 @@ import {
   Calendar,
   LogIn,
   UserCheck,
-  AlertCircle,
   RefreshCw,
   TrendingUp
 } from 'lucide-react';
@@ -42,7 +41,7 @@ export default function AdminOverviewPage() {
 
   // Main overview data
   const { data, isLoading: overviewLoading, error: overviewError } = useAdminOverview();
-  const { school, users = [], teachers = [], students = [], classes: overviewClasses = [] } = data || {};
+  const { school, users = [], teachers = [], students = [] } = data || {};
 
   // Dashboard statistics hooks
   const { data: teacherStats, isLoading: teacherStatsLoading } = useTeacherStats();
@@ -57,7 +56,7 @@ export default function AdminOverviewPage() {
   // Attendance trend data (last 14 days)
   const fourteenDaysAgo = new Date();
   fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-  const { data: attendanceData, isLoading: attendanceTrendLoading } = useAttendance({
+  const { data: attendanceData } = useAttendance({
     from: fourteenDaysAgo.toISOString().split('T')[0],
     to: new Date().toISOString().split('T')[0]
   });

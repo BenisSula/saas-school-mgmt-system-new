@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AdminConfigurationPage from '../pages/admin/ConfigurationPage';
 
 vi.setConfig({ testTimeout: 12000 });
@@ -10,7 +11,7 @@ const brandingResponse = {
   secondary_color: '#654321',
   theme_flags: { darkMode: true }
 };
-const termsResponse: unknown[] = [];
+let termsResponse: unknown[] = [];
 const classesResponse: unknown[] = [];
 
 describe('AdminConfigurationPage', () => {
@@ -33,7 +34,24 @@ describe('AdminConfigurationPage', () => {
           json: async () => brandingResponse
         } as unknown as Response;
       }
-      if (url.endsWith('/configuration/terms') && (!init || init.method === undefined)) {
+      // Handle POST /configuration/terms (create term) - check this first before GET
+      if (url.endsWith('/configuration/terms') && init?.method === 'POST') {
+        const newTerm = {
+          id: 'term-1',
+          name: 'Winter Term',
+          starts_on: '2025-01-10',
+          ends_on: '2025-04-01'
+        };
+        // Update the terms list immediately for subsequent GET requests
+        termsResponse = [newTerm];
+        return {
+          ok: true,
+          status: 201,
+          json: async () => newTerm
+        } as unknown as Response;
+      }
+      // Handle GET /configuration/terms (list terms) - must come after POST check
+      if ((url.endsWith('/configuration/terms') || url.includes('/configuration/terms')) && (!init || init.method === undefined || init.method === 'GET')) {
         return {
           ok: true,
           status: 200,
@@ -45,18 +63,6 @@ describe('AdminConfigurationPage', () => {
           ok: true,
           status: 200,
           json: async () => classesResponse
-        } as unknown as Response;
-      }
-      if (url.endsWith('/configuration/terms') && init?.method === 'POST') {
-        return {
-          ok: true,
-          status: 201,
-          json: async () => ({
-            id: 'term-1',
-            name: 'Winter Term',
-            starts_on: '2025-01-10',
-            ends_on: '2025-04-01'
-          })
         } as unknown as Response;
       }
       if (url.endsWith('/configuration/classes') && init?.method === 'POST') {
@@ -91,7 +97,17 @@ describe('AdminConfigurationPage', () => {
   });
 
   it('loads branding and allows creating terms and classes', async () => {
-    render(<AdminConfigurationPage />);
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false }
+      }
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AdminConfigurationPage />
+      </QueryClientProvider>
+    );
 
     expect(await screen.findByText(/Tenant Configuration/i)).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
@@ -112,7 +128,17 @@ describe('AdminConfigurationPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Add term/i }));
 
-    await waitFor(() => expect(screen.getByText('Winter Term')).toBeInTheDocument());
+    // Wait for the term to appear in the table after React Query refetch
+    // The component uses useTerms() which will refetch after createTermMutation succeeds
+    // React Query will invalidate and refetch, so we need to wait for the refetch
+    await waitFor(
+      () => {
+        // The term name should appear in a table cell
+        const termText = screen.queryByText('Winter Term');
+        expect(termText).toBeInTheDocument();
+      },
+      { timeout: 10000 }
+    );
 
     // Create class
     fireEvent.change(screen.getByLabelText('Class name'), {

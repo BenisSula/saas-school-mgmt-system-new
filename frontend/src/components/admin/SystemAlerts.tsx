@@ -1,6 +1,6 @@
 import React from 'react';
 import { StatusBanner } from '../ui/StatusBanner';
-import { AlertCircle, Shield, Lock, Calendar, Sync } from 'lucide-react';
+import { AlertCircle, Shield, Lock, Calendar, RefreshCw } from 'lucide-react';
 
 export interface SystemAlert {
   id: string;
@@ -70,7 +70,7 @@ export function SystemAlerts({
       type: 'warning',
       title: 'Sync Failures',
       message: 'Data synchronization issues detected. Some data may be out of sync.',
-      icon: <Sync className="h-4 w-4" />
+      icon: <RefreshCw className="h-4 w-4" />
     });
   }
 
@@ -96,7 +96,7 @@ export function SystemAlerts({
       {allAlerts.map((alert) => (
         <StatusBanner
           key={alert.id}
-          status={alert.type}
+          status={alert.type === 'warning' ? 'error' : alert.type}
           message={
             <div className="flex items-start gap-2">
               {alert.icon && <span className="mt-0.5">{alert.icon}</span>}

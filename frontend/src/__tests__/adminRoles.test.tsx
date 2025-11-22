@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { DashboardRouteProvider } from '../context/DashboardRouteContext';
 import AdminRoleManagementPage from '../pages/admin/RoleManagementPage';
 
 interface MockUser {
@@ -63,7 +65,19 @@ describe('AdminRoleManagementPage', () => {
   });
 
   it('lists users and updates role', async () => {
-    render(<AdminRoleManagementPage />);
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false }
+      }
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <DashboardRouteProvider defaultTitle="Test">
+          <AdminRoleManagementPage />
+        </DashboardRouteProvider>
+      </QueryClientProvider>
+    );
 
     const roleSelect = await screen.findByRole('combobox');
     fireEvent.change(roleSelect, { target: { value: 'admin' } });

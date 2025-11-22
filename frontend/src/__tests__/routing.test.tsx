@@ -211,9 +211,10 @@ describe('Dashboard routing', () => {
     const reportsLink = screen.getByRole('link', { name: /Reports \(printable\)/i });
     await user.click(reportsLink);
 
+    // The page heading is "Reports & Exports", not "Reports Dashboard"
     const reportsHeading = await within(screen.getByRole('main')).findByRole('heading', {
       level: 1,
-      name: /Reports Dashboard/i
+      name: /Reports/i
     });
     expect(reportsHeading).toBeInTheDocument();
 
