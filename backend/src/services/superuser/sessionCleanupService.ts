@@ -1,4 +1,3 @@
-import { Pool } from 'pg';
 import { getPool } from '../../db/connection';
 import { autoExpireStaleSessions } from './sessionService';
 import { logger } from '../../lib/logger';
@@ -8,7 +7,7 @@ import { logger } from '../../lib/logger';
  * Handles periodic cleanup of expired sessions
  */
 
-let cleanupInterval: NodeJS.Timeout | null = null;
+let cleanupInterval: ReturnType<typeof setInterval> | null = null;
 const CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
 /**

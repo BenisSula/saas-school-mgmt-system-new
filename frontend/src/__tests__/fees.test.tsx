@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { describe, it, expect } from 'vitest';
 import StudentFeesPage from '../pages/student/StudentFeesPage';
-import AdminInvoicePage from '../pages/AdminInvoicePage';
+import AdminInvoicePage from '../pages/admin/InvoicePage';
 import { DashboardRouteProvider } from '../context/DashboardRouteContext';
 
 function renderWithDashboard(ui: ReactElement) {

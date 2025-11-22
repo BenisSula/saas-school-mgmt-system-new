@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import RouteMeta from '../components/layout/RouteMeta';
-import { useAuth } from '../context/AuthContext';
+import RouteMeta from '../../components/layout/RouteMeta';
+import { useAuth } from '../../context/AuthContext';
 import {
   api,
   type AttendanceMark,
   type TeacherClassRosterEntry,
   type TeacherClassInfo
-} from '../lib/api';
-import { defaultDate } from '../lib/utils/date';
-import { DatePicker } from '../components/ui/DatePicker';
-import { Select } from '../components/ui/Select';
-import { Button } from '../components/ui/Button';
-import { StatusBanner } from '../components/ui/StatusBanner';
+} from '../../lib/api';
+import { defaultDate } from '../../lib/utils/date';
+import { DatePicker } from '../../components/ui/DatePicker';
+import { Select } from '../../components/ui/Select';
+import { Button } from '../../components/ui/Button';
+import { StatusBanner } from '../../components/ui/StatusBanner';
 
 type AttendanceStatus = 'present' | 'absent' | 'late';
 
@@ -255,3 +255,4 @@ export function TeacherAttendancePage() {
 }
 
 export default TeacherAttendancePage;
+

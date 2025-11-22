@@ -16,8 +16,10 @@ import {
   deleteTeacher
 } from '../services/teacherService';
 import { listStudents } from '../services/studentService';
-import verifyTeacherAssignment from '../middleware/verifyTeacherAssignment';
 import { safeAuditLogFromRequest } from '../lib/auditHelpers';
+import { createSuccessResponse, createErrorResponse, createPaginatedSuccessResponse } from '../lib/responseHelpers';
+import { mutationRateLimiter } from '../middleware/mutationRateLimiter';
+import { createGetHandler, createPostHandler, createDeleteHandler, asyncHandler, requireTenantContext } from '../lib/routeHelpers';
 
 const router = Router();
 
@@ -33,55 +35,34 @@ const listTeachersQuerySchema = z.object({
   page: z.string().optional()
 });
 
-router.get('/', validateInput(listTeachersQuerySchema, 'query'), async (req, res) => {
+router.get('/', validateInput(listTeachersQuerySchema, 'query'), asyncHandler(async (req, res) => {
+  if (!requireTenantContext(req, res)) return;
+
   const pagination = req.pagination!;
   const allTeachers = await listTeachers(req.tenantClient!, req.tenant!.schema);
   
   // Apply pagination
   const paginated = allTeachers.slice(pagination.offset, pagination.offset + pagination.limit);
-  const response = createPaginatedResponse(paginated, allTeachers.length, pagination);
+  const paginationData = createPaginatedResponse(paginated, allTeachers.length, pagination);
+  const response = createPaginatedSuccessResponse(paginated, paginationData.pagination, 'Teachers retrieved successfully');
   
   res.json(response);
-});
+}));
 
-router.get('/:id', async (req, res, next) => {
-  try {
-    const teacher = await getTeacher(req.tenantClient!, req.tenant!.schema, req.params.id);
-    if (!teacher) {
-      return res.status(404).json({ message: 'Teacher not found' });
-    }
+// Standardized CRUD handlers
+router.get('/:id', createGetHandler({
+  getResource: getTeacher,
+  resourceName: 'Teacher',
+  auditAction: 'TEACHER_VIEWED'
+}));
 
-    // Audit log for sensitive read operation
-    await safeAuditLogFromRequest(
-      req,
-      {
-        action: 'TEACHER_VIEWED',
-        resourceType: 'teacher',
-        resourceId: req.params.id,
-        details: {
-          teacherId: req.params.id
-        },
-        severity: 'info'
-      },
-      'teachers'
-    );
+router.post('/', mutationRateLimiter, validateInput(teacherSchema, 'body'), createPostHandler({
+  createResource: createTeacher,
+  resourceName: 'Teacher',
+  auditAction: 'TEACHER_CREATED'
+}));
 
-    res.json(teacher);
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post('/', validateInput(teacherSchema, 'body'), async (req, res, next) => {
-  try {
-    const teacher = await createTeacher(req.tenantClient!, req.tenant!.schema, req.body);
-    res.status(201).json(teacher);
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.put('/:id', requirePermission('users:manage'), validateInput(teacherSchema.partial(), 'body'), async (req, res, next) => {
+router.put('/:id', requirePermission('users:manage'), mutationRateLimiter, validateInput(teacherSchema.partial(), 'body'), asyncHandler(async (req, res, next) => {
   try {
     const teacher = await updateTeacher(
       req.tenantClient!,
@@ -90,11 +71,12 @@ router.put('/:id', requirePermission('users:manage'), validateInput(teacherSchem
       req.body
     );
     if (!teacher) {
-      return res.status(404).json({ message: 'Teacher not found' });
+      return res.status(404).json(createErrorResponse('Teacher not found'));
     }
 
     // Create audit log for class assignment if classes were updated
-    if (req.body.assigned_classes) {
+    if (req.body.assigned_classes || req.body.assignedClasses) {
+      const assignedClasses = req.body.assigned_classes || req.body.assignedClasses;
       await safeAuditLogFromRequest(
         req,
         {
@@ -103,7 +85,7 @@ router.put('/:id', requirePermission('users:manage'), validateInput(teacherSchem
           resourceId: req.params.id,
           details: {
             teacherId: req.params.id,
-            assignedClasses: req.body.assigned_classes,
+            assignedClasses: assignedClasses,
             assignmentType: 'class_teacher'
           },
           severity: 'info'
@@ -112,8 +94,29 @@ router.put('/:id', requirePermission('users:manage'), validateInput(teacherSchem
       );
     }
 
+    // Create audit log for subject assignment if subjects were updated
+    if (req.body.subjects) {
+      await safeAuditLogFromRequest(
+        req,
+        {
+          action: 'SUBJECT_ASSIGNED',
+          resourceType: 'teacher',
+          resourceId: req.params.id,
+          details: {
+            teacherId: req.params.id,
+            assignedSubjects: req.body.subjects,
+            assignmentType: 'subject_teacher'
+          },
+          severity: 'info'
+        },
+        'teachers'
+      );
+    }
+
     // Audit log for general profile update
-    const updatedFields = Object.keys(req.body).filter(key => key !== 'assigned_classes');
+    const updatedFields = Object.keys(req.body).filter(key => 
+      key !== 'assigned_classes' && key !== 'assignedClasses' && key !== 'subjects'
+    );
     if (updatedFields.length > 0) {
       await safeAuditLogFromRequest(
         req,
@@ -131,36 +134,33 @@ router.put('/:id', requirePermission('users:manage'), validateInput(teacherSchem
       );
     }
 
-    res.json(teacher);
+    res.json(createSuccessResponse(teacher, 'Teacher updated successfully'));
   } catch (error) {
     next(error);
   }
-});
+}));
 
-router.delete('/:id', requirePermission('users:manage'), async (req, res, next) => {
-  try {
-    await deleteTeacher(req.tenantClient!, req.tenant!.schema, req.params.id);
-    res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-});
+router.delete('/:id', requirePermission('users:manage'), mutationRateLimiter, createDeleteHandler({
+  deleteResource: deleteTeacher,
+  resourceName: 'Teacher',
+  auditAction: 'TEACHER_DELETED'
+}));
 
 // Teacher-specific routes (accessible to teachers with students:view_own_class permission)
 router.get('/me', requirePermission('dashboard:view'), async (req, res, next) => {
   try {
     if (!req.user || !req.tenantClient || !req.tenant) {
-      return res.status(500).json({ message: 'User context missing' });
+      return res.status(500).json(createErrorResponse('User context missing'));
     }
 
     const teacherEmail = req.user.email;
     const teacher = await getTeacherByEmail(req.tenantClient, req.tenant.schema, teacherEmail);
 
     if (!teacher) {
-      return res.status(404).json({ message: 'Teacher profile not found' });
+      return res.status(404).json(createErrorResponse('Teacher profile not found'));
     }
 
-    res.json(teacher);
+    res.json(createSuccessResponse(teacher, 'Teacher profile retrieved successfully'));
   } catch (error) {
     next(error);
   }
@@ -169,19 +169,19 @@ router.get('/me', requirePermission('dashboard:view'), async (req, res, next) =>
 router.get('/me/classes', requirePermission('dashboard:view'), async (req, res, next) => {
   try {
     if (!req.user || !req.tenantClient || !req.tenant) {
-      return res.status(500).json({ message: 'User context missing' });
+      return res.status(500).json(createErrorResponse('User context missing'));
     }
 
     const teacherEmail = req.user.email;
     const teacher = await getTeacherByEmail(req.tenantClient, req.tenant.schema, teacherEmail);
 
     if (!teacher) {
-      return res.status(404).json({ message: 'Teacher profile not found' });
+      return res.status(404).json(createErrorResponse('Teacher profile not found'));
     }
 
     const assignedClasses = teacher.assigned_classes || [];
     if (assignedClasses.length === 0) {
-      return res.json([]);
+      return res.json(createSuccessResponse([], 'No classes assigned'));
     }
 
     const schema = req.tenant.schema;
@@ -244,7 +244,7 @@ router.get('/me/classes', requirePermission('dashboard:view'), async (req, res, 
       studentCount: studentCounts.get(classId) || 0
     }));
 
-    res.json(classes);
+    res.json(createSuccessResponse(classes, 'Teacher classes retrieved successfully'));
   } catch (error) {
     next(error);
   }
@@ -290,7 +290,8 @@ router.get('/me/students', requirePermission('students:view_own_class'), async (
       });
 
       const paginated = filtered.slice(pagination.offset, pagination.offset + pagination.limit);
-      const response = createPaginatedResponse(paginated, filtered.length, pagination);
+      const paginationData = createPaginatedResponse(paginated, filtered.length, pagination);
+      const response = createPaginatedSuccessResponse(paginated, paginationData.pagination, 'Students retrieved successfully');
 
       return res.json(response);
     }
@@ -313,7 +314,8 @@ router.get('/me/students', requirePermission('students:view_own_class'), async (
     });
 
     const paginated = filtered.slice(pagination.offset, pagination.offset + pagination.limit);
-    const response = createPaginatedResponse(paginated, filtered.length, pagination);
+    const paginationData = createPaginatedResponse(paginated, filtered.length, pagination);
+    const response = createPaginatedSuccessResponse(paginated, paginationData.pagination, 'Students retrieved successfully');
 
     res.json(response);
   } catch (error) {

@@ -30,10 +30,8 @@ export default function AdminExamConfigPage() {
   );
 
   const deleteExamMutation = useMutationWithInvalidation(
-    async () => {
-      // TODO: Implement backend endpoint
-      // Note: deleteExam API endpoint not yet implemented
-      throw new Error('Delete exam functionality not yet implemented');
+    async (examId: string) => {
+      await api.admin.deleteExam(examId);
     },
     [queryKeys.admin.exams()] as unknown as unknown[][],
     { successMessage: 'Exam deleted successfully' }
@@ -66,7 +64,16 @@ export default function AdminExamConfigPage() {
             <Button size="sm" variant="outline">
               Edit
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => deleteExamMutation.mutate(row.id)}>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                if (window.confirm(`Are you sure you want to delete "${row.name}"? This action cannot be undone.`)) {
+                  deleteExamMutation.mutate(row.id);
+                }
+              }}
+              loading={deleteExamMutation.isPending}
+            >
               Delete
             </Button>
           </div>

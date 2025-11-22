@@ -1,6 +1,5 @@
 import crypto from 'crypto';
-import type { PoolClient, Pool } from 'pg';
-import { createTenant, runTenantMigrations, seedTenant } from '../../db/tenantManager';
+import type { PoolClient } from 'pg';
 import { createUser } from '../userService';
 import { queueEmail } from '../email/emailService';
 import { recordSharedAuditLog } from '../auditLogService';
@@ -364,7 +363,7 @@ export async function updateOnboardingWizard(
 export async function completeTenantOnboarding(
   client: PoolClient,
   tenantId: string,
-  schoolData: {
+  _schoolData: {
     name: string;
     address?: string;
     contactPhone?: string;
@@ -382,8 +381,6 @@ export async function completeTenantOnboarding(
     if (tenantResult.rowCount === 0) {
       throw new Error('Tenant not found');
     }
-
-    const tenant = tenantResult.rows[0];
 
     // Update onboarding progress
     await updateOnboardingProgress(client, tenantId, 'schema_created', 'in_progress');

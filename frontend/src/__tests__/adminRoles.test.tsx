@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import AdminRoleManagementPage from '../pages/AdminRoleManagementPage';
+import AdminRoleManagementPage from '../pages/admin/RoleManagementPage';
 
 interface MockUser {
   id: string;

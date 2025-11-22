@@ -10,6 +10,10 @@ import {
   listSubscriptions,
   getSubscriptionHistory
 } from '../../services/superuser/subscriptionService';
+import {
+  getSubscriptionTierConfigs,
+  updateSubscriptionTierConfigs
+} from '../../services/superuser/subscriptionTierService';
 
 const router = Router();
 
@@ -172,6 +176,52 @@ router.get('/:id/history', async (req, res, next) => {
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
     const history = await getSubscriptionHistory(req.params.id, limit);
     res.json(history);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get subscription tier configurations
+router.get('/tiers/config', async (req, res, next) => {
+  try {
+    const configs = await getSubscriptionTierConfigs();
+    res.json(configs);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update subscription tier configurations (bulk)
+const updateTierConfigsSchema = z.object({
+  configs: z.array(
+    z.object({
+      tier: z.enum(['free', 'trial', 'paid']),
+      config: z.object({
+        name: z.string().optional(),
+        description: z.string().optional(),
+        monthlyPrice: z.number().optional(),
+        yearlyPrice: z.number().optional(),
+        maxUsers: z.number().nullable().optional(),
+        maxStudents: z.number().nullable().optional(),
+        maxTeachers: z.number().nullable().optional(),
+        maxStorageGb: z.number().nullable().optional(),
+        features: z.record(z.string(), z.unknown()).optional(),
+        limits: z.record(z.string(), z.unknown()).optional(),
+        isActive: z.boolean().optional()
+      })
+    })
+  ).min(1, 'At least one tier configuration is required')
+});
+
+router.put('/tiers/config', async (req, res, next) => {
+  try {
+    const parsed = updateTierConfigsSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: parsed.error.message });
+    }
+
+    const updated = await updateSubscriptionTierConfigs(parsed.data.configs, req.user?.id ?? null);
+    res.json(updated);
   } catch (error) {
     next(error);
   }

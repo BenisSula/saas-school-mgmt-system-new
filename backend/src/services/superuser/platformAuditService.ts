@@ -77,24 +77,35 @@ export async function logLoginAttempt(
     failureReason?: string | null;
   }
 ): Promise<void> {
-  await pool.query(
-    `
-      INSERT INTO shared.login_attempts (
-        email, user_id, tenant_id, ip_address, user_agent,
-        success, failure_reason, attempted_at
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-    `,
-    [
-      entry.email,
-      entry.userId || null,
-      entry.tenantId || null,
-      entry.ipAddress || null,
-      entry.userAgent || null,
-      entry.success,
-      entry.failureReason || null
-    ]
-  );
+  // Check if table exists before attempting insert
+  const exists = await tableExists(pool, 'shared', 'login_attempts');
+  if (!exists) {
+    return; // Silently skip - table doesn't exist (expected when migrations haven't run)
+  }
+
+  try {
+    await pool.query(
+      `
+        INSERT INTO shared.login_attempts (
+          email, user_id, tenant_id, ip_address, user_agent,
+          success, failure_reason, attempted_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+      `,
+      [
+        entry.email,
+        entry.userId || null,
+        entry.tenantId || null,
+        entry.ipAddress || null,
+        entry.userAgent || null,
+        entry.success,
+        entry.failureReason || null
+      ]
+    );
+  } catch (error) {
+    // Silently fail - don't break login flow if audit logging fails
+    console.error('[auth] Failed to record login event:', error);
+  }
 
   // Also log to audit_logs for critical failures
   if (!entry.success) {

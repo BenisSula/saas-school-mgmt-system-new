@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import AdminConfigurationPage from '../pages/AdminConfigurationPage';
+import AdminConfigurationPage from '../pages/admin/ConfigurationPage';
 
 vi.setConfig({ testTimeout: 12000 });
 

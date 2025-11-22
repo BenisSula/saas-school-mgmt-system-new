@@ -237,6 +237,40 @@ export interface ApiErrorResponse {
 }
 
 /**
+ * Standardized API response format
+ */
+export interface StandardizedApiResponse<T = unknown> {
+  success: boolean;
+  message: string;
+  data?: T;
+}
+
+/**
+ * Extract data from standardized API response
+ * Handles both new standardized format and legacy format for backward compatibility
+ */
+export function extractApiData<T>(response: StandardizedApiResponse<T> | T): T {
+  if (response && typeof response === 'object' && 'success' in response && 'data' in response) {
+    const stdResponse = response as StandardizedApiResponse<T>;
+    if (stdResponse.success) {
+      // Handle null/undefined data (e.g., for delete operations)
+      if (stdResponse.data === undefined && stdResponse.data !== null) {
+        // If data is explicitly undefined (not null), it might be missing
+        // For delete operations, we return undefined as T
+        return undefined as T;
+      }
+      return stdResponse.data as T;
+    }
+    // If success is false, throw an error
+    if (!stdResponse.success) {
+      throw new Error(stdResponse.message || 'API request failed');
+    }
+  }
+  // Legacy format - return as-is
+  return response as T;
+}
+
+/**
  * Extracts error information from API response
  * Returns both message and structured error data
  */
@@ -797,6 +831,7 @@ export interface StudentRecord {
   class_uuid?: string | null;
   admission_number: string | null;
   date_of_birth?: string | null;
+  enrollment_status?: 'active' | 'graduated' | 'transferred' | 'suspended' | 'withdrawn';
   parent_contacts?: Array<{ name: string; relationship: string; phone: string }> | string | null;
   created_at?: string;
   updated_at?: string;
@@ -1418,37 +1453,102 @@ export const api = {
     return extractPaginatedData(response);
   },
   listTeachers: async () => {
-    const response = await apiFetch<PaginatedResponse<TeacherProfile> | TeacherProfile[]>(
+    const response = await apiFetch<StandardizedApiResponse<PaginatedResponse<TeacherProfile>> | PaginatedResponse<TeacherProfile> | TeacherProfile[]>(
       '/teachers'
     );
-    const teachers = extractPaginatedData(response);
+    // Handle standardized response
+    let teachers: TeacherProfile[];
+    if (response && typeof response === 'object' && 'success' in response && 'data' in response) {
+      const stdResponse = response as StandardizedApiResponse<PaginatedResponse<TeacherProfile>>;
+      if (stdResponse.success && stdResponse.data) {
+        teachers = extractPaginatedData(stdResponse.data);
+      } else {
+        throw new Error(stdResponse.message || 'Failed to fetch teachers');
+      }
+    } else {
+      // Legacy format
+      teachers = extractPaginatedData(response as PaginatedResponse<TeacherProfile> | TeacherProfile[]);
+    }
     return teachers.map(transformTeacher);
   },
+  createTeacher: async (payload: {
+    name: string;
+    email: string;
+    subjects?: string[];
+    assignedClasses?: string[];
+  }) => {
+    const response = await apiFetch<StandardizedApiResponse<TeacherProfile> | TeacherProfile>('/teachers', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    return transformTeacher(extractApiData(response));
+  },
   getTeacher: async (id: string) => {
-    const teacher = await apiFetch<TeacherProfile>(`/teachers/${id}`);
+    const response = await apiFetch<StandardizedApiResponse<TeacherProfile> | TeacherProfile>(`/teachers/${id}`);
+    const teacher = extractApiData(response);
     return transformTeacher(teacher);
   },
   updateTeacher: (
     id: string,
     payload: { name?: string; email?: string; subjects?: string[]; assignedClasses?: string[] }
   ) =>
-    apiFetch<TeacherProfile>(`/teachers/${id}`, {
+    apiFetch<StandardizedApiResponse<TeacherProfile> | TeacherProfile>(`/teachers/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload)
-    }).then(transformTeacher),
-  deleteTeacher: (id: string) =>
-    apiFetch<void>(`/teachers/${id}`, {
+    }).then((response) => transformTeacher(extractApiData(response))),
+  deleteTeacher: async (id: string) => {
+    const response = await apiFetch<StandardizedApiResponse<null> | void>(`/teachers/${id}`, {
       method: 'DELETE'
-    }),
-  listStudents: async () => {
-    const response = await apiFetch<PaginatedResponse<StudentRecord> | StudentRecord[]>(
-      '/students'
-    );
-    const students = extractPaginatedData(response);
+    });
+    // For delete operations, we don't need the data, just verify success
+    if (response && typeof response === 'object' && 'success' in response) {
+      const stdResponse = response as StandardizedApiResponse<null>;
+      if (!stdResponse.success) {
+        throw new Error(stdResponse.message || 'Failed to delete teacher');
+      }
+    }
+    return;
+  },
+  listStudents: async (filters?: { classId?: string; enrollmentStatus?: string; search?: string }) => {
+    const params = buildQuery(filters);
+    const response = await apiFetch<StandardizedApiResponse<PaginatedResponse<StudentRecord>> | PaginatedResponse<StudentRecord> | StudentRecord[]>(`/students${params}`);
+    // Handle standardized response
+    let students: StudentRecord[];
+    if (response && typeof response === 'object' && 'success' in response && 'data' in response) {
+      const stdResponse = response as StandardizedApiResponse<PaginatedResponse<StudentRecord>>;
+      if (stdResponse.success && stdResponse.data) {
+        // Check if data has items (new paginated format) or is direct array
+        if ('items' in stdResponse.data && Array.isArray(stdResponse.data.items)) {
+          students = stdResponse.data.items;
+        } else {
+          students = extractPaginatedData(stdResponse.data);
+        }
+      } else {
+        throw new Error(stdResponse.message || 'Failed to fetch students');
+      }
+    } else {
+      // Legacy format
+      students = extractPaginatedData(response as PaginatedResponse<StudentRecord> | StudentRecord[]);
+    }
     return students.map(transformStudent);
   },
+  createStudent: async (payload: {
+    firstName: string;
+    lastName: string;
+    dateOfBirth?: string;
+    classId?: string;
+    admissionNumber?: string;
+    parentContacts?: Array<{ name: string; relationship: string; phone: string }>;
+  }) => {
+    const response = await apiFetch<StandardizedApiResponse<StudentRecord> | StudentRecord>('/students', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    return transformStudent(extractApiData(response));
+  },
   getStudent: async (id: string) => {
-    const student = await apiFetch<StudentRecord>(`/students/${id}`);
+    const response = await apiFetch<StandardizedApiResponse<StudentRecord> | StudentRecord>(`/students/${id}`);
+    const student = extractApiData(response);
     return transformStudent(student);
   },
   updateStudent: (
@@ -1462,13 +1562,39 @@ export const api = {
       parentContacts?: Array<{ name: string; relationship: string; phone: string }>;
     }
   ) =>
-    apiFetch<StudentRecord>(`/students/${id}`, {
+    apiFetch<StandardizedApiResponse<StudentRecord> | StudentRecord>(`/students/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload)
-    }).then(transformStudent),
-  deleteStudent: (id: string) =>
-    apiFetch<void>(`/students/${id}`, {
+    }).then((response) => transformStudent(extractApiData(response))),
+  deleteStudent: async (id: string) => {
+    const response = await apiFetch<StandardizedApiResponse<null> | void>(`/students/${id}`, {
       method: 'DELETE'
+    });
+    // For delete operations, we don't need the data, just verify success
+    if (response && typeof response === 'object' && 'success' in response) {
+      const stdResponse = response as StandardizedApiResponse<null>;
+      if (!stdResponse.success) {
+        throw new Error(stdResponse.message || 'Failed to delete student');
+      }
+    }
+    return;
+  },
+  requestClassChange: (studentId: string, payload: { targetClassId: string; reason?: string }) =>
+    apiFetch<{
+      success: boolean;
+      message: string;
+      data?: {
+        id: string;
+        student_id: string;
+        current_class_id: string | null;
+        requested_class_id: string;
+        status: 'pending' | 'approved' | 'rejected';
+        reason?: string;
+        created_at: string;
+      };
+    }>(`/students/${studentId}/class-change-request`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
     }),
   getSchool: () =>
     apiFetch<{ id: string; name: string; address: Record<string, unknown> } | null>('/school'),
@@ -1532,6 +1658,97 @@ export const api = {
     deleteSchool: (id: string) =>
       apiFetch<void>(`/superuser/schools/${id}`, {
         method: 'DELETE'
+      }),
+    getSubscriptionTierConfigs: () =>
+      apiFetch<Array<{
+        id: string;
+        tier: SubscriptionTier;
+        name: string;
+        description: string | null;
+        monthlyPrice: number;
+        yearlyPrice: number;
+        maxUsers: number | null;
+        maxStudents: number | null;
+        maxTeachers: number | null;
+        maxStorageGb: number | null;
+        features: Record<string, unknown>;
+        limits: Record<string, unknown>;
+        isActive: boolean;
+        createdAt: string;
+        updatedAt: string;
+      }>>('/superuser/subscriptions/tiers/config'),
+    updateSubscriptionTierConfigs: (configs: Array<{
+      tier: SubscriptionTier;
+      config: {
+        name?: string;
+        description?: string;
+        monthlyPrice?: number;
+        yearlyPrice?: number;
+        maxUsers?: number | null;
+        maxStudents?: number | null;
+        maxTeachers?: number | null;
+        maxStorageGb?: number | null;
+        features?: Record<string, unknown>;
+        limits?: Record<string, unknown>;
+        isActive?: boolean;
+      };
+    }>) =>
+      apiFetch<Array<{
+        id: string;
+        tier: SubscriptionTier;
+        name: string;
+        description: string | null;
+        monthlyPrice: number;
+        yearlyPrice: number;
+        maxUsers: number | null;
+        maxStudents: number | null;
+        maxTeachers: number | null;
+        maxStorageGb: number | null;
+        features: Record<string, unknown>;
+        limits: Record<string, unknown>;
+        isActive: boolean;
+        createdAt: string;
+        updatedAt: string;
+      }>>('/superuser/subscriptions/tiers/config', {
+        method: 'PUT',
+        body: JSON.stringify({ configs })
+      }),
+    // Alias for subscription tiers endpoint (matches requirement)
+    updateSubscriptionTiers: (configs: Array<{
+      tier: SubscriptionTier;
+      config: {
+        name?: string;
+        description?: string;
+        monthlyPrice?: number;
+        yearlyPrice?: number;
+        maxUsers?: number | null;
+        maxStudents?: number | null;
+        maxTeachers?: number | null;
+        maxStorageGb?: number | null;
+        features?: Record<string, unknown>;
+        limits?: Record<string, unknown>;
+        isActive?: boolean;
+      };
+    }>) =>
+      apiFetch<Array<{
+        id: string;
+        tier: SubscriptionTier;
+        name: string;
+        description: string | null;
+        monthlyPrice: number;
+        yearlyPrice: number;
+        maxUsers: number | null;
+        maxStudents: number | null;
+        maxTeachers: number | null;
+        maxStorageGb: number | null;
+        features: Record<string, unknown>;
+        limits: Record<string, unknown>;
+        isActive: boolean;
+        createdAt: string;
+        updatedAt: string;
+      }>>('/superuser/subscription-tiers', {
+        method: 'PUT',
+        body: JSON.stringify({ configs })
       }),
     createSchoolAdmin: (id: string, payload: CreateSchoolAdminPayload) =>
       apiFetch<{
@@ -2275,6 +2492,33 @@ export const api = {
     fetchReportPdf: (reportId: string) =>
       apiFetch<Blob>(`/admin/reports/term/${reportId}/pdf`, {
         responseType: 'blob'
+      }),
+    deleteExam: (examId: string) =>
+      apiFetch<void>(`/exams/${examId}`, {
+        method: 'DELETE'
+      }),
+    assignHODDepartment: (userId: string, department: string) =>
+      apiFetch<{ message: string }>(`/admin/users/${userId}/department`, {
+        method: 'PUT',
+        body: JSON.stringify({ department })
+      }),
+    bulkRemoveHODRoles: (userIds: string[]) =>
+      apiFetch<{ message: string; removed: number; failed: number }>(`/admin/users/hod/bulk`, {
+        method: 'DELETE',
+        body: JSON.stringify({ userIds })
+      }),
+    requestClassChange: (studentId: string, payload: { targetClassId: string; reason?: string }) =>
+      apiFetch<{
+        id: string;
+        student_id: string;
+        current_class_id: string | null;
+        requested_class_id: string;
+        status: 'pending' | 'approved' | 'rejected';
+        reason?: string;
+        created_at: string;
+      }>(`/students/${studentId}/class-change-request`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
       })
   },
   /**
@@ -3046,8 +3290,47 @@ export const api = {
           body: JSON.stringify(payload)
         }
       )
-  }
+  },
+  // File Upload
+  uploadFile: (payload: {
+    file: string; // base64 encoded
+    filename: string;
+    mimetype: string;
+    description?: string;
+    entityType?: 'user' | 'student' | 'teacher' | 'hod';
+    entityId?: string;
+  }) =>
+    apiFetch<{
+      id: string;
+      filename: string;
+      originalFilename: string;
+      fileSize: number;
+      mimeType: string;
+      fileUrl: string;
+      uploadedBy: string;
+      uploadedAt: Date;
+    }>('/upload', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+  listFileUploads: () =>
+    apiFetch<Array<{
+      id: string;
+      filename: string;
+      originalFilename: string;
+      fileSize: number;
+      mimeType: string;
+      fileUrl: string;
+      uploadedBy: string;
+      uploadedAt: Date;
+    }>>('/upload'),
+  deleteFileUpload: (fileId: string) =>
+    apiFetch<void>(`/upload/${fileId}`, {
+      method: 'DELETE'
+    })
 };
+
+export default api;
 
 export interface AuditLogEntry {
   id: string;

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import authenticate from '../middleware/authenticate';
-import { requirePermission, requireSuperuser } from '../middleware/rbac';
+import { requireSuperuser } from '../middleware/rbac';
 import {
   createAdminForSchool,
   createSchool,
@@ -252,5 +252,44 @@ router.use('/users', usersRouter);
 
 // Role management routes
 router.use('/roles', rolesRouter);
+
+// PUT /superuser/subscription-tiers - Alias for subscription tier config update
+router.put('/subscription-tiers', async (req, res, next) => {
+  try {
+    const { updateSubscriptionTierConfigs } = await import('../services/superuser/subscriptionTierService');
+    const { z } = await import('zod');
+    
+    const updateTierConfigsSchema = z.object({
+      configs: z.array(
+        z.object({
+          tier: z.enum(['free', 'trial', 'paid']),
+          config: z.object({
+            name: z.string().optional(),
+            description: z.string().optional(),
+            monthlyPrice: z.number().optional(),
+            yearlyPrice: z.number().optional(),
+            maxUsers: z.number().nullable().optional(),
+            maxStudents: z.number().nullable().optional(),
+            maxTeachers: z.number().nullable().optional(),
+            maxStorageGb: z.number().nullable().optional(),
+            features: z.record(z.string(), z.unknown()).optional(),
+            limits: z.record(z.string(), z.unknown()).optional(),
+            isActive: z.boolean().optional()
+          })
+        })
+      ).min(1, 'At least one tier configuration is required')
+    });
+
+    const parsed = updateTierConfigsSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: parsed.error.message });
+    }
+
+    const updated = await updateSubscriptionTierConfigs(parsed.data.configs, req.user?.id ?? null);
+    res.json(updated);
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;

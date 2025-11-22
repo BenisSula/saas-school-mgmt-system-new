@@ -38,7 +38,7 @@ router.get(
         return res.status(400).json({ message: parsed.error.message });
       }
 
-      const results = await search(req.tenantClient, req.tenant.schema, parsed.data.q, {
+      const results = await search(req.tenantClient!, req.tenant!.schema, parsed.data.q, {
         limit: parsed.data.limit,
         types: parsed.data.types
       });

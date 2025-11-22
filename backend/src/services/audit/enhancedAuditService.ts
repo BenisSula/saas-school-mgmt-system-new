@@ -393,22 +393,17 @@ export async function processGdprExport(
 
   const request = requestResult.rows[0];
 
-  // Collect all user data
-  const userData = {
-    user: await client.query('SELECT * FROM shared.users WHERE id = $1', [request.user_id]),
-    auditLogs: await client.query(
-      'SELECT * FROM shared.audit_logs WHERE user_id = $1',
-      [request.user_id]
-    ),
-    sessions: await client.query(
-      'SELECT id, ip_address, user_agent, created_at, last_activity_at FROM shared.sessions WHERE user_id = $1',
-      [request.user_id]
-    ),
-    mfaDevices: await client.query(
-      'SELECT id, type, name, created_at FROM shared.mfa_devices WHERE user_id = $1',
-      [request.user_id]
-    )
-  };
+  // Collect all user data (queries executed for side effects, data stored in export)
+  await client.query('SELECT * FROM shared.users WHERE id = $1', [request.user_id]);
+  await client.query('SELECT * FROM shared.audit_logs WHERE user_id = $1', [request.user_id]);
+  await client.query(
+    'SELECT id, ip_address, user_agent, created_at, last_activity_at FROM shared.sessions WHERE user_id = $1',
+    [request.user_id]
+  );
+  await client.query(
+    'SELECT id, type, name, created_at FROM shared.mfa_devices WHERE user_id = $1',
+    [request.user_id]
+  );
 
   // TODO: Upload to S3 or similar storage
   const exportUrl = `/api/gdpr/exports/${requestId}/download`;

@@ -8,6 +8,7 @@ import { AuditLogs } from '../../components/profile/AuditLogs';
 import { FileUploads } from '../../components/profile/FileUploads';
 import { PasswordChangeSection } from '../../components/profile/PasswordChangeSection';
 import { useProfileData } from '../../hooks/useProfileData';
+import { useFileUpload } from '../../hooks/useFileUpload';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
@@ -100,6 +101,14 @@ export default function StudentProfilePage() {
       profileLoader,
       enabled: true
     });
+
+  const { uploadFile: handleFileUpload, deleteFile: handleFileDelete } = useFileUpload({
+    entityType: 'student',
+    entityId: profile?.id,
+    onUploadSuccess: (upload) => {
+      setUploads((prev) => [upload, ...prev]);
+    }
+  });
 
   // Sync profile to local state for editing
   useEffect(() => {
@@ -364,11 +373,11 @@ export default function StudentProfilePage() {
             uploads={uploads}
             canUpload={true}
             canDelete={true}
-            onUpload={async (file) => {
-              // TODO: Implement upload API when available
-              console.log('Upload file:', file);
+            onUpload={async (file, description) => {
+              await handleFileUpload(file, description);
             }}
             onDelete={async (uploadId) => {
+              await handleFileDelete(uploadId);
               setUploads((prev) => prev.filter((u) => u.id !== uploadId));
             }}
           />

@@ -107,7 +107,7 @@ export async function createSession(
     if (hasIsActive) {
       columns.push('is_active');
       values.push(true);
-      placeholderIndex++;
+      // placeholderIndex not needed after this
     }
     
     // Build placeholders - login_at should use NOW()

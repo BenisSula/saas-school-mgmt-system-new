@@ -1,9 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { RouteMeta } from '../../components/layout/RouteMeta';
 import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Modal } from '../../components/ui/Modal';
 import { StatusBanner } from '../../components/ui/StatusBanner';
@@ -11,8 +9,24 @@ import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton';
 import { PaginatedTable } from '../../components/admin/PaginatedTable';
 import { ExportButtons } from '../../components/admin/ExportButtons';
 import { createExportHandlers } from '../../hooks/useExport';
-import { api, type TeacherProfile, type SchoolClass, type Subject } from '../../lib/api';
+import { useQueryClient } from '@tanstack/react-query';
+import { useTeachers, useUpdateTeacher, useDeleteTeacher } from '../../hooks/queries/useTeachers';
+import { useClasses } from '../../hooks/queries/useClasses';
+import { useDebounce } from '../../hooks/useDebounce';
+import { useQuery } from '../../hooks/useQuery';
+import { queryKeys } from '../../hooks/useQuery';
+import { api, type TeacherProfile } from '../../lib/api';
 import type { TableColumn } from '../../components/ui/Table';
+import { ViewButton, AssignButton, ActionButtonGroup } from '../../components/table-actions';
+import { FormModal } from '../../components/shared';
+import { AdminUserRegistrationModal } from '../../components/admin/AdminUserRegistrationModal';
+import { EmptyState } from '../../components/admin/EmptyState';
+import { CSVImportModal } from '../../components/admin/CSVImportModal';
+import { AdvancedFilters, type AdvancedFilterField } from '../../components/admin/AdvancedFilters';
+import { ActivityLog } from '../../components/admin/ActivityLog';
+import { TeacherDetailView } from '../../components/admin/TeacherDetailView';
+import { useCSVImport } from '../../hooks/useCSVImport';
+import { Plus, Upload, Eye } from 'lucide-react';
 
 interface TeacherFilters {
   search: string;
@@ -28,55 +42,76 @@ const defaultFilters: TeacherFilters = {
 
 export function TeachersManagementPage() {
   const navigate = useNavigate();
-  const [teachers, setTeachers] = useState<TeacherProfile[]>([]);
-  const [classes, setClasses] = useState<SchoolClass[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState<TeacherFilters>(defaultFilters);
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [showAssignmentModal, setShowAssignmentModal] = useState<boolean>(false);
+  const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [showImportModal, setShowImportModal] = useState<boolean>(false);
+  const [showActivityLog, setShowActivityLog] = useState<boolean>(false);
+  const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
   const [selectedTeacher, setSelectedTeacher] = useState<TeacherProfile | null>(null);
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedSubject, setSelectedSubject] = useState<string>('');
   const [isClassTeacher, setIsClassTeacher] = useState<boolean>(false);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  
+  // CSV Import
+  const csvImportMutation = useCSVImport({
+    entityType: 'teachers',
+    invalidateQueries: [[...queryKeys.admin.teachers()]] as unknown as unknown[][]
+  });
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [teachersResult, classesResult, subjectsResult] = await Promise.allSettled([
-        api.listTeachers(),
-        api.listClasses(),
-        api.admin.listSubjects()
-      ]);
+  // Debounce search filter to prevent excessive API calls
+  const debouncedSearch = useDebounce(filters.search, 500);
 
-      if (teachersResult.status === 'fulfilled') {
-        setTeachers(teachersResult.value);
-      } else {
-        throw new Error((teachersResult.reason as Error).message || 'Failed to load teachers');
-      }
-
-      if (classesResult.status === 'fulfilled') {
-        setClasses(classesResult.value);
-      }
-
-      if (subjectsResult.status === 'fulfilled') {
-        setSubjects(subjectsResult.value);
-      }
-    } catch (err) {
-      const message = (err as Error).message;
-      setError(message);
-      toast.error(message);
-    } finally {
-      setLoading(false);
+  // Build API filters
+  const apiFilters = useMemo(() => {
+    const result: { search?: string } = {};
+    if (debouncedSearch) {
+      result.search = debouncedSearch;
     }
-  }, []);
+    return Object.keys(result).length > 0 ? result : undefined;
+  }, [debouncedSearch]);
 
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
+  // Fetch data using React Query hooks
+  const { data: teachers = [], isLoading: teachersLoading, error: teachersError } = useTeachers(apiFilters);
+  const { data: classes = [], isLoading: classesLoading } = useClasses();
+  const { data: subjects = [], isLoading: subjectsLoading } = useQuery(
+    queryKeys.admin.subjects(),
+    () => api.admin.listSubjects(),
+    { staleTime: 60000 } // Subjects don't change often
+  );
+
+  // Mutations
+  const updateTeacherMutation = useUpdateTeacher();
+  const deleteTeacherMutation = useDeleteTeacher();
+
+  const loading = teachersLoading || classesLoading || subjectsLoading;
+  const error = teachersError ? (teachersError as Error).message : null;
+
+  // Advanced filter fields
+  const advancedFilterFields: AdvancedFilterField[] = [
+    {
+      key: 'classId',
+      label: 'Class',
+      type: 'select',
+      options: [
+        { label: 'All classes', value: 'all' },
+        ...classes.map((c) => ({ label: c.name, value: c.id }))
+      ]
+    },
+    {
+      key: 'subjectId',
+      label: 'Subject',
+      type: 'select',
+      options: [
+        { label: 'All subjects', value: 'all' },
+        ...subjects.map((s) => ({ label: s.name, value: s.id }))
+      ]
+    }
+  ];
 
   const filteredTeachers = useMemo(() => {
     return teachers.filter((teacher) => {
@@ -107,7 +142,13 @@ export function TeachersManagementPage() {
 
   const handleViewProfile = (teacher: TeacherProfile) => {
     setSelectedTeacher(teacher);
+    setSelectedTeacherId(teacher.id);
     setShowProfileModal(true);
+  };
+
+  const handleViewDetails = (teacher: TeacherProfile) => {
+    setSelectedTeacherId(teacher.id);
+    setShowDetailModal(true);
   };
 
   const handleAssignClass = (teacher: TeacherProfile) => {
@@ -118,12 +159,34 @@ export function TeachersManagementPage() {
     setShowAssignmentModal(true);
   };
 
-  const handleSaveAssignment = async () => {
+  const getAssignmentMutationVariables = (): { id: string; data: { assignedClasses: string[]; subjects: string[] } } | undefined => {
     if (!selectedTeacher || !selectedClass || !selectedSubject) {
-      toast.error('Please select class and subject');
-      return;
+      return undefined;
     }
 
+    // Also update teacher's assigned_classes and subjects arrays
+    const updatedClasses = selectedTeacher.assigned_classes.includes(selectedClass)
+      ? selectedTeacher.assigned_classes
+      : [...selectedTeacher.assigned_classes, selectedClass];
+
+    const updatedSubjects = selectedTeacher.subjects.includes(selectedSubject)
+      ? selectedTeacher.subjects
+      : [...selectedTeacher.subjects, selectedSubject];
+
+    return {
+      id: selectedTeacher.id,
+      data: {
+        assignedClasses: updatedClasses,
+        subjects: updatedSubjects
+      }
+    };
+  };
+
+  const handleAssignmentSuccess = async () => {
+    if (!selectedTeacher || !selectedClass || !selectedSubject) {
+      return;
+    }
+    
     try {
       // Assign teacher to class/subject via admin API
       await api.admin.assignTeacher(selectedTeacher.id, {
@@ -131,47 +194,30 @@ export function TeachersManagementPage() {
         subjectId: selectedSubject,
         isClassTeacher
       });
-
-      // Also update teacher's assigned_classes and subjects arrays
-      const updatedClasses = selectedTeacher.assigned_classes.includes(selectedClass)
-        ? selectedTeacher.assigned_classes
-        : [...selectedTeacher.assigned_classes, selectedClass];
-
-      const updatedSubjects = selectedTeacher.subjects.includes(selectedSubject)
-        ? selectedTeacher.subjects
-        : [...selectedTeacher.subjects, selectedSubject];
-
-      await api.updateTeacher(selectedTeacher.id, {
-        assignedClasses: updatedClasses,
-        subjects: updatedSubjects
-      });
-
-      toast.success('Teacher assigned successfully');
-      setShowAssignmentModal(false);
-      await loadData();
-    } catch (err) {
-      toast.error((err as Error).message);
+    } catch {
+      // Error already handled by mutation
     }
   };
 
   const handleBulkDelete = async () => {
     if (selectedRows.size === 0) {
-      toast.error('Please select teachers to delete');
       return;
     }
 
-    if (!window.confirm(`Delete ${selectedRows.size} teacher(s)?`)) {
+    if (!window.confirm(`Delete ${selectedRows.size} teacher(s)? This action cannot be undone.`)) {
       return;
     }
 
+    // Delete teachers one by one (can be optimized to bulk delete if backend supports it)
+    const deletePromises = Array.from(selectedRows).map((id) => 
+      deleteTeacherMutation.mutateAsync(id)
+    );
+    
     try {
-      const deletePromises = Array.from(selectedRows).map((id) => api.deleteTeacher(id));
       await Promise.all(deletePromises);
-      toast.success(`${selectedRows.size} teacher(s) deleted`);
       setSelectedRows(new Set());
-      await loadData();
-    } catch (err) {
-      toast.error((err as Error).message);
+    } catch {
+      // Error handled by mutation
     }
   };
 
@@ -184,8 +230,23 @@ export function TeachersManagementPage() {
       Classes: t.assigned_classes.join('; ')
     }));
 
-    return createExportHandlers(exportData, 'teachers', ['Name', 'Email', 'Subjects', 'Classes']);
-  }, [filteredTeachers]);
+    const handlers = createExportHandlers(exportData, 'teachers', ['Name', 'Email', 'Subjects', 'Classes']);
+
+    // For PDF/Excel, use backend endpoint with filters
+    const exportPayload = {
+      type: 'teachers' as const,
+      title: 'Teachers Export',
+      filters: {
+        search: filters.search || undefined
+      }
+    };
+
+    return {
+      ...handlers,
+      exportPDF: () => handlers.exportPDF('/reports/export', exportPayload),
+      exportExcel: () => handlers.exportExcel('/reports/export', exportPayload)
+    };
+  }, [filteredTeachers, filters]);
 
   const handleExportCSV = exportHandlers.exportCSV;
   const handleExportPDF = exportHandlers.exportPDF;
@@ -219,6 +280,7 @@ export function TeachersManagementPage() {
           checked={selectedRows.size === filteredTeachers.length && filteredTeachers.length > 0}
           onChange={toggleAllSelection}
           className="rounded border-[var(--brand-border)]"
+          aria-label="Select all teachers"
         />
       ),
       render: (row) => (
@@ -228,6 +290,7 @@ export function TeachersManagementPage() {
           onChange={() => toggleRowSelection(row.id)}
           className="rounded border-[var(--brand-border)]"
           onClick={(e) => e.stopPropagation()}
+          aria-label={`Select ${row.name}`}
         />
       ),
       align: 'center'
@@ -282,21 +345,21 @@ export function TeachersManagementPage() {
     {
       header: 'Actions',
       render: (row) => (
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => handleViewProfile(row)}>
-            View
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => handleAssignClass(row)}>
-            Assign
-          </Button>
+        <ActionButtonGroup>
           <Button
             size="sm"
-            variant="ghost"
-            onClick={() => navigate(`/dashboard/teacher/profile?teacherId=${row.id}`)}
+            variant="outline"
+            onClick={() => handleViewDetails(row)}
+            className="gap-1"
           >
-            Profile
+            <Eye className="h-3 w-3" />
+            Details
           </Button>
-        </div>
+          <ViewButton onClick={() => handleViewProfile(row)} />
+          <AssignButton 
+            onClick={() => handleAssignClass(row)}
+          />
+        </ActionButtonGroup>
       )
     }
   ];
@@ -321,7 +384,18 @@ export function TeachersManagementPage() {
               Manage teachers, assign classes and subjects, view qualifications and reports.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => setShowCreateModal(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Create Teacher
+            </Button>
+            <Button variant="outline" onClick={() => setShowImportModal(true)} className="gap-2">
+              <Upload className="h-4 w-4" />
+              Import CSV
+            </Button>
+            <Button variant="outline" onClick={() => setShowActivityLog(!showActivityLog)} className="gap-2">
+              Activity Log
+            </Button>
             <ExportButtons
               onExportCSV={handleExportCSV}
               onExportPDF={handleExportPDF}
@@ -337,54 +411,63 @@ export function TeachersManagementPage() {
 
         {error ? <StatusBanner status="error" message={error} /> : null}
 
+        {/* Advanced Filters */}
         <section
           className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-4 shadow-sm"
           aria-label="Filters"
         >
-          <div className="grid gap-4 md:grid-cols-3">
-            <Input
-              label="Search"
-              placeholder="Search by name, email, subject, class..."
-              value={filters.search}
-              onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
-            />
-            <Select
-              label="Class"
-              value={filters.classId}
-              onChange={(e) => setFilters((f) => ({ ...f, classId: e.target.value }))}
-              options={[
-                { label: 'All classes', value: 'all' },
-                ...classes.map((c) => ({ label: c.name, value: c.id }))
-              ]}
-            />
-            <Select
-              label="Subject"
-              value={filters.subjectId}
-              onChange={(e) => setFilters((f) => ({ ...f, subjectId: e.target.value }))}
-              options={[
-                { label: 'All subjects', value: 'all' },
-                ...subjects.map((s) => ({ label: s.name, value: s.id }))
-              ]}
-            />
-          </div>
+          <AdvancedFilters
+            fields={advancedFilterFields}
+            filters={{
+              search: filters.search,
+              classId: filters.classId,
+              subjectId: filters.subjectId
+            }}
+            onFiltersChange={(newFilters) => {
+              setFilters({
+                search: newFilters.search || '',
+                classId: newFilters.classId || 'all',
+                subjectId: newFilters.subjectId || 'all'
+              });
+            }}
+            onReset={() => setFilters(defaultFilters)}
+            searchPlaceholder="Search by name, email, subject, class..."
+          />
           <div className="mt-4 flex items-center justify-between text-sm text-[var(--brand-muted)]">
             <span>
               Showing {filteredTeachers.length} of {teachers.length} teachers
             </span>
-            {(filters.search || filters.classId !== 'all' || filters.subjectId !== 'all') && (
-              <Button size="sm" variant="ghost" onClick={() => setFilters(defaultFilters)}>
-                Clear filters
-              </Button>
-            )}
           </div>
         </section>
 
-        <PaginatedTable
-          columns={teacherColumns}
-          data={filteredTeachers}
-          caption="Teachers"
-          emptyMessage="No teachers found matching the current filters."
-        />
+        {/* Activity Log */}
+        {showActivityLog && (
+          <section className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-4 shadow-sm">
+            <ActivityLog entityType="teacher" limit={10} />
+          </section>
+        )}
+
+        {filteredTeachers.length === 0 && teachers.length === 0 ? (
+          <EmptyState
+            type="teachers"
+            onAction={() => setShowCreateModal(true)}
+          />
+        ) : filteredTeachers.length === 0 ? (
+          <EmptyState
+            type="generic"
+            title="No teachers found"
+            description="No teachers match your current filters. Try adjusting your search or filter criteria."
+            onAction={() => setFilters(defaultFilters)}
+            actionLabel="Clear Filters"
+          />
+        ) : (
+          <PaginatedTable
+            columns={teacherColumns}
+            data={filteredTeachers}
+            caption="Teachers"
+            emptyMessage="No teachers found matching the current filters."
+          />
+        )}
 
         {showProfileModal && selectedTeacher && (
           <Modal
@@ -463,13 +546,26 @@ export function TeachersManagementPage() {
         )}
 
         {showAssignmentModal && selectedTeacher && (
-          <Modal
+          <FormModal
             title={`Assign class/subject: ${selectedTeacher.name}`}
             isOpen={showAssignmentModal}
             onClose={() => {
               setShowAssignmentModal(false);
               setSelectedTeacher(null);
+              setSelectedClass('');
+              setSelectedSubject('');
+              setIsClassTeacher(false);
             }}
+            mutation={updateTeacherMutation}
+            variables={getAssignmentMutationVariables()}
+            invalidateQueries={[queryKeys.admin.teachers()] as unknown as unknown[][]}
+            messages={{
+              pending: 'Assigning class/subject...',
+              success: 'Assignment saved successfully',
+              error: 'Failed to save assignment'
+            }}
+            saveLabel="Assign"
+            onSuccess={handleAssignmentSuccess}
           >
             <div className="space-y-4">
               <Select
@@ -507,12 +603,51 @@ export function TeachersManagementPage() {
                   Assign as class teacher
                 </label>
               </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="ghost" onClick={() => setShowAssignmentModal(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSaveAssignment}>Assign</Button>
-              </div>
+            </div>
+          </FormModal>
+        )}
+
+        {showCreateModal && (
+          <AdminUserRegistrationModal
+            onClose={() => setShowCreateModal(false)}
+            onSuccess={() => {
+              setShowCreateModal(false);
+              // Invalidate teachers query to refresh the list
+              queryClient.invalidateQueries({ queryKey: queryKeys.admin.teachers() });
+            }}
+          />
+        )}
+
+        {showImportModal && (
+          <CSVImportModal
+            isOpen={showImportModal}
+            onClose={() => setShowImportModal(false)}
+            onImport={async (file) => {
+              const result = await csvImportMutation.mutateAsync(file);
+              return result;
+            }}
+            entityType="teachers"
+            acceptedColumns={['email', 'fullName', 'password', 'phone', 'qualifications', 'yearsOfExperience', 'subjects']}
+          />
+        )}
+
+        {showDetailModal && selectedTeacherId && (
+          <Modal
+            title="Teacher Details"
+            isOpen={showDetailModal}
+            onClose={() => {
+              setShowDetailModal(false);
+              setSelectedTeacherId(null);
+            }}
+          >
+            <div className="max-h-[80vh] overflow-y-auto">
+              <TeacherDetailView
+                teacherId={selectedTeacherId}
+                onClose={() => {
+                  setShowDetailModal(false);
+                  setSelectedTeacherId(null);
+                }}
+              />
             </div>
           </Modal>
         )}

@@ -14,3 +14,6 @@ export type { TimelineStepperProps, TimelineEvent } from './TimelineStepper';
 export { PermissionDenied } from './PermissionDenied';
 export type { PermissionDeniedProps } from './PermissionDenied';
 
+export { FormModal } from './FormModal';
+export type { FormModalProps } from './FormModal';
+

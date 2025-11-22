@@ -51,7 +51,7 @@ async function tableExists(pool: Pool, schema: string, tableName: string): Promi
     tableExistenceCacheTime.set(cacheKey, now);
     
     return exists;
-  } catch (error) {
+  } catch {
     // On error, assume table doesn't exist and cache negative result
     tableExistenceCache.set(cacheKey, false);
     tableExistenceCacheTime.set(cacheKey, now);
@@ -144,11 +144,11 @@ async function updateLoginAttemptsMetrics(pool: Pool): Promise<void> {
     return; // Silently skip - table doesn't exist (expected when migrations haven't run)
   }
   
-  try {
-    // Get success/fail counts from last hour
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    
-    const result = await pool.query(
+         try {
+           // Get success/fail counts from last hour
+           const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+           
+           await pool.query(
       `
         SELECT 
           success,
@@ -243,7 +243,7 @@ async function updateFailedLoginIPMetrics(pool: Pool): Promise<void> {
 /**
  * Start periodic metrics collection
  */
-let metricsInterval: NodeJS.Timeout | null = null;
+let metricsInterval: ReturnType<typeof setInterval> | null = null;
 const METRICS_COLLECTION_INTERVAL_MS = 30 * 1000; // 30 seconds
 
 export function startMetricsCollection(): void {

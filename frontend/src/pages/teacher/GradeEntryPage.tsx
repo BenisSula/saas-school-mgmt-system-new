@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import Table from '../components/Table';
-import type { TableColumn } from '../components/Table';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { useAuth } from '../context/AuthContext';
+import Table from '../../components/Table';
+import type { TableColumn } from '../../components/Table';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { useAuth } from '../../context/AuthContext';
 import {
   api,
   type GradeEntryInput,
   type GradeAggregate,
   type TeacherClassRosterEntry,
   type TeacherClassSummary
-} from '../lib/api';
-import { sanitizeIdentifier, sanitizeText } from '../lib/sanitize';
-import { Select } from '../components/ui/Select';
-import { StatusBanner } from '../components/ui/StatusBanner';
+} from '../../lib/api';
+import { sanitizeIdentifier, sanitizeText } from '../../lib/sanitize';
+import { Select } from '../../components/ui/Select';
+import { StatusBanner } from '../../components/ui/StatusBanner';
 
 interface GradeRow extends GradeEntryInput {
   id: string;
@@ -387,3 +387,4 @@ export function TeacherGradeEntryPage() {
 }
 
 export default TeacherGradeEntryPage;
+

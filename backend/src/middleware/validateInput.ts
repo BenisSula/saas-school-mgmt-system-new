@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { z, ZodError } from 'zod';
+import { z } from 'zod';
 
 /**
  * Middleware to validate request body, query, or params against a Zod schema
@@ -10,22 +10,23 @@ export function validateInput<T extends z.ZodTypeAny>(
 ) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      const data = source === 'body' ? req.body : source === 'query' ? req.query : req.params;
-      const validated = schema.parse(data);
+      let data = source === 'body' ? req.body : source === 'query' ? req.query : req.params;
       
-      // Replace the original data with validated data
-      if (source === 'body') {
-        req.body = validated;
-      } else if (source === 'query') {
-        req.query = validated as Record<string, string>;
-      } else {
-        req.params = validated as Record<string, string>;
+      // For query parameters, handle arrays and ensure proper format
+      if (source === 'query' && data) {
+        const queryData: Record<string, string> = {};
+        for (const key in data) {
+          const value = data[key];
+          // If value is an array, take the first element (Express behavior)
+          queryData[key] = Array.isArray(value) ? (value[0] || '') : (value || '');
+        }
+        data = queryData;
       }
       
-      next();
-    } catch (error) {
-      if (error instanceof ZodError) {
-        const errors = error.issues.map((err) => ({
+      const result = schema.safeParse(data);
+      
+      if (!result.success) {
+        const errors = result.error.issues.map((err) => ({
           field: err.path.join('.'),
           message: err.message,
           code: err.code
@@ -38,6 +39,19 @@ export function validateInput<T extends z.ZodTypeAny>(
         });
       }
       
+      // Replace the original data with validated data
+      if (source === 'body') {
+        req.body = result.data;
+      } else if (source === 'query') {
+        req.query = result.data as Record<string, string>;
+      } else {
+        req.params = result.data as Record<string, string>;
+      }
+      
+      next();
+    } catch (error) {
+      // Fallback error handling
+      console.error('[validateInput] Unexpected error:', error);
       return res.status(400).json({
         message: 'Invalid input',
         code: 'INVALID_INPUT'

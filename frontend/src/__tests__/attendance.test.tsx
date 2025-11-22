@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { TeacherAttendancePage } from '../pages/TeacherAttendancePage';
+import { TeacherAttendancePage } from '../pages/teacher/AttendancePage';
 import StudentAttendancePage from '../pages/student/StudentAttendancePage';
 import { DashboardRouteProvider } from '../context/DashboardRouteContext';
 import { api } from '../lib/api';

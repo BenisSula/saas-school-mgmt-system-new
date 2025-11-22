@@ -466,3 +466,4 @@ export default function TeacherClassesPage() {
     </RouteMeta>
   );
 }
+

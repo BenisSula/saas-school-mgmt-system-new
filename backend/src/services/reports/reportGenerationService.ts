@@ -1,5 +1,4 @@
 import type { PoolClient } from 'pg';
-import { z } from 'zod';
 import { assertValidSchemaName } from '../../db/tenantManager';
 
 export interface ReportDefinition {

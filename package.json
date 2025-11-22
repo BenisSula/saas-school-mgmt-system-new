@@ -7,6 +7,12 @@
     "test": "npm run test --prefix backend && npm run test --prefix frontend",
     "format": "npm run format --prefix backend && npm run format --prefix frontend",
     "format:write": "npm run format:write --prefix backend && npm run format:write --prefix frontend",
+    "qa:test": "node scripts/qa-test-runner.js",
+    "qa:setup": "powershell -ExecutionPolicy Bypass -File scripts/setup-qa-environment.ps1",
+    "load:test:export": "node scripts/load-tests/export-load-test.js",
+    "load:test:upload": "node scripts/load-tests/upload-load-test.js",
+    "load:test:attendance": "node scripts/load-tests/attendance-load-test.js",
+    "load:test:all": "npm run load:test:export && npm run load:test:upload && npm run load:test:attendance",
     "prepare": "husky install"
   },
   "devDependencies": {

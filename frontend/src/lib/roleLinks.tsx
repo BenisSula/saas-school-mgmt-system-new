@@ -44,6 +44,24 @@ const adminLinks: SidebarLink[] = [
     path: '/dashboard/users'
   },
   {
+    id: 'admin-teachers',
+    label: 'Teachers',
+    icon: <UserCheck className="h-5 w-5" />,
+    path: '/dashboard/teachers'
+  },
+  {
+    id: 'admin-students',
+    label: 'Students',
+    icon: <GraduationCap className="h-5 w-5" />,
+    path: '/dashboard/students'
+  },
+  {
+    id: 'admin-hods',
+    label: 'HODs',
+    icon: <Shield className="h-5 w-5" />,
+    path: '/dashboard/hods'
+  },
+  {
     id: 'admin-classes',
     label: 'Classes & subjects',
     icon: <NotebookPen className="h-5 w-5" />,
@@ -78,12 +96,6 @@ const adminLinks: SidebarLink[] = [
     label: 'School settings',
     icon: <Settings2 className="h-5 w-5" />,
     path: '/dashboard/settings'
-  },
-  {
-    id: 'admin-student-profile',
-    label: 'Student profile (view)',
-    icon: <UserCircle className="h-5 w-5" />,
-    path: '/dashboard/student/profile'
   }
 ];
 

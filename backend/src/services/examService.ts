@@ -132,6 +132,35 @@ export async function createExam(
   return result.rows[0];
 }
 
+export async function deleteExam(
+  client: PoolClient,
+  schema: string,
+  examId: string,
+  actorId?: string
+): Promise<void> {
+  // First check if exam exists
+  const examCheck = await client.query(
+    `SELECT id FROM ${qualified(schema, EXAM_TABLE)} WHERE id = $1`,
+    [examId]
+  );
+
+  if (examCheck.rowCount === 0) {
+    throw new Error('Exam not found');
+  }
+
+  // Delete exam (cascade will handle related sessions and grades if foreign keys are set up)
+  await client.query(
+    `DELETE FROM ${qualified(schema, EXAM_TABLE)} WHERE id = $1`,
+    [examId]
+  );
+
+  console.info('[audit] exam_deleted', {
+    tenantSchema: schema,
+    examId,
+    actorId: actorId ?? null
+  });
+}
+
 export async function createExamSession(
   client: PoolClient,
   schema: string,

@@ -15,7 +15,11 @@ import {
   deleteStudent,
   getStudentClassRoster
 } from '../services/studentService';
+import { createClassChangeRequest } from '../services/classChangeRequestService';
 import { safeAuditLogFromRequest } from '../lib/auditHelpers';
+import { createSuccessResponse, createErrorResponse, createPaginatedSuccessResponse } from '../lib/responseHelpers';
+import { createGetHandler, createPostHandler, createPutHandler, createDeleteHandler, asyncHandler, requireTenantContext } from '../lib/routeHelpers';
+import { mutationRateLimiter } from '../middleware/mutationRateLimiter';
 
 const router = Router();
 
@@ -23,113 +27,63 @@ router.use(authenticate, tenantResolver(), ensureTenantContext());
 
 const listStudentsQuerySchema = z.object({
   classId: z.string().optional(),
+  enrollmentStatus: z.string().optional(),
+  search: z.string().optional(),
   limit: z.string().optional(),
   offset: z.string().optional(),
   page: z.string().optional()
 });
 
-router.get('/', requireAnyPermission('users:manage', 'students:view_own_class'), validateInput(listStudentsQuerySchema, 'query'), async (req, res) => {
-  const { classId } = req.query;
+router.get('/', requireAnyPermission('users:manage', 'students:view_own_class'), validateInput(listStudentsQuerySchema, 'query'), asyncHandler(async (req, res) => {
+  if (!requireTenantContext(req, res)) return;
+
+  const { classId, enrollmentStatus, search } = req.query;
   const pagination = req.pagination!;
   
-  const allStudents = await listStudents(req.tenantClient!, req.tenant!.schema) as Array<{
+  // Pass filters to listStudents service
+  const filters = {
+    classId: classId as string | undefined,
+    enrollmentStatus: enrollmentStatus as string | undefined,
+    search: search as string | undefined
+  };
+  
+  const allStudents = await listStudents(req.tenantClient!, req.tenant!.schema, filters) as Array<{
     class_uuid?: string | null;
     class_id?: string | null;
   }>;
   
-  // Filter by class if specified
-  let filtered = allStudents;
-  if (classId && typeof classId === 'string') {
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(classId);
-    if (isUUID) {
-      filtered = allStudents.filter((s) => s.class_uuid === classId);
-    } else {
-      filtered = allStudents.filter((s) => s.class_id === classId);
-    }
-  }
-  
   // Apply pagination
-  const paginated = filtered.slice(pagination.offset, pagination.offset + pagination.limit);
-  const response = createPaginatedResponse(paginated, filtered.length, pagination);
+  const paginated = allStudents.slice(pagination.offset, pagination.offset + pagination.limit);
+  const paginationData = createPaginatedResponse(paginated, allStudents.length, pagination);
+  const response = createPaginatedSuccessResponse(paginated, paginationData.pagination, 'Students retrieved successfully');
   
   res.json(response);
-});
+}));
 
-router.get('/:id', requirePermission('users:manage'), async (req, res, next) => {
-  try {
-    const student = await getStudent(req.tenantClient!, req.tenant!.schema, req.params.id);
-    if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
-    }
+// Standardized CRUD handlers
+router.get('/:id', requirePermission('users:manage'), createGetHandler({
+  getResource: getStudent,
+  resourceName: 'Student',
+  auditAction: 'STUDENT_VIEWED'
+}));
 
-    // Audit log for sensitive read operation
-    await safeAuditLogFromRequest(
-      req,
-      {
-        action: 'STUDENT_VIEWED',
-        resourceType: 'student',
-        resourceId: req.params.id,
-        details: {
-          studentId: req.params.id
-        },
-        severity: 'info'
-      },
-      'students'
-    );
+router.post('/', requirePermission('users:manage'), validateInput(studentSchema, 'body'), createPostHandler({
+  createResource: createStudent,
+  resourceName: 'Student',
+  auditAction: 'STUDENT_CREATED'
+}));
 
-    res.json(student);
-  } catch (error) {
-    next(error);
-  }
-});
+router.put('/:id', requirePermission('users:manage'), mutationRateLimiter, validateInput(studentSchema.partial(), 'body'), createPutHandler({
+  updateResource: updateStudent,
+  resourceName: 'Student',
+  auditAction: 'STUDENT_UPDATED'
+}));
 
-router.post('/', requirePermission('users:manage'), validateInput(studentSchema, 'body'), async (req, res, next) => {
-  try {
-    const student = await createStudent(req.tenantClient!, req.tenant!.schema, req.body, req.user?.id, req.tenant!.id);
-    res.status(201).json(student);
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.put('/:id', requirePermission('users:manage'), validateInput(studentSchema.partial(), 'body'), async (req, res, next) => {
-  try {
-    const student = await updateStudent(
-      req.tenantClient!,
-      req.tenant!.schema,
-      req.params.id,
-      req.body
-    );
-    if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
-    }
-
-    // Audit log for profile update
-    await safeAuditLogFromRequest(
-      req,
-      {
-        action: 'STUDENT_UPDATED',
-        resourceType: 'student',
-        resourceId: req.params.id,
-        details: {
-          studentId: req.params.id,
-          updatedFields: Object.keys(req.body)
-        },
-        severity: 'info'
-      },
-      'students'
-    );
-
-    res.json(student);
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.delete('/:id', requirePermission('users:manage'), async (req, res) => {
-  await deleteStudent(req.tenantClient!, req.tenant!.schema, req.params.id);
-  res.status(204).send();
-});
+router.delete('/:id', requirePermission('users:manage'), mutationRateLimiter, createDeleteHandler({
+  deleteResource: deleteStudent,
+  resourceName: 'Student',
+  auditAction: 'STUDENT_DELETED'
+}));
 
 // Student roster endpoint - accessible to students for their own class, or admins/teachers
 router.get('/:id/roster', async (req, res, next) => {
@@ -140,7 +94,7 @@ router.get('/:id/roster', async (req, res, next) => {
       req.user?.role === 'admin' || req.user?.role === 'superadmin' || req.user?.role === 'teacher';
 
     if (!isOwnRoster && !hasPermission) {
-      return res.status(403).json({ message: 'You can only view your own class roster' });
+      return res.status(403).json(createErrorResponse('You can only view your own class roster'));
     }
 
     const roster = await getStudentClassRoster(
@@ -150,11 +104,68 @@ router.get('/:id/roster', async (req, res, next) => {
     );
 
     if (!roster) {
-      return res.status(404).json({ message: 'Student not found or not assigned to a class' });
+      return res.status(404).json(createErrorResponse('Student not found or not assigned to a class'));
     }
 
-    res.json(roster);
+    res.json(createSuccessResponse(roster, 'Class roster retrieved successfully'));
   } catch (error) {
+    next(error);
+  }
+});
+
+// POST /students/:id/class-change-request - Create a class change request
+const classChangeRequestSchema = z.object({
+  targetClassId: z.string().min(1, 'Target class ID is required'),
+  reason: z.string().optional()
+});
+
+router.post('/:id/class-change-request', requirePermission('users:manage'), mutationRateLimiter, validateInput(classChangeRequestSchema, 'body'), async (req, res, next) => {
+  try {
+    if (!req.tenantClient || !req.tenant || !req.user) {
+      return res.status(500).json(createErrorResponse('Tenant context missing'));
+    }
+
+    const request = await createClassChangeRequest(
+      req.tenantClient,
+      req.tenant.schema,
+      req.params.id,
+      {
+        targetClassId: req.body.targetClassId,
+        reason: req.body.reason
+      },
+      req.user.id
+    );
+
+    // Audit log
+    await safeAuditLogFromRequest(
+      req,
+      {
+        action: 'CLASS_CHANGE_REQUEST_CREATED',
+        resourceType: 'student',
+        resourceId: req.params.id,
+        details: {
+          studentId: req.params.id,
+          requestedClassId: req.body.targetClassId,
+          requestId: request.id
+        },
+        severity: 'info'
+      },
+      'students'
+    );
+
+    res.status(201).json(createSuccessResponse(request, 'Class change request created successfully'));
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'Student not found') {
+        return res.status(404).json(createErrorResponse(error.message));
+      }
+      if (error.message.includes('already in the requested class')) {
+        return res.status(400).json(createErrorResponse(error.message));
+      }
+      if (error.message.includes('pending class change request already exists')) {
+        return res.status(409).json(createErrorResponse(error.message));
+      }
+    }
     next(error);
   }
 });

@@ -1,5 +1,4 @@
 import type { PoolClient } from 'pg';
-import { z } from 'zod';
 
 export interface CreateScheduledReportInput {
   tenantId: string;

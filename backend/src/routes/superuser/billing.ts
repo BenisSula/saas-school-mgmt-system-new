@@ -14,7 +14,6 @@ import {
   createPlatformInvoice,
   getInvoicesForTenant,
   getInvoiceById,
-  markInvoiceAsPaid,
   generateInvoicePdf
 } from '../../services/billing/invoiceService';
 import {

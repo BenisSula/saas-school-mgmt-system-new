@@ -5,6 +5,7 @@ import { ActivityHistory } from '../../components/profile/ActivityHistory';
 import { AuditLogs } from '../../components/profile/AuditLogs';
 import { FileUploads } from '../../components/profile/FileUploads';
 import { useProfileData } from '../../hooks/useProfileData';
+import { useFileUpload } from '../../hooks/useFileUpload';
 import { api, type TeacherProfileDetail, type TeacherProfile } from '../../lib/api';
 import { isHOD } from '../../lib/utils/userHelpers';
 
@@ -69,6 +70,14 @@ export default function HODProfilePage() {
       profileLoader,
       enabled: true
     });
+
+  const { uploadFile: handleFileUpload, deleteFile: handleFileDelete } = useFileUpload({
+    entityType: 'hod',
+    entityId: profile?.id,
+    onUploadSuccess: (upload) => {
+      setUploads((prev) => [upload, ...prev]);
+    }
+  });
 
   const sections: ProfileSection[] = useMemo(
     () => [
@@ -250,11 +259,11 @@ export default function HODProfilePage() {
             uploads={uploads}
             canUpload={true}
             canDelete={true}
-            onUpload={async (file) => {
-              // TODO: Implement upload API when available
-              console.log('Upload file:', file);
+            onUpload={async (file, description) => {
+              await handleFileUpload(file, description);
             }}
             onDelete={async (uploadId) => {
+              await handleFileDelete(uploadId);
               setUploads((prev) => prev.filter((u) => u.id !== uploadId));
             }}
           />

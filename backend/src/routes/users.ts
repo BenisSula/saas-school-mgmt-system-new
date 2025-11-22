@@ -5,7 +5,7 @@ import ensureTenantContext from '../middleware/ensureTenantContext';
 import { requirePermission } from '../middleware/rbac';
 import { validateInput } from '../middleware/validateInput';
 import { createPaginatedResponse } from '../middleware/pagination';
-import { listTenantUsers, updateTenantUserRole, updateUserStatus } from '../services/userService';
+import { listTenantUsers, updateTenantUserRole, updateUserStatus, updateHODDepartment, bulkRemoveHODRoles } from '../services/userService';
 import { processPendingProfile, cleanupPendingProfile } from '../services/profileService';
 import { adminCreateUser } from '../services/adminUserService';
 import { roleUpdateSchema } from '../validators/userValidator';
@@ -236,6 +236,65 @@ router.patch('/:userId/reject', requirePermission('users:manage'), async (req, r
 
     res.json(updated);
   } catch (error) {
+    next(error);
+  }
+});
+
+// PUT /admin/users/:id/department - Assign department to HOD
+const departmentAssignmentSchema = z.object({
+  department: z.string().min(1, 'Department is required')
+});
+
+router.put('/:userId/department', requirePermission('users:manage'), validateInput(departmentAssignmentSchema, 'body'), async (req, res, next) => {
+  try {
+    if (!req.user || !req.tenant) {
+      return res.status(500).json({ message: 'User or tenant context missing' });
+    }
+
+    await updateHODDepartment(
+      req.params.userId,
+      req.body.department,
+      req.tenant.id,
+      req.user.id
+    );
+
+    res.json({ message: 'Department assigned successfully' });
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes('does not have HOD role')) {
+        return res.status(400).json({ message: error.message });
+      }
+      if (error.message.includes('does not exist')) {
+        return res.status(500).json({ message: error.message });
+      }
+    }
+    next(error);
+  }
+});
+
+// Bulk HOD role removal endpoint
+const bulkRemoveHODSchema = z.object({
+  userIds: z.array(z.string().uuid()).min(1, 'At least one user ID is required')
+});
+
+router.delete('/hod/bulk', requirePermission('users:manage'), validateInput(bulkRemoveHODSchema, 'body'), async (req, res, next) => {
+  try {
+    if (!req.user || !req.tenant) {
+      return res.status(500).json({ message: 'User or tenant context missing' });
+    }
+
+    const { userIds } = req.body;
+    const { removed, failed } = await bulkRemoveHODRoles(userIds, req.tenant.id, req.user.id);
+
+    res.json({
+      message: `${removed} HOD role(s) removed successfully${failed > 0 ? `, ${failed} failed` : ''}`,
+      removed,
+      failed
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('does not exist')) {
+      return res.status(500).json({ message: error.message });
+    }
     next(error);
   }
 });

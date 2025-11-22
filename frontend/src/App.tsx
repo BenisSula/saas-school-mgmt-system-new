@@ -13,12 +13,12 @@ const HomePage = lazy(() => import('./pages'));
 const TestLoginPage = lazy(() => import('./pages/TestLoginPage'));
 // Legacy pages retained via redirects; not directly imported
 const AuthUnifiedPage = lazy(() => import('./pages/auth/Auth'));
-const AdminConfigurationPage = lazy(() => import('./pages/AdminConfigurationPage'));
-const AdminReportsPage = lazy(() => import('./pages/admin/AdminReportsPage'));
-const AdminRoleManagementPage = lazy(() => import('./pages/AdminRoleManagementPage'));
-const TeacherAttendancePage = lazy(() => import('./pages/TeacherAttendancePage'));
+const AdminConfigurationPage = lazy(() => import('./pages/admin/ConfigurationPage'));
+const AdminReportsPage = lazy(() => import('./pages/admin/ReportsPage'));
+const AdminRoleManagementPage = lazy(() => import('./pages/admin/RoleManagementPage'));
+const TeacherAttendancePage = lazy(() => import('./pages/teacher/AttendancePage'));
 const StudentFeesPage = lazy(() => import('./pages/student/StudentFeesPage'));
-const TeacherGradeEntryPage = lazy(() => import('./pages/TeacherGradeEntryPage'));
+const TeacherGradeEntryPage = lazy(() => import('./pages/teacher/GradeEntryPage'));
 const StudentAttendancePage = lazy(() => import('./pages/student/StudentAttendancePage'));
 const StudentResultsPage = lazy(() => import('./pages/student/StudentResultsPage'));
 const StudentMessagesPage = lazy(() => import('./pages/student/StudentMessagesPage'));

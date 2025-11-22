@@ -23,9 +23,9 @@ CREATE TABLE IF NOT EXISTS shared.subscriptions (
   UNIQUE (tenant_id, provider_subscription_id)
 );
 
-CREATE INDEX idx_subscriptions_tenant_id ON shared.subscriptions(tenant_id);
-CREATE INDEX idx_subscriptions_status ON shared.subscriptions(status);
-CREATE INDEX idx_subscriptions_period_end ON shared.subscriptions(current_period_end);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_tenant_id ON shared.subscriptions(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON shared.subscriptions(status);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_period_end ON shared.subscriptions(current_period_end);
 
 CREATE TABLE IF NOT EXISTS shared.invoices (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

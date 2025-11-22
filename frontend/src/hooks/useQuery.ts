@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 // Re-export for convenience
 export { useMutation, useQueryClient };
 
-// Query keys factory
+// Query keys factory - Standardized keys for all queries
 export const queryKeys = {
   // Admin queries
   admin: {
@@ -30,7 +30,7 @@ export const queryKeys = {
     subscriptions: () => ['superuser', 'subscriptions'] as const,
     usage: (tenantId?: string) => ['superuser', 'usage', tenantId] as const
   }
-};
+} as const;
 
 // Generic query hook wrapper
 export function useQuery<T>(

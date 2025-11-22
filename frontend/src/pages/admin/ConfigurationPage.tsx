@@ -1,18 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { toast } from 'sonner';
-import { api, type AcademicTerm, type BrandingConfig, type SchoolClass } from '../lib/api';
-import { Button } from '../components/ui/Button';
-import { Table } from '../components/ui/Table';
-import { Input } from '../components/ui/Input';
-import { Select } from '../components/ui/Select';
-import { DatePicker } from '../components/ui/DatePicker';
-import { StatusBanner } from '../components/ui/StatusBanner';
-import { Modal } from '../components/ui/Modal';
-import { useAsyncFeedback } from '../hooks/useAsyncFeedback';
-import { sanitizeText } from '../lib/sanitize';
-import { useAuth } from '../context/AuthContext';
-import { formatDate } from '../lib/utils/date';
+import { api, type AcademicTerm, type BrandingConfig, type SchoolClass } from '../../lib/api';
+import { Button } from '../../components/ui/Button';
+import { Table } from '../../components/ui/Table';
+import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
+import { DatePicker } from '../../components/ui/DatePicker';
+import { StatusBanner } from '../../components/ui/StatusBanner';
+import { useAsyncFeedback } from '../../hooks/useAsyncFeedback';
+import { sanitizeText } from '../../lib/sanitize';
+import { useAuth } from '../../context/AuthContext';
+import { formatDate } from '../../lib/utils/date';
+import { EditButton, DeleteButton, ActionButtonGroup } from '../../components/table-actions';
+import { FormModal } from '../../components/shared';
+import { useTerms, useCreateTerm, useUpdateTerm, useDeleteTerm } from '../../hooks/queries/useTerms';
+import { useClasses, useCreateClass, useUpdateClass, useDeleteClass } from '../../hooks/queries/useClasses';
+import { queryKeys } from '../../hooks/useQuery';
 
 interface BrandingFormState {
   logoUrl: string;
@@ -85,8 +89,6 @@ function validateClassInput(input: { name: string; description?: string }): stri
 function AdminConfigurationPage() {
   const { user } = useAuth();
   const [branding, setBranding] = useState<BrandingFormState>(defaultBranding);
-  const [terms, setTerms] = useState<AcademicTerm[]>([]);
-  const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [termForm, setTermForm] = useState({ name: '', startsOn: '', endsOn: '' });
   const [classForm, setClassForm] = useState({ name: '', description: '' });
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -104,29 +106,23 @@ function AdminConfigurationPage() {
   const termModalInitialRef = useRef<HTMLInputElement>(null);
   const classModalInitialRef = useRef<HTMLInputElement>(null);
   const { status, message, setSuccess, setError, clear } = useAsyncFeedback();
-  const termModalSubmitting =
-    termEditor !== null && pendingAction === `update-term:${termEditor.id}`;
-  const classModalSubmitting =
-    classEditor !== null && pendingAction === `update-class:${classEditor.id}`;
-  const termModalBusy =
-    termEditor !== null &&
-    (pendingAction === `update-term:${termEditor.id}` ||
-      pendingAction === `delete-term:${termEditor.id}`);
-  const classModalBusy =
-    classEditor !== null &&
-    (pendingAction === `update-class:${classEditor.id}` ||
-      pendingAction === `delete-class:${classEditor.id}`);
+  
+  // Use React Query hooks
+  const { data: terms = [] } = useTerms();
+  const { data: classes = [] } = useClasses();
+  const createTermMutation = useCreateTerm();
+  const updateTermMutation = useUpdateTerm();
+  const deleteTermMutation = useDeleteTerm();
+  const createClassMutation = useCreateClass();
+  const updateClassMutation = useUpdateClass();
+  const deleteClassMutation = useDeleteClass();
 
   useEffect(() => {
     if (!user) return;
     let isMounted = true;
     (async () => {
       try {
-        const [brandingResponse, termsResponse, classesResponse] = await Promise.all([
-          api.getBranding(),
-          api.listTerms(),
-          api.listClasses()
-        ]);
+        const brandingResponse = await api.getBranding();
         if (!isMounted) return;
 
         if (brandingResponse) {
@@ -137,8 +133,6 @@ function AdminConfigurationPage() {
             themeFlags: (brandingResponse.theme_flags as Record<string, boolean> | null) ?? {}
           });
         }
-        setTerms(termsResponse);
-        setClasses(classesResponse);
       } catch (error) {
         setError((error as Error).message);
         toast.error((error as Error).message);
@@ -196,58 +190,46 @@ function AdminConfigurationPage() {
 
   async function handleCreateTerm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    clear();
+    const payload = {
+      name: sanitizeText(termForm.name),
+      startsOn: termForm.startsOn,
+      endsOn: termForm.endsOn
+    };
+    const validationMessage = validateTermInput(payload);
+    if (validationMessage) {
+      setError(validationMessage);
+      toast.error(validationMessage);
+      return;
+    }
     try {
-      clear();
-      const payload = {
-        name: sanitizeText(termForm.name),
-        startsOn: termForm.startsOn,
-        endsOn: termForm.endsOn
-      };
-      const validationMessage = validateTermInput(payload);
-      if (validationMessage) {
-        setError(validationMessage);
-        toast.error(validationMessage);
-        return;
-      }
-      setPendingAction('create-term');
-      const created = await api.createTerm(payload);
-      setTerms((current) => [created, ...current]);
+      await createTermMutation.mutateAsync(payload);
       setTermForm({ name: '', startsOn: '', endsOn: '' });
       setSuccess('Academic term recorded.');
-      toast.success('Academic term added.');
     } catch (error) {
       setError((error as Error).message);
-      toast.error((error as Error).message);
-    } finally {
-      setPendingAction(null);
     }
   }
 
   async function handleCreateClass(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    clear();
+    const payload = {
+      name: sanitizeText(classForm.name),
+      description: classForm.description.trim() ? sanitizeText(classForm.description) : undefined
+    };
+    const validationMessage = validateClassInput(payload);
+    if (validationMessage) {
+      setError(validationMessage);
+      toast.error(validationMessage);
+      return;
+    }
     try {
-      clear();
-      const payload = {
-        name: sanitizeText(classForm.name),
-        description: classForm.description.trim() ? sanitizeText(classForm.description) : undefined
-      };
-      const validationMessage = validateClassInput(payload);
-      if (validationMessage) {
-        setError(validationMessage);
-        toast.error(validationMessage);
-        return;
-      }
-      setPendingAction('create-class');
-      const created = await api.createClass(payload);
-      setClasses((current) => [created, ...current]);
+      await createClassMutation.mutateAsync(payload);
       setClassForm({ name: '', description: '' });
       setSuccess('Class saved.');
-      toast.success('Class saved.');
     } catch (error) {
       setError((error as Error).message);
-      toast.error((error as Error).message);
-    } finally {
-      setPendingAction(null);
     }
   }
 
@@ -268,69 +250,27 @@ function AdminConfigurationPage() {
     setTermEditor(null);
   }, []);
 
-  const handleUpdateTerm = useCallback(
-    async (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      if (!termEditor) {
-        return;
-      }
-      try {
-        clear();
-        const payload = {
-          name: sanitizeText(termEditor.name),
-          startsOn: termEditor.startsOn,
-          endsOn: termEditor.endsOn
-        };
-        const validationMessage = validateTermInput(payload);
-        if (validationMessage) {
-          setError(validationMessage);
-          toast.error(validationMessage);
-          return;
-        }
-        const actionKey = `update-term:${termEditor.id}`;
-        setPendingAction(actionKey);
-        const updated = await api.updateTerm(termEditor.id, payload);
-        setTerms((current) => current.map((term) => (term.id === updated.id ? updated : term)));
-        setSuccess('Academic term updated.');
-        toast.success('Academic term updated.');
-        setTermEditor(null);
-      } catch (error) {
-        setError((error as Error).message);
-        toast.error((error as Error).message);
-      } finally {
-        setPendingAction(null);
-      }
-    },
-    [termEditor, clear, setError, setSuccess]
-  );
+  const getTermUpdateVariables = (): { id: string; data: { name: string; startsOn: string; endsOn: string } } | undefined => {
+    if (!termEditor) return undefined;
+    
+    const payload = {
+      name: sanitizeText(termEditor.name),
+      startsOn: termEditor.startsOn,
+      endsOn: termEditor.endsOn
+    };
+    const validationMessage = validateTermInput(payload);
+    if (validationMessage) {
+      setError(validationMessage);
+      toast.error(validationMessage);
+      return undefined;
+    }
+    
+    return {
+      id: termEditor.id,
+      data: payload
+    };
+  };
 
-  const handleDeleteTerm = useCallback(
-    async (term: AcademicTerm) => {
-      const promptMessage = `Delete "${term.name}"? This cannot be undone and may impact reporting tied to this term.`;
-      const confirmed = typeof window === 'undefined' ? false : window.confirm(promptMessage);
-      if (!confirmed) {
-        return;
-      }
-      try {
-        clear();
-        const actionKey = `delete-term:${term.id}`;
-        setPendingAction(actionKey);
-        await api.deleteTerm(term.id);
-        setTerms((current) => current.filter((item) => item.id !== term.id));
-        setSuccess('Academic term removed.');
-        toast.success('Academic term removed.');
-        if (termEditor?.id === term.id) {
-          setTermEditor(null);
-        }
-      } catch (error) {
-        setError((error as Error).message);
-        toast.error((error as Error).message);
-      } finally {
-        setPendingAction(null);
-      }
-    },
-    [clear, setError, setSuccess, termEditor]
-  );
 
   const openClassEditor = useCallback(
     (classItem: SchoolClass) => {
@@ -348,70 +288,28 @@ function AdminConfigurationPage() {
     setClassEditor(null);
   }, []);
 
-  const handleUpdateClass = useCallback(
-    async (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      if (!classEditor) {
-        return;
-      }
-      try {
-        clear();
-        const payload = {
-          name: sanitizeText(classEditor.name),
-          description: classEditor.description.trim()
-            ? sanitizeText(classEditor.description)
-            : undefined
-        };
-        const validationMessage = validateClassInput(payload);
-        if (validationMessage) {
-          setError(validationMessage);
-          toast.error(validationMessage);
-          return;
-        }
-        const actionKey = `update-class:${classEditor.id}`;
-        setPendingAction(actionKey);
-        const updated = await api.updateClass(classEditor.id, payload);
-        setClasses((current) => current.map((item) => (item.id === updated.id ? updated : item)));
-        setSuccess('Class updated.');
-        toast.success('Class updated.');
-        setClassEditor(null);
-      } catch (error) {
-        setError((error as Error).message);
-        toast.error((error as Error).message);
-      } finally {
-        setPendingAction(null);
-      }
-    },
-    [classEditor, clear, setError, setSuccess]
-  );
+  const getClassUpdateVariables = (): { id: string; data: { name: string; description?: string } } | undefined => {
+    if (!classEditor) return undefined;
+    
+    const payload = {
+      name: sanitizeText(classEditor.name),
+      description: classEditor.description.trim()
+        ? sanitizeText(classEditor.description)
+        : undefined
+    };
+    const validationMessage = validateClassInput(payload);
+    if (validationMessage) {
+      setError(validationMessage);
+      toast.error(validationMessage);
+      return undefined;
+    }
+    
+    return {
+      id: classEditor.id,
+      data: payload
+    };
+  };
 
-  const handleDeleteClass = useCallback(
-    async (classItem: SchoolClass) => {
-      const promptMessage = `Delete class "${classItem.name}"? Students mapped to this class may appear in unassigned listings.`;
-      const confirmed = typeof window === 'undefined' ? false : window.confirm(promptMessage);
-      if (!confirmed) {
-        return;
-      }
-      try {
-        clear();
-        const actionKey = `delete-class:${classItem.id}`;
-        setPendingAction(actionKey);
-        await api.deleteClass(classItem.id);
-        setClasses((current) => current.filter((item) => item.id !== classItem.id));
-        setSuccess('Class removed.');
-        toast.success('Class removed.');
-        if (classEditor?.id === classItem.id) {
-          setClassEditor(null);
-        }
-      } catch (error) {
-        setError((error as Error).message);
-        toast.error((error as Error).message);
-      } finally {
-        setPendingAction(null);
-      }
-    },
-    [clear, setError, setSuccess, classEditor]
-  );
 
   const termColumns = useMemo(
     () => [
@@ -430,41 +328,36 @@ function AdminConfigurationPage() {
         header: 'Actions',
         key: 'actions',
         render: (row: AcademicTerm) => {
-          const isTermMutation =
-            pendingAction?.startsWith('update-term:') || pendingAction?.startsWith('delete-term:');
-          const isCurrentTermMutation =
-            pendingAction === `update-term:${row.id}` || pendingAction === `delete-term:${row.id}`;
           return (
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={(event) => {
-                  event.stopPropagation();
+            <ActionButtonGroup>
+              <EditButton
+                onClick={() => {
                   openTermEditor(row);
                 }}
-                disabled={isTermMutation && !isCurrentTermMutation}
-              >
-                Edit
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  void handleDeleteTerm(row);
+                disabled={deleteTermMutation.isPending || updateTermMutation.isPending}
+              />
+              <DeleteButton
+                mutation={deleteTermMutation}
+                variables={row.id}
+                invalidateQueries={[queryKeys.admin.subjects()] as unknown as unknown[][]}
+                messages={{
+                  pending: 'Deleting term...',
+                  success: 'Term deleted successfully',
+                  error: 'Failed to delete term'
                 }}
-                loading={pendingAction === `delete-term:${row.id}`}
-                disabled={isTermMutation && !isCurrentTermMutation}
-              >
-                Delete
-              </Button>
-            </div>
+                confirmMessage={`Delete "${row.name}"? This cannot be undone and may impact reporting tied to this term.`}
+                onSuccess={() => {
+                  if (termEditor?.id === row.id) {
+                    setTermEditor(null);
+                  }
+                }}
+              />
+            </ActionButtonGroup>
           );
         }
       }
     ],
-    [pendingAction, openTermEditor, handleDeleteTerm]
+    [openTermEditor, deleteTermMutation, updateTermMutation, termEditor]
   );
 
   const classColumns = useMemo(
@@ -479,43 +372,36 @@ function AdminConfigurationPage() {
         header: 'Actions',
         key: 'actions',
         render: (row: SchoolClass) => {
-          const isClassMutation =
-            pendingAction?.startsWith('update-class:') ||
-            pendingAction?.startsWith('delete-class:');
-          const isCurrentClassMutation =
-            pendingAction === `update-class:${row.id}` ||
-            pendingAction === `delete-class:${row.id}`;
           return (
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={(event) => {
-                  event.stopPropagation();
+            <ActionButtonGroup>
+              <EditButton
+                onClick={() => {
                   openClassEditor(row);
                 }}
-                disabled={isClassMutation && !isCurrentClassMutation}
-              >
-                Edit
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  void handleDeleteClass(row);
+                disabled={deleteClassMutation.isPending || updateClassMutation.isPending}
+              />
+              <DeleteButton
+                mutation={deleteClassMutation}
+                variables={row.id}
+                invalidateQueries={[queryKeys.admin.classes()] as unknown as unknown[][]}
+                messages={{
+                  pending: 'Deleting class...',
+                  success: 'Class deleted successfully',
+                  error: 'Failed to delete class'
                 }}
-                loading={pendingAction === `delete-class:${row.id}`}
-                disabled={isClassMutation && !isCurrentClassMutation}
-              >
-                Delete
-              </Button>
-            </div>
+                confirmMessage={`Delete class "${row.name}"? Students mapped to this class may appear in unassigned listings.`}
+                onSuccess={() => {
+                  if (classEditor?.id === row.id) {
+                    setClassEditor(null);
+                  }
+                }}
+              />
+            </ActionButtonGroup>
           );
         }
       }
     ],
-    [pendingAction, openClassEditor, handleDeleteClass]
+    [openClassEditor, deleteClassMutation, updateClassMutation, classEditor]
   );
 
   return (
@@ -690,31 +576,25 @@ function AdminConfigurationPage() {
           />
         </div>
       </section>
-      <Modal
+      <FormModal
         title="Edit academic term"
         isOpen={Boolean(termEditor)}
-        onClose={termModalBusy ? () => undefined : closeTermEditor}
-        initialFocusRef={termModalInitialRef}
-        footer={
-          termEditor ? (
-            <>
-              <Button variant="ghost" onClick={closeTermEditor} disabled={termModalBusy}>
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                form="term-editor-form"
-                loading={termModalSubmitting}
-                disabled={termModalBusy}
-              >
-                Save changes
-              </Button>
-            </>
-          ) : undefined
-        }
+        onClose={closeTermEditor}
+        mutation={updateTermMutation}
+        variables={getTermUpdateVariables()}
+            invalidateQueries={[queryKeys.admin.subjects()] as unknown as unknown[][]}
+        messages={{
+          pending: 'Updating term...',
+          success: 'Term updated successfully',
+          error: 'Failed to update term'
+        }}
+        onSuccess={() => {
+          setTermEditor(null);
+          setSuccess('Academic term updated.');
+        }}
       >
         {termEditor ? (
-          <form id="term-editor-form" className="space-y-4" onSubmit={handleUpdateTerm}>
+          <div className="space-y-4">
             <Input
               ref={termModalInitialRef}
               label="Term name"
@@ -723,7 +603,7 @@ function AdminConfigurationPage() {
                 setTermEditor((state) => (state ? { ...state, name: event.target.value } : state))
               }
               required
-              disabled={termModalSubmitting}
+              disabled={updateTermMutation.isPending}
             />
             <DatePicker
               label="Start date"
@@ -734,7 +614,7 @@ function AdminConfigurationPage() {
                 )
               }
               required
-              disabled={termModalSubmitting}
+              disabled={updateTermMutation.isPending}
             />
             <DatePicker
               label="End date"
@@ -743,40 +623,34 @@ function AdminConfigurationPage() {
                 setTermEditor((state) => (state ? { ...state, endsOn: event.target.value } : state))
               }
               required
-              disabled={termModalSubmitting}
+              disabled={updateTermMutation.isPending}
             />
             <p className="text-xs text-slate-400">
               Updating a term will reflect across schedules, attendance windows, and reporting
               rollups.
             </p>
-          </form>
+          </div>
         ) : null}
-      </Modal>
-      <Modal
+      </FormModal>
+      <FormModal
         title="Edit class"
         isOpen={Boolean(classEditor)}
-        onClose={classModalBusy ? () => undefined : closeClassEditor}
-        initialFocusRef={classModalInitialRef}
-        footer={
-          classEditor ? (
-            <>
-              <Button variant="ghost" onClick={closeClassEditor} disabled={classModalBusy}>
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                form="class-editor-form"
-                loading={classModalSubmitting}
-                disabled={classModalBusy}
-              >
-                Save changes
-              </Button>
-            </>
-          ) : undefined
-        }
+        onClose={closeClassEditor}
+        mutation={updateClassMutation}
+        variables={getClassUpdateVariables()}
+        invalidateQueries={[queryKeys.admin.classes()] as unknown as unknown[][]}
+        messages={{
+          pending: 'Updating class...',
+          success: 'Class updated successfully',
+          error: 'Failed to update class'
+        }}
+        onSuccess={() => {
+          setClassEditor(null);
+          setSuccess('Class updated.');
+        }}
       >
         {classEditor ? (
-          <form id="class-editor-form" className="space-y-4" onSubmit={handleUpdateClass}>
+          <div className="space-y-4">
             <Input
               ref={classModalInitialRef}
               label="Class name"
@@ -785,7 +659,7 @@ function AdminConfigurationPage() {
                 setClassEditor((state) => (state ? { ...state, name: event.target.value } : state))
               }
               required
-              disabled={classModalSubmitting}
+              disabled={updateClassMutation.isPending}
             />
             <Input
               label="Description"
@@ -796,14 +670,14 @@ function AdminConfigurationPage() {
                 )
               }
               placeholder="e.g. Lower senior"
-              disabled={classModalSubmitting}
+              disabled={updateClassMutation.isPending}
             />
             <p className="text-xs text-slate-400">
               Editing a class will propagate to attendance rosters, gradebooks, and fee schedules.
             </p>
-          </form>
+          </div>
         ) : null}
-      </Modal>
+      </FormModal>
     </div>
   );
 }

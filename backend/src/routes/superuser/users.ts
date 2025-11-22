@@ -11,8 +11,7 @@ import {
 } from '../../services/superuser/permissionOverrideService';
 import {
   listOverrides,
-  createOverride,
-  revokeOverride
+  createOverride
 } from '../../services/superuser/overrideService';
 import { updatePlatformUserStatus } from '../../services/platformMonitoringService';
 import { adminResetPassword } from '../../services/superuser/passwordManagementService';

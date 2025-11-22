@@ -84,15 +84,28 @@ export function useProfileData<T>(options: UseProfileDataOptions) {
           // Don't fail the whole load if audit logs fail
         }
 
-        // TODO: Load uploads when backend endpoint is available
-        // try {
-        //   const uploadsData = await api.getUploads(userId);
-        //   if (!cancelled) {
-        //     setUploads(uploadsData);
-        //   }
-        // } catch (err) {
-        //   console.warn('Failed to load uploads:', err);
-        // }
+        // Load file uploads
+        try {
+          const uploadsData = await api.listFileUploads();
+          if (!cancelled) {
+            // Convert to FileUpload format
+            setUploads(
+              uploadsData.map((u) => ({
+                id: u.id,
+                filename: u.filename,
+                fileSize: u.fileSize,
+                mimeType: u.mimeType,
+                uploadedAt: typeof u.uploadedAt === 'string' ? u.uploadedAt : u.uploadedAt.toISOString(),
+                uploadedBy: u.uploadedBy,
+                description: null,
+                downloadUrl: u.fileUrl
+              }))
+            );
+          }
+        } catch (err) {
+          console.warn('Failed to load uploads:', err);
+          // Don't fail the whole load if uploads fail
+        }
       } catch (err) {
         if (!cancelled) {
           setError((err as Error).message);

@@ -42,20 +42,50 @@ export function useExport<T extends Record<string, unknown>>() {
 
         // Server-side exports (PDF/Excel)
         if (format === 'pdf' || format === 'excel') {
-          // For now, use CSV as fallback since backend PDF/Excel endpoints need to be implemented
-          // When backend endpoints are ready, uncomment and use:
-          // if (!apiEndpoint) {
-          //   toast.error('Export endpoint not configured');
-          //   return;
-          // }
-          // const blob = await api.superuser.exportReport(apiEndpoint, { format, ...apiPayload });
-          // Download blob...
+          // If apiEndpoint and apiPayload are provided, use backend export
+          if (apiEndpoint && apiPayload) {
+            try {
+              const response = await fetch(apiEndpoint, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                },
+                body: JSON.stringify({
+                  format,
+                  ...apiPayload
+                })
+              });
+
+              if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Export failed: ${errorText || response.statusText}`);
+              }
+
+              const blob = await response.blob();
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${filename}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              window.URL.revokeObjectURL(url);
+              
+              toast.success(`${format.toUpperCase()} exported successfully`);
+              return;
+            } catch (error) {
+              console.error('Export error:', error);
+              toast.error(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+              // Fallback to CSV
+              toast.info('Falling back to CSV export');
+              exportToCSV(data, filename, headers);
+              return;
+            }
+          }
           
-          // Suppress unused parameter warnings - will be used when backend endpoints are ready
-          void apiEndpoint;
-          void apiPayload;
-          
-          toast.info(`${format.toUpperCase()} export via backend coming soon. Exporting as CSV instead.`);
+          // If no backend endpoint, fallback to CSV
+          toast.info(`${format.toUpperCase()} export requires backend endpoint. Exporting as CSV instead.`);
           exportToCSV(data, filename, headers);
           return;
         }
@@ -74,35 +104,110 @@ export function useExport<T extends Record<string, unknown>>() {
 
 /**
  * Helper to create export handlers for common use cases
+ * This is a non-hook function that can be used anywhere
  */
 export function createExportHandlers<T extends Record<string, unknown>>(
   data: T[],
   baseFilename: string,
   headers?: string[]
 ) {
-  const { exportData } = useExport<T>();
+  const filename = `${baseFilename}-${defaultDate()}`;
 
   return {
-    exportCSV: () => exportData({ data, filename: `${baseFilename}-${defaultDate()}`, format: 'csv', headers }),
-    exportJSON: () => exportData({ data, filename: `${baseFilename}-${defaultDate()}`, format: 'json' }),
-    exportPDF: (apiEndpoint?: string, apiPayload?: Record<string, unknown>) =>
-      exportData({
-        data,
-        filename: `${baseFilename}-${defaultDate()}`,
-        format: 'pdf',
-        headers,
-        apiEndpoint,
-        apiPayload
-      }),
-    exportExcel: (apiEndpoint?: string, apiPayload?: Record<string, unknown>) =>
-      exportData({
-        data,
-        filename: `${baseFilename}-${defaultDate()}`,
-        format: 'excel',
-        headers,
-        apiEndpoint,
-        apiPayload
-      })
+    exportCSV: () => {
+      exportToCSV(data, filename, headers);
+      toast.success('CSV exported successfully');
+    },
+    exportJSON: () => {
+      exportToJSON(data, filename);
+      toast.success('JSON exported successfully');
+    },
+    exportPDF: async (apiEndpoint?: string, apiPayload?: Record<string, unknown>) => {
+      if (apiEndpoint && apiPayload) {
+        try {
+          const response = await fetch(apiEndpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+            },
+            body: JSON.stringify({
+              format: 'pdf',
+              ...apiPayload
+            })
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Export failed: ${errorText || response.statusText}`);
+          }
+
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${filename}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+          
+          toast.success('PDF exported successfully');
+        } catch (error) {
+          console.error('Export error:', error);
+          toast.error(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          // Fallback to CSV
+          toast.info('Falling back to CSV export');
+          exportToCSV(data, filename, headers);
+        }
+      } else {
+        toast.info('PDF export requires backend endpoint. Exporting as CSV instead.');
+        exportToCSV(data, filename, headers);
+      }
+    },
+    exportExcel: async (apiEndpoint?: string, apiPayload?: Record<string, unknown>) => {
+      if (apiEndpoint && apiPayload) {
+        try {
+          const response = await fetch(apiEndpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+            },
+            body: JSON.stringify({
+              format: 'excel',
+              ...apiPayload
+            })
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Export failed: ${errorText || response.statusText}`);
+          }
+
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${filename}.xlsx`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+          
+          toast.success('Excel exported successfully');
+        } catch (error) {
+          console.error('Export error:', error);
+          toast.error(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          // Fallback to CSV
+          toast.info('Falling back to CSV export');
+          exportToCSV(data, filename, headers);
+        }
+      } else {
+        toast.info('Excel export requires backend endpoint. Exporting as CSV instead.');
+        exportToCSV(data, filename, headers);
+      }
+    }
   };
 }
 

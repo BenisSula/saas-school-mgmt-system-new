@@ -4,6 +4,7 @@ import tenantResolver from '../middleware/tenantResolver';
 import ensureTenantContext from '../middleware/ensureTenantContext';
 import verifyTeacherAssignment from '../middleware/verifyTeacherAssignment';
 import { requireAnyPermission, requireSelfOrPermission, requirePermission } from '../middleware/rbac';
+import { attendanceLimiter } from '../middleware/mutationRateLimiter';
 import {
   AttendanceMark,
   getAttendanceSummary,
@@ -29,6 +30,7 @@ const extractClassIdForVerification = (req: Request, res: Response, next: NextFu
 router.post(
   '/mark',
   requireAnyPermission('attendance:manage', 'attendance:mark'),
+  attendanceLimiter,
   extractClassIdForVerification,
   verifyTeacherAssignment({ classIdParam: '_classIdForVerification', allowAdmins: true }),
   async (req, res, next) => {
@@ -36,6 +38,20 @@ router.post(
       const payload = req.body.records as AttendanceMark[];
       if (!Array.isArray(payload) || payload.length === 0) {
         return res.status(400).json({ message: 'records array required' });
+      }
+
+      // Server-side validation
+      for (const record of payload) {
+        if (!record.studentId || !record.classId || !record.date || !record.status) {
+          return res.status(400).json({ 
+            message: 'Each record must have studentId, classId, date, and status' 
+          });
+        }
+        if (!['present', 'absent', 'late'].includes(record.status)) {
+          return res.status(400).json({ 
+            message: `Invalid status: ${record.status}. Must be 'present', 'absent', or 'late'` 
+          });
+        }
       }
 
       await markAttendance(req.tenantClient!, req.tenant!.schema, payload, req.user?.id);

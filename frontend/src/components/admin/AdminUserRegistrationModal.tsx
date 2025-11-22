@@ -183,6 +183,7 @@ export function AdminUserRegistrationModal({
       }
 
       await api.registerUser(payload);
+      // Success notification will be shown by onSuccess callback
       onSuccess();
     } catch (err) {
       let message = 'Failed to register user. Please try again.';

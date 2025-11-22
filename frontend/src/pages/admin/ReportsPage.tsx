@@ -7,16 +7,16 @@ import {
   type FeeAggregate,
   type GradeAggregate,
   type StudentRecord
-} from '../lib/api';
-import { Button } from '../components/ui/Button';
-import { Table } from '../components/ui/Table';
-import { Input } from '../components/ui/Input';
-import { DatePicker } from '../components/ui/DatePicker';
-import { Select } from '../components/ui/Select';
-import { StatusBanner } from '../components/ui/StatusBanner';
-import { useAsyncFeedback } from '../hooks/useAsyncFeedback';
-import { sanitizeIdentifier } from '../lib/sanitize';
-import { exportToJSON } from '../lib/utils/export';
+} from '../../lib/api';
+import { Button } from '../../components/ui/Button';
+import { Table } from '../../components/ui/Table';
+import { Input } from '../../components/ui/Input';
+import { DatePicker } from '../../components/ui/DatePicker';
+import { Select } from '../../components/ui/Select';
+import { StatusBanner } from '../../components/ui/StatusBanner';
+import { useAsyncFeedback } from '../../hooks/useAsyncFeedback';
+import { sanitizeIdentifier } from '../../lib/sanitize';
+import { exportToJSON } from '../../lib/utils/export';
 
 function AdminReportsPage() {
   const [attendanceFilters, setAttendanceFilters] = useState({

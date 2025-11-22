@@ -6,8 +6,51 @@ import { createAuditLog } from './audit/enhancedAuditService';
 
 const table = 'students';
 
-export async function listStudents(client: PoolClient, schema: string) {
-  return listEntities(client, schema, table);
+export async function listStudents(
+  client: PoolClient,
+  schema: string,
+  filters?: {
+    enrollmentStatus?: string;
+    classId?: string;
+    search?: string;
+  }
+) {
+  const tableName = getTableName(schema, table);
+  let query = `SELECT * FROM ${tableName}`;
+  const params: unknown[] = [];
+  const conditions: string[] = [];
+  let paramIndex = 1;
+
+  if (filters) {
+    if (filters.enrollmentStatus) {
+      conditions.push(`enrollment_status = $${paramIndex}`);
+      params.push(filters.enrollmentStatus);
+      paramIndex++;
+    }
+    if (filters.classId) {
+      conditions.push(`(class_id = $${paramIndex} OR class_uuid = $${paramIndex})`);
+      params.push(filters.classId);
+      paramIndex++;
+    }
+    if (filters.search) {
+      conditions.push(`(
+        LOWER(first_name || ' ' || last_name) LIKE $${paramIndex}
+        OR LOWER(admission_number) LIKE $${paramIndex}
+        OR LOWER(class_id) LIKE $${paramIndex}
+      )`);
+      params.push(`%${filters.search.toLowerCase()}%`);
+      paramIndex++;
+    }
+  }
+
+  if (conditions.length > 0) {
+    query += ` WHERE ${conditions.join(' AND ')}`;
+  }
+
+  query += ` ORDER BY last_name, first_name`;
+
+  const result = await client.query(query, params);
+  return result.rows;
 }
 
 export async function getStudent<T = Record<string, unknown>>(client: PoolClient, schema: string, id: string): Promise<T | null> {
@@ -56,7 +99,7 @@ export async function createStudent(
           resourceType: 'student',
           resourceId: studentId,
           details: {
-            studentEmail: (payload as any).email,
+            studentEmail: (payload as { email?: string }).email,
             classId: classIdName,
             classUuid: classUuid
           },

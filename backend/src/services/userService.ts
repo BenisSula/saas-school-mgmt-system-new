@@ -2,6 +2,7 @@ import argon2 from 'argon2';
 import crypto from 'crypto';
 import { Pool } from 'pg';
 import { getPool } from '../db/connection';
+import { withDbClient, tableExists, columnExists } from '../lib/dbHelpers';
 import { Role } from '../config/permissions';
 import { buildWhereClauseFromFilters } from '../lib/queryUtils';
 
@@ -125,21 +126,11 @@ export async function assignAdditionalRole(
   grantedBy: string,
   tenantId: string
 ): Promise<void> {
-  const pool = getPool();
-  const client = await pool.connect();
-  try {
+  await withDbClient(async (client) => {
     // Check if additional_roles table exists
-    const tableCheck = await client.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'shared' 
-        AND table_name = 'additional_roles'
-      )
-    `);
+    const exists = await tableExists(client, 'shared', 'additional_roles');
 
-    const tableExists = tableCheck.rows[0]?.exists ?? false;
-
-    if (tableExists) {
+    if (exists) {
       // Insert or update additional role
       await client.query(
         `
@@ -154,9 +145,7 @@ export async function assignAdditionalRole(
       // Fallback: log warning for legacy support
       console.warn('[userService] additional_roles table does not exist, falling back to legacy role update');
     }
-  } finally {
-    client.release();
-  }
+  });
 }
 
 /**
@@ -168,21 +157,11 @@ export async function removeAdditionalRole(
   role: string,
   tenantId: string
 ): Promise<void> {
-  const pool = getPool();
-  const client = await pool.connect();
-  try {
+  await withDbClient(async (client) => {
     // Check if additional_roles table exists
-    const tableCheck = await client.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'shared' 
-        AND table_name = 'additional_roles'
-      )
-    `);
+    const exists = await tableExists(client, 'shared', 'additional_roles');
 
-    const tableExists = tableCheck.rows[0]?.exists ?? false;
-
-    if (tableExists) {
+    if (exists) {
       // Delete additional role
       await client.query(
         `
@@ -195,9 +174,113 @@ export async function removeAdditionalRole(
       // Fallback: log warning for legacy support
       console.warn('[userService] additional_roles table does not exist, skipping role removal');
     }
-  } finally {
-    client.release();
+  });
+}
+
+/**
+ * Bulk remove HOD role from multiple users.
+ * Returns the number of roles successfully removed.
+ */
+export async function bulkRemoveHODRoles(
+  userIds: string[],
+  tenantId: string,
+  actorId: string
+): Promise<{ removed: number; failed: number }> {
+  if (userIds.length === 0) {
+    return { removed: 0, failed: 0 };
   }
+
+  return withDbClient(async (client) => {
+    // Check if additional_roles table exists
+    const exists = await tableExists(client, 'shared', 'additional_roles');
+    if (!exists) {
+      throw new Error('additional_roles table does not exist');
+    }
+
+    let removed = 0;
+    let failed = 0;
+
+    // Remove HOD role for each user
+    for (const userId of userIds) {
+      try {
+        const result = await client.query(
+          `
+            DELETE FROM shared.additional_roles
+            WHERE user_id = $1 AND role = 'hod' AND tenant_id = $2
+          `,
+          [userId, tenantId]
+        );
+        if (result.rowCount && result.rowCount > 0) {
+          removed++;
+        } else {
+          failed++;
+        }
+      } catch (error) {
+        console.error(`[userService] Failed to remove HOD role for user ${userId}:`, error);
+        failed++;
+      }
+    }
+
+    console.info('[audit] bulk_hod_removed', {
+      tenantId,
+      actorId,
+      totalRequested: userIds.length,
+      removed,
+      failed
+    });
+
+    return { removed, failed };
+  });
+}
+
+/**
+ * Update department for a user with HOD role in additional_roles metadata.
+ * Note: This requires the metadata column to exist in additional_roles table.
+ */
+export async function updateHODDepartment(
+  userId: string,
+  department: string,
+  tenantId: string,
+  updatedBy: string
+): Promise<void> {
+  await withDbClient(async (client) => {
+    // Check if additional_roles table exists
+    const tableExistsCheck = await tableExists(client, 'shared', 'additional_roles');
+    if (!tableExistsCheck) {
+      throw new Error('additional_roles table does not exist');
+    }
+
+    // Check if metadata column exists
+    const hasMetadataColumn = await columnExists(client, 'shared', 'additional_roles', 'metadata');
+    if (!hasMetadataColumn) {
+      throw new Error('metadata column does not exist in additional_roles table. Please run migration to add it.');
+    }
+
+    // Check if user has HOD role
+    const hodRoleCheck = await client.query(
+      `
+        SELECT id FROM shared.additional_roles
+        WHERE user_id = $1 AND role = 'hod' AND tenant_id = $2
+      `,
+      [userId, tenantId]
+    );
+
+    if (hodRoleCheck.rowCount === 0) {
+      throw new Error('User does not have HOD role');
+    }
+
+    // Update metadata with department (merge with existing metadata)
+    await client.query(
+      `
+        UPDATE shared.additional_roles
+        SET metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object('department', $1),
+            granted_by = $2,
+            granted_at = COALESCE(granted_at, NOW())
+        WHERE user_id = $3 AND role = 'hod' AND tenant_id = $4
+      `,
+      [department, updatedBy, userId, tenantId]
+    );
+  });
 }
 
 /**
@@ -208,9 +291,7 @@ export async function getUserWithAdditionalRoles(
   userId: string,
   tenantId: string
 ): Promise<TenantUser & { additional_roles?: Array<{ role: string; granted_at: string; granted_by?: string }> }> {
-  const pool = getPool();
-  const client = await pool.connect();
-  try {
+  return withDbClient(async (client) => {
     // Get user
     const userResult = await client.query(
       `
@@ -228,19 +309,11 @@ export async function getUserWithAdditionalRoles(
     const user = userResult.rows[0];
 
     // Check if additional_roles table exists
-    const tableCheck = await client.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'shared' 
-        AND table_name = 'additional_roles'
-      )
-    `);
-
-    const tableExists = tableCheck.rows[0]?.exists ?? false;
+    const tableExistsCheck = await tableExists(client, 'shared', 'additional_roles');
 
     let additionalRoles: Array<{ role: string; granted_at: string; granted_by?: string }> = [];
 
-    if (tableExists) {
+    if (tableExistsCheck) {
       // Get additional roles
       const rolesResult = await client.query(
         `
@@ -267,9 +340,7 @@ export async function getUserWithAdditionalRoles(
       created_at: user.created_at,
       additional_roles: additionalRoles
     };
-  } finally {
-    client.release();
-  }
+  });
 }
 
 export async function updateTenantUserRole(
@@ -278,9 +349,7 @@ export async function updateTenantUserRole(
   role: UserRole,
   actorId: string
 ): Promise<TenantUser | null> {
-  const pool = getPool();
-  const client = await pool.connect();
-  try {
+  return withDbClient(async (client) => {
     // If assigning HOD role, use additional_roles table instead of direct role update
     if (role === 'hod') {
       // Verify user's current role is 'teacher' (HODs must be teachers)
@@ -354,9 +423,7 @@ export async function updateTenantUserRole(
         metadata: row.metadata || {}
       }))
     };
-  } finally {
-    client.release();
-  }
+  });
 }
 
 export interface CreateUserInput {
@@ -478,9 +545,7 @@ export async function updateUserStatus(
   status: 'pending' | 'active' | 'rejected' | 'suspended',
   actorId: string
 ): Promise<TenantUser | null> {
-  const pool = getPool();
-  const client = await pool.connect();
-  try {
+  return withDbClient(async (client) => {
     // Get user info before update (needed for profile processing)
     const userBeforeUpdate = await client.query(
       `
@@ -547,7 +612,5 @@ export async function updateUserStatus(
         metadata: row.metadata || {}
       }))
     };
-  } finally {
-    client.release();
-  }
+  });
 }

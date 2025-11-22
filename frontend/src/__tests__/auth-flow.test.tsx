@@ -5,7 +5,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Mock } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { RegisterForm } from '../components/auth/RegisterForm';
-import AdminRoleManagementPage from '../pages/AdminRoleManagementPage';
+import AdminRoleManagementPage from '../pages/admin/RoleManagementPage';
 import * as AuthContextModule from '../context/AuthContext';
 import { api } from '../lib/api';
 import { toast } from 'sonner';

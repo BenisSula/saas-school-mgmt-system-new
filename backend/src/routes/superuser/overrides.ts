@@ -98,8 +98,25 @@ router.get('/:id', async (req, res, next) => {
 // Get active overrides for target
 router.get('/target/:overrideType/:targetId', async (req, res, next) => {
   try {
+    // Validate overrideType matches the expected OverrideType enum
+    const validOverrideTypes: Array<OverrideType> = [
+      'user_status',
+      'tenant_status',
+      'subscription_limit',
+      'feature_access',
+      'quota_override',
+      'rate_limit',
+      'other'
+    ];
+    
+    if (!validOverrideTypes.includes(req.params.overrideType as OverrideType)) {
+      return res.status(400).json({ 
+        message: `Invalid override type. Must be one of: ${validOverrideTypes.join(', ')}` 
+      });
+    }
+    
     const overrides = await getActiveOverridesForTarget(
-      req.params.overrideType as any,
+      req.params.overrideType as OverrideType,
       req.params.targetId
     );
     res.json(overrides);

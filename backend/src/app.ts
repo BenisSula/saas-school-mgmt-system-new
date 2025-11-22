@@ -35,7 +35,7 @@ import { requestLogger } from './services/monitoring/loggingService';
 import authenticate from './middleware/authenticate';
 import { requirePermission } from './middleware/rbac';
 import { tenantResolver } from './middleware/tenantResolver';
-import { apiLimiter, writeLimiter, adminActionLimiter, superuserStrictLimiter, suspiciousLoginLimiter } from './middleware/rateLimiter';
+import { apiLimiter, writeLimiter, adminActionLimiter, superuserStrictLimiter } from './middleware/rateLimiter';
 import { sanitizeInput } from './middleware/validateInput';
 import { setCsrfToken, csrfProtection } from './middleware/csrf';
 import { auditAdminActions } from './middleware/auditAdminActions';
@@ -114,6 +114,9 @@ app.use(setCsrfToken); // Set CSRF token cookie
 app.use('/health', healthRouter);
 // Metrics endpoint (no auth required, but should be protected in production)
 app.use('/metrics', metricsRouter);
+// Public schools endpoint (no auth required)
+import schoolsPublicRouter from './routes/schools';
+app.use('/schools', schoolsPublicRouter);
 // Auth routes (with strict rate limiting)
 app.use('/auth', authRouter);
 
@@ -159,6 +162,22 @@ app.get(
 );
 
 app.use('/admin', authenticate, tenantResolver(), enhancedTenantIsolation, adminActionLimiter, csrfProtection, auditAdminActions, parsePagination, cachePolicies.admin, adminAcademicsRouter);
+// Admin users routes (HOD management)
+import adminUsersRouter from './routes/admin/users';
+app.use('/admin/users', authenticate, tenantResolver(), enhancedTenantIsolation, adminActionLimiter, csrfProtection, auditAdminActions, cachePolicies.admin, adminUsersRouter);
+
+// File upload routes
+import uploadRouter from './routes/upload';
+app.use('/upload', uploadRouter);
+
+// Export routes
+import exportRouter from './routes/export';
+app.use('/reports/export', exportRouter);
+
+// Serve uploaded files statically
+import path from 'path';
+const uploadsDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
+app.use('/uploads', express.static(uploadsDir));
 
 app.use(errorHandler);
 
