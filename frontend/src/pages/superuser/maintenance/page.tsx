@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { RouteMeta } from '../../../components/layout/RouteMeta';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
-import { StatusBanner } from '../../../components/ui/StatusBanner';
 import { DashboardSkeleton } from '../../../components/ui/DashboardSkeleton';
 import { api } from '../../../lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -17,28 +16,6 @@ import {
   Trash2,
   Activity
 } from 'lucide-react';
-
-interface MigrationResult {
-  success: boolean;
-  migrationsRun: number;
-  errors: string[];
-  duration: number;
-}
-
-interface CacheClearResult {
-  success: boolean;
-  clearedKeys: number;
-  errors: string[];
-}
-
-interface SchemaHealthCheck {
-  tenantId: string;
-  schemaName: string;
-  status: 'healthy' | 'degraded' | 'unhealthy';
-  issues: string[];
-  tableCount: number;
-  lastMigration?: string;
-}
 
 export default function SuperuserMaintenancePage() {
   const queryClient = useQueryClient();
@@ -220,18 +197,14 @@ export default function SuperuserMaintenancePage() {
                   )
                 }
               >
-                {runMigrationsMutation.isPending
-                  ? 'Running Migrations...'
-                  : 'Run Migrations'}
+                {runMigrationsMutation.isPending ? 'Running Migrations...' : 'Run Migrations'}
               </Button>
 
               {runMigrationsMutation.data && (
                 <div className="mt-4 p-4 bg-gray-50 rounded-md">
                   <p className="font-medium mb-2">Migration Results:</p>
                   <ul className="text-sm space-y-1">
-                    <li>
-                      Migrations Run: {runMigrationsMutation.data.data.migrationsRun}
-                    </li>
+                    <li>Migrations Run: {runMigrationsMutation.data.data.migrationsRun}</li>
                     <li>Duration: {runMigrationsMutation.data.data.duration}ms</li>
                     {runMigrationsMutation.data.data.errors.length > 0 && (
                       <li className="text-red-600">
@@ -335,9 +308,7 @@ export default function SuperuserMaintenancePage() {
                   <p className="text-xs text-gray-600">Total</p>
                 </div>
                 <div className="text-center p-3 bg-green-50 rounded-md">
-                  <p className="text-2xl font-bold text-green-600">
-                    {healthData.summary.healthy}
-                  </p>
+                  <p className="text-2xl font-bold text-green-600">{healthData.summary.healthy}</p>
                   <p className="text-xs text-gray-600">Healthy</p>
                 </div>
                 <div className="text-center p-3 bg-yellow-50 rounded-md">
@@ -347,9 +318,7 @@ export default function SuperuserMaintenancePage() {
                   <p className="text-xs text-gray-600">Degraded</p>
                 </div>
                 <div className="text-center p-3 bg-red-50 rounded-md">
-                  <p className="text-2xl font-bold text-red-600">
-                    {healthData.summary.unhealthy}
-                  </p>
+                  <p className="text-2xl font-bold text-red-600">{healthData.summary.unhealthy}</p>
                   <p className="text-xs text-gray-600">Unhealthy</p>
                 </div>
               </div>
@@ -403,4 +372,3 @@ export default function SuperuserMaintenancePage() {
     </RouteMeta>
   );
 }
-

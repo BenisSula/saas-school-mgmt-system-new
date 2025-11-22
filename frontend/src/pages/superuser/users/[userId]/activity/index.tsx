@@ -25,16 +25,12 @@ export default function UserActivityPage() {
     'timeline' | 'sessions' | 'login-history' | 'password-history'
   >('timeline');
 
-  if (!userId) {
-    return (
-      <RouteMeta title="User Activity">
-        <StatusBanner status="error" message="User ID is required" />
-      </RouteMeta>
-    );
-  }
-
-  // Fetch user details
-  const { data: userData, isLoading: userLoading, error: userError } = useQuery({
+  // Fetch user details - hooks must be called unconditionally
+  const {
+    data: userData,
+    isLoading: userLoading,
+    error: userError
+  } = useQuery({
     queryKey: ['superuser', 'user', userId],
     queryFn: async () => {
       const users = await api.superuser.listUsers();
@@ -43,7 +39,7 @@ export default function UserActivityPage() {
     enabled: !!userId
   });
 
-  // Fetch user sessions
+  // Fetch user sessions - hooks must be called unconditionally
   const { data: sessionsData, isLoading: sessionsLoading } = useQuery({
     queryKey: ['superuser', 'sessions', userId],
     queryFn: async () => {
@@ -53,7 +49,7 @@ export default function UserActivityPage() {
     refetchInterval: 30000 // Poll every 30 seconds
   });
 
-  // WebSocket for real-time updates
+  // WebSocket for real-time updates - hooks must be called unconditionally
   const { connected: wsConnected } = useWebSocket('/ws', {
     enabled: !!userId,
     onMessage: (message) => {
@@ -65,6 +61,14 @@ export default function UserActivityPage() {
       }
     }
   });
+
+  if (!userId) {
+    return (
+      <RouteMeta title="User Activity">
+        <StatusBanner status="error" message="User ID is required" />
+      </RouteMeta>
+    );
+  }
 
   const tabs = [
     { id: 'timeline', label: 'Activity Timeline' },
@@ -210,5 +214,3 @@ export default function UserActivityPage() {
     </RouteMeta>
   );
 }
-
-

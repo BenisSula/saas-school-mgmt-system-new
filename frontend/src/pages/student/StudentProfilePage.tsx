@@ -403,6 +403,7 @@ export default function StudentProfilePage() {
         content: <PasswordChangeSection />
       }
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       displayProfile,
       contacts,

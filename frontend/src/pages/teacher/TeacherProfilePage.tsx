@@ -191,6 +191,7 @@ export default function TeacherProfilePage() {
         )
       }
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [profile, activities, auditLogs, uploads, setUploads]
   );
 
@@ -205,4 +206,3 @@ export default function TeacherProfilePage() {
     />
   );
 }
-

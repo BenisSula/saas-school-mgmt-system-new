@@ -4,7 +4,7 @@
  * Phase 8.1 - Billing & Stripe Integration
  */
 
-import { useSubscription, useCancelSubscription, useUpdatePlan } from '../../hooks/queries/useBilling';
+import { useSubscription, useCancelSubscription } from '../../hooks/queries/useBilling';
 import { Button } from '../ui/Button';
 import { StatusBanner } from '../ui/StatusBanner';
 import { DashboardSkeleton } from '../ui/DashboardSkeleton';
@@ -35,7 +35,7 @@ export function SubscriptionCard() {
           No Active Subscription
         </h2>
         <p className="text-sm text-[var(--brand-muted)] mb-4">
-          You don't have an active subscription. Contact your administrator to set up billing.
+          You don&apos;t have an active subscription. Contact your administrator to set up billing.
         </p>
       </div>
     );
@@ -171,4 +171,3 @@ export function SubscriptionCard() {
     </div>
   );
 }
-

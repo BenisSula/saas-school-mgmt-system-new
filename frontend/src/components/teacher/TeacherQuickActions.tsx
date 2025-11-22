@@ -3,14 +3,15 @@
  * Provides quick action buttons for teacher dashboard
  */
 
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../ui/Button';
-import { BookOpen, Users, ClipboardList, FileText, MessageSquare, Download } from 'lucide-react';
+import { BookOpen, Users, ClipboardList, FileText, MessageSquare } from 'lucide-react';
 
 interface QuickAction {
   label: string;
   path: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   variant?: 'default' | 'outline' | 'ghost';
 }
 
@@ -61,4 +62,3 @@ export function TeacherQuickActions() {
     </div>
   );
 }
-

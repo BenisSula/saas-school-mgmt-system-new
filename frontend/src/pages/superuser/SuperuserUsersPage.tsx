@@ -389,50 +389,66 @@ export function SuperuserUsersPage() {
               {/* User Information Grid - Fixed spacing to prevent overlapping */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Email</p>
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">
+                    Email
+                  </p>
                   <p className="text-sm text-[var(--brand-text-primary)] break-words">
                     {displayUser.email}
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Username</p>
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">
+                    Username
+                  </p>
                   <p className="text-sm text-[var(--brand-text-primary)] break-words">
                     {displayUser.username || 'Not set'}
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Full name</p>
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">
+                    Full name
+                  </p>
                   <p className="text-sm text-[var(--brand-text-primary)] break-words">
                     {displayUser.fullName || 'Not set'}
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Role</p>
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">
+                    Role
+                  </p>
                   <p className="text-sm text-[var(--brand-text-primary)] capitalize">
                     {displayUser.role}
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Tenant</p>
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">
+                    Tenant
+                  </p>
                   <p className="text-sm text-[var(--brand-text-primary)] break-words">
                     {displayUser.tenantName || displayUser.schoolName || 'No tenant'}
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Status</p>
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">
+                    Status
+                  </p>
                   <p className="text-sm text-[var(--brand-text-primary)] capitalize">
                     {displayUser.isVerified ? displayUser.status || 'active' : 'pending'}
                     {!displayUser.isVerified && ' (Unverified)'}
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Created</p>
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">
+                    Created
+                  </p>
                   <p className="text-sm text-[var(--brand-text-primary)]">
                     {formatDateTime(displayUser.createdAt)}
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">User ID</p>
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">
+                    User ID
+                  </p>
                   <p className="text-xs font-mono text-[var(--brand-text-secondary)] break-all">
                     {displayUser.id}
                   </p>
@@ -457,10 +473,14 @@ export function SuperuserUsersPage() {
                   <div className="rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-secondary)] p-3">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-[var(--brand-text-secondary)] mb-1">Temporary Password</p>
+                        <p className="text-xs text-[var(--brand-text-secondary)] mb-1">
+                          Temporary Password
+                        </p>
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-mono text-[var(--brand-text-primary)] break-all">
-                            {showPassword ? temporaryPassword : '•'.repeat(temporaryPassword.length)}
+                            {showPassword
+                              ? temporaryPassword
+                              : '•'.repeat(temporaryPassword.length)}
                           </p>
                           <Button
                             size="sm"
@@ -469,7 +489,11 @@ export function SuperuserUsersPage() {
                             className="shrink-0"
                             aria-label={showPassword ? 'Hide password' : 'Show password'}
                           >
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
                           </Button>
                           <Button
                             size="sm"
@@ -493,9 +517,13 @@ export function SuperuserUsersPage() {
                   </div>
                 ) : passwordHistory ? (
                   <div className="rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-secondary)] p-3">
-                    <p className="text-xs text-[var(--brand-text-secondary)] mb-1">Last Password Change</p>
+                    <p className="text-xs text-[var(--brand-text-secondary)] mb-1">
+                      Last Password Change
+                    </p>
                     <p className="text-sm text-[var(--brand-text-primary)]">
-                      {passwordHistory.changedAt ? formatDateTime(passwordHistory.changedAt) : 'N/A'}
+                      {passwordHistory.changedAt
+                        ? formatDateTime(passwordHistory.changedAt)
+                        : 'N/A'}
                     </p>
                     <p className="text-xs text-[var(--brand-text-secondary)] mt-1">
                       Type: {passwordHistory.changeType.replace(/_/g, ' ')}
@@ -503,19 +531,23 @@ export function SuperuserUsersPage() {
                   </div>
                 ) : (
                   <p className="text-sm text-[var(--brand-text-secondary)] italic">
-                    No password information available. Click "Reset Password" to generate a temporary password.
+                    No password information available. Click &quot;Reset Password&quot; to generate
+                    a temporary password.
                   </p>
                 )}
               </div>
 
               {/* Action Buttons */}
               <div className="flex justify-end gap-3 pt-2 border-t border-[var(--brand-border)]">
-                <Button variant="ghost" onClick={() => {
-                  setShowEditModal(false);
-                  setSelectedUser(null);
-                  setShowPassword(false);
-                  setTemporaryPassword(null);
-                }}>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setSelectedUser(null);
+                    setShowPassword(false);
+                    setTemporaryPassword(null);
+                  }}
+                >
                   Close
                 </Button>
               </div>

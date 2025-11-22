@@ -12,7 +12,7 @@ import { Input } from '../../../components/ui/Input';
 import { Select } from '../../../components/ui/Select';
 import { Modal } from '../../../components/ui/Modal';
 import { Table, type TableColumn } from '../../../components/ui/Table';
-import { Plus, UserCheck, UserX, Key } from 'lucide-react';
+import { Plus, UserCheck, UserX } from 'lucide-react';
 import { ActionButtonGroup } from '../../../components/table-actions';
 import {
   useAdminUsers,
@@ -221,7 +221,9 @@ export default function AdminUsersPage() {
     );
   }
 
-  const users = (Array.isArray(usersData) ? usersData : (usersData as any)?.data || []) as AdminUser[];
+  const users = (
+    Array.isArray(usersData) ? usersData : (usersData as { data?: AdminUser[] })?.data || []
+  ) as AdminUser[];
   const departments = (departmentsData?.data || []) as Array<{ id: string; name: string }>;
   const classes = classesData || [];
 
@@ -359,25 +361,19 @@ export default function AdminUsersPage() {
               label="Password"
               type="password"
               value={teacherFormData.password}
-              onChange={(e) =>
-                setTeacherFormData({ ...teacherFormData, password: e.target.value })
-              }
+              onChange={(e) => setTeacherFormData({ ...teacherFormData, password: e.target.value })}
               required
             />
             <Input
               label="Full Name"
               value={teacherFormData.fullName}
-              onChange={(e) =>
-                setTeacherFormData({ ...teacherFormData, fullName: e.target.value })
-              }
+              onChange={(e) => setTeacherFormData({ ...teacherFormData, fullName: e.target.value })}
               required
             />
             <Input
               label="Phone"
               value={teacherFormData.phone}
-              onChange={(e) =>
-                setTeacherFormData({ ...teacherFormData, phone: e.target.value })
-              }
+              onChange={(e) => setTeacherFormData({ ...teacherFormData, phone: e.target.value })}
             />
             <Input
               label="Qualifications"
@@ -416,26 +412,20 @@ export default function AdminUsersPage() {
               label="Email"
               type="email"
               value={studentFormData.email}
-              onChange={(e) =>
-                setStudentFormData({ ...studentFormData, email: e.target.value })
-              }
+              onChange={(e) => setStudentFormData({ ...studentFormData, email: e.target.value })}
               required
             />
             <Input
               label="Password"
               type="password"
               value={studentFormData.password}
-              onChange={(e) =>
-                setStudentFormData({ ...studentFormData, password: e.target.value })
-              }
+              onChange={(e) => setStudentFormData({ ...studentFormData, password: e.target.value })}
               required
             />
             <Input
               label="Full Name"
               value={studentFormData.fullName}
-              onChange={(e) =>
-                setStudentFormData({ ...studentFormData, fullName: e.target.value })
-              }
+              onChange={(e) => setStudentFormData({ ...studentFormData, fullName: e.target.value })}
               required
             />
             <Select
@@ -501,4 +491,3 @@ export default function AdminUsersPage() {
     </RouteMeta>
   );
 }
-

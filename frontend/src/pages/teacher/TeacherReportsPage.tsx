@@ -4,7 +4,7 @@ import { StatusBanner } from '../../components/ui/StatusBanner';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
 import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton';
-import { api, type TeacherClassReport, type TeacherClassInfo } from '../../lib/api';
+import { api, type TeacherClassReport } from '../../lib/api';
 import { toast } from 'sonner';
 import { useTeacherClasses } from '../../hooks/queries/useTeachers';
 import { useExportAttendance, useExportGrades } from '../../hooks/queries/useTeacherPhase7';
@@ -43,7 +43,9 @@ export default function TeacherReportsPage() {
   const exportAttendanceMutation = useExportAttendance();
   const exportGradesMutation = useExportGrades();
 
-  const selectedClassName = useMemo(() => {
+  // selectedClassName is computed but not used - keeping for potential future use
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _selectedClassName = useMemo(() => {
     const clazz = classes.find((entry) => entry.id === selectedClassId);
     return clazz?.name ?? '';
   }, [classes, selectedClassId]);
@@ -276,4 +278,3 @@ export default function TeacherReportsPage() {
     </RouteMeta>
   );
 }
-

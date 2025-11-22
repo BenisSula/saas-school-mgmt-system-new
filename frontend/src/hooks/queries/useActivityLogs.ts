@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { api, type AuditLogEntry } from '../../lib/api';
+import { api } from '../../lib/api';
 import { queryKeys } from '../useQuery';
 
 export interface ActivityLogFilters {
@@ -60,4 +60,3 @@ export function useActivityLogs(filters?: ActivityLogFilters) {
     staleTime: 30000 // 30 seconds
   });
 }
-

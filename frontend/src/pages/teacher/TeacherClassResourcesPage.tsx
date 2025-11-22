@@ -10,8 +10,11 @@ import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
 import { Input } from '../../components/ui/Input';
 import { useTeacherClasses } from '../../hooks/queries/useTeachers';
-import type { TeacherClassInfo } from '../../lib/api';
-import { useClassResources, useUploadResource, useDeleteResource } from '../../hooks/queries/useTeacherPhase7';
+import {
+  useClassResources,
+  useUploadResource,
+  useDeleteResource
+} from '../../hooks/queries/useTeacherPhase7';
 import { FileText, Upload, Trash2, Download } from 'lucide-react';
 import { formatDate } from '../../lib/utils/date';
 
@@ -181,4 +184,3 @@ export default function TeacherClassResourcesPage() {
     </RouteMeta>
   );
 }
-

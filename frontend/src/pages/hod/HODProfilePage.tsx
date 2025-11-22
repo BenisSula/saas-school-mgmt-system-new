@@ -283,6 +283,7 @@ export default function HODProfilePage() {
         )
       }
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [profile, activities, auditLogs, uploads, setUploads]
   );
 

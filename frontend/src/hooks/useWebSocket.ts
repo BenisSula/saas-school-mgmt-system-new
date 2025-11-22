@@ -38,13 +38,13 @@ export function useWebSocket(
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
     const apiBase = import.meta.env.VITE_API_BASE_URL || '';
-    
+
     // If VITE_API_BASE_URL is set, use it; otherwise use current host
     if (apiBase) {
       const url = new URL(apiBase);
       return `${protocol}//${url.host}${path}`;
     }
-    
+
     return `${protocol}//${host}${path}`;
   }, [path]);
 
@@ -101,23 +101,20 @@ export function useWebSocket(
       };
 
       wsRef.current = ws;
-    } catch (error) {
+    } catch {
       // WebSocket not available - graceful fallback
       console.warn('[WebSocket] Not available, using polling fallback');
       setConnected(false);
     }
   }, [enabled, getWebSocketUrl, onMessage, onError, onConnect, onDisconnect]);
 
-  const send = useCallback(
-    (message: WebSocketMessage) => {
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify(message));
-      } else {
-        console.warn('[WebSocket] Cannot send message, not connected');
-      }
-    },
-    []
-  );
+  const send = useCallback((message: WebSocketMessage) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify(message));
+    } else {
+      console.warn('[WebSocket] Cannot send message, not connected');
+    }
+  }, []);
 
   const reconnect = useCallback(() => {
     if (wsRef.current) {
@@ -144,4 +141,3 @@ export function useWebSocket(
 
   return { connected, send, reconnect };
 }
-

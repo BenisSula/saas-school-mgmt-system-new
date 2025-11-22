@@ -4,16 +4,7 @@ import { Card } from '../ui/Card';
 import { api } from '../../lib/api';
 import type { AuditLogEntry } from '../../lib/api';
 import { formatDateShort } from '../../lib/utils/date';
-import {
-  Activity,
-  LogIn,
-  LogOut,
-  Key,
-  FileText,
-  Settings,
-  Calendar,
-  Clock
-} from 'lucide-react';
+import { Activity, LogIn, LogOut, Key, FileText, Settings, Calendar, Clock } from 'lucide-react';
 
 export interface UserActivityTimelineProps {
   userId: string;
@@ -21,7 +12,9 @@ export interface UserActivityTimelineProps {
   limit?: number;
 }
 
-const ACTION_ICONS: Record<string, React.ReactNode> = {
+import type { ReactNode } from 'react';
+
+const ACTION_ICONS: Record<string, ReactNode> = {
   LOGIN: <LogIn className="h-4 w-4" />,
   LOGOUT: <LogOut className="h-4 w-4" />,
   PASSWORD: <Key className="h-4 w-4" />,
@@ -33,21 +26,22 @@ const ACTION_ICONS: Record<string, React.ReactNode> = {
 };
 
 const ACTION_COLORS: Record<string, string> = {
-  LOGIN: 'bg-[var(--brand-success)]/20 text-[var(--brand-success)] border-[var(--brand-success)]/30',
+  LOGIN:
+    'bg-[var(--brand-success)]/20 text-[var(--brand-success)] border-[var(--brand-success)]/30',
   LOGOUT: 'bg-[var(--brand-muted)]/20 text-[var(--brand-muted)] border-[var(--brand-muted)]/30',
-  PASSWORD: 'bg-[var(--brand-warning)]/20 text-[var(--brand-warning)] border-[var(--brand-warning)]/30',
-  PASSWORD_RESET: 'bg-[var(--brand-warning)]/20 text-[var(--brand-warning)] border-[var(--brand-warning)]/30',
-  PASSWORD_CHANGE: 'bg-[var(--brand-warning)]/20 text-[var(--brand-warning)] border-[var(--brand-warning)]/30',
+  PASSWORD:
+    'bg-[var(--brand-warning)]/20 text-[var(--brand-warning)] border-[var(--brand-warning)]/30',
+  PASSWORD_RESET:
+    'bg-[var(--brand-warning)]/20 text-[var(--brand-warning)] border-[var(--brand-warning)]/30',
+  PASSWORD_CHANGE:
+    'bg-[var(--brand-warning)]/20 text-[var(--brand-warning)] border-[var(--brand-warning)]/30',
   REPORT: 'bg-[var(--brand-info)]/20 text-[var(--brand-info)] border-[var(--brand-info)]/30',
-  SETTINGS: 'bg-[var(--brand-primary)]/20 text-[var(--brand-primary)] border-[var(--brand-primary)]/30',
+  SETTINGS:
+    'bg-[var(--brand-primary)]/20 text-[var(--brand-primary)] border-[var(--brand-primary)]/30',
   DEFAULT: 'bg-[var(--brand-muted)]/20 text-[var(--brand-muted)] border-[var(--brand-muted)]/30'
 };
 
-export function UserActivityTimeline({
-  userId,
-  tenantId,
-  limit = 50
-}: UserActivityTimelineProps) {
+export function UserActivityTimeline({ userId, tenantId, limit = 50 }: UserActivityTimelineProps) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['superuser', 'user-activity', userId, tenantId, limit],
     queryFn: async () => {
@@ -92,7 +86,9 @@ export function UserActivityTimeline({
       activities: grouped[date].sort((a, b) => {
         const aTime = a.createdAt || a.timestamp;
         const bTime = b.createdAt || b.timestamp;
-        return new Date(bTime?.toString() || '').getTime() - new Date(aTime?.toString() || '').getTime();
+        return (
+          new Date(bTime?.toString() || '').getTime() - new Date(aTime?.toString() || '').getTime()
+        );
       })
     }));
   }, [data?.logs]);
@@ -255,4 +251,3 @@ export function UserActivityTimeline({
     </div>
   );
 }
-

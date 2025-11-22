@@ -7,7 +7,7 @@ import { PieChart, type PieChartData } from '../../components/charts/PieChart';
 import { StatCard } from '../../components/charts/StatCard';
 import { DataTable, type DataTableColumn } from '../../components/tables/DataTable';
 import { useHodDashboard, useHodTeachers } from '../../hooks/queries/hod';
-import { Users, GraduationCap, BookOpen, TrendingUp, Activity, RefreshCw } from 'lucide-react';
+import { Users, BookOpen, TrendingUp, Activity, RefreshCw } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { useQueryClient } from '@tanstack/react-query';
 import type { HODTeacher } from '../../hooks/queries/hod';
@@ -41,52 +41,55 @@ export default function HODDashboardPage() {
     }));
   }, [dashboardData]);
 
-  const teacherColumns: DataTableColumn<HODTeacher>[] = useMemo(() => [
-    {
-      key: 'name',
-      header: 'Teacher Name',
-      render: (row) => row.name,
-      sortable: true
-    },
-    {
-      key: 'email',
-      header: 'Email',
-      render: (row) => row.email || 'N/A',
-      sortable: true
-    },
-    {
-      key: 'subjects',
-      header: 'Subjects',
-      render: (row) => (
-        <div className="flex flex-wrap gap-1">
-          {row.subjects.slice(0, 3).map((subject) => (
-            <span
-              key={subject}
-              className="rounded-full border border-[var(--brand-border)] bg-black/15 px-2 py-1 text-xs text-[var(--brand-surface-contrast)]"
-            >
-              {subject}
-            </span>
-          ))}
-          {row.subjects.length > 3 && (
-            <span className="text-xs text-[var(--brand-muted)]">
-              +{row.subjects.length - 3} more
-            </span>
-          )}
-        </div>
-      )
-    },
-    {
-      key: 'classes',
-      header: 'Classes',
-      render: (row) => `${row.classes.length} classes`
-    },
-    {
-      key: 'lastActive',
-      header: 'Last Active',
-      render: (row) => row.lastActive ? new Date(row.lastActive).toLocaleDateString() : 'Never',
-      sortable: true
-    }
-  ], []);
+  const teacherColumns: DataTableColumn<HODTeacher>[] = useMemo(
+    () => [
+      {
+        key: 'name',
+        header: 'Teacher Name',
+        render: (row) => row.name,
+        sortable: true
+      },
+      {
+        key: 'email',
+        header: 'Email',
+        render: (row) => row.email || 'N/A',
+        sortable: true
+      },
+      {
+        key: 'subjects',
+        header: 'Subjects',
+        render: (row) => (
+          <div className="flex flex-wrap gap-1">
+            {row.subjects.slice(0, 3).map((subject) => (
+              <span
+                key={subject}
+                className="rounded-full border border-[var(--brand-border)] bg-black/15 px-2 py-1 text-xs text-[var(--brand-surface-contrast)]"
+              >
+                {subject}
+              </span>
+            ))}
+            {row.subjects.length > 3 && (
+              <span className="text-xs text-[var(--brand-muted)]">
+                +{row.subjects.length - 3} more
+              </span>
+            )}
+          </div>
+        )
+      },
+      {
+        key: 'classes',
+        header: 'Classes',
+        render: (row) => `${row.classes.length} classes`
+      },
+      {
+        key: 'lastActive',
+        header: 'Last Active',
+        render: (row) => (row.lastActive ? new Date(row.lastActive).toLocaleDateString() : 'Never'),
+        sortable: true
+      }
+    ],
+    []
+  );
 
   // Early returns after all hooks
   if (isLoading) {

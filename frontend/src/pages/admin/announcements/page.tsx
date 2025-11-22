@@ -12,7 +12,7 @@ import { Input } from '../../../components/ui/Input';
 import { Select } from '../../../components/ui/Select';
 import { Modal } from '../../../components/ui/Modal';
 import { Table, type TableColumn } from '../../../components/ui/Table';
-import { Plus, Bell } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import {
   useAnnouncements,
   useCreateAnnouncement,
@@ -31,7 +31,10 @@ export default function AdminAnnouncementsPage() {
   });
 
   const filters = {
-    targetRole: targetRoleFilter !== 'all' ? (targetRoleFilter as any) : undefined
+    targetRole:
+      targetRoleFilter !== 'all'
+        ? (targetRoleFilter as 'admin' | 'hod' | 'teacher' | 'student')
+        : undefined
   };
 
   const { data, isLoading, error } = useAnnouncements(filters);
@@ -81,9 +84,7 @@ export default function AdminAnnouncementsPage() {
     {
       key: 'content',
       label: 'Content',
-      render: (announcement) => (
-        <div className="max-w-md truncate">{announcement.content}</div>
-      )
+      render: (announcement) => <div className="max-w-md truncate">{announcement.content}</div>
     },
     {
       key: 'targetRoles',
@@ -138,8 +139,12 @@ export default function AdminAnnouncementsPage() {
     );
   }
 
-  const response = data as any;
-  const announcements = (response?.announcements || response?.data?.announcements || []) as Announcement[];
+  const response = data as
+    | { announcements?: Announcement[]; data?: { announcements?: Announcement[] } }
+    | undefined;
+  const announcements = (response?.announcements ||
+    response?.data?.announcements ||
+    []) as Announcement[];
 
   return (
     <RouteMeta title="Announcements">
@@ -251,4 +256,3 @@ export default function AdminAnnouncementsPage() {
     </RouteMeta>
   );
 }
-

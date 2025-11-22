@@ -7,7 +7,6 @@ import { useState } from 'react';
 import RouteMeta from '../../../components/layout/RouteMeta';
 import { DashboardSkeleton } from '../../../components/ui/DashboardSkeleton';
 import { StatusBanner } from '../../../components/ui/StatusBanner';
-import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Select } from '../../../components/ui/Select';
 import { Table, type TableColumn } from '../../../components/ui/Table';
@@ -43,16 +42,48 @@ export default function AdminReportsPage() {
     academicYear: ''
   });
 
-  const { data: activityData, isLoading: activityLoading, error: activityError } =
-    useActivityReport(activityFilters);
-  const { data: loginData, isLoading: loginLoading, error: loginError } =
-    useLoginReport(loginFilters);
-  const { data: performanceData, isLoading: performanceLoading, error: performanceError } =
-    usePerformanceReport(performanceFilters);
+  const {
+    data: activityData,
+    isLoading: activityLoading,
+    error: activityError
+  } = useActivityReport(activityFilters);
+  const {
+    data: loginData,
+    isLoading: loginLoading,
+    error: loginError
+  } = useLoginReport(loginFilters);
+  const {
+    data: performanceData,
+    isLoading: performanceLoading,
+    error: performanceError
+  } = usePerformanceReport(performanceFilters);
   const { data: classesData } = useClasses();
   const { data: subjectsData } = useSubjects();
 
-  const activityColumns: TableColumn<any>[] = [
+  interface ActivityLog {
+    action: string;
+    resourceType: string;
+    userId: string;
+    createdAt: string;
+  }
+
+  interface LoginLog {
+    userId: string;
+    ipAddress: string;
+    success: boolean;
+    loginAt: string;
+  }
+
+  interface PerformanceData {
+    class_name: string;
+    subject: string;
+    exam_count: number;
+    avg_score: number;
+    min_score: number;
+    max_score: number;
+  }
+
+  const activityColumns: TableColumn<ActivityLog>[] = [
     { key: 'action', label: 'Action' },
     { key: 'resourceType', label: 'Resource Type' },
     { key: 'userId', label: 'User ID' },
@@ -63,7 +94,7 @@ export default function AdminReportsPage() {
     }
   ];
 
-  const loginColumns: TableColumn<any>[] = [
+  const loginColumns: TableColumn<LoginLog>[] = [
     { key: 'userId', label: 'User ID' },
     { key: 'ipAddress', label: 'IP Address' },
     {
@@ -82,7 +113,7 @@ export default function AdminReportsPage() {
     }
   ];
 
-  const performanceColumns: TableColumn<any>[] = [
+  const performanceColumns: TableColumn<PerformanceData>[] = [
     { key: 'class_name', label: 'Class' },
     { key: 'subject', label: 'Subject' },
     { key: 'exam_count', label: 'Exams' },
@@ -110,13 +141,32 @@ export default function AdminReportsPage() {
     );
   }
 
-  const activityResponse = activityData as any;
-  const loginResponse = loginData as any;
-  const performanceResponse = performanceData as any;
-  
-  const activityLogs = (activityResponse?.logs || activityResponse?.data?.logs || []) as any[];
-  const loginLogs = (loginResponse?.logins || loginResponse?.data?.logins || []) as any[];
-  const performanceDataRows = (performanceResponse?.classSubjectPerformance || performanceResponse?.data?.classSubjectPerformance || []) as any[];
+  interface ActivityResponse {
+    logs?: ActivityLog[];
+    data?: { logs?: ActivityLog[] };
+  }
+
+  interface LoginResponse {
+    logins?: LoginLog[];
+    data?: { logins?: LoginLog[] };
+  }
+
+  interface PerformanceResponse {
+    classSubjectPerformance?: PerformanceData[];
+    data?: { classSubjectPerformance?: PerformanceData[] };
+  }
+
+  const activityResponse = activityData as ActivityResponse | undefined;
+  const loginResponse = loginData as LoginResponse | undefined;
+  const performanceResponse = performanceData as PerformanceResponse | undefined;
+
+  const activityLogs = (activityResponse?.logs ||
+    activityResponse?.data?.logs ||
+    []) as ActivityLog[];
+  const loginLogs = (loginResponse?.logins || loginResponse?.data?.logins || []) as LoginLog[];
+  const performanceDataRows = (performanceResponse?.classSubjectPerformance ||
+    performanceResponse?.data?.classSubjectPerformance ||
+    []) as PerformanceData[];
 
   return (
     <RouteMeta title="Reports">
@@ -215,24 +265,18 @@ export default function AdminReportsPage() {
                   label="Start Date"
                   type="date"
                   value={loginFilters.startDate}
-                  onChange={(e) =>
-                    setLoginFilters({ ...loginFilters, startDate: e.target.value })
-                  }
+                  onChange={(e) => setLoginFilters({ ...loginFilters, startDate: e.target.value })}
                 />
                 <Input
                   label="End Date"
                   type="date"
                   value={loginFilters.endDate}
-                  onChange={(e) =>
-                    setLoginFilters({ ...loginFilters, endDate: e.target.value })
-                  }
+                  onChange={(e) => setLoginFilters({ ...loginFilters, endDate: e.target.value })}
                 />
                 <Input
                   label="User ID"
                   value={loginFilters.userId}
-                  onChange={(e) =>
-                    setLoginFilters({ ...loginFilters, userId: e.target.value })
-                  }
+                  onChange={(e) => setLoginFilters({ ...loginFilters, userId: e.target.value })}
                 />
               </div>
               <Table columns={loginColumns} data={loginLogs} emptyMessage="No login logs found" />
@@ -284,4 +328,3 @@ export default function AdminReportsPage() {
     </RouteMeta>
   );
 }
-

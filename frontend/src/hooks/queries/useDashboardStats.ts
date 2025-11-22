@@ -1,7 +1,7 @@
 /**
  * @deprecated This file is deprecated. Use hooks from '../queries/dashboard' instead.
  * This file provides backward-compatible wrappers for existing code.
- * 
+ *
  * Migration path:
  * - useTeacherStats() -> useTeacherStatsQuery()
  * - useStudentStats() -> useStudentStatsQuery()
@@ -21,15 +21,7 @@ import {
   useTodayAttendanceQuery,
   useActiveSessionsQuery,
   useLoginAttemptsQuery,
-  useRecentActivityQuery,
-  type TeacherStats as NewTeacherStats,
-  type StudentStats as NewStudentStats,
-  type ClassStats as NewClassStats,
-  type SubjectStats as NewSubjectStats,
-  type TodayAttendance as NewTodayAttendance,
-  type ActiveSession as NewActiveSession,
-  type LoginAttempt as NewLoginAttempt,
-  type RecentActivity as NewRecentActivity
+  useRecentActivityQuery
 } from './dashboard';
 
 // Legacy interfaces for backward compatibility
@@ -101,14 +93,17 @@ export interface RecentActivity {
  */
 export function useTeacherStats() {
   const { data, ...rest } = useTeacherStatsQuery();
-  
+
   // Transform new format to old format
-  const transformed: TeacherStats | undefined = data ? {
-    total: data.totalTeachers,
-    active: data.activeTeachers,
-    assigned: data.teachersByDepartment.reduce((sum, dept) => sum + dept.count, 0), // Approximate
-    unassigned: data.totalTeachers - data.teachersByDepartment.reduce((sum, dept) => sum + dept.count, 0)
-  } : undefined;
+  const transformed: TeacherStats | undefined = data
+    ? {
+        total: data.totalTeachers,
+        active: data.activeTeachers,
+        assigned: data.teachersByDepartment.reduce((sum, dept) => sum + dept.count, 0), // Approximate
+        unassigned:
+          data.totalTeachers - data.teachersByDepartment.reduce((sum, dept) => sum + dept.count, 0)
+      }
+    : undefined;
 
   return { data: transformed, ...rest };
 }
@@ -119,21 +114,26 @@ export function useTeacherStats() {
  */
 export function useStudentStats() {
   const { data, ...rest } = useStudentStatsQuery();
-  
+
   // Transform new format to old format
-  const transformed: StudentStats | undefined = data ? {
-    total: data.totalStudents,
-    active: data.activeStudents,
-    byClass: data.studentsByClass.reduce((acc, item) => {
-      acc[item.classId] = item.count;
-      return acc;
-    }, {} as Record<string, number>),
-    byGender: {
-      male: data.maleCount,
-      female: data.femaleCount,
-      other: data.totalStudents - data.maleCount - data.femaleCount
-    }
-  } : undefined;
+  const transformed: StudentStats | undefined = data
+    ? {
+        total: data.totalStudents,
+        active: data.activeStudents,
+        byClass: data.studentsByClass.reduce(
+          (acc, item) => {
+            acc[item.classId] = item.count;
+            return acc;
+          },
+          {} as Record<string, number>
+        ),
+        byGender: {
+          male: data.maleCount,
+          female: data.femaleCount,
+          other: data.totalStudents - data.maleCount - data.femaleCount
+        }
+      }
+    : undefined;
 
   return { data: transformed, ...rest };
 }
@@ -144,13 +144,15 @@ export function useStudentStats() {
  */
 export function useClassStats() {
   const { data, ...rest } = useClassStatsQuery();
-  
+
   // Transform new format to old format
-  const transformed: ClassStats | undefined = data ? {
-    total: data.totalClasses,
-    withStudents: data.classesByLevel.reduce((sum, level) => sum + level.count, 0), // Approximate
-    withTeachers: data.activeClasses // Approximate
-  } : undefined;
+  const transformed: ClassStats | undefined = data
+    ? {
+        total: data.totalClasses,
+        withStudents: data.classesByLevel.reduce((sum, level) => sum + level.count, 0), // Approximate
+        withTeachers: data.activeClasses // Approximate
+      }
+    : undefined;
 
   return { data: transformed, ...rest };
 }
@@ -161,13 +163,15 @@ export function useClassStats() {
  */
 export function useSubjectStats() {
   const { data, ...rest } = useSubjectStatsQuery();
-  
+
   // Transform new format to old format
-  const transformed: SubjectStats | undefined = data ? {
-    total: data.totalSubjects,
-    assigned: data.assignedSubjects,
-    unassigned: data.unassignedSubjects
-  } : undefined;
+  const transformed: SubjectStats | undefined = data
+    ? {
+        total: data.totalSubjects,
+        assigned: data.assignedSubjects,
+        unassigned: data.unassignedSubjects
+      }
+    : undefined;
 
   return { data: transformed, ...rest };
 }
@@ -178,15 +182,17 @@ export function useSubjectStats() {
  */
 export function useTodayAttendance() {
   const { data, ...rest } = useTodayAttendanceQuery();
-  
+
   // Transform new format to old format
-  const transformed: TodayAttendance | undefined = data ? {
-    present: data.presentCount,
-    absent: data.absentCount,
-    late: 0, // Not available in new format
-    total: data.presentCount + data.absentCount,
-    percentage: data.attendanceRate
-  } : undefined;
+  const transformed: TodayAttendance | undefined = data
+    ? {
+        present: data.presentCount,
+        absent: data.absentCount,
+        late: 0, // Not available in new format
+        total: data.presentCount + data.absentCount,
+        percentage: data.attendanceRate
+      }
+    : undefined;
 
   return { data: transformed, ...rest };
 }
@@ -197,7 +203,7 @@ export function useTodayAttendance() {
  */
 export function useActiveSessions() {
   const { data, ...rest } = useActiveSessionsQuery();
-  
+
   // Transform new format to old format
   const transformed: ActiveSession[] | undefined = data?.sessions.map((session) => ({
     id: session.id,
@@ -218,7 +224,7 @@ export function useActiveSessions() {
  */
 export function useLoginAttempts(days = 1) {
   const { data, ...rest } = useLoginAttemptsQuery(days);
-  
+
   // Transform new format to old format
   const transformed: LoginAttempt[] | undefined = data?.attempts.map((attempt) => ({
     id: '', // Not available in new format
@@ -238,14 +244,17 @@ export function useLoginAttempts(days = 1) {
  */
 export function useRecentActivity(limit = 20) {
   const { data, ...rest } = useRecentActivityQuery(limit);
-  
+
   // Transform new format to old format
   const transformed: RecentActivity[] | undefined = data?.activities.map((activity) => ({
     id: activity.id,
     action: activity.action,
     description: `${activity.action} on ${activity.resourceType || 'resource'}`,
     userEmail: undefined, // Not available in new format
-    timestamp: typeof activity.createdAt === 'string' ? activity.createdAt : activity.createdAt?.toString() || '',
+    timestamp:
+      typeof activity.createdAt === 'string'
+        ? activity.createdAt
+        : activity.createdAt?.toString() || '',
     severity: undefined // Not available in new format
   }));
 

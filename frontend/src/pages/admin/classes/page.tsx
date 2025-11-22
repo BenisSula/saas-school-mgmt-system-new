@@ -213,7 +213,9 @@ export default function AdminClassesPage() {
     );
   }
 
-  const classes = (Array.isArray(classesData) ? classesData : (classesData as any)?.data || []) as AdminClass[];
+  const classes = (
+    Array.isArray(classesData) ? classesData : (classesData as { data?: AdminClass[] })?.data || []
+  ) as AdminClass[];
   const teachers = teachersData || [];
   const students = studentsData || [];
 
@@ -418,4 +420,3 @@ export default function AdminClassesPage() {
     </RouteMeta>
   );
 }
-

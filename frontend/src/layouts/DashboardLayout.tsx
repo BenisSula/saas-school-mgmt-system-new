@@ -10,7 +10,6 @@ import { Sidebar } from '../components/ui/Sidebar';
 import { useSidebar } from '../hooks/useSidebar';
 import type { AuthUser } from '../lib/api';
 import { getSidebarLinksForRole } from '../lib/roleLinks';
-import { getUserAdditionalRoles } from '../lib/utils/userHelpers';
 import { DashboardRouteProvider, useDashboardRouteMeta } from '../context/DashboardRouteContext';
 import { DashboardSkeleton } from '../components/ui/DashboardSkeleton';
 

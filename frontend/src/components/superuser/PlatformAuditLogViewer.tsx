@@ -11,7 +11,16 @@ import { formatDateTime } from '../../lib/utils/date';
 import { formatRequestId, formatUserAgent } from '../../utils/formatters';
 import { TagsCell } from './shared/TagsCell';
 import { AuditDetailsModal } from './shared/AuditDetailsModal';
-import { FileText, Download, AlertCircle, AlertTriangle, Info, XCircle, Eye, Monitor } from 'lucide-react';
+import {
+  FileText,
+  Download,
+  AlertCircle,
+  AlertTriangle,
+  Info,
+  XCircle,
+  Eye,
+  Monitor
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 export interface PlatformAuditLogViewerProps {
@@ -25,12 +34,15 @@ export interface PlatformAuditLogViewerProps {
 
 const SEVERITY_COLORS: Record<string, string> = {
   info: 'bg-[var(--brand-info)]/20 text-[var(--brand-info)] border-[var(--brand-info)]/30',
-  warning: 'bg-[var(--brand-warning)]/20 text-[var(--brand-warning)] border-[var(--brand-warning)]/30',
+  warning:
+    'bg-[var(--brand-warning)]/20 text-[var(--brand-warning)] border-[var(--brand-warning)]/30',
   error: 'bg-[var(--brand-error)]/20 text-[var(--brand-error)] border-[var(--brand-error)]/30',
   critical: 'bg-[var(--brand-error)]/30 text-[var(--brand-error)] border-[var(--brand-error)]/50'
 };
 
-const SEVERITY_ICONS: Record<string, React.ReactNode> = {
+import type { ReactNode } from 'react';
+
+const SEVERITY_ICONS: Record<string, ReactNode> = {
   info: <Info className="h-4 w-4" />,
   warning: <AlertTriangle className="h-4 w-4" />,
   error: <XCircle className="h-4 w-4" />,
@@ -42,9 +54,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [quickRange, setQuickRange] = useState<'7' | '30' | '90' | 'all'>('7');
-  const [severityFilter, setSeverityFilter] = useState<string>(
-    initialFilters.severity || 'all'
-  );
+  const [severityFilter, setSeverityFilter] = useState<string>(initialFilters.severity || 'all');
   const [actionFilter, setActionFilter] = useState<string>(initialFilters.action || 'all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
@@ -140,7 +150,9 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
           log.resourceType?.toLowerCase().includes(term) ||
           log.resourceId?.toLowerCase().includes(term) ||
           log.userEmail?.toLowerCase().includes(term) ||
-          JSON.stringify(log.details || {}).toLowerCase().includes(term)
+          JSON.stringify(log.details || {})
+            .toLowerCase()
+            .includes(term)
       );
     }
 
@@ -234,7 +246,10 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
         render: (log) => (
           <div className="flex items-center gap-2">
             <Monitor className="h-4 w-4 text-[var(--brand-muted)]" />
-            <span className="text-[var(--brand-text-secondary)] text-sm truncate max-w-xs" title={log.userAgent || undefined}>
+            <span
+              className="text-[var(--brand-text-secondary)] text-sm truncate max-w-xs"
+              title={log.userAgent || undefined}
+            >
               {formatUserAgent(log.userAgent)}
             </span>
           </div>
@@ -432,4 +447,3 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
     </div>
   );
 }
-

@@ -17,8 +17,7 @@ import {
   useDepartments,
   useCreateDepartment,
   useUpdateDepartment,
-  useDeleteDepartment,
-  type Department
+  useDeleteDepartment
 } from '../../../hooks/queries/admin/useDepartments';
 
 interface Department {
@@ -143,7 +142,9 @@ export default function AdminDepartmentsPage() {
     );
   }
 
-  const departments = (Array.isArray(data) ? data : (data as any)?.data || []) as Department[];
+  const departments = (
+    Array.isArray(data) ? data : (data as { data?: Department[] })?.data || []
+  ) as Department[];
 
   return (
     <RouteMeta title="Departments">
@@ -153,9 +154,7 @@ export default function AdminDepartmentsPage() {
             <h1 className="text-2xl font-semibold text-[var(--brand-surface-contrast)]">
               Departments
             </h1>
-            <p className="text-sm text-[var(--brand-muted)]">
-              Manage departments and assign HODs
-            </p>
+            <p className="text-sm text-[var(--brand-muted)]">Manage departments and assign HODs</p>
           </div>
           <Button
             leftIcon={<Plus className="h-4 w-4" />}
@@ -165,11 +164,7 @@ export default function AdminDepartmentsPage() {
           </Button>
         </header>
 
-        <Table
-          columns={columns}
-          data={departments}
-          emptyMessage="No departments found"
-        />
+        <Table columns={columns} data={departments} emptyMessage="No departments found" />
 
         {/* Create Modal */}
         <Modal
@@ -273,4 +268,3 @@ export default function AdminDepartmentsPage() {
     </RouteMeta>
   );
 }
-

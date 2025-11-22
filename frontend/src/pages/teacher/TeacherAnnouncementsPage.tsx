@@ -81,10 +81,7 @@ export default function TeacherAnnouncementsPage() {
                 <Button variant="outline" onClick={() => setShowForm(false)}>
                   Cancel
                 </Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!message.trim() || postMutation.isPending}
-                >
+                <Button onClick={handleSubmit} disabled={!message.trim() || postMutation.isPending}>
                   <Send className="mr-2 h-4 w-4" />
                   {postMutation.isPending ? 'Posting...' : 'Post Announcement'}
                 </Button>
@@ -95,11 +92,10 @@ export default function TeacherAnnouncementsPage() {
 
         {selectedClassId && !showForm && (
           <div className="text-center text-gray-500 py-8">
-            Click "New Announcement" to post a message to your class
+            Click &quot;New Announcement&quot; to post a message to your class
           </div>
         )}
       </div>
     </RouteMeta>
   );
 }
-

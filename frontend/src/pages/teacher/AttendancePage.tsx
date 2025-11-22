@@ -1,13 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import RouteMeta from '../../components/layout/RouteMeta';
 import { useAuth } from '../../context/AuthContext';
-import {
-  api,
-  type AttendanceMark,
-  type TeacherClassRosterEntry,
-  type TeacherClassInfo
-} from '../../lib/api';
+import { api, type AttendanceMark, type TeacherClassRosterEntry } from '../../lib/api';
 import { defaultDate } from '../../lib/utils/date';
 import { DatePicker } from '../../components/ui/DatePicker';
 import { Select } from '../../components/ui/Select';
@@ -240,4 +235,3 @@ export function TeacherAttendancePage() {
 }
 
 export default TeacherAttendancePage;
-

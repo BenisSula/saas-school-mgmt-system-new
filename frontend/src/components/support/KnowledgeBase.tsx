@@ -27,6 +27,7 @@ export const KnowledgeBase: React.FC = () => {
   useEffect(() => {
     loadCategories();
     loadArticles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory, searchQuery]);
 
   const loadCategories = async () => {
@@ -111,4 +112,3 @@ export const KnowledgeBase: React.FC = () => {
     </div>
   );
 };
-

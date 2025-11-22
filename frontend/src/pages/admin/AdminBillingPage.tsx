@@ -8,7 +8,7 @@ import { SubscriptionCard } from '../../components/billing/SubscriptionCard';
 import { InvoiceList } from '../../components/billing/InvoiceList';
 import { usePayments } from '../../hooks/queries/useBilling';
 import RouteMeta from '../../components/layout/RouteMeta';
-import { CreditCard, FileText, History } from 'lucide-react';
+import { CreditCard, History } from 'lucide-react';
 import type { BillingPayment } from '../../lib/api';
 
 export default function AdminBillingPage() {
@@ -114,4 +114,3 @@ export default function AdminBillingPage() {
     </RouteMeta>
   );
 }
-

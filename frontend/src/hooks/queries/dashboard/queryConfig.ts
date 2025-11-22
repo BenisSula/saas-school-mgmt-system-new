@@ -18,7 +18,7 @@ export const dashboardQueryConfig = {
  * @param queryKey - Query key array
  * @param queryFn - Query function
  */
-export function createDashboardQueryOptions<TData, TError = Error>(
+export function createDashboardQueryOptions<TData>(
   tenantId: string | null,
   queryKey: readonly unknown[],
   queryFn: () => Promise<TData>
@@ -30,4 +30,3 @@ export function createDashboardQueryOptions<TData, TError = Error>(
     ...dashboardQueryConfig
   };
 }
-

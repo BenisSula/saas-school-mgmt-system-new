@@ -23,7 +23,6 @@ export function StudentResourceCard({
   title,
   description,
   fileUrl,
-  fileType,
   size,
   createdAt,
   onDownload
@@ -49,19 +48,12 @@ export function StudentResourceCard({
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold mb-1 truncate">{title}</h3>
-          {description && (
-            <p className="text-sm text-gray-600 mb-2 line-clamp-2">{description}</p>
-          )}
+          {description && <p className="text-sm text-gray-600 mb-2 line-clamp-2">{description}</p>}
           <div className="flex items-center justify-between text-xs text-gray-500">
             <span>{formatDate(createdAt)}</span>
             <span>{(size / 1024).toFixed(1)} KB</span>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleDownload}
-            className="w-full mt-3"
-          >
+          <Button size="sm" variant="outline" onClick={handleDownload} className="w-full mt-3">
             <Download className="mr-2 h-4 w-4" />
             Download
           </Button>
@@ -70,4 +62,3 @@ export function StudentResourceCard({
     </Card>
   );
 }
-
