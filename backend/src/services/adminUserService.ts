@@ -2,11 +2,12 @@ import type { PoolClient } from 'pg';
 import { registerUser, type UserRegistrationInput } from './userRegistrationService';
 import { createAuditLog } from './audit/enhancedAuditService';
 import { Role } from '../config/permissions';
+import { getPool } from '../db/connection';
 
 export interface AdminCreateUserInput {
   email: string;
   password: string;
-  role: 'student' | 'teacher';
+  role: 'student' | 'teacher' | 'hod'; // 'hod' is handled specially - created as teacher with HOD role
   // Common profile fields
   fullName: string;
   gender?: 'male' | 'female' | 'other';
@@ -17,12 +18,13 @@ export interface AdminCreateUserInput {
   parentGuardianContact?: string;
   studentId?: string;
   classId?: string;
-  // Teacher-specific fields
+  // Teacher/HOD-specific fields
   phone?: string;
   qualifications?: string;
   yearsOfExperience?: number;
   subjects?: string[];
   teacherId?: string;
+  departmentId?: string; // For HOD
 }
 
 export interface AdminCreateUserResult {
@@ -51,10 +53,12 @@ export async function adminCreateUser(
 ): Promise<AdminCreateUserResult> {
   try {
     // Convert admin input to unified registration input
+    // For HOD, we create as teacher first, then assign HOD role
+    const actualRole: 'student' | 'teacher' | 'admin' = input.role === 'hod' ? 'teacher' : input.role;
     const registrationInput: UserRegistrationInput = {
       email: input.email,
       password: input.password,
-      role: input.role,
+      role: actualRole,
       tenantId: tenantId,
       fullName: input.fullName,
       gender: input.gender,
@@ -90,21 +94,43 @@ export async function adminCreateUser(
       throw new Error('Failed to create profile record');
     }
 
-    // Create audit log for teacher creation
-    if (input.role === 'teacher') {
+    // If creating HOD, assign HOD role and department
+    if (input.role === 'hod') {
+      const pool = getPool();
+      
+      // Assign HOD role
+      await pool.query(
+        `INSERT INTO shared.user_roles (user_id, role_name, assigned_by)
+         VALUES ($1, 'hod', $2)
+         ON CONFLICT (user_id, role_name) DO NOTHING`,
+        [result.userId, actorId]
+      );
+
+      // Assign department if provided
+      if (input.departmentId) {
+        await pool.query(
+          `UPDATE shared.users SET department_id = $1 WHERE id = $2`,
+          [input.departmentId, result.userId]
+        );
+      }
+    }
+
+    // Create audit log for teacher/HOD creation
+    if (input.role === 'teacher' || input.role === 'hod') {
       try {
         await createAuditLog(
           tenantClient,
           {
             tenantId: tenantId,
             userId: actorId,
-            action: 'TEACHER_CREATED',
-            resourceType: 'teacher',
+            action: input.role === 'hod' ? 'HOD_CREATED' : 'TEACHER_CREATED',
+            resourceType: input.role === 'hod' ? 'hod' : 'teacher',
             resourceId: result.userId,
             details: {
-              teacherEmail: result.email,
-              teacherId: result.profileId,
-              assignedClasses: input.subjects || []
+              email: result.email,
+              profileId: result.profileId,
+              assignedClasses: input.subjects || [],
+              departmentId: input.departmentId || null
             },
             severity: 'info'
           }

@@ -117,6 +117,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_set_case_number ON shared.investigation_cases;
 CREATE TRIGGER trigger_set_case_number
   BEFORE INSERT ON shared.investigation_cases
   FOR EACH ROW
@@ -131,6 +132,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_investigation_cases_updated_at ON shared.investigation_cases;
 CREATE TRIGGER trigger_investigation_cases_updated_at
   BEFORE UPDATE ON shared.investigation_cases
   FOR EACH ROW

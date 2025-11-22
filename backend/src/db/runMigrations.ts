@@ -44,6 +44,18 @@ export async function runMigrations(pool: Pool, skipDoBlocks = false): Promise<v
       sql = fixPgMemInserts(sql);
     }
 
-    await pool.query(sql);
+    try {
+      console.log(`Running migration: ${file}...`);
+      await pool.query(sql);
+      console.log(`✅ Migration ${file} completed successfully`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`\n❌ Migration failed: ${file}`);
+      console.error(`Error: ${errorMessage}`);
+      if (error instanceof Error && 'code' in error) {
+        console.error(`PostgreSQL Error Code: ${(error as { code?: string }).code}`);
+      }
+      throw new Error(`Migration ${file} failed: ${errorMessage}`);
+    }
   }
 }

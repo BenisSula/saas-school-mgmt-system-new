@@ -148,7 +148,7 @@ router.post('/users/:userId/sessions/:sessionId/revoke', async (req, res, next) 
       return res.status(400).json({ message: 'Invalid parameters' });
     }
 
-    const { userId, sessionId } = paramsResult.data;
+    const { sessionId } = paramsResult.data;
 
     await endSession(pool, sessionId);
 

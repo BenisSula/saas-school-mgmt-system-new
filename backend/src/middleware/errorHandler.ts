@@ -2,7 +2,7 @@
  * Enhanced Error Handler with Error Tracking
  */
 
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { errorTracker } from '../services/monitoring/errorTracking';
 import { metrics } from './metrics';
 
@@ -20,8 +20,7 @@ export interface ApiError extends Error {
 export function errorHandler(
   error: ApiError,
   req: Request,
-  res: Response,
-  _next: NextFunction
+  res: Response
 ) {
   // Track error metrics (wrap in try-catch to prevent error handler from failing)
   const statusCode = error.statusCode || 500;

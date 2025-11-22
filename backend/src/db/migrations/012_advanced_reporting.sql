@@ -21,10 +21,10 @@ CREATE TABLE IF NOT EXISTS shared.report_definitions (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_report_definitions_tenant_id ON shared.report_definitions(tenant_id);
-CREATE INDEX idx_report_definitions_report_type ON shared.report_definitions(report_type);
-CREATE INDEX idx_report_definitions_is_template ON shared.report_definitions(is_template) WHERE is_template = TRUE;
-CREATE INDEX idx_report_definitions_active ON shared.report_definitions(is_active) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_report_definitions_tenant_id ON shared.report_definitions(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_report_definitions_report_type ON shared.report_definitions(report_type);
+CREATE INDEX IF NOT EXISTS idx_report_definitions_is_template ON shared.report_definitions(is_template) WHERE is_template = TRUE;
+CREATE INDEX IF NOT EXISTS idx_report_definitions_active ON shared.report_definitions(is_active) WHERE is_active = TRUE;
 
 -- Scheduled reports
 CREATE TABLE IF NOT EXISTS shared.scheduled_reports (
@@ -45,10 +45,10 @@ CREATE TABLE IF NOT EXISTS shared.scheduled_reports (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_scheduled_reports_tenant_id ON shared.scheduled_reports(tenant_id);
-CREATE INDEX idx_scheduled_reports_report_definition_id ON shared.scheduled_reports(report_definition_id);
-CREATE INDEX idx_scheduled_reports_next_run_at ON shared.scheduled_reports(next_run_at) WHERE is_active = TRUE;
-CREATE INDEX idx_scheduled_reports_active ON shared.scheduled_reports(is_active) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_scheduled_reports_tenant_id ON shared.scheduled_reports(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_scheduled_reports_report_definition_id ON shared.scheduled_reports(report_definition_id);
+CREATE INDEX IF NOT EXISTS idx_scheduled_reports_next_run_at ON shared.scheduled_reports(next_run_at) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_scheduled_reports_active ON shared.scheduled_reports(is_active) WHERE is_active = TRUE;
 
 -- Report execution history
 CREATE TABLE IF NOT EXISTS shared.report_executions (
@@ -70,11 +70,11 @@ CREATE TABLE IF NOT EXISTS shared.report_executions (
   completed_at TIMESTAMPTZ
 );
 
-CREATE INDEX idx_report_executions_tenant_id ON shared.report_executions(tenant_id);
-CREATE INDEX idx_report_executions_report_definition_id ON shared.report_executions(report_definition_id);
-CREATE INDEX idx_report_executions_scheduled_report_id ON shared.report_executions(scheduled_report_id);
-CREATE INDEX idx_report_executions_status ON shared.report_executions(status);
-CREATE INDEX idx_report_executions_started_at ON shared.report_executions(started_at);
+CREATE INDEX IF NOT EXISTS idx_report_executions_tenant_id ON shared.report_executions(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_report_executions_report_definition_id ON shared.report_executions(report_definition_id);
+CREATE INDEX IF NOT EXISTS idx_report_executions_scheduled_report_id ON shared.report_executions(scheduled_report_id);
+CREATE INDEX IF NOT EXISTS idx_report_executions_status ON shared.report_executions(status);
+CREATE INDEX IF NOT EXISTS idx_report_executions_started_at ON shared.report_executions(started_at);
 
 -- Report data snapshots (for historical trend comparison)
 CREATE TABLE IF NOT EXISTS shared.report_snapshots (
@@ -89,10 +89,10 @@ CREATE TABLE IF NOT EXISTS shared.report_snapshots (
   UNIQUE (tenant_id, report_definition_id, snapshot_date)
 );
 
-CREATE INDEX idx_report_snapshots_tenant_id ON shared.report_snapshots(tenant_id);
-CREATE INDEX idx_report_snapshots_report_definition_id ON shared.report_snapshots(report_definition_id);
-CREATE INDEX idx_report_snapshots_snapshot_date ON shared.report_snapshots(snapshot_date);
-CREATE INDEX idx_report_snapshots_execution_id ON shared.report_snapshots(execution_id);
+CREATE INDEX IF NOT EXISTS idx_report_snapshots_tenant_id ON shared.report_snapshots(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_report_snapshots_report_definition_id ON shared.report_snapshots(report_definition_id);
+CREATE INDEX IF NOT EXISTS idx_report_snapshots_snapshot_date ON shared.report_snapshots(snapshot_date);
+CREATE INDEX IF NOT EXISTS idx_report_snapshots_execution_id ON shared.report_snapshots(execution_id);
 
 -- Custom report builder configurations
 CREATE TABLE IF NOT EXISTS shared.custom_reports (
@@ -116,9 +116,9 @@ CREATE TABLE IF NOT EXISTS shared.custom_reports (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_custom_reports_tenant_id ON shared.custom_reports(tenant_id);
-CREATE INDEX idx_custom_reports_created_by ON shared.custom_reports(created_by);
-CREATE INDEX idx_custom_reports_shared ON shared.custom_reports(is_shared) WHERE is_shared = TRUE;
+CREATE INDEX IF NOT EXISTS idx_custom_reports_tenant_id ON shared.custom_reports(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_custom_reports_created_by ON shared.custom_reports(created_by);
+CREATE INDEX IF NOT EXISTS idx_custom_reports_shared ON shared.custom_reports(is_shared) WHERE is_shared = TRUE;
 
 -- Report favorites (for quick access)
 CREATE TABLE IF NOT EXISTS shared.report_favorites (
@@ -136,6 +136,6 @@ CREATE TABLE IF NOT EXISTS shared.report_favorites (
   UNIQUE (user_id, report_definition_id, custom_report_id)
 );
 
-CREATE INDEX idx_report_favorites_user_id ON shared.report_favorites(user_id);
-CREATE INDEX idx_report_favorites_tenant_id ON shared.report_favorites(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_report_favorites_user_id ON shared.report_favorites(user_id);
+CREATE INDEX IF NOT EXISTS idx_report_favorites_tenant_id ON shared.report_favorites(tenant_id);
 

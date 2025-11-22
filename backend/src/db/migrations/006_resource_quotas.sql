@@ -16,9 +16,9 @@ CREATE TABLE IF NOT EXISTS shared.quota_limits (
   UNIQUE (tenant_id, resource_type)
 );
 
-CREATE INDEX idx_quota_limits_tenant_id ON shared.quota_limits(tenant_id);
-CREATE INDEX idx_quota_limits_resource_type ON shared.quota_limits(resource_type);
-CREATE INDEX idx_quota_limits_enforced ON shared.quota_limits(is_enforced) WHERE is_enforced = TRUE;
+CREATE INDEX IF NOT EXISTS idx_quota_limits_tenant_id ON shared.quota_limits(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_quota_limits_resource_type ON shared.quota_limits(resource_type);
+CREATE INDEX IF NOT EXISTS idx_quota_limits_enforced ON shared.quota_limits(is_enforced) WHERE is_enforced = TRUE;
 
 -- Quota usage tracking (for historical analysis)
 CREATE TABLE IF NOT EXISTS shared.quota_usage_logs (
@@ -32,9 +32,9 @@ CREATE TABLE IF NOT EXISTS shared.quota_usage_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_quota_usage_logs_tenant_id ON shared.quota_usage_logs(tenant_id);
-CREATE INDEX idx_quota_usage_logs_resource_type ON shared.quota_usage_logs(resource_type);
-CREATE INDEX idx_quota_usage_logs_period ON shared.quota_usage_logs(period_start, period_end);
+CREATE INDEX IF NOT EXISTS idx_quota_usage_logs_tenant_id ON shared.quota_usage_logs(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_quota_usage_logs_resource_type ON shared.quota_usage_logs(resource_type);
+CREATE INDEX IF NOT EXISTS idx_quota_usage_logs_period ON shared.quota_usage_logs(period_start, period_end);
 
 -- Rate limiting per tenant (for API endpoints)
 CREATE TABLE IF NOT EXISTS shared.rate_limit_rules (
@@ -50,8 +50,8 @@ CREATE TABLE IF NOT EXISTS shared.rate_limit_rules (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_rate_limit_rules_tenant_id ON shared.rate_limit_rules(tenant_id);
-CREATE INDEX idx_rate_limit_rules_endpoint ON shared.rate_limit_rules(endpoint_pattern);
+CREATE INDEX IF NOT EXISTS idx_rate_limit_rules_tenant_id ON shared.rate_limit_rules(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_rate_limit_rules_endpoint ON shared.rate_limit_rules(endpoint_pattern);
 
 -- Rate limit tracking (sliding window)
 CREATE TABLE IF NOT EXISTS shared.rate_limit_tracking (
@@ -68,9 +68,9 @@ CREATE TABLE IF NOT EXISTS shared.rate_limit_tracking (
   UNIQUE (tenant_id, endpoint_pattern, method, identifier, window_start)
 );
 
-CREATE INDEX idx_rate_limit_tracking_tenant_id ON shared.rate_limit_tracking(tenant_id);
-CREATE INDEX idx_rate_limit_tracking_window ON shared.rate_limit_tracking(window_start, window_end);
-CREATE INDEX idx_rate_limit_tracking_identifier ON shared.rate_limit_tracking(identifier);
+CREATE INDEX IF NOT EXISTS idx_rate_limit_tracking_tenant_id ON shared.rate_limit_tracking(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_rate_limit_tracking_window ON shared.rate_limit_tracking(window_start, window_end);
+CREATE INDEX IF NOT EXISTS idx_rate_limit_tracking_identifier ON shared.rate_limit_tracking(identifier);
 
 -- Quota violation warnings and notifications
 CREATE TABLE IF NOT EXISTS shared.quota_warnings (
@@ -85,9 +85,9 @@ CREATE TABLE IF NOT EXISTS shared.quota_warnings (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_quota_warnings_tenant_id ON shared.quota_warnings(tenant_id);
-CREATE INDEX idx_quota_warnings_quota_limit_id ON shared.quota_warnings(quota_limit_id);
-CREATE INDEX idx_quota_warnings_sent ON shared.quota_warnings(is_sent) WHERE is_sent = FALSE;
+CREATE INDEX IF NOT EXISTS idx_quota_warnings_tenant_id ON shared.quota_warnings(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_quota_warnings_quota_limit_id ON shared.quota_warnings(quota_limit_id);
+CREATE INDEX IF NOT EXISTS idx_quota_warnings_sent ON shared.quota_warnings(is_sent) WHERE is_sent = FALSE;
 
 -- Insert default rate limit rules for platform
 INSERT INTO shared.rate_limit_rules (tenant_id, endpoint_pattern, method, requests_per_window, window_seconds, is_enforced)

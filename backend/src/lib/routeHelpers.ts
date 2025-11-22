@@ -5,7 +5,8 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { createSuccessResponse, createErrorResponse, createPaginatedSuccessResponse } from './responseHelpers';
+import type { PoolClient } from 'pg';
+import { createSuccessResponse, createErrorResponse } from './responseHelpers';
 import { safeAuditLogFromRequest } from './auditHelpers';
 
 /**
@@ -52,7 +53,7 @@ export function asyncHandler(
  * Creates a standardized GET handler for a single resource
  */
 export function createGetHandler<T>(options: {
-  getResource: (client: any, schema: string, id: string) => Promise<T | null>;
+  getResource: (client: PoolClient, schema: string, id: string) => Promise<T | null>;
   resourceName: string;
   auditAction?: string;
   requirePermission?: string;
@@ -97,7 +98,7 @@ export function createGetHandler<T>(options: {
  * Creates a standardized POST handler for creating resources
  */
 export function createPostHandler<TInput, TOutput>(options: {
-  createResource: (client: any, schema: string, input: TInput, actorId?: string, tenantId?: string) => Promise<TOutput>;
+  createResource: (client: PoolClient, schema: string, input: TInput, actorId?: string, tenantId?: string) => Promise<TOutput>;
   resourceName: string;
   auditAction?: string;
 }) {
@@ -120,8 +121,8 @@ export function createPostHandler<TInput, TOutput>(options: {
           {
             action: options.auditAction,
             resourceType: options.resourceName.toLowerCase(),
-            resourceId: (resource as any)?.id,
-            details: { [`${options.resourceName.toLowerCase()}Id`]: (resource as any)?.id },
+            resourceId: (resource as { id?: string })?.id,
+            details: { [`${options.resourceName.toLowerCase()}Id`]: (resource as { id?: string })?.id },
             severity: 'info'
           },
           `${options.resourceName.toLowerCase()}s`
@@ -139,7 +140,7 @@ export function createPostHandler<TInput, TOutput>(options: {
  * Creates a standardized PUT handler for updating resources
  */
 export function createPutHandler<TInput, TOutput>(options: {
-  updateResource: (client: any, schema: string, id: string, input: Partial<TInput>) => Promise<TOutput | null>;
+  updateResource: (client: PoolClient, schema: string, id: string, input: Partial<TInput>) => Promise<TOutput | null>;
   resourceName: string;
   auditAction?: string;
   getAuditDetails?: (req: Request, resource: TOutput) => Record<string, unknown>;
@@ -192,7 +193,7 @@ export function createPutHandler<TInput, TOutput>(options: {
  * Creates a standardized DELETE handler
  */
 export function createDeleteHandler(options: {
-  deleteResource: (client: any, schema: string, id: string) => Promise<void>;
+  deleteResource: (client: PoolClient, schema: string, id: string) => Promise<void>;
   resourceName: string;
   auditAction?: string;
 }) {
@@ -228,8 +229,8 @@ export function createDeleteHandler(options: {
  * Creates a standardized GET/PUT handler for upsert operations (like school, branding)
  */
 export function createUpsertHandlers<TInput, TOutput>(options: {
-  getResource: (client: any, schema: string) => Promise<TOutput | null>;
-  upsertResource: (client: any, schema: string, input: TInput) => Promise<TOutput>;
+  getResource: (client: PoolClient, schema: string) => Promise<TOutput | null>;
+  upsertResource: (client: PoolClient, schema: string, input: TInput) => Promise<TOutput>;
   resourceName: string;
   auditAction: string;
   schema: z.ZodSchema<TInput>;

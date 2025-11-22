@@ -10,6 +10,7 @@ import { Sidebar } from '../components/ui/Sidebar';
 import { useSidebar } from '../hooks/useSidebar';
 import type { AuthUser } from '../lib/api';
 import { getSidebarLinksForRole } from '../lib/roleLinks';
+import { getUserAdditionalRoles } from '../lib/utils/userHelpers';
 import { DashboardRouteProvider, useDashboardRouteMeta } from '../context/DashboardRouteContext';
 import { DashboardSkeleton } from '../components/ui/DashboardSkeleton';
 
@@ -23,7 +24,14 @@ export interface DashboardLayoutProps {
 export function DashboardLayout({ children, user, onLogout, storageKey }: DashboardLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const links = useMemo(() => getSidebarLinksForRole(user?.role), [user?.role]);
+  const additionalRoles = useMemo(() => {
+    if (!user?.additional_roles) return [];
+    return user.additional_roles.map((r) => r.role);
+  }, [user?.additional_roles]);
+  const links = useMemo(
+    () => getSidebarLinksForRole(user?.role, additionalRoles),
+    [user?.role, additionalRoles]
+  );
 
   const {
     isOpen,

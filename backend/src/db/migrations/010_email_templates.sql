@@ -16,9 +16,9 @@ CREATE TABLE IF NOT EXISTS shared.email_templates (
   UNIQUE (tenant_id, template_key, version)
 );
 
-CREATE INDEX idx_email_templates_template_key ON shared.email_templates(template_key);
-CREATE INDEX idx_email_templates_tenant_id ON shared.email_templates(tenant_id);
-CREATE INDEX idx_email_templates_active ON shared.email_templates(is_active) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_email_templates_template_key ON shared.email_templates(template_key);
+CREATE INDEX IF NOT EXISTS idx_email_templates_tenant_id ON shared.email_templates(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_email_templates_active ON shared.email_templates(is_active) WHERE is_active = TRUE;
 
 -- Email sending queue and tracking
 CREATE TABLE IF NOT EXISTS shared.email_queue (
@@ -45,10 +45,10 @@ CREATE TABLE IF NOT EXISTS shared.email_queue (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_email_queue_status ON shared.email_queue(status) WHERE status IN ('pending', 'sending');
-CREATE INDEX idx_email_queue_tenant_id ON shared.email_queue(tenant_id);
-CREATE INDEX idx_email_queue_scheduled_at ON shared.email_queue(scheduled_at);
-CREATE INDEX idx_email_queue_priority ON shared.email_queue(priority, scheduled_at);
+CREATE INDEX IF NOT EXISTS idx_email_queue_status ON shared.email_queue(status) WHERE status IN ('pending', 'sending');
+CREATE INDEX IF NOT EXISTS idx_email_queue_tenant_id ON shared.email_queue(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_email_queue_scheduled_at ON shared.email_queue(scheduled_at);
+CREATE INDEX IF NOT EXISTS idx_email_queue_priority ON shared.email_queue(priority, scheduled_at);
 
 -- Email sending history (for audit and analytics)
 CREATE TABLE IF NOT EXISTS shared.email_history (
@@ -68,9 +68,9 @@ CREATE TABLE IF NOT EXISTS shared.email_history (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_email_history_tenant_id ON shared.email_history(tenant_id);
-CREATE INDEX idx_email_history_template_key ON shared.email_history(template_key);
-CREATE INDEX idx_email_history_recipient_email ON shared.email_history(recipient_email);
-CREATE INDEX idx_email_history_created_at ON shared.email_history(created_at);
-CREATE INDEX idx_email_history_status ON shared.email_history(status);
+CREATE INDEX IF NOT EXISTS idx_email_history_tenant_id ON shared.email_history(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_email_history_template_key ON shared.email_history(template_key);
+CREATE INDEX IF NOT EXISTS idx_email_history_recipient_email ON shared.email_history(recipient_email);
+CREATE INDEX IF NOT EXISTS idx_email_history_created_at ON shared.email_history(created_at);
+CREATE INDEX IF NOT EXISTS idx_email_history_status ON shared.email_history(status);
 

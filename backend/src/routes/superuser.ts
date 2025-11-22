@@ -36,6 +36,7 @@ import permissionOverridesRouter from './superuser/permissionOverrides';
 import schoolsRouter from './superuser/schools';
 import usersRouter from './superuser/users';
 import rolesRouter from './superuser/roles';
+import maintenanceRouter from './superuser/maintenance';
 
 const router = Router();
 
@@ -252,6 +253,9 @@ router.use('/users', usersRouter);
 
 // Role management routes
 router.use('/roles', rolesRouter);
+
+// Maintenance routes
+router.use('/maintenance', maintenanceRouter);
 
 // PUT /superuser/subscription-tiers - Alias for subscription tier config update
 router.put('/subscription-tiers', async (req, res, next) => {

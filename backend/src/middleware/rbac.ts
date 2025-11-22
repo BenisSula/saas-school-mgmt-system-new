@@ -148,17 +148,28 @@ export function requireSelfOrPermission(permission?: Permission, idParam = 'stud
  */
 export function requireAnyPermission(...permissions: Permission[]) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    const role = req.user?.role;
-
-    if (!role) {
-      return res.status(403).json({ message: 'Forbidden' });
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
     }
 
-    // Check if user has ANY of the specified permissions
-    const hasAnyPermission = permissions.some((permission) => hasPermission(role, permission));
+    // Get all user roles (primary + additional) for permission checking
+    const userRoles: string[] = [req.user.role];
+    
+    // Add additional roles if available
+    const userWithRoles = req.user as { additional_roles?: Array<{ role: string }> };
+    if (userWithRoles.additional_roles && Array.isArray(userWithRoles.additional_roles)) {
+      userRoles.push(...userWithRoles.additional_roles.map((ar) => ar.role));
+    }
+
+    // Check if user has ANY of the specified permissions across all roles
+    const hasAnyPermission = permissions.some((permission) => {
+      return userRoles.some((role) => hasPermission(role as Role, permission));
+    });
 
     if (!hasAnyPermission) {
-      return res.status(403).json({ message: 'Forbidden' });
+      return res.status(403).json({ 
+        message: `Forbidden. Required one of: ${permissions.join(', ')}` 
+      });
     }
 
     return next();

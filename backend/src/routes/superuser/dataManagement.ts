@@ -15,9 +15,7 @@ import {
   createExportJob,
   getExportJobs,
   createImportJob,
-  getImportJobs,
-  updateExportJobStatus,
-  updateImportJobStatus
+  getImportJobs
 } from '../../services/dataManagement/exportImportService';
 import {
   createGdprErasureRequest,

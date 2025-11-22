@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import { Role } from '../config/permissions';
 import { isSuperuser } from '../lib/superuserHelpers';
 
 /**

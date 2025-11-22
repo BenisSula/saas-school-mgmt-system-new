@@ -135,6 +135,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_user_sessions_updated_at ON shared.user_sessions;
 CREATE TRIGGER trigger_user_sessions_updated_at
   BEFORE UPDATE ON shared.user_sessions
   FOR EACH ROW

@@ -45,10 +45,10 @@ CREATE TABLE IF NOT EXISTS shared.invoices (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_invoices_tenant_id ON shared.invoices(tenant_id);
-CREATE INDEX idx_invoices_subscription_id ON shared.invoices(subscription_id);
-CREATE INDEX idx_invoices_status ON shared.invoices(status);
-CREATE INDEX idx_invoices_due_date ON shared.invoices(due_date);
+CREATE INDEX IF NOT EXISTS idx_invoices_tenant_id ON shared.invoices(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_invoices_subscription_id ON shared.invoices(subscription_id);
+CREATE INDEX IF NOT EXISTS idx_invoices_status ON shared.invoices(status);
+CREATE INDEX IF NOT EXISTS idx_invoices_due_date ON shared.invoices(due_date);
 
 CREATE TABLE IF NOT EXISTS shared.payments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -67,10 +67,10 @@ CREATE TABLE IF NOT EXISTS shared.payments (
   UNIQUE (provider, provider_payment_id)
 );
 
-CREATE INDEX idx_payments_tenant_id ON shared.payments(tenant_id);
-CREATE INDEX idx_payments_invoice_id ON shared.payments(invoice_id);
-CREATE INDEX idx_payments_status ON shared.payments(status);
-CREATE INDEX idx_payments_provider ON shared.payments(provider);
+CREATE INDEX IF NOT EXISTS idx_payments_tenant_id ON shared.payments(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_payments_invoice_id ON shared.payments(invoice_id);
+CREATE INDEX IF NOT EXISTS idx_payments_status ON shared.payments(status);
+CREATE INDEX IF NOT EXISTS idx_payments_provider ON shared.payments(provider);
 
 CREATE TABLE IF NOT EXISTS shared.payment_methods (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS shared.payment_methods (
   UNIQUE (tenant_id, provider, provider_payment_method_id)
 );
 
-CREATE INDEX idx_payment_methods_tenant_id ON shared.payment_methods(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_payment_methods_tenant_id ON shared.payment_methods(tenant_id);
 
 -- Dunning management for failed payments
 CREATE TABLE IF NOT EXISTS shared.dunning_attempts (
@@ -105,9 +105,9 @@ CREATE TABLE IF NOT EXISTS shared.dunning_attempts (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_dunning_attempts_invoice_id ON shared.dunning_attempts(invoice_id);
-CREATE INDEX idx_dunning_attempts_tenant_id ON shared.dunning_attempts(tenant_id);
-CREATE INDEX idx_dunning_attempts_scheduled_at ON shared.dunning_attempts(scheduled_at);
+CREATE INDEX IF NOT EXISTS idx_dunning_attempts_invoice_id ON shared.dunning_attempts(invoice_id);
+CREATE INDEX IF NOT EXISTS idx_dunning_attempts_tenant_id ON shared.dunning_attempts(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_dunning_attempts_scheduled_at ON shared.dunning_attempts(scheduled_at);
 
 -- Subscription history for audit trail
 CREATE TABLE IF NOT EXISTS shared.subscription_history (
@@ -122,6 +122,6 @@ CREATE TABLE IF NOT EXISTS shared.subscription_history (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_subscription_history_subscription_id ON shared.subscription_history(subscription_id);
-CREATE INDEX idx_subscription_history_tenant_id ON shared.subscription_history(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_subscription_history_subscription_id ON shared.subscription_history(subscription_id);
+CREATE INDEX IF NOT EXISTS idx_subscription_history_tenant_id ON shared.subscription_history(tenant_id);
 

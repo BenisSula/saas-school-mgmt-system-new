@@ -18,9 +18,9 @@ CREATE TABLE IF NOT EXISTS shared.backup_jobs (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_backup_jobs_tenant_id ON shared.backup_jobs(tenant_id);
-CREATE INDEX idx_backup_jobs_status ON shared.backup_jobs(status);
-CREATE INDEX idx_backup_jobs_created_at ON shared.backup_jobs(created_at);
+CREATE INDEX IF NOT EXISTS idx_backup_jobs_tenant_id ON shared.backup_jobs(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_backup_jobs_status ON shared.backup_jobs(status);
+CREATE INDEX IF NOT EXISTS idx_backup_jobs_created_at ON shared.backup_jobs(created_at);
 
 -- Backup Schedules
 CREATE TABLE IF NOT EXISTS shared.backup_schedules (
@@ -40,9 +40,9 @@ CREATE TABLE IF NOT EXISTS shared.backup_schedules (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_backup_schedules_tenant_id ON shared.backup_schedules(tenant_id);
-CREATE INDEX idx_backup_schedules_is_active ON shared.backup_schedules(is_active) WHERE is_active = TRUE;
-CREATE INDEX idx_backup_schedules_next_run_at ON shared.backup_schedules(next_run_at) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_backup_schedules_tenant_id ON shared.backup_schedules(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_backup_schedules_is_active ON shared.backup_schedules(is_active) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_backup_schedules_next_run_at ON shared.backup_schedules(next_run_at) WHERE is_active = TRUE;
 
 -- Data Export Jobs
 CREATE TABLE IF NOT EXISTS shared.data_export_jobs (
@@ -63,9 +63,9 @@ CREATE TABLE IF NOT EXISTS shared.data_export_jobs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_data_export_jobs_tenant_id ON shared.data_export_jobs(tenant_id);
-CREATE INDEX idx_data_export_jobs_status ON shared.data_export_jobs(status);
-CREATE INDEX idx_data_export_jobs_expires_at ON shared.data_export_jobs(expires_at);
+CREATE INDEX IF NOT EXISTS idx_data_export_jobs_tenant_id ON shared.data_export_jobs(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_data_export_jobs_status ON shared.data_export_jobs(status);
+CREATE INDEX IF NOT EXISTS idx_data_export_jobs_expires_at ON shared.data_export_jobs(expires_at);
 
 -- Data Import Jobs
 CREATE TABLE IF NOT EXISTS shared.data_import_jobs (
@@ -89,8 +89,8 @@ CREATE TABLE IF NOT EXISTS shared.data_import_jobs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_data_import_jobs_tenant_id ON shared.data_import_jobs(tenant_id);
-CREATE INDEX idx_data_import_jobs_status ON shared.data_import_jobs(status);
+CREATE INDEX IF NOT EXISTS idx_data_import_jobs_tenant_id ON shared.data_import_jobs(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_data_import_jobs_status ON shared.data_import_jobs(status);
 
 -- GDPR Erasure Requests
 CREATE TABLE IF NOT EXISTS shared.gdpr_erasure_requests (
@@ -111,10 +111,10 @@ CREATE TABLE IF NOT EXISTS shared.gdpr_erasure_requests (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_gdpr_erasure_requests_tenant_id ON shared.gdpr_erasure_requests(tenant_id);
-CREATE INDEX idx_gdpr_erasure_requests_user_id ON shared.gdpr_erasure_requests(user_id);
-CREATE INDEX idx_gdpr_erasure_requests_status ON shared.gdpr_erasure_requests(status);
-CREATE INDEX idx_gdpr_erasure_requests_verification_token ON shared.gdpr_erasure_requests(verification_token);
+CREATE INDEX IF NOT EXISTS idx_gdpr_erasure_requests_tenant_id ON shared.gdpr_erasure_requests(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_gdpr_erasure_requests_user_id ON shared.gdpr_erasure_requests(user_id);
+CREATE INDEX IF NOT EXISTS idx_gdpr_erasure_requests_status ON shared.gdpr_erasure_requests(status);
+CREATE INDEX IF NOT EXISTS idx_gdpr_erasure_requests_verification_token ON shared.gdpr_erasure_requests(verification_token);
 
 -- SSO Providers
 CREATE TABLE IF NOT EXISTS shared.sso_providers (
@@ -144,9 +144,9 @@ CREATE TABLE IF NOT EXISTS shared.sso_providers (
   UNIQUE (tenant_id, provider_name)
 );
 
-CREATE INDEX idx_sso_providers_tenant_id ON shared.sso_providers(tenant_id);
-CREATE INDEX idx_sso_providers_is_active ON shared.sso_providers(is_active) WHERE is_active = TRUE;
-CREATE INDEX idx_sso_providers_is_default ON shared.sso_providers(is_default) WHERE is_default = TRUE;
+CREATE INDEX IF NOT EXISTS idx_sso_providers_tenant_id ON shared.sso_providers(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_sso_providers_is_active ON shared.sso_providers(is_active) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_sso_providers_is_default ON shared.sso_providers(is_default) WHERE is_default = TRUE;
 
 -- SSO Sessions
 CREATE TABLE IF NOT EXISTS shared.sso_sessions (
@@ -165,10 +165,10 @@ CREATE TABLE IF NOT EXISTS shared.sso_sessions (
   UNIQUE (tenant_id, user_id, provider_id, sso_session_id)
 );
 
-CREATE INDEX idx_sso_sessions_tenant_id ON shared.sso_sessions(tenant_id);
-CREATE INDEX idx_sso_sessions_user_id ON shared.sso_sessions(user_id);
-CREATE INDEX idx_sso_sessions_provider_id ON shared.sso_sessions(provider_id);
-CREATE INDEX idx_sso_sessions_expires_at ON shared.sso_sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_sso_sessions_tenant_id ON shared.sso_sessions(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_sso_sessions_user_id ON shared.sso_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_sso_sessions_provider_id ON shared.sso_sessions(provider_id);
+CREATE INDEX IF NOT EXISTS idx_sso_sessions_expires_at ON shared.sso_sessions(expires_at);
 
 -- SSO User Mappings (for JIT provisioning)
 CREATE TABLE IF NOT EXISTS shared.sso_user_mappings (
@@ -184,10 +184,10 @@ CREATE TABLE IF NOT EXISTS shared.sso_user_mappings (
   UNIQUE (tenant_id, provider_id, external_user_id)
 );
 
-CREATE INDEX idx_sso_user_mappings_tenant_id ON shared.sso_user_mappings(tenant_id);
-CREATE INDEX idx_sso_user_mappings_provider_id ON shared.sso_user_mappings(provider_id);
-CREATE INDEX idx_sso_user_mappings_user_id ON shared.sso_user_mappings(user_id);
-CREATE INDEX idx_sso_user_mappings_external_user_id ON shared.sso_user_mappings(external_user_id);
+CREATE INDEX IF NOT EXISTS idx_sso_user_mappings_tenant_id ON shared.sso_user_mappings(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_sso_user_mappings_provider_id ON shared.sso_user_mappings(provider_id);
+CREATE INDEX IF NOT EXISTS idx_sso_user_mappings_user_id ON shared.sso_user_mappings(user_id);
+CREATE INDEX IF NOT EXISTS idx_sso_user_mappings_external_user_id ON shared.sso_user_mappings(external_user_id);
 
 -- Data Retention Policies
 CREATE TABLE IF NOT EXISTS shared.data_retention_policies (
@@ -206,6 +206,6 @@ CREATE TABLE IF NOT EXISTS shared.data_retention_policies (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_data_retention_policies_tenant_id ON shared.data_retention_policies(tenant_id);
-CREATE INDEX idx_data_retention_policies_is_active ON shared.data_retention_policies(is_active) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_data_retention_policies_tenant_id ON shared.data_retention_policies(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_data_retention_policies_is_active ON shared.data_retention_policies(is_active) WHERE is_active = TRUE;
 

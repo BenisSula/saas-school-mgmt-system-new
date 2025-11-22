@@ -3,8 +3,9 @@
  * Consolidates common password management route patterns
  */
 
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+import type { Pool } from 'pg';
 import { getPool } from '../db/connection';
 import { extractIpAddress, extractUserAgent } from './superuserHelpers';
 import { Role } from '../config/permissions';
@@ -31,7 +32,7 @@ export const changePasswordBodySchema = z.object({
  */
 export function createPasswordResetHandler(options: {
   resetPassword: (
-    pool: any,
+    pool: Pool,
     userId: string,
     actorId: string,
     role: Role,
@@ -40,7 +41,7 @@ export function createPasswordResetHandler(options: {
     reason?: string
   ) => Promise<{ temporaryPassword: string }>;
 }) {
-  return async (req: Request, res: Response, next: any) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: 'Authentication required' });
@@ -89,7 +90,7 @@ export function createPasswordResetHandler(options: {
  */
 export function createPasswordChangeHandler(options: {
   changePassword: (
-    pool: any,
+    pool: Pool,
     userId: string,
     newPassword: string,
     actorId: string,
@@ -99,7 +100,7 @@ export function createPasswordChangeHandler(options: {
     reason?: string
   ) => Promise<void>;
 }) {
-  return async (req: Request, res: Response, next: any) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: 'Authentication required' });

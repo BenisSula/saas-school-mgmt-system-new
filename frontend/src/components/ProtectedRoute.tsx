@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import type { Role, Permission } from '../config/permissions';
 import { hasPermission } from '../config/permissions';
+import { isHOD } from '../lib/utils/userHelpers';
 
 export interface ProtectedRouteProps {
   allowedRoles?: Role[];
@@ -49,6 +50,12 @@ export function ProtectedRoute({
     []
   );
 
+  // Get additional roles from user
+  const additionalRoles = React.useMemo(() => {
+    if (!user?.additional_roles) return [];
+    return user.additional_roles.map((r) => r.role);
+  }, [user?.additional_roles]);
+
   // Calculate required permissions based on user role and permission list
   const hasRequiredPermissions = React.useMemo(() => {
     if (!allowedPermissions || allowedPermissions.length === 0) {
@@ -63,12 +70,12 @@ export function ProtectedRoute({
 
     if (requireAllPermissions) {
       // User must have ALL specified permissions
-      return allowedPermissions.every((perm) => hasPermission(role, perm));
+      return allowedPermissions.every((perm) => hasPermission(role, perm, additionalRoles));
     } else {
       // User must have ANY of the specified permissions
-      return allowedPermissions.some((perm) => hasPermission(role, perm));
+      return allowedPermissions.some((perm) => hasPermission(role, perm, additionalRoles));
     }
-  }, [allowedPermissions, requireAllPermissions, user]);
+  }, [allowedPermissions, requireAllPermissions, user, additionalRoles]);
 
   // Redirect to not-authorized if access denied (only once)
   // Must be called before any conditional returns (React hooks rule)
@@ -82,13 +89,19 @@ export function ProtectedRoute({
     }
 
     // Check role-based access
-    if (allowedRoles && !allowedRoles.includes(user.role)) {
-      setHasRedirected(true);
-      navigate('/not-authorized', {
-        replace: true,
-        state: { from: location.pathname }
-      });
-      return;
+    // For HOD routes, check if user is HOD (has 'hod' in additional_roles)
+    if (allowedRoles) {
+      const userIsHOD = isHOD(user);
+      const hasAllowedRole = allowedRoles.includes(user.role) || (userIsHOD && allowedRoles.includes('teacher'));
+      
+      if (!hasAllowedRole) {
+        setHasRedirected(true);
+        navigate('/not-authorized', {
+          replace: true,
+          state: { from: location.pathname }
+        });
+        return;
+      }
     }
 
     // Check permission-based access
@@ -143,9 +156,15 @@ export function ProtectedRoute({
   }
 
   // Check role-based access first
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // Will be handled by useEffect redirect, but show fallback while redirecting
-    return fallback ?? defaultAccessDeniedPrompt;
+  // For HOD routes, check if user is HOD (has 'hod' in additional_roles)
+  if (allowedRoles) {
+    const userIsHOD = isHOD(user);
+    const hasAllowedRole = allowedRoles.includes(user.role) || (userIsHOD && allowedRoles.includes('teacher'));
+    
+    if (!hasAllowedRole) {
+      // Will be handled by useEffect redirect, but show fallback while redirecting
+      return fallback ?? defaultAccessDeniedPrompt;
+    }
   }
 
   // Check permission-based access (only if roles check passed or no roles specified)

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import type { PoolClient } from 'pg';
 import authenticate from '../middleware/authenticate';
 import tenantResolver from '../middleware/tenantResolver';
 import ensureTenantContext from '../middleware/ensureTenantContext';
@@ -18,8 +19,15 @@ import {
 import { listStudents } from '../services/studentService';
 import { safeAuditLogFromRequest } from '../lib/auditHelpers';
 import { createSuccessResponse, createErrorResponse, createPaginatedSuccessResponse } from '../lib/responseHelpers';
+import { validateContextOrRespond } from '../lib/contextHelpers';
 import { mutationRateLimiter } from '../middleware/mutationRateLimiter';
 import { createGetHandler, createPostHandler, createDeleteHandler, asyncHandler, requireTenantContext } from '../lib/routeHelpers';
+import { markTeacherAttendance, getTeacherAttendance, bulkMarkTeacherAttendance } from '../services/teacherAttendanceService';
+import { submitTeacherGrades, getTeacherGrades, updateTeacherGrade } from '../services/teacherGradesService';
+import { uploadClassResource, getClassResources, deleteClassResource } from '../services/classResourcesService';
+import { postClassAnnouncement } from '../services/teacherAnnouncementsService';
+import { generateAttendancePDF, generateAttendanceExcel, generateGradesPDF, generateGradesExcel } from '../services/exportService';
+import multer from 'multer';
 
 const router = Router();
 
@@ -149,12 +157,12 @@ router.delete('/:id', requirePermission('users:manage'), mutationRateLimiter, cr
 // Teacher-specific routes (accessible to teachers with students:view_own_class permission)
 router.get('/me', requirePermission('dashboard:view'), async (req, res, next) => {
   try {
-    if (!req.user || !req.tenantClient || !req.tenant) {
-      return res.status(500).json(createErrorResponse('User context missing'));
-    }
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
+    const { tenant, tenantClient, user } = context;
 
-    const teacherEmail = req.user.email;
-    const teacher = await getTeacherByEmail(req.tenantClient, req.tenant.schema, teacherEmail);
+    const teacherEmail = user.email;
+    const teacher = await getTeacherByEmail(tenantClient, tenant.schema, teacherEmail);
 
     if (!teacher) {
       return res.status(404).json(createErrorResponse('Teacher profile not found'));
@@ -168,12 +176,12 @@ router.get('/me', requirePermission('dashboard:view'), async (req, res, next) =>
 
 router.get('/me/classes', requirePermission('dashboard:view'), async (req, res, next) => {
   try {
-    if (!req.user || !req.tenantClient || !req.tenant) {
-      return res.status(500).json(createErrorResponse('User context missing'));
-    }
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
+    const { tenant, tenantClient, user } = context;
 
-    const teacherEmail = req.user.email;
-    const teacher = await getTeacherByEmail(req.tenantClient, req.tenant.schema, teacherEmail);
+    const teacherEmail = user.email;
+    const teacher = await getTeacherByEmail(tenantClient, tenant.schema, teacherEmail);
 
     if (!teacher) {
       return res.status(404).json(createErrorResponse('Teacher profile not found'));
@@ -184,8 +192,9 @@ router.get('/me/classes', requirePermission('dashboard:view'), async (req, res, 
       return res.json(createSuccessResponse([], 'No classes assigned'));
     }
 
-    const schema = req.tenant.schema;
-    const client = req.tenantClient;
+    // Use extracted variables from context check
+    const schema = tenant.schema;
+    const client = tenantClient;
 
     // Query classes table to get class names
     // Handle both UUID and text class IDs
@@ -318,6 +327,475 @@ router.get('/me/students', requirePermission('students:view_own_class'), async (
     const response = createPaginatedSuccessResponse(paginated, paginationData.pagination, 'Students retrieved successfully');
 
     res.json(response);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Helper function to get teacher ID from user
+async function getTeacherIdFromUser(
+  tenantClient: PoolClient,
+  schema: string,
+  userEmail: string
+): Promise<string | null> {
+  const teacher = await getTeacherByEmail(tenantClient, schema, userEmail);
+  return teacher?.id || null;
+}
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+});
+
+// ========== TEACHER ATTENDANCE ROUTES ==========
+
+/**
+ * POST /teachers/attendance/mark
+ * Mark attendance for a class
+ */
+router.post('/attendance/mark', requirePermission('attendance:mark'), async (req, res, next) => {
+  try {
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
+    const { tenant, tenantClient, user } = context;
+
+    const teacherId = await getTeacherIdFromUser(tenantClient, tenant.schema, user.email);
+    if (!teacherId) {
+      return res.status(404).json(createErrorResponse('Teacher profile not found'));
+    }
+
+    const records = req.body.records as Array<{
+      studentId: string;
+      classId: string;
+      status: 'present' | 'absent' | 'late';
+      date: string;
+    }>;
+
+    if (!Array.isArray(records) || records.length === 0) {
+      return res.status(400).json(createErrorResponse('records array is required'));
+    }
+
+    await markTeacherAttendance(
+      tenantClient,
+      tenant.schema,
+      teacherId,
+      records.map((r) => ({ ...r, markedBy: user.id })),
+      user.id
+    );
+
+    res.status(200).json(createSuccessResponse(null, 'Attendance marked successfully'));
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /teachers/attendance
+ * Get attendance records
+ */
+router.get('/attendance', requirePermission('attendance:view_own_class'), async (req, res, next) => {
+  try {
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
+    const { tenant, tenantClient, user } = context;
+
+    const teacherId = await getTeacherIdFromUser(tenantClient, tenant.schema, user.email);
+    if (!teacherId) {
+      return res.status(404).json(createErrorResponse('Teacher profile not found'));
+    }
+
+    const attendance = await getTeacherAttendance(tenantClient, tenant.schema, teacherId, {
+      classId: req.query.classId as string | undefined,
+      date: req.query.date as string | undefined,
+      from: req.query.from as string | undefined,
+      to: req.query.to as string | undefined
+    });
+
+    res.json(createSuccessResponse(attendance, 'Attendance retrieved successfully'));
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /teachers/attendance/bulk
+ * Bulk mark attendance
+ */
+router.post('/attendance/bulk', requirePermission('attendance:mark'), async (req, res, next) => {
+  try {
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
+    const { tenant, tenantClient, user } = context;
+
+    const teacherId = await getTeacherIdFromUser(tenantClient, tenant.schema, user.email);
+    if (!teacherId) {
+      return res.status(404).json(createErrorResponse('Teacher profile not found'));
+    }
+
+    const records = req.body.records as Array<{
+      studentId: string;
+      classId: string;
+      status: 'present' | 'absent' | 'late';
+      date: string;
+    }>;
+
+    if (!Array.isArray(records) || records.length === 0) {
+      return res.status(400).json(createErrorResponse('records array is required'));
+    }
+
+    await bulkMarkTeacherAttendance(
+      tenantClient,
+      tenant.schema,
+      teacherId,
+      records.map((r) => ({ ...r, markedBy: user.id })),
+      user.id
+    );
+
+    res.status(200).json(createSuccessResponse(null, 'Attendance marked successfully'));
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ========== TEACHER GRADES ROUTES ==========
+
+/**
+ * POST /teachers/grades/submit
+ * Submit grades for students
+ */
+router.post('/grades/submit', requirePermission('grades:enter'), async (req, res, next) => {
+  try {
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
+    const { tenant, tenantClient, user } = context;
+
+    const teacherId = await getTeacherIdFromUser(tenantClient, tenant.schema, user.email);
+    if (!teacherId) {
+      return res.status(404).json(createErrorResponse('Teacher profile not found'));
+    }
+
+    const grades = req.body.grades as Array<{
+      studentId: string;
+      classId: string;
+      subjectId?: string;
+      examId?: string;
+      score: number;
+      remarks?: string;
+      term?: string;
+    }>;
+
+    if (!Array.isArray(grades) || grades.length === 0) {
+      return res.status(400).json(createErrorResponse('grades array is required'));
+    }
+
+    const result = await submitTeacherGrades(tenantClient, tenant.schema, teacherId, grades, user.id);
+
+    res.status(200).json(createSuccessResponse(result, 'Grades submitted successfully'));
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * PUT /teachers/grades/:gradeId
+ * Update a specific grade
+ */
+router.put('/grades/:gradeId', requirePermission('grades:edit'), async (req, res, next) => {
+  try {
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
+    const { tenant, tenantClient, user } = context;
+
+    const teacherId = await getTeacherIdFromUser(tenantClient, tenant.schema, user.email);
+    if (!teacherId) {
+      return res.status(404).json(createErrorResponse('Teacher profile not found'));
+    }
+
+    const result = await updateTeacherGrade(
+      tenantClient,
+      tenant.schema,
+      teacherId,
+      req.params.gradeId,
+      {
+        score: req.body.score,
+        remarks: req.body.remarks
+      },
+      user.id
+    );
+
+    if (!result) {
+      return res.status(404).json(createErrorResponse('Grade not found'));
+    }
+
+    res.json(createSuccessResponse(result, 'Grade updated successfully'));
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /teachers/grades
+ * Get grades for a class/subject
+ */
+router.get('/grades', requirePermission('grades:view_own_class'), async (req, res, next) => {
+  try {
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
+    const { tenant, tenantClient, user } = context;
+
+    const teacherId = await getTeacherIdFromUser(tenantClient, tenant.schema, user.email);
+    if (!teacherId) {
+      return res.status(404).json(createErrorResponse('Teacher profile not found'));
+    }
+
+    const grades = await getTeacherGrades(tenantClient, tenant.schema, teacherId, {
+      classId: req.query.classId as string | undefined,
+      subjectId: req.query.subjectId as string | undefined,
+      examId: req.query.examId as string | undefined,
+      term: req.query.term as string | undefined
+    });
+
+    res.json(createSuccessResponse(grades, 'Grades retrieved successfully'));
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ========== CLASS RESOURCES ROUTES ==========
+
+/**
+ * POST /teachers/resources/upload
+ * Upload a class resource
+ */
+router.post('/resources/upload', requirePermission('resources:upload'), upload.single('file'), async (req, res, next) => {
+  try {
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
+    const { tenant, tenantClient, user } = context;
+
+    const teacherId = await getTeacherIdFromUser(tenantClient, tenant.schema, user.email);
+    if (!teacherId) {
+      return res.status(404).json(createErrorResponse('Teacher profile not found'));
+    }
+
+    if (!req.file) {
+      return res.status(400).json(createErrorResponse('File is required'));
+    }
+
+    const resource = await uploadClassResource(
+      tenantClient,
+      tenant.schema,
+      tenant.id,
+      teacherId,
+      {
+        classId: req.body.classId,
+        title: req.body.title,
+        description: req.body.description,
+        file: {
+          filename: req.file.originalname,
+          mimetype: req.file.mimetype,
+          size: req.file.size,
+          data: req.file.buffer
+        }
+      },
+      user.id
+    );
+
+    res.status(201).json(createSuccessResponse(resource, 'Resource uploaded successfully'));
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /teachers/resources
+ * Get class resources
+ */
+router.get('/resources', requirePermission('resources:upload'), async (req, res, next) => {
+  try {
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
+    const { tenant, tenantClient, user } = context;
+
+    const classId = req.query.classId as string;
+    if (!classId) {
+      return res.status(400).json(createErrorResponse('classId is required'));
+    }
+
+    const teacherId = await getTeacherIdFromUser(tenantClient, tenant.schema, user.email);
+    if (!teacherId) {
+      return res.status(404).json(createErrorResponse('Teacher profile not found'));
+    }
+
+    const resources = await getClassResources(tenantClient, tenant.schema, classId, teacherId);
+
+    res.json(createSuccessResponse(resources, 'Resources retrieved successfully'));
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * DELETE /teachers/resources/:resourceId
+ * Delete a class resource
+ */
+router.delete('/resources/:resourceId', requirePermission('resources:upload'), async (req, res, next) => {
+  try {
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
+    const { tenant, tenantClient, user } = context;
+
+    const teacherId = await getTeacherIdFromUser(tenantClient, tenant.schema, user.email);
+    if (!teacherId) {
+      return res.status(404).json(createErrorResponse('Teacher profile not found'));
+    }
+
+    const deleted = await deleteClassResource(tenantClient, tenant.schema, teacherId, req.params.resourceId, user.id);
+
+    if (!deleted) {
+      return res.status(404).json(createErrorResponse('Resource not found'));
+    }
+
+    res.json(createSuccessResponse(null, 'Resource deleted successfully'));
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ========== TEACHER ANNOUNCEMENTS ROUTES ==========
+
+/**
+ * POST /teachers/announcements
+ * Post an announcement to a class
+ */
+router.post('/announcements', requirePermission('announcements:post'), async (req, res, next) => {
+  try {
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
+    const { tenant, tenantClient, user } = context;
+
+    const teacherId = await getTeacherIdFromUser(tenantClient, tenant.schema, user.email);
+    if (!teacherId) {
+      return res.status(404).json(createErrorResponse('Teacher profile not found'));
+    }
+
+    const announcement = await postClassAnnouncement(
+      tenantClient,
+      tenant.schema,
+      tenant.id,
+      teacherId,
+      {
+        classId: req.body.classId,
+        message: req.body.message,
+        attachments: req.body.attachments
+      },
+      user.id
+    );
+
+    res.status(201).json(createSuccessResponse(announcement, 'Announcement posted successfully'));
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ========== EXPORT ROUTES ==========
+
+/**
+ * GET /teachers/export/attendance
+ * Export attendance as PDF or Excel
+ */
+router.get('/export/attendance', requirePermission('attendance:view_own_class'), async (req, res, next) => {
+  try {
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
+    const { tenant, tenantClient, user } = context;
+
+    const teacherId = await getTeacherIdFromUser(tenantClient, tenant.schema, user.email);
+    if (!teacherId) {
+      return res.status(404).json(createErrorResponse('Teacher profile not found'));
+    }
+
+    const classId = req.query.classId as string;
+    if (!classId) {
+      return res.status(400).json(createErrorResponse('classId is required'));
+    }
+
+    const format = (req.query.format as string) || 'pdf';
+    const options = {
+      classId,
+      date: req.query.date as string | undefined,
+      from: req.query.from as string | undefined,
+      to: req.query.to as string | undefined
+    };
+
+    let buffer: Buffer;
+    let contentType: string;
+    let filename: string;
+
+    if (format === 'excel' || format === 'xlsx') {
+      buffer = await generateAttendanceExcel(tenantClient, tenant.schema, teacherId, options);
+      contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      filename = `attendance_${classId}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    } else {
+      buffer = await generateAttendancePDF(tenantClient, tenant.schema, teacherId, options);
+      contentType = 'application/pdf';
+      filename = `attendance_${classId}_${new Date().toISOString().split('T')[0]}.pdf`;
+    }
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buffer);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /teachers/export/grades
+ * Export grades as PDF or Excel
+ */
+router.get('/export/grades', requirePermission('grades:view_own_class'), async (req, res, next) => {
+  try {
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
+    const { tenant, tenantClient, user } = context;
+
+    const teacherId = await getTeacherIdFromUser(tenantClient, tenant.schema, user.email);
+    if (!teacherId) {
+      return res.status(404).json(createErrorResponse('Teacher profile not found'));
+    }
+
+    const classId = req.query.classId as string;
+    if (!classId) {
+      return res.status(400).json(createErrorResponse('classId is required'));
+    }
+
+    const format = (req.query.format as string) || 'pdf';
+    const options = {
+      classId,
+      subjectId: req.query.subjectId as string | undefined,
+      examId: req.query.examId as string | undefined,
+      term: req.query.term as string | undefined
+    };
+
+    let buffer: Buffer;
+    let contentType: string;
+    let filename: string;
+
+    if (format === 'excel' || format === 'xlsx') {
+      buffer = await generateGradesExcel(tenantClient, tenant.schema, teacherId, options);
+      contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      filename = `grades_${classId}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    } else {
+      buffer = await generateGradesPDF(tenantClient, tenant.schema, teacherId, options);
+      contentType = 'application/pdf';
+      filename = `grades_${classId}_${new Date().toISOString().split('T')[0]}.pdf`;
+    }
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buffer);
   } catch (error) {
     next(error);
   }

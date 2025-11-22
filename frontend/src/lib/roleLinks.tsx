@@ -16,7 +16,8 @@ import {
   MessageCircle,
   UserCircle,
   Activity,
-  Shield
+  Shield,
+  Database
 } from 'lucide-react';
 import type { Role } from './api';
 import { filterSidebarLinksByPermission } from './rbac/filterSidebarLinks';
@@ -62,10 +63,34 @@ const adminLinks: SidebarLink[] = [
     path: '/dashboard/hods'
   },
   {
+    id: 'admin-departments',
+    label: 'Departments',
+    icon: <Building2 className="h-5 w-5" />,
+    path: '/dashboard/departments'
+  },
+  {
+    id: 'admin-classes-management',
+    label: 'Classes Management',
+    icon: <NotebookPen className="h-5 w-5" />,
+    path: '/dashboard/classes-management'
+  },
+  {
     id: 'admin-classes',
     label: 'Classes & subjects',
     icon: <NotebookPen className="h-5 w-5" />,
     path: '/dashboard/classes'
+  },
+  {
+    id: 'admin-users-management',
+    label: 'Users Management',
+    icon: <Users className="h-5 w-5" />,
+    path: '/dashboard/users-management'
+  },
+  {
+    id: 'admin-announcements',
+    label: 'Announcements',
+    icon: <MessageCircle className="h-5 w-5" />,
+    path: '/dashboard/announcements'
   },
   {
     id: 'admin-attendance',
@@ -227,6 +252,12 @@ const superAdminLinks: SidebarLink[] = [
     path: '/dashboard/superuser/activity'
   },
   {
+    id: 'super-maintenance',
+    label: 'Maintenance',
+    icon: <Database className="h-5 w-5" />,
+    path: '/dashboard/superuser/maintenance'
+  },
+  {
     id: 'super-investigations',
     label: 'Investigation Tools',
     icon: <Shield className="h-5 w-5" />,
@@ -242,22 +273,28 @@ const superAdminLinks: SidebarLink[] = [
 
 const hodLinks: SidebarLink[] = [
   {
-    id: 'hod-overview',
+    id: 'hod-dashboard',
     label: 'Dashboard',
     icon: <LayoutDashboard className="h-5 w-5" />,
-    path: '/dashboard/hod/overview'
+    path: '/dashboard/hod/dashboard'
+  },
+  {
+    id: 'hod-teachers',
+    label: 'Department Teachers',
+    icon: <Users className="h-5 w-5" />,
+    path: '/dashboard/hod/teachers'
   },
   {
     id: 'hod-reports',
-    label: 'Reports',
+    label: 'Department Reports',
     icon: <BarChart3 className="h-5 w-5" />,
     path: '/dashboard/hod/reports'
   },
   {
-    id: 'hod-analytics',
-    label: 'Analytics',
-    icon: <LineChart className="h-5 w-5" />,
-    path: '/dashboard/hod/analytics'
+    id: 'hod-profile',
+    label: 'Profile',
+    icon: <UserCircle className="h-5 w-5" />,
+    path: '/dashboard/hod/profile'
   }
 ];
 
@@ -272,19 +309,41 @@ const ROLE_LINKS: RoleLinkMap = {
 /**
  * Get sidebar links for a role, filtered by permissions
  * Only returns links the user has permission to access
+ * 
+ * @param role - The user's primary role
+ * @param additionalRoles - Optional array of additional role names (e.g., ['hod'])
  */
-export function getSidebarLinksForRole(role: Role | null | undefined): SidebarLink[] {
+export function getSidebarLinksForRole(
+  role: Role | null | undefined,
+  additionalRoles?: string[]
+): SidebarLink[] {
   if (!role) return [];
-  const links = ROLE_LINKS[role] ?? [];
+  
+  // Check if user is HOD using helper function
+  const isHOD = role === 'teacher' && additionalRoles?.includes('hod');
+  
+  // If HOD, return HOD links, otherwise return links for primary role
+  const effectiveRole: Role = isHOD ? 'hod' : role;
+  const links = ROLE_LINKS[effectiveRole] ?? [];
+  
   // Filter links based on RBAC permissions
-  return filterSidebarLinksByPermission(links, role);
+  // Pass additionalRoles so permission checking can account for HOD permissions
+  return filterSidebarLinksByPermission(links, role, additionalRoles);
 }
 
-export function getDefaultDashboardPath(role: Role | null | undefined): string {
+export function getDefaultDashboardPath(
+  role: Role | null | undefined,
+  additionalRoles?: string[]
+): string {
   if (role === 'superadmin') {
     return '/dashboard/superuser/dashboard';
   }
-  const links = getSidebarLinksForRole(role);
+  // Check if user is HOD using helper function
+  const isHOD = role === 'teacher' && additionalRoles?.includes('hod');
+  if (isHOD) {
+    return '/dashboard/hod/dashboard';
+  }
+  const links = getSidebarLinksForRole(role, additionalRoles);
   return links[0]?.path ?? '/dashboard/overview';
 }
 

@@ -14,8 +14,8 @@ CREATE TABLE IF NOT EXISTS shared.feature_flags (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_feature_flags_flag_key ON shared.feature_flags(flag_key);
-CREATE INDEX idx_feature_flags_enabled_globally ON shared.feature_flags(is_enabled_globally) WHERE is_enabled_globally = TRUE;
+CREATE INDEX IF NOT EXISTS idx_feature_flags_flag_key ON shared.feature_flags(flag_key);
+CREATE INDEX IF NOT EXISTS idx_feature_flags_enabled_globally ON shared.feature_flags(is_enabled_globally) WHERE is_enabled_globally = TRUE;
 
 -- Feature flag history for audit
 CREATE TABLE IF NOT EXISTS shared.feature_flag_history (
@@ -30,9 +30,9 @@ CREATE TABLE IF NOT EXISTS shared.feature_flag_history (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_feature_flag_history_flag_id ON shared.feature_flag_history(flag_id);
-CREATE INDEX idx_feature_flag_history_tenant_id ON shared.feature_flag_history(tenant_id);
-CREATE INDEX idx_feature_flag_history_created_at ON shared.feature_flag_history(created_at);
+CREATE INDEX IF NOT EXISTS idx_feature_flag_history_flag_id ON shared.feature_flag_history(flag_id);
+CREATE INDEX IF NOT EXISTS idx_feature_flag_history_tenant_id ON shared.feature_flag_history(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_feature_flag_history_created_at ON shared.feature_flag_history(created_at);
 
 -- Per-tenant feature flag overrides (for fine-grained control)
 CREATE TABLE IF NOT EXISTS shared.tenant_feature_flags (
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS shared.tenant_feature_flags (
   UNIQUE (tenant_id, flag_key)
 );
 
-CREATE INDEX idx_tenant_feature_flags_tenant_id ON shared.tenant_feature_flags(tenant_id);
-CREATE INDEX idx_tenant_feature_flags_flag_key ON shared.tenant_feature_flags(flag_key);
-CREATE INDEX idx_tenant_feature_flags_enabled ON shared.tenant_feature_flags(is_enabled) WHERE is_enabled = TRUE;
+CREATE INDEX IF NOT EXISTS idx_tenant_feature_flags_tenant_id ON shared.tenant_feature_flags(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_tenant_feature_flags_flag_key ON shared.tenant_feature_flags(flag_key);
+CREATE INDEX IF NOT EXISTS idx_tenant_feature_flags_enabled ON shared.tenant_feature_flags(is_enabled) WHERE is_enabled = TRUE;
 

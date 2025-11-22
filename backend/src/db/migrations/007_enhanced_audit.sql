@@ -75,14 +75,66 @@ CREATE TABLE IF NOT EXISTS shared.audit_logs (
 );
 
 -- Indexes for efficient searching and filtering
-CREATE INDEX IF NOT EXISTS idx_audit_logs_tenant_id ON shared.audit_logs(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON shared.audit_logs(user_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON shared.audit_logs(action);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON shared.audit_logs(resource_type, resource_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON shared.audit_logs(created_at);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_severity ON shared.audit_logs(severity);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_tags ON shared.audit_logs USING GIN(tags);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_request_id ON shared.audit_logs(request_id);
+-- Only create indexes if the columns exist
+DO $$
+BEGIN
+  -- Check if tenant_id column exists before creating index
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'shared' 
+    AND table_name = 'audit_logs' 
+    AND column_name = 'tenant_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_tenant_id ON shared.audit_logs(tenant_id);
+  END IF;
+
+  -- Check if user_id column exists before creating index
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'shared' 
+    AND table_name = 'audit_logs' 
+    AND column_name = 'user_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON shared.audit_logs(user_id);
+  END IF;
+
+  -- These columns should always exist if table exists
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables 
+    WHERE table_schema = 'shared' 
+    AND table_name = 'audit_logs'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON shared.audit_logs(action);
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON shared.audit_logs(created_at);
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_severity ON shared.audit_logs(severity);
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_request_id ON shared.audit_logs(request_id);
+    
+    -- Check if resource_type and resource_id exist before creating composite index
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns 
+      WHERE table_schema = 'shared' 
+      AND table_name = 'audit_logs' 
+      AND column_name = 'resource_type'
+    ) AND EXISTS (
+      SELECT 1 FROM information_schema.columns 
+      WHERE table_schema = 'shared' 
+      AND table_name = 'audit_logs' 
+      AND column_name = 'resource_id'
+    ) THEN
+      CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON shared.audit_logs(resource_type, resource_id);
+    END IF;
+    
+    -- Check if tags column exists before creating GIN index
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns 
+      WHERE table_schema = 'shared' 
+      AND table_name = 'audit_logs' 
+      AND column_name = 'tags'
+    ) THEN
+      CREATE INDEX IF NOT EXISTS idx_audit_logs_tags ON shared.audit_logs USING GIN(tags);
+    END IF;
+  END IF;
+END $$;
 
 -- Data retention policies
 CREATE TABLE IF NOT EXISTS shared.audit_retention_policies (
@@ -97,8 +149,8 @@ CREATE TABLE IF NOT EXISTS shared.audit_retention_policies (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_audit_retention_policies_tenant_id ON shared.audit_retention_policies(tenant_id);
-CREATE INDEX idx_audit_retention_policies_active ON shared.audit_retention_policies(is_active) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_audit_retention_policies_tenant_id ON shared.audit_retention_policies(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_audit_retention_policies_active ON shared.audit_retention_policies(is_active) WHERE is_active = TRUE;
 
 -- Insert default retention policy (90 days for all logs)
 INSERT INTO shared.audit_retention_policies (tenant_id, resource_type, action_pattern, retention_days, archive_before_delete, is_active)
@@ -123,9 +175,9 @@ CREATE TABLE IF NOT EXISTS shared.audit_logs_archive (
   archived_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_audit_logs_archive_tenant_id ON shared.audit_logs_archive(tenant_id);
-CREATE INDEX idx_audit_logs_archive_created_at ON shared.audit_logs_archive(created_at);
-CREATE INDEX idx_audit_logs_archive_archived_at ON shared.audit_logs_archive(archived_at);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_archive_tenant_id ON shared.audit_logs_archive(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_archive_created_at ON shared.audit_logs_archive(created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_archive_archived_at ON shared.audit_logs_archive(archived_at);
 
 -- GDPR data export requests
 CREATE TABLE IF NOT EXISTS shared.gdpr_export_requests (
@@ -143,10 +195,10 @@ CREATE TABLE IF NOT EXISTS shared.gdpr_export_requests (
   metadata JSONB DEFAULT '{}'::jsonb
 );
 
-CREATE INDEX idx_gdpr_export_requests_tenant_id ON shared.gdpr_export_requests(tenant_id);
-CREATE INDEX idx_gdpr_export_requests_user_id ON shared.gdpr_export_requests(user_id);
-CREATE INDEX idx_gdpr_export_requests_status ON shared.gdpr_export_requests(status);
-CREATE INDEX idx_gdpr_export_requests_requested_at ON shared.gdpr_export_requests(requested_at);
+CREATE INDEX IF NOT EXISTS idx_gdpr_export_requests_tenant_id ON shared.gdpr_export_requests(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_gdpr_export_requests_user_id ON shared.gdpr_export_requests(user_id);
+CREATE INDEX IF NOT EXISTS idx_gdpr_export_requests_status ON shared.gdpr_export_requests(status);
+CREATE INDEX IF NOT EXISTS idx_gdpr_export_requests_requested_at ON shared.gdpr_export_requests(requested_at);
 
 -- GDPR data erasure log (for compliance tracking)
 CREATE TABLE IF NOT EXISTS shared.gdpr_erasure_log (
@@ -162,7 +214,7 @@ CREATE TABLE IF NOT EXISTS shared.gdpr_erasure_log (
   metadata JSONB DEFAULT '{}'::jsonb
 );
 
-CREATE INDEX idx_gdpr_erasure_log_tenant_id ON shared.gdpr_erasure_log(tenant_id);
-CREATE INDEX idx_gdpr_erasure_log_user_id ON shared.gdpr_erasure_log(user_id);
-CREATE INDEX idx_gdpr_erasure_log_executed_at ON shared.gdpr_erasure_log(executed_at);
+CREATE INDEX IF NOT EXISTS idx_gdpr_erasure_log_tenant_id ON shared.gdpr_erasure_log(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_gdpr_erasure_log_user_id ON shared.gdpr_erasure_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_gdpr_erasure_log_executed_at ON shared.gdpr_erasure_log(executed_at);
 

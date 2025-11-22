@@ -3,7 +3,7 @@
  * DRY principle: Centralized database connection and table existence checks
  */
 
-import { Pool, PoolClient } from 'pg';
+import type { PoolClient } from 'pg';
 import { getPool } from '../db/connection';
 
 /**
@@ -66,7 +66,7 @@ export async function tableExists(
     tableExistenceCacheTime.set(cacheKey, now);
 
     return exists;
-  } catch (error) {
+  } catch {
     // On error, assume table doesn't exist and cache negative result
     tableExistenceCache.set(cacheKey, false);
     tableExistenceCacheTime.set(cacheKey, now);

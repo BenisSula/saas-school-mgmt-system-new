@@ -13,6 +13,8 @@ import { DatePicker } from '../../components/ui/DatePicker';
 import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
 import { StatusBanner } from '../../components/ui/StatusBanner';
+import { useTeacherClasses } from '../../hooks/queries/useTeachers';
+import { useMarkAttendance } from '../../hooks/queries/useTeacherPhase7';
 
 type AttendanceStatus = 'present' | 'absent' | 'late';
 
@@ -26,39 +28,25 @@ interface AttendanceRow {
 
 export function TeacherAttendancePage() {
   const { user } = useAuth();
-  const [classes, setClasses] = useState<TeacherClassInfo[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [date, setDate] = useState<string>(defaultDate);
   const [rows, setRows] = useState<AttendanceRow[]>([]);
-  const [loadingClasses, setLoadingClasses] = useState(true);
   const [loadingRoster, setLoadingRoster] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { data: classes = [], isLoading: loadingClasses } = useTeacherClasses();
+  const markAttendanceMutation = useMarkAttendance();
 
   const selectedClass = useMemo(
     () => classes.find((clazz) => clazz.id === selectedClassId) ?? null,
     [classes, selectedClassId]
   );
 
-  const loadClasses = useCallback(async () => {
-    setLoadingClasses(true);
-    setError(null);
-    try {
-      const summaries = await api.teachers.getMyClasses();
-      setClasses(summaries);
-      if (summaries.length > 0) {
-        setSelectedClassId((current) => current || summaries[0].id);
-      }
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoadingClasses(false);
-    }
-  }, []);
-
   useEffect(() => {
-    void loadClasses();
-  }, [loadClasses]);
+    if (classes.length > 0 && !selectedClassId) {
+      setSelectedClassId(classes[0].id);
+    }
+  }, [classes, selectedClassId]);
 
   const loadRoster = async () => {
     if (!selectedClassId) {
@@ -120,14 +108,11 @@ export function TeacherAttendancePage() {
       classId: selectedClassId
     }));
 
-    setSaving(true);
     try {
-      await api.markAttendance(payload);
+      await markAttendanceMutation.mutateAsync(payload);
       toast.success('Attendance recorded successfully.');
     } catch (err) {
       toast.error((err as Error).message);
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -243,7 +228,7 @@ export function TeacherAttendancePage() {
             </div>
 
             <div className="flex justify-end">
-              <Button onClick={() => void handleSave()} loading={saving}>
+              <Button onClick={() => void handleSave()} loading={markAttendanceMutation.isPending}>
                 Save attendance
               </Button>
             </div>

@@ -17,8 +17,8 @@ CREATE TABLE IF NOT EXISTS shared.mfa_devices (
   UNIQUE (user_id, type, name)
 );
 
-CREATE INDEX idx_mfa_devices_user_id ON shared.mfa_devices(user_id);
-CREATE INDEX idx_mfa_devices_enabled ON shared.mfa_devices(is_enabled) WHERE is_enabled = TRUE;
+CREATE INDEX IF NOT EXISTS idx_mfa_devices_user_id ON shared.mfa_devices(user_id);
+CREATE INDEX IF NOT EXISTS idx_mfa_devices_enabled ON shared.mfa_devices(is_enabled) WHERE is_enabled = TRUE;
 
 -- MFA verification attempts (for rate limiting and security)
 CREATE TABLE IF NOT EXISTS shared.mfa_attempts (
@@ -32,8 +32,8 @@ CREATE TABLE IF NOT EXISTS shared.mfa_attempts (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_mfa_attempts_user_id ON shared.mfa_attempts(user_id);
-CREATE INDEX idx_mfa_attempts_created_at ON shared.mfa_attempts(created_at);
+CREATE INDEX IF NOT EXISTS idx_mfa_attempts_user_id ON shared.mfa_attempts(user_id);
+CREATE INDEX IF NOT EXISTS idx_mfa_attempts_created_at ON shared.mfa_attempts(created_at);
 
 -- Enhanced session management
 CREATE TABLE IF NOT EXISTS shared.sessions (
@@ -50,10 +50,10 @@ CREATE TABLE IF NOT EXISTS shared.sessions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_sessions_user_id ON shared.sessions(user_id);
-CREATE INDEX idx_sessions_token_hash ON shared.sessions(token_hash);
-CREATE INDEX idx_sessions_expires_at ON shared.sessions(expires_at);
-CREATE INDEX idx_sessions_revoked_at ON shared.sessions(revoked_at) WHERE revoked_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON shared.sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_token_hash ON shared.sessions(token_hash);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON shared.sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_sessions_revoked_at ON shared.sessions(revoked_at) WHERE revoked_at IS NULL;
 
 -- Password policies per tenant
 CREATE TABLE IF NOT EXISTS shared.password_policies (
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS shared.password_policies (
   UNIQUE (tenant_id)
 );
 
-CREATE INDEX idx_password_policies_tenant_id ON shared.password_policies(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_password_policies_tenant_id ON shared.password_policies(tenant_id);
 
 -- Password history for preventing reuse
 CREATE TABLE IF NOT EXISTS shared.password_history (
@@ -83,8 +83,8 @@ CREATE TABLE IF NOT EXISTS shared.password_history (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_password_history_user_id ON shared.password_history(user_id);
-CREATE INDEX idx_password_history_created_at ON shared.password_history(created_at);
+CREATE INDEX IF NOT EXISTS idx_password_history_user_id ON shared.password_history(user_id);
+CREATE INDEX IF NOT EXISTS idx_password_history_created_at ON shared.password_history(created_at);
 
 -- Account lockout tracking
 CREATE TABLE IF NOT EXISTS shared.account_lockouts (
@@ -96,8 +96,8 @@ CREATE TABLE IF NOT EXISTS shared.account_lockouts (
   UNIQUE (user_id)
 );
 
-CREATE INDEX idx_account_lockouts_user_id ON shared.account_lockouts(user_id);
-CREATE INDEX idx_account_lockouts_locked_until ON shared.account_lockouts(locked_until);
+CREATE INDEX IF NOT EXISTS idx_account_lockouts_user_id ON shared.account_lockouts(user_id);
+CREATE INDEX IF NOT EXISTS idx_account_lockouts_locked_until ON shared.account_lockouts(locked_until);
 
 -- IP whitelisting for tenants
 CREATE TABLE IF NOT EXISTS shared.ip_whitelist (
@@ -112,8 +112,8 @@ CREATE TABLE IF NOT EXISTS shared.ip_whitelist (
   UNIQUE (tenant_id, ip_address)
 );
 
-CREATE INDEX idx_ip_whitelist_tenant_id ON shared.ip_whitelist(tenant_id);
-CREATE INDEX idx_ip_whitelist_active ON shared.ip_whitelist(is_active) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_ip_whitelist_tenant_id ON shared.ip_whitelist(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_ip_whitelist_active ON shared.ip_whitelist(is_active) WHERE is_active = TRUE;
 
 -- Failed login attempts tracking (for lockout)
 CREATE TABLE IF NOT EXISTS shared.failed_login_attempts (
@@ -125,9 +125,9 @@ CREATE TABLE IF NOT EXISTS shared.failed_login_attempts (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_failed_login_attempts_user_id ON shared.failed_login_attempts(user_id);
-CREATE INDEX idx_failed_login_attempts_email ON shared.failed_login_attempts(email);
-CREATE INDEX idx_failed_login_attempts_created_at ON shared.failed_login_attempts(created_at);
+CREATE INDEX IF NOT EXISTS idx_failed_login_attempts_user_id ON shared.failed_login_attempts(user_id);
+CREATE INDEX IF NOT EXISTS idx_failed_login_attempts_email ON shared.failed_login_attempts(email);
+CREATE INDEX IF NOT EXISTS idx_failed_login_attempts_created_at ON shared.failed_login_attempts(created_at);
 
 -- Insert default platform-wide password policy
 INSERT INTO shared.password_policies (tenant_id, min_length, require_uppercase, require_lowercase, require_numbers, require_special_chars, max_age_days, prevent_reuse_count, lockout_attempts, lockout_duration_minutes)

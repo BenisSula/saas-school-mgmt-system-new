@@ -51,7 +51,9 @@ export type Permission =
   | 'overrides:create'
   | 'overrides:revoke'
   | 'permission_overrides:manage'
-  | 'permission_overrides:view';
+  | 'permission_overrides:view'
+  | 'billing:view'
+  | 'billing:manage';
 
 export const rolePermissions: Record<Role, Permission[]> = {
   student: [
@@ -118,7 +120,9 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'announcements:manage',
     'kb:manage',
     'status:view',
-    'status:manage'
+    'status:manage',
+    'billing:view',
+    'billing:manage'
   ],
   superadmin: [
     'dashboard:view',
@@ -166,7 +170,14 @@ export const rolePermissions: Record<Role, Permission[]> = {
 /**
  * Checks if a role has a specific permission
  */
-export function hasPermission(role: Role, permission: Permission): boolean {
+export function hasPermission(role: Role, permission: Permission, additionalRoles?: string[]): boolean {
   const permissions = rolePermissions[role] ?? [];
+  
+  // If user has HOD additional role, also check HOD permissions
+  if (additionalRoles?.includes('hod') && role === 'teacher') {
+    const hodPermissions = rolePermissions['hod'] ?? [];
+    return permissions.includes(permission) || hodPermissions.includes(permission);
+  }
+  
   return permissions.includes(permission);
 }

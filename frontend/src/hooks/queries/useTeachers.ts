@@ -146,3 +146,14 @@ export function useDeleteTeacher() {
   });
 }
 
+/**
+ * Hook to fetch teacher's assigned classes
+ */
+export function useTeacherClasses() {
+  return useQuery({
+    queryKey: ['teacher', 'classes'],
+    queryFn: () => api.teachers.getMyClasses(),
+    staleTime: 30000, // 30 seconds
+  });
+}
+

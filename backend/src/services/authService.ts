@@ -68,6 +68,7 @@ export interface AuthResponse {
     tenantId: string | null;
     isVerified: boolean;
     status: 'pending' | 'active' | 'suspended' | 'rejected';
+    additional_roles?: Array<{ role: string; granted_at?: string; granted_by?: string; metadata?: Record<string, unknown> }>;
   };
 }
 
@@ -346,6 +347,19 @@ export async function login(input: LoginInput, context?: SessionContext): Promis
       }
     }
 
+    // Get additional roles if tenant exists
+    let additionalRoles: Array<{ role: string; granted_at?: string; granted_by?: string; metadata?: Record<string, unknown> }> = [];
+    if (user.tenant_id) {
+      try {
+        const { getUserWithAdditionalRoles } = await import('./userService');
+        const userWithRoles = await getUserWithAdditionalRoles(user.id, user.tenant_id);
+        additionalRoles = userWithRoles.additional_roles || [];
+      } catch (error) {
+        // If additional_roles table doesn't exist or query fails, continue without them
+        console.warn('[auth] Failed to fetch additional roles:', error);
+      }
+    }
+
     const response: AuthResponse = {
       accessToken,
       refreshToken,
@@ -357,7 +371,8 @@ export async function login(input: LoginInput, context?: SessionContext): Promis
         role: user.role,
         tenantId: user.tenant_id,
         isVerified: user.is_verified,
-        status: userStatus
+        status: userStatus,
+        additional_roles: additionalRoles
       }
     };
 
@@ -404,7 +419,7 @@ export async function refreshToken(token: string, context?: SessionContext): Pro
   const tokenInfo = await verifyRefreshToken(pool, token);
 
   const userResult = await pool.query(
-    `SELECT id, email, role, tenant_id, is_verified FROM shared.users WHERE id = $1`,
+    `SELECT id, email, role, tenant_id, is_verified, status FROM shared.users WHERE id = $1`,
     [tokenInfo.userId]
   );
 
@@ -422,6 +437,25 @@ export async function refreshToken(token: string, context?: SessionContext): Pro
 
   await rotateSessionToken(user.id, token, newRefreshToken, context);
 
+  // Safely get status
+  let userStatus: 'pending' | 'active' | 'suspended' | 'rejected' = 'pending';
+  if (user.status) {
+    userStatus = user.status as 'pending' | 'active' | 'suspended' | 'rejected';
+  }
+
+  // Get additional roles if tenant exists
+  let additionalRoles: Array<{ role: string; granted_at?: string; granted_by?: string; metadata?: Record<string, unknown> }> = [];
+  if (user.tenant_id) {
+    try {
+      const { getUserWithAdditionalRoles } = await import('./userService');
+      const userWithRoles = await getUserWithAdditionalRoles(user.id, user.tenant_id);
+      additionalRoles = userWithRoles.additional_roles || [];
+    } catch (error) {
+      // If additional_roles table doesn't exist or query fails, continue without them
+      console.warn('[auth] Failed to fetch additional roles during refresh:', error);
+    }
+  }
+
   return {
     accessToken,
     refreshToken: newRefreshToken,
@@ -432,7 +466,8 @@ export async function refreshToken(token: string, context?: SessionContext): Pro
       role: user.role,
       tenantId: user.tenant_id,
       isVerified: user.is_verified,
-      status: (user.status as 'pending' | 'active' | 'suspended' | 'rejected') ?? 'pending'
+      status: userStatus,
+      additional_roles: additionalRoles
     }
   };
 }

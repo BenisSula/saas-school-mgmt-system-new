@@ -69,18 +69,16 @@ const LINK_PERMISSIONS: Record<string, LinkPermission> = {
   'super-settings': { linkId: 'super-settings', requiredPermissions: ['settings:branding'] },
 
   // HOD links
-  'hod-overview': { linkId: 'hod-overview', requiredPermissions: ['dashboard:view'] },
-  'hod-reports': { linkId: 'hod-reports', requiredPermissions: ['reports:view'] },
-  'hod-analytics': {
-    linkId: 'hod-analytics',
-    requiredPermissions: ['department-analytics', 'performance:charts']
-  }
+  'hod-dashboard': { linkId: 'hod-dashboard', requiredPermissions: ['department-analytics', 'grades:manage'] },
+  'hod-teachers': { linkId: 'hod-teachers', requiredPermissions: ['department-analytics', 'grades:manage'] },
+  'hod-reports': { linkId: 'hod-reports', requiredPermissions: ['department-analytics', 'reports:view'] },
+  'hod-profile': { linkId: 'hod-profile', requiredPermissions: ['profile:view_self'] }
 };
 
 /**
  * Check if user has permission to access a link
  */
-function canAccessLink(role: Role, linkId: string): boolean {
+function canAccessLink(role: Role, linkId: string, additionalRoles?: string[]): boolean {
   const linkPermission = LINK_PERMISSIONS[linkId];
 
   // If no permission requirement, allow access
@@ -96,10 +94,10 @@ function canAccessLink(role: Role, linkId: string): boolean {
 
   if (requireAll) {
     // User must have ALL specified permissions
-    return requiredPermissions.every((perm) => hasPermission(role, perm));
+    return requiredPermissions.every((perm) => hasPermission(role, perm, additionalRoles));
   } else {
     // User must have ANY of the specified permissions
-    return requiredPermissions.some((perm) => hasPermission(role, perm));
+    return requiredPermissions.some((perm) => hasPermission(role, perm, additionalRoles));
   }
 }
 
@@ -108,11 +106,12 @@ function canAccessLink(role: Role, linkId: string): boolean {
  */
 export function filterSidebarLinksByPermission(
   links: SidebarLink[],
-  role: Role | null | undefined
+  role: Role | null | undefined,
+  additionalRoles?: string[]
 ): SidebarLink[] {
   if (!role) {
     return [];
   }
 
-  return links.filter((link) => canAccessLink(role, link.id));
+  return links.filter((link) => canAccessLink(role, link.id, additionalRoles));
 }

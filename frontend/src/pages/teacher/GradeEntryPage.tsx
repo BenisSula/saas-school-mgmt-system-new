@@ -15,6 +15,7 @@ import {
 import { sanitizeIdentifier, sanitizeText } from '../../lib/sanitize';
 import { Select } from '../../components/ui/Select';
 import { StatusBanner } from '../../components/ui/StatusBanner';
+import { useSubmitGrades } from '../../hooks/queries/useTeacherPhase7';
 
 interface GradeRow extends GradeEntryInput {
   id: string;
@@ -27,7 +28,6 @@ export function TeacherGradeEntryPage() {
   const [rows, setRows] = useState<GradeRow[]>([
     { id: 'row-0', studentId: '', subject: '', score: 0 }
   ]);
-  const [isSaving, setIsSaving] = useState(false);
   const [distributionLoading, setDistributionLoading] = useState(false);
   const [distribution, setDistribution] = useState<GradeAggregate[]>([]);
   const [classes, setClasses] = useState<TeacherClassSummary[]>([]);
@@ -36,6 +36,7 @@ export function TeacherGradeEntryPage() {
   const [roster, setRoster] = useState<TeacherClassRosterEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const submitGradesMutation = useSubmitGrades();
 
   const columns: TableColumn<GradeRow>[] = useMemo(
     () => [
@@ -215,14 +216,21 @@ export function TeacherGradeEntryPage() {
       toast.error('Provide an exam identifier.');
       return;
     }
-    const payload: GradeEntryInput[] = rows
+    
+    // Find subject ID from selected subject
+    const selectedSubject = classes
+      .find((clazz) => clazz.id === selectedClassId)
+      ?.subjects.find((subject) => subject.id === selectedSubjectId);
+    
+    const payload = rows
       .filter((row) => row.studentId && row.subject)
-      .map(({ studentId, subject, score, remarks }) => ({
+      .map(({ studentId, score, remarks }) => ({
         studentId: sanitizeIdentifier(studentId),
-        subject: sanitizeText(subject),
+        classId: sanitizeIdentifier(selectedClassId),
+        subjectId: selectedSubject?.id,
+        examId: sanitizeIdentifier(examId),
         score,
-        remarks: remarks ? sanitizeText(remarks) : undefined,
-        classId: sanitizeIdentifier(selectedClassId)
+        remarks: remarks ? sanitizeText(remarks) : undefined
       }));
 
     if (payload.length === 0) {
@@ -230,14 +238,11 @@ export function TeacherGradeEntryPage() {
       return;
     }
 
-    setIsSaving(true);
     try {
-      const response = await api.bulkUpsertGrades(examId, payload);
-      toast.success(`Saved ${response.saved} grade entries.`);
+      await submitGradesMutation.mutateAsync(payload);
+      toast.success(`Saved ${payload.length} grade entries.`);
     } catch (error) {
       toast.error((error as Error).message);
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -305,7 +310,7 @@ export function TeacherGradeEntryPage() {
             <Button variant="outline" onClick={fetchDistribution} loading={distributionLoading}>
               Load distribution
             </Button>
-            <Button onClick={handleSave} loading={isSaving}>
+            <Button onClick={handleSave} loading={submitGradesMutation.isPending}>
               Save grades
             </Button>
           </div>

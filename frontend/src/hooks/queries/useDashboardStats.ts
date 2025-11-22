@@ -1,6 +1,38 @@
-import { useQuery, queryKeys } from '../useQuery';
-import { api } from '../../lib/api';
+/**
+ * @deprecated This file is deprecated. Use hooks from '../queries/dashboard' instead.
+ * This file provides backward-compatible wrappers for existing code.
+ * 
+ * Migration path:
+ * - useTeacherStats() -> useTeacherStatsQuery()
+ * - useStudentStats() -> useStudentStatsQuery()
+ * - useClassStats() -> useClassStatsQuery()
+ * - useSubjectStats() -> useSubjectStatsQuery()
+ * - useTodayAttendance() -> useTodayAttendanceQuery()
+ * - useActiveSessions() -> useActiveSessionsQuery()
+ * - useLoginAttempts() -> useLoginAttemptsQuery()
+ * - useRecentActivity() -> useRecentActivityQuery()
+ */
 
+import {
+  useTeacherStatsQuery,
+  useStudentStatsQuery,
+  useClassStatsQuery,
+  useSubjectStatsQuery,
+  useTodayAttendanceQuery,
+  useActiveSessionsQuery,
+  useLoginAttemptsQuery,
+  useRecentActivityQuery,
+  type TeacherStats as NewTeacherStats,
+  type StudentStats as NewStudentStats,
+  type ClassStats as NewClassStats,
+  type SubjectStats as NewSubjectStats,
+  type TodayAttendance as NewTodayAttendance,
+  type ActiveSession as NewActiveSession,
+  type LoginAttempt as NewLoginAttempt,
+  type RecentActivity as NewRecentActivity
+} from './dashboard';
+
+// Legacy interfaces for backward compatibility
 export interface TeacherStats {
   total: number;
   active: number;
@@ -64,183 +96,158 @@ export interface RecentActivity {
 }
 
 /**
- * Hook to fetch teacher statistics
+ * @deprecated Use useTeacherStatsQuery() from '../queries/dashboard' instead
+ * Hook to fetch teacher statistics (backward-compatible wrapper)
  */
 export function useTeacherStats() {
-  return useQuery(queryKeys.admin.teacherStats(), async () => {
-    const teachers = await api.listTeachers();
-    const total = teachers.length;
-    const active = teachers.filter((t) => t.status === 'active' || !t.status).length;
-    const assigned = teachers.filter((t) => t.assigned_classes && t.assigned_classes.length > 0).length;
-    const unassigned = total - assigned;
+  const { data, ...rest } = useTeacherStatsQuery();
+  
+  // Transform new format to old format
+  const transformed: TeacherStats | undefined = data ? {
+    total: data.totalTeachers,
+    active: data.activeTeachers,
+    assigned: data.teachersByDepartment.reduce((sum, dept) => sum + dept.count, 0), // Approximate
+    unassigned: data.totalTeachers - data.teachersByDepartment.reduce((sum, dept) => sum + dept.count, 0)
+  } : undefined;
 
-    return {
-      total,
-      active,
-      assigned,
-      unassigned
-    } as TeacherStats;
-  });
+  return { data: transformed, ...rest };
 }
 
 /**
- * Hook to fetch student statistics
+ * @deprecated Use useStudentStatsQuery() from '../queries/dashboard' instead
+ * Hook to fetch student statistics (backward-compatible wrapper)
  */
 export function useStudentStats() {
-  return useQuery(queryKeys.admin.studentStats(), async () => {
-    const students = await api.listStudents();
-    const total = students.length;
-    const active = students.filter((s) => s.enrollment_status === 'active' || !s.enrollment_status).length;
-    
-    // Count by class
-    const byClass: Record<string, number> = {};
-    students.forEach((s) => {
-      const classId = s.class_id || 'unassigned';
-      byClass[classId] = (byClass[classId] || 0) + 1;
-    });
+  const { data, ...rest } = useStudentStatsQuery();
+  
+  // Transform new format to old format
+  const transformed: StudentStats | undefined = data ? {
+    total: data.totalStudents,
+    active: data.activeStudents,
+    byClass: data.studentsByClass.reduce((acc, item) => {
+      acc[item.classId] = item.count;
+      return acc;
+    }, {} as Record<string, number>),
+    byGender: {
+      male: data.maleCount,
+      female: data.femaleCount,
+      other: data.totalStudents - data.maleCount - data.femaleCount
+    }
+  } : undefined;
 
-    // Count by gender (assuming gender field exists)
-    const byGender = { male: 0, female: 0, other: 0 };
-    students.forEach((s) => {
-      const gender = (s as unknown as { gender?: string }).gender?.toLowerCase() || 'other';
-      if (gender === 'male' || gender === 'm') {
-        byGender.male++;
-      } else if (gender === 'female' || gender === 'f') {
-        byGender.female++;
-      } else {
-        byGender.other++;
-      }
-    });
-
-    return {
-      total,
-      active,
-      byClass,
-      byGender
-    } as StudentStats;
-  });
+  return { data: transformed, ...rest };
 }
 
 /**
- * Hook to fetch class statistics
+ * @deprecated Use useClassStatsQuery() from '../queries/dashboard' instead
+ * Hook to fetch class statistics (backward-compatible wrapper)
  */
 export function useClassStats() {
-  return useQuery(queryKeys.admin.classStats(), async () => {
-    const [classes, students, teachers] = await Promise.all([
-      api.listClasses(),
-      api.listStudents(),
-      api.listTeachers()
-    ]);
+  const { data, ...rest } = useClassStatsQuery();
+  
+  // Transform new format to old format
+  const transformed: ClassStats | undefined = data ? {
+    total: data.totalClasses,
+    withStudents: data.classesByLevel.reduce((sum, level) => sum + level.count, 0), // Approximate
+    withTeachers: data.activeClasses // Approximate
+  } : undefined;
 
-    const total = classes.length;
-    const classIds = new Set(students.map((s) => s.class_id).filter(Boolean));
-    const withStudents = classIds.size;
-
-    const teacherClassIds = new Set(
-      teachers.flatMap((t) => t.assigned_classes || []).filter(Boolean)
-    );
-    const withTeachers = teacherClassIds.size;
-
-    return {
-      total,
-      withStudents,
-      withTeachers
-    } as ClassStats;
-  });
+  return { data: transformed, ...rest };
 }
 
 /**
- * Hook to fetch subject statistics
+ * @deprecated Use useSubjectStatsQuery() from '../queries/dashboard' instead
+ * Hook to fetch subject statistics (backward-compatible wrapper)
  */
 export function useSubjectStats() {
-  return useQuery(queryKeys.admin.subjectStats(), async () => {
-    const subjects = await api.admin.listSubjects();
-    const total = subjects.length;
-    
-    // Count assigned subjects (subjects that appear in teacher assignments)
-    const teachers = await api.listTeachers();
-    const assignedSubjectIds = new Set(
-      teachers.flatMap((t) => t.subjects || []).filter(Boolean)
-    );
-    const assigned = assignedSubjectIds.size;
-    const unassigned = total - assigned;
+  const { data, ...rest } = useSubjectStatsQuery();
+  
+  // Transform new format to old format
+  const transformed: SubjectStats | undefined = data ? {
+    total: data.totalSubjects,
+    assigned: data.assignedSubjects,
+    unassigned: data.unassignedSubjects
+  } : undefined;
 
-    return {
-      total,
-      assigned,
-      unassigned
-    } as SubjectStats;
-  });
+  return { data: transformed, ...rest };
 }
 
 /**
- * Hook to fetch today's attendance statistics
+ * @deprecated Use useTodayAttendanceQuery() from '../queries/dashboard' instead
+ * Hook to fetch today's attendance statistics (backward-compatible wrapper)
  */
 export function useTodayAttendance() {
-  return useQuery(queryKeys.admin.todayAttendance(), async () => {
-    const today = new Date().toISOString().split('T')[0];
-    const attendance = await api.getAttendanceAggregate({ from: today, to: today });
-    
-    let present = 0;
-    let absent = 0;
-    let late = 0;
-    let total = 0;
+  const { data, ...rest } = useTodayAttendanceQuery();
+  
+  // Transform new format to old format
+  const transformed: TodayAttendance | undefined = data ? {
+    present: data.presentCount,
+    absent: data.absentCount,
+    late: 0, // Not available in new format
+    total: data.presentCount + data.absentCount,
+    percentage: data.attendanceRate
+  } : undefined;
 
-    attendance.forEach((record) => {
-      if (record.status === 'present') present += record.count;
-      else if (record.status === 'absent') absent += record.count;
-      else if (record.status === 'late') late += record.count;
-      total += record.count;
-    });
-
-    const percentage = total > 0 ? Math.round(((present + late) / total) * 100) : 0;
-
-    return {
-      present,
-      absent,
-      late,
-      total,
-      percentage
-    } as TodayAttendance;
-  });
+  return { data: transformed, ...rest };
 }
 
 /**
- * Hook to fetch recent activity logs
- * Note: ActivityLog component uses useActivityLogs hook directly
- * This is kept for API consistency but ActivityLog handles its own data fetching
- */
-export function useRecentActivity(limit = 20) {
-  // ActivityLog component handles its own data fetching via useActivityLogs
-  // This hook is kept for consistency but returns empty array
-  return useQuery(queryKeys.admin.recentActivity(limit), async () => {
-    return [] as RecentActivity[];
-  });
-}
-
-/**
- * Hook to fetch login attempts (successful and failed)
- */
-export function useLoginAttempts(days = 1) {
-  return useQuery(queryKeys.admin.loginAttempts(days), async () => {
-    // TODO: Implement backend endpoint /admin/users/login-attempts
-    // For now, return mock data structure
-    return {
-      successful: 0,
-      failed: 0,
-      attempts: [] as LoginAttempt[]
-    };
-  });
-}
-
-/**
- * Hook to fetch active sessions
+ * @deprecated Use useActiveSessionsQuery() from '../queries/dashboard' instead
+ * Hook to fetch active sessions (backward-compatible wrapper)
  */
 export function useActiveSessions() {
-  return useQuery(queryKeys.admin.activeSessions(), async () => {
-    // TODO: Implement backend endpoint /admin/sessions/active
-    // For now, return empty array
-    return [] as ActiveSession[];
-  });
+  const { data, ...rest } = useActiveSessionsQuery();
+  
+  // Transform new format to old format
+  const transformed: ActiveSession[] | undefined = data?.sessions.map((session) => ({
+    id: session.id,
+    userId: session.userId,
+    userEmail: '', // Not available in new format
+    ipAddress: session.ipAddress || undefined,
+    userAgent: session.userAgent || undefined,
+    lastActivity: session.updatedAt,
+    deviceType: (session.deviceInfo as { deviceType?: string })?.deviceType || undefined
+  }));
+
+  return { data: transformed, ...rest };
 }
 
+/**
+ * @deprecated Use useLoginAttemptsQuery() from '../queries/dashboard' instead
+ * Hook to fetch login attempts (backward-compatible wrapper)
+ */
+export function useLoginAttempts(days = 1) {
+  const { data, ...rest } = useLoginAttemptsQuery(days);
+  
+  // Transform new format to old format
+  const transformed: LoginAttempt[] | undefined = data?.attempts.map((attempt) => ({
+    id: '', // Not available in new format
+    email: attempt.email,
+    success: attempt.success,
+    ipAddress: attempt.ipAddress || undefined,
+    userAgent: attempt.userAgent || undefined,
+    timestamp: attempt.attemptedAt
+  }));
+
+  return { data: transformed, ...rest };
+}
+
+/**
+ * @deprecated Use useRecentActivityQuery() from '../queries/dashboard' instead
+ * Hook to fetch recent activity logs (backward-compatible wrapper)
+ */
+export function useRecentActivity(limit = 20) {
+  const { data, ...rest } = useRecentActivityQuery(limit);
+  
+  // Transform new format to old format
+  const transformed: RecentActivity[] | undefined = data?.activities.map((activity) => ({
+    id: activity.id,
+    action: activity.action,
+    description: `${activity.action} on ${activity.resourceType || 'resource'}`,
+    userEmail: undefined, // Not available in new format
+    timestamp: typeof activity.createdAt === 'string' ? activity.createdAt : activity.createdAt?.toString() || '',
+    severity: undefined // Not available in new format
+  }));
+
+  return { data: transformed, ...rest };
+}

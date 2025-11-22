@@ -11,6 +11,7 @@ import { useTeacherDashboard } from '../../hooks/queries/useDashboardQueries';
 import { Users, BookOpen, GraduationCap, AlertCircle } from 'lucide-react';
 import type { TeacherAssignmentSummary } from '../../lib/api';
 import { Button } from '../../components/ui/Button';
+import { TeacherQuickActions } from '../../components/teacher/TeacherQuickActions';
 
 export default function TeacherDashboardPage() {
   const { overview, loading, error } = useTeacherDashboard();
@@ -45,13 +46,6 @@ export default function TeacherDashboardPage() {
     ];
   }, [overview]);
 
-  const quickActions = useMemo(() => {
-    return [
-      { label: 'View Students', path: '/dashboard/teacher/students', icon: Users },
-      { label: 'Mark Attendance', path: '/dashboard/teacher/attendance', icon: BookOpen },
-      { label: 'Enter Grades', path: '/dashboard/teacher/grades', icon: GraduationCap }
-    ];
-  }, []);
 
   // Class distribution chart
   const classDistribution: BarChartData[] = useMemo(() => {
@@ -178,17 +172,33 @@ export default function TeacherDashboardPage() {
               </p>
             </div>
             <div className="flex gap-2">
-              {quickActions.map((action) => (
-                <Link key={action.path} to={action.path}>
-                  <Button variant="outline" size="sm">
-                    <action.icon className="h-4 w-4 mr-2" />
-                    {action.label}
-                  </Button>
-                </Link>
-              ))}
+              <Link to="/dashboard/teacher/students">
+                <Button variant="outline" size="sm">
+                  <Users className="h-4 w-4 mr-2" />
+                  View Students
+                </Button>
+              </Link>
+              <Link to="/dashboard/teacher/attendance">
+                <Button variant="outline" size="sm">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Mark Attendance
+                </Button>
+              </Link>
+              <Link to="/dashboard/teacher/grades">
+                <Button variant="outline" size="sm">
+                  <GraduationCap className="h-4 w-4 mr-2" />
+                  Enter Grades
+                </Button>
+              </Link>
             </div>
           </div>
         </header>
+
+        {/* Quick Actions */}
+        <section className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
+          <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+          <TeacherQuickActions />
+        </section>
 
         {/* Stats Cards */}
         <section

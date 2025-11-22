@@ -262,5 +262,5 @@ This link will expire in 7 days.',
     '{"reportName": "string", "reportDescription": "string", "rowCount": "number", "generatedAt": "string", "downloadUrl": "string", "format": "string"}'::jsonb,
     TRUE
   )
-ON CONFLICT (template_key, tenant_id, version) DO NOTHING;
+ON CONFLICT (template_key) DO NOTHING;
 

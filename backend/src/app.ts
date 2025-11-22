@@ -165,6 +165,27 @@ app.use('/admin', authenticate, tenantResolver(), enhancedTenantIsolation, admin
 // Admin users routes (HOD management)
 import adminUsersRouter from './routes/admin/users';
 app.use('/admin/users', authenticate, tenantResolver(), enhancedTenantIsolation, adminActionLimiter, csrfProtection, auditAdminActions, cachePolicies.admin, adminUsersRouter);
+// Admin departments routes
+import adminDepartmentsRouter from './routes/admin/departments';
+app.use('/admin/departments', authenticate, tenantResolver(), enhancedTenantIsolation, adminActionLimiter, csrfProtection, auditAdminActions, cachePolicies.admin, adminDepartmentsRouter);
+// Admin classes routes
+import adminClassesRouter from './routes/admin/classes';
+app.use('/admin/classes', authenticate, tenantResolver(), enhancedTenantIsolation, adminActionLimiter, csrfProtection, auditAdminActions, cachePolicies.admin, adminClassesRouter);
+// Admin user management routes
+import adminUserManagementRouter from './routes/admin/userManagement';
+app.use('/admin/users', authenticate, tenantResolver(), enhancedTenantIsolation, adminActionLimiter, csrfProtection, auditAdminActions, cachePolicies.admin, adminUserManagementRouter);
+// Admin dashboard routes
+import adminDashboardRouter from './routes/admin/dashboard';
+app.use('/admin/dashboard', authenticate, tenantResolver(), enhancedTenantIsolation, adminActionLimiter, csrfProtection, auditAdminActions, cachePolicies.admin, adminDashboardRouter);
+// Admin reports routes
+import adminReportsRouter from './routes/admin/reports';
+app.use('/admin/reports', authenticate, tenantResolver(), enhancedTenantIsolation, adminActionLimiter, csrfProtection, auditAdminActions, cachePolicies.admin, adminReportsRouter);
+// Admin notifications routes
+import adminNotificationsRouter from './routes/admin/notifications';
+app.use('/admin', authenticate, tenantResolver(), enhancedTenantIsolation, adminActionLimiter, csrfProtection, auditAdminActions, cachePolicies.admin, adminNotificationsRouter);
+// Admin billing routes
+import adminBillingRouter from './routes/admin/billing';
+app.use('/admin/billing', authenticate, tenantResolver(), enhancedTenantIsolation, adminActionLimiter, csrfProtection, auditAdminActions, cachePolicies.admin, adminBillingRouter);
 
 // File upload routes
 import uploadRouter from './routes/upload';
@@ -173,6 +194,7 @@ app.use('/upload', uploadRouter);
 // Export routes
 import exportRouter from './routes/export';
 app.use('/reports/export', exportRouter);
+
 
 // Serve uploaded files statically
 import path from 'path';

@@ -180,6 +180,7 @@ export interface AuthUser {
   tenantId: string | null;
   isVerified: boolean;
   status: UserStatus;
+  additional_roles?: Array<{ role: string; granted_at?: string; granted_by?: string; metadata?: Record<string, unknown> }>;
 }
 
 export interface AuthResponse {
@@ -792,6 +793,69 @@ export interface TeacherStudent {
   class_id?: string | null;
   class_uuid?: string | null;
   admission_number?: string | null;
+}
+
+// Billing Types
+export interface Subscription {
+  id: string;
+  tenant_id: string;
+  stripe_subscription_id?: string;
+  stripe_customer_id?: string;
+  plan_id: string;
+  plan_name?: string;
+  status: 'active' | 'canceled' | 'past_due' | 'trialing' | 'unpaid';
+  billing_cycle?: 'monthly' | 'yearly';
+  billing_interval?: 'month' | 'year';
+  amount?: number;
+  price_cents?: number;
+  currency?: string;
+  current_period_start?: string;
+  current_period_end?: string;
+  trial_end?: string;
+  cancel_at_period_end?: boolean;
+  canceled_at?: string;
+  metadata?: Record<string, unknown>;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface BillingInvoice {
+  id: string;
+  tenant_id: string;
+  subscription_id?: string;
+  stripe_invoice_id?: string;
+  invoice_number: string;
+  amount?: number;
+  amount_cents?: number;
+  currency?: string;
+  status: 'draft' | 'open' | 'paid' | 'void' | 'uncollectible';
+  due_date?: string;
+  paid_at?: string;
+  pdf_url?: string;
+  hosted_invoice_url?: string;
+  metadata?: Record<string, unknown>;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface BillingPayment {
+  id: string;
+  tenant_id: string;
+  invoice_id?: string;
+  user_id?: string;
+  stripe_payment_intent_id?: string;
+  stripe_charge_id?: string;
+  amount?: number;
+  amount_cents?: number;
+  currency?: string;
+  status: 'pending' | 'succeeded' | 'failed' | 'refunded' | 'canceled';
+  provider?: string;
+  provider_payment_id?: string;
+  payment_method?: string;
+  failure_reason?: string;
+  metadata?: Record<string, unknown>;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Backend returns snake_case with JSON strings, transform to frontend format
@@ -1444,7 +1508,103 @@ export const api = {
     markMessageAsRead: (messageId: string) =>
       apiFetch<void>(`/student/messages/${messageId}/read`, {
         method: 'PATCH'
-      })
+      }),
+    // Phase 7: Dashboard
+    getDashboard: () => apiFetch<{
+      attendance: {
+        summary: { present: number; total: number; percentage: number };
+        recent: Array<{ date: string; status: string }>;
+      };
+      grades: {
+        recent: Array<{
+          subject: string;
+          score: number;
+          grade: string | null;
+          exam: string | null;
+          date: string;
+        }>;
+        summary: { average: number; totalSubjects: number };
+      };
+      classSchedule: Array<{ day: string; time: string; subject: string; teacher: string }>;
+      resources: Array<{
+        id: string;
+        title: string;
+        description: string | null;
+        file_url: string;
+        file_type: string;
+        created_at: string;
+      }>;
+      announcements: Array<{
+        id: string;
+        message: string;
+        teacher_name: string | null;
+        created_at: string;
+      }>;
+      upcomingTasks: Array<{ id: string; title: string; dueDate: string; subject: string }>;
+    }>('/students/me/dashboard'),
+    // Phase 7: Announcements
+    getAnnouncements: (classId: string) =>
+      apiFetch<Array<{
+        id: string;
+        tenant_id: string;
+        class_id: string;
+        teacher_id: string;
+        message: string;
+        attachments: Array<{ filename: string; url: string }> | null;
+        created_at: string;
+        teacher_name?: string;
+      }>>(`/students/announcements?classId=${classId}`),
+    // Phase 7: Resources
+    getResources: (classId: string) =>
+      apiFetch<Array<{
+        id: string;
+        tenant_id: string;
+        teacher_id: string;
+        class_id: string;
+        title: string;
+        description: string | null;
+        file_url: string;
+        file_type: string;
+        size: number;
+        created_at: string;
+      }>>(`/students/resources?classId=${classId}`),
+    // Phase 7: Attendance (already exists but ensure it's accessible)
+    getAttendance: (params?: { from?: string; to?: string }) => {
+      const queryParams = new URLSearchParams();
+      if (params?.from) queryParams.append('from', params.from);
+      if (params?.to) queryParams.append('to', params.to);
+      const queryString = queryParams.toString();
+      return apiFetch<{
+        history: Array<{
+          id: string;
+          student_id: string;
+          class_id: string;
+          status: string;
+          attendance_date: string;
+        }>;
+        summary: { present: number; total: number; percentage: number };
+      }>(`/students/attendance${queryString ? `?${queryString}` : ''}`);
+    },
+    // Phase 7: Grades
+    getGrades: (params?: { term?: string }) => {
+      const queryParams = new URLSearchParams();
+      if (params?.term) queryParams.append('term', params.term);
+      const queryString = queryParams.toString();
+      return apiFetch<Array<{
+        id: string;
+        student_id: string;
+        class_id: string;
+        subject_id: string | null;
+        exam_id: string | null;
+        score: number;
+        grade: string | null;
+        remarks: string | null;
+        subject_name: string | null;
+        exam_name: string | null;
+        class_name: string | null;
+        created_at: string;
+      }>>(`/students/grades${queryString ? `?${queryString}` : ''}`);
+    }
   },
 
   // RBAC
@@ -2433,6 +2593,53 @@ export const api = {
       return apiFetch<Blob>(`/superuser/investigations/cases/${caseId}/export?format=${format}`, {
         responseType: 'blob'
       });
+    },
+    // Maintenance Operations
+    runMigrations: (tenantId?: string | null) =>
+      apiFetch<{
+        success: boolean;
+        message: string;
+        data: {
+          success: boolean;
+          migrationsRun: number;
+          errors: string[];
+          duration: number;
+        };
+      }>('/superuser/maintenance/run-migrations', {
+        method: 'POST',
+        body: JSON.stringify({ tenantId: tenantId || null })
+      }),
+    clearCache: (schoolId: string) =>
+      apiFetch<{
+        success: boolean;
+        message: string;
+        data: {
+          success: boolean;
+          clearedKeys: number;
+          errors: string[];
+        };
+      }>(`/superuser/maintenance/clear-cache/${schoolId}`, {
+        method: 'POST'
+      }),
+    checkSchemaHealth: (tenantId?: string | null) => {
+      const params = tenantId ? `?tenantId=${tenantId}` : '';
+      return apiFetch<{
+        success: boolean;
+        data: Array<{
+          tenantId: string;
+          schemaName: string;
+          status: 'healthy' | 'degraded' | 'unhealthy';
+          issues: string[];
+          tableCount: number;
+          lastMigration?: string;
+        }>;
+        summary: {
+          total: number;
+          healthy: number;
+          degraded: number;
+          unhealthy: number;
+        };
+      }>(`/superuser/maintenance/schema-health${params}`);
     }
   },
   admin: {
@@ -2519,7 +2726,429 @@ export const api = {
       }>(`/students/${studentId}/class-change-request`, {
         method: 'POST',
         body: JSON.stringify(payload)
-      })
+      }),
+    // Dashboard
+    getDashboard: () => apiFetch<{
+      users: {
+        teachers: number;
+        students: number;
+        hods: number;
+        activeTeachers: number;
+        activeStudents: number;
+      };
+      departments: number;
+      classes: number;
+      students: number;
+      activity: {
+        last7Days: number;
+        loginsLast7Days: number;
+      };
+    }>('/admin/dashboard'),
+    // Departments
+    listDepartments: (includeCounts?: boolean) => {
+      const params = includeCounts === false ? '?includeCounts=false' : '';
+      return apiFetch<Array<{
+        id: string;
+        name: string;
+        slug: string;
+        contactEmail: string | null;
+        contactPhone: string | null;
+        hodCount?: number;
+        teacherCount?: number;
+        createdAt: string;
+        updatedAt: string;
+      }>>(`/admin/departments${params}`);
+    },
+    getDepartment: (id: string) => apiFetch<{
+      id: string;
+      name: string;
+      slug: string;
+      contactEmail: string | null;
+      contactPhone: string | null;
+      createdAt: string;
+      updatedAt: string;
+    }>(`/admin/departments/${id}`),
+    createDepartment: (payload: {
+      name: string;
+      slug?: string;
+      contactEmail?: string;
+      contactPhone?: string;
+      metadata?: Record<string, unknown>;
+    }) => apiFetch<{
+      id: string;
+      name: string;
+      slug: string;
+      contactEmail: string | null;
+      contactPhone: string | null;
+      createdAt: string;
+      updatedAt: string;
+    }>('/admin/departments', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+    updateDepartment: (id: string, payload: Partial<{
+      name: string;
+      slug?: string;
+      contactEmail?: string;
+      contactPhone?: string;
+      metadata?: Record<string, unknown>;
+    }>) => apiFetch<{
+      id: string;
+      name: string;
+      slug: string;
+      contactEmail: string | null;
+      contactPhone: string | null;
+      createdAt: string;
+      updatedAt: string;
+    }>(`/admin/departments/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload)
+    }),
+    deleteDepartment: (id: string) => apiFetch<void>(`/admin/departments/${id}`, {
+      method: 'DELETE'
+    }),
+    assignHODToDepartment: (departmentId: string, userId: string) => apiFetch<{ message: string }>(
+      `/admin/departments/${departmentId}/assign-hod`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ userId })
+      }
+    ),
+    // Classes
+    listClasses: (includeCounts?: boolean) => {
+      const params = includeCounts === false ? '?includeCounts=false' : '';
+      return apiFetch<Array<{
+        id: string;
+        name: string;
+        description: string | null;
+        gradeLevel: string | null;
+        section: string | null;
+        departmentId: string | null;
+        classTeacherId: string | null;
+        capacity: number | null;
+        academicYear: string | null;
+        studentCount?: number;
+        teacherName?: string;
+        createdAt: string;
+        updatedAt: string;
+      }>>(`/admin/classes${params}`);
+    },
+    getClass: (id: string) => apiFetch<{
+      id: string;
+      name: string;
+      description: string | null;
+      gradeLevel: string | null;
+      section: string | null;
+      departmentId: string | null;
+      classTeacherId: string | null;
+      capacity: number | null;
+      academicYear: string | null;
+      createdAt: string;
+      updatedAt: string;
+    }>(`/admin/classes/${id}`),
+    createClass: (payload: {
+      name: string;
+      description?: string;
+      gradeLevel?: string;
+      section?: string;
+      departmentId?: string;
+      capacity?: number;
+      academicYear?: string;
+      metadata?: Record<string, unknown>;
+    }) => apiFetch<{
+      id: string;
+      name: string;
+      description: string | null;
+      gradeLevel: string | null;
+      section: string | null;
+      departmentId: string | null;
+      classTeacherId: string | null;
+      capacity: number | null;
+      academicYear: string | null;
+      createdAt: string;
+      updatedAt: string;
+    }>('/admin/classes', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+    updateClass: (id: string, payload: Partial<{
+      name: string;
+      description?: string;
+      gradeLevel?: string;
+      section?: string;
+      departmentId?: string;
+      capacity?: number;
+      academicYear?: string;
+      metadata?: Record<string, unknown>;
+    }>) => apiFetch<{
+      id: string;
+      name: string;
+      description: string | null;
+      gradeLevel: string | null;
+      section: string | null;
+      departmentId: string | null;
+      classTeacherId: string | null;
+      capacity: number | null;
+      academicYear: string | null;
+      createdAt: string;
+      updatedAt: string;
+    }>(`/admin/classes/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload)
+    }),
+    deleteClass: (id: string) => apiFetch<void>(`/admin/classes/${id}`, {
+      method: 'DELETE'
+    }),
+    assignClassTeacher: (classId: string, teacherUserId: string) => apiFetch<{ message: string }>(
+      `/admin/classes/${classId}/assign-teacher`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ teacherUserId })
+      }
+    ),
+    assignStudentsToClass: (classId: string, studentIds: string[]) => apiFetch<{
+      assigned: number;
+      failed: number;
+    }>(`/admin/classes/${classId}/assign-students`, {
+      method: 'POST',
+      body: JSON.stringify({ studentIds })
+    }),
+    // User Management
+    createHOD: (payload: {
+      email: string;
+      password: string;
+      fullName: string;
+      phone?: string;
+      departmentId?: string;
+      qualifications?: string;
+      yearsOfExperience?: number;
+      subjects?: string[];
+    }) => apiFetch<{
+      userId: string;
+      profileId: string;
+      email: string;
+      role: string;
+      status: 'active';
+    }>('/admin/users/hod/create', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+    createTeacher: (payload: {
+      email: string;
+      password: string;
+      fullName: string;
+      phone?: string;
+      qualifications?: string;
+      yearsOfExperience?: number;
+      subjects?: string[];
+      teacherId?: string;
+    }) => apiFetch<{
+      userId: string;
+      profileId: string;
+      email: string;
+      role: string;
+      status: 'active';
+    }>('/admin/users/teacher/create', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+    createStudent: (payload: {
+      email: string;
+      password: string;
+      fullName: string;
+      gender?: 'male' | 'female' | 'other';
+      dateOfBirth?: string;
+      parentGuardianName?: string;
+      parentGuardianContact?: string;
+      studentId?: string;
+      classId?: string;
+    }) => apiFetch<{
+      userId: string;
+      profileId: string;
+      email: string;
+      role: string;
+      status: 'active';
+    }>('/admin/users/student/create', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+    listUsers: (filters?: { role?: string; status?: string }) => {
+      const params = new URLSearchParams();
+      if (filters?.role) params.append('role', filters.role);
+      if (filters?.status) params.append('status', filters.status);
+      const query = params.toString();
+      return apiFetch<Array<{
+        id: string;
+        email: string;
+        role: string;
+        status: string;
+        isVerified: boolean;
+        createdAt: string;
+      }>>(`/admin/users${query ? `?${query}` : ''}`);
+    },
+    disableUser: (id: string) => apiFetch<{ message: string }>(`/admin/users/${id}/disable`, {
+      method: 'PATCH'
+    }),
+    enableUser: (id: string) => apiFetch<{ message: string }>(`/admin/users/${id}/enable`, {
+      method: 'PATCH'
+    }),
+    // Reports
+    getActivityReport: (filters?: {
+      startDate?: string;
+      endDate?: string;
+      userId?: string;
+      action?: string;
+      limit?: number;
+      offset?: number;
+    }) => {
+      const params = new URLSearchParams();
+      if (filters?.startDate) params.append('startDate', filters.startDate);
+      if (filters?.endDate) params.append('endDate', filters.endDate);
+      if (filters?.userId) params.append('userId', filters.userId);
+      if (filters?.action) params.append('action', filters.action);
+      if (filters?.limit) params.append('limit', String(filters.limit));
+      if (filters?.offset) params.append('offset', String(filters.offset));
+      const query = params.toString();
+      return apiFetch<{
+        logs: Array<{
+          id: string;
+          userId: string;
+          action: string;
+          resourceType: string;
+          resourceId: string;
+          details: Record<string, unknown>;
+          createdAt: string;
+        }>;
+        total: number;
+      }>(`/admin/reports/activity${query ? `?${query}` : ''}`);
+    },
+    getLoginReport: (filters?: {
+      startDate?: string;
+      endDate?: string;
+      userId?: string;
+      limit?: number;
+      offset?: number;
+    }) => {
+      const params = new URLSearchParams();
+      if (filters?.startDate) params.append('startDate', filters.startDate);
+      if (filters?.endDate) params.append('endDate', filters.endDate);
+      if (filters?.userId) params.append('userId', filters.userId);
+      if (filters?.limit) params.append('limit', String(filters.limit));
+      if (filters?.offset) params.append('offset', String(filters.offset));
+      const query = params.toString();
+      return apiFetch<{
+        logins: Array<{
+          id: string;
+          userId: string;
+          ipAddress: string;
+          userAgent: string;
+          loginAt: string;
+          success: boolean;
+          failureReason: string | null;
+        }>;
+        total: number;
+      }>(`/admin/reports/logins${query ? `?${query}` : ''}`);
+    },
+    getPerformanceReport: (filters?: {
+      classId?: string;
+      subjectId?: string;
+      academicYear?: string;
+    }) => {
+      const params = new URLSearchParams();
+      if (filters?.classId) params.append('classId', filters.classId);
+      if (filters?.subjectId) params.append('subjectId', filters.subjectId);
+      if (filters?.academicYear) params.append('academicYear', filters.academicYear);
+      const query = params.toString();
+      return apiFetch<{
+        classSubjectPerformance: Array<{
+          class_name: string;
+          subject: string;
+          exam_count: number;
+          avg_score: number;
+          min_score: number;
+          max_score: number;
+        }>;
+        topStudents: Array<{
+          student_id: string;
+          student_name: string;
+          class_name: string;
+          exams_taken: number;
+          avg_score: number;
+        }>;
+      }>(`/admin/reports/performance${query ? `?${query}` : ''}`);
+    },
+    // Notifications
+    createAnnouncement: (payload: {
+      title: string;
+      content: string;
+      targetRoles: Array<'admin' | 'hod' | 'teacher' | 'student'>;
+      priority?: 'low' | 'normal' | 'high' | 'urgent';
+      expiresAt?: string;
+    }) => apiFetch<{ id: string }>('/admin/announcements', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+    listAnnouncements: (filters?: {
+      limit?: number;
+      offset?: number;
+      targetRole?: 'admin' | 'hod' | 'teacher' | 'student';
+    }) => {
+      const params = new URLSearchParams();
+      if (filters?.limit) params.append('limit', String(filters.limit));
+      if (filters?.offset) params.append('offset', String(filters.offset));
+      if (filters?.targetRole) params.append('targetRole', filters.targetRole);
+      const query = params.toString();
+      return apiFetch<{
+        announcements: Array<{
+          id: string;
+          title: string;
+          content: string;
+          targetRoles: string[];
+          priority: string;
+          createdBy: string;
+          createdAt: string;
+          expiresAt: string | null;
+        }>;
+        total: number;
+      }>(`/admin/announcements${query ? `?${query}` : ''}`);
+    }
+  },
+  // HOD endpoints
+  hod: {
+    getDashboard: () => apiFetch<{
+      department: { id: string; name: string };
+      teachers: { total: number; active: number; bySubject: Array<{ subject: string; count: number }> };
+      classes: { total: number; byLevel: Array<{ level: string; count: number }> };
+      performance: { avgScore: number; totalExams: number; recentActivity: number };
+    }>('/hod/dashboard'),
+    listTeachers: (filters?: { search?: string; subject?: string }) => {
+      const params = new URLSearchParams();
+      if (filters?.search) params.append('search', filters.search);
+      if (filters?.subject) params.append('subject', filters.subject);
+      const query = params.toString();
+      return apiFetch<Array<{
+        id: string;
+        name: string;
+        email: string | null;
+        subjects: string[];
+        classes: string[];
+        lastActive: string | null;
+        performanceScore?: number;
+      }>>(`/hod/teachers${query ? `?${query}` : ''}`);
+    },
+    getDepartmentReport: (filters?: { term?: string; classId?: string; subjectId?: string }) => {
+      const params = new URLSearchParams();
+      if (filters?.term) params.append('term', filters.term);
+      if (filters?.classId) params.append('classId', filters.classId);
+      if (filters?.subjectId) params.append('subjectId', filters.subjectId);
+      const query = params.toString();
+      return apiFetch<{
+        department: { id: string; name: string };
+        summary: { teachers: number; classes: number; students: number };
+        performance: { avgScore: number; topPerformingClass: string | null; improvementTrend: number };
+        activity: { last7Days: number; last30Days: number };
+      }>(`/hod/reports/department${query ? `?${query}` : ''}`);
+    }
   },
   /**
    * @deprecated Legacy teacher API endpoints.
@@ -2566,6 +3195,167 @@ export const api = {
       return apiFetch<PaginatedResponse<TeacherStudent>>(
         `/teachers/me/students${queryString ? `?${queryString}` : ''}`
       );
+    },
+    // Phase 7: Attendance
+    markAttendance: (records: Array<{
+      studentId: string;
+      classId: string;
+      status: 'present' | 'absent' | 'late';
+      date: string;
+    }>) => apiFetch<{ success: boolean }>('/teachers/attendance/mark', {
+      method: 'POST',
+      body: JSON.stringify({ records })
+    }),
+    getAttendance: (params?: { classId?: string; date?: string; from?: string; to?: string }) => {
+      const queryParams = new URLSearchParams();
+      if (params?.classId) queryParams.append('classId', params.classId);
+      if (params?.date) queryParams.append('date', params.date);
+      if (params?.from) queryParams.append('from', params.from);
+      if (params?.to) queryParams.append('to', params.to);
+      const queryString = queryParams.toString();
+      return apiFetch<Array<{
+        id: string;
+        student_id: string;
+        class_id: string;
+        status: string;
+        attendance_date: string;
+        first_name: string;
+        last_name: string;
+        admission_number: string | null;
+      }>>(`/teachers/attendance${queryString ? `?${queryString}` : ''}`);
+    },
+    bulkMarkAttendance: (records: Array<{
+      studentId: string;
+      classId: string;
+      status: 'present' | 'absent' | 'late';
+      date: string;
+    }>) => apiFetch<{ success: boolean }>('/teachers/attendance/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ records })
+    }),
+    // Phase 7: Grades
+    submitGrades: (grades: Array<{
+      studentId: string;
+      classId: string;
+      subjectId?: string;
+      examId?: string;
+      score: number;
+      remarks?: string;
+      term?: string;
+    }>) => apiFetch<Array<{ id: string; studentId: string; score: number }>>('/teachers/grades/submit', {
+      method: 'POST',
+      body: JSON.stringify({ grades })
+    }),
+    updateGrade: (gradeId: string, updates: { score?: number; remarks?: string }) =>
+      apiFetch<{ id: string; studentId: string; score: number }>(`/teachers/grades/${gradeId}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates)
+      }),
+    getGrades: (params?: { classId?: string; subjectId?: string; examId?: string; term?: string }) => {
+      const queryParams = new URLSearchParams();
+      if (params?.classId) queryParams.append('classId', params.classId);
+      if (params?.subjectId) queryParams.append('subjectId', params.subjectId);
+      if (params?.examId) queryParams.append('examId', params.examId);
+      if (params?.term) queryParams.append('term', params.term);
+      const queryString = queryParams.toString();
+      return apiFetch<Array<{
+        id: string;
+        student_id: string;
+        class_id: string;
+        subject_id: string | null;
+        exam_id: string | null;
+        score: number;
+        grade: string | null;
+        remarks: string | null;
+        first_name: string;
+        last_name: string;
+        admission_number: string | null;
+      }>>(`/teachers/grades${queryString ? `?${queryString}` : ''}`);
+    },
+    // Phase 7: Resources
+    uploadResource: (formData: FormData) => apiFetch<{
+      id: string;
+      tenant_id: string;
+      teacher_id: string;
+      class_id: string;
+      title: string;
+      description: string | null;
+      file_url: string;
+      file_type: string;
+      size: number;
+      created_at: string;
+    }>('/teachers/resources/upload', {
+      method: 'POST',
+      body: formData
+    }),
+    getResources: (classId: string) =>
+      apiFetch<Array<{
+        id: string;
+        tenant_id: string;
+        teacher_id: string;
+        class_id: string;
+        title: string;
+        description: string | null;
+        file_url: string;
+        file_type: string;
+        size: number;
+        created_at: string;
+      }>>(`/teachers/resources?classId=${classId}`),
+    deleteResource: (resourceId: string) =>
+      apiFetch<{ success: boolean }>(`/teachers/resources/${resourceId}`, {
+        method: 'DELETE'
+      }),
+    // Phase 7: Announcements
+    postAnnouncement: (announcement: {
+      classId: string;
+      message: string;
+      attachments?: Array<{ filename: string; url: string }>;
+    }) => apiFetch<{
+      id: string;
+      tenant_id: string;
+      class_id: string;
+      teacher_id: string;
+      message: string;
+      attachments: Array<{ filename: string; url: string }> | null;
+      created_at: string;
+    }>('/teachers/announcements', {
+      method: 'POST',
+      body: JSON.stringify(announcement)
+    }),
+    // Phase 7: Exports
+    exportAttendance: (params: {
+      classId: string;
+      format?: 'pdf' | 'excel' | 'xlsx';
+      date?: string;
+      from?: string;
+      to?: string;
+    }) => {
+      const queryParams = new URLSearchParams();
+      queryParams.append('classId', params.classId);
+      if (params.format) queryParams.append('format', params.format);
+      if (params.date) queryParams.append('date', params.date);
+      if (params.from) queryParams.append('from', params.from);
+      if (params.to) queryParams.append('to', params.to);
+      return apiFetch<Blob>(`/teachers/export/attendance?${queryParams.toString()}`, {
+        responseType: 'blob'
+      });
+    },
+    exportGrades: (params: {
+      classId: string;
+      format?: 'pdf' | 'excel' | 'xlsx';
+      subjectId?: string;
+      examId?: string;
+      term?: string;
+    }) => {
+      const queryParams = new URLSearchParams();
+      queryParams.append('classId', params.classId);
+      if (params.format) queryParams.append('format', params.format);
+      if (params.subjectId) queryParams.append('subjectId', params.subjectId);
+      if (params.examId) queryParams.append('examId', params.examId);
+      if (params.term) queryParams.append('term', params.term);
+      return apiFetch<Blob>(`/teachers/export/grades?${queryParams.toString()}`, {
+        responseType: 'blob'
+      });
     }
   },
   // Audit and activity endpoints
@@ -3327,7 +4117,47 @@ export const api = {
   deleteFileUpload: (fileId: string) =>
     apiFetch<void>(`/upload/${fileId}`, {
       method: 'DELETE'
-    })
+    }),
+  // Billing
+  billing: {
+    getSubscription: () => apiFetch<Subscription>('/admin/billing/subscription'),
+    createSubscription: (payload: { priceId: string; trialDays?: number }) =>
+      apiFetch<Subscription>('/admin/billing/subscription/subscribe', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    cancelSubscription: (payload: { cancelImmediately?: boolean }) =>
+      apiFetch<Subscription>('/admin/billing/subscription/cancel', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    updatePlan: (payload: { newPriceId: string; prorate?: boolean }) =>
+      apiFetch<Subscription>('/admin/billing/subscription/update-plan', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }),
+    getInvoices: (params?: { status?: string; limit?: number; offset?: number }) => {
+      const queryParams = new URLSearchParams();
+      if (params?.status) queryParams.append('status', params.status);
+      if (params?.limit) queryParams.append('limit', String(params.limit));
+      if (params?.offset) queryParams.append('offset', String(params.offset));
+      return apiFetch<PaginatedResponse<BillingInvoice>>(
+        `/admin/billing/invoices${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
+      );
+    },
+    getInvoice: (invoiceId: string) =>
+      apiFetch<BillingInvoice>(`/admin/billing/invoices/${invoiceId}`),
+    getPayments: (params?: { invoiceId?: string; status?: string; limit?: number; offset?: number }) => {
+      const queryParams = new URLSearchParams();
+      if (params?.invoiceId) queryParams.append('invoiceId', params.invoiceId);
+      if (params?.status) queryParams.append('status', params.status);
+      if (params?.limit) queryParams.append('limit', String(params.limit));
+      if (params?.offset) queryParams.append('offset', String(params.offset));
+      return apiFetch<PaginatedResponse<BillingPayment>>(
+        `/admin/billing/payments${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
+      );
+    }
+  }
 };
 
 export default api;

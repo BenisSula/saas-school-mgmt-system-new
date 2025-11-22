@@ -20,12 +20,12 @@ CREATE TABLE IF NOT EXISTS shared.support_tickets (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_support_tickets_tenant_id ON shared.support_tickets(tenant_id);
-CREATE INDEX idx_support_tickets_status ON shared.support_tickets(status);
-CREATE INDEX idx_support_tickets_priority ON shared.support_tickets(priority);
-CREATE INDEX idx_support_tickets_created_by ON shared.support_tickets(created_by);
-CREATE INDEX idx_support_tickets_assigned_to ON shared.support_tickets(assigned_to);
-CREATE INDEX idx_support_tickets_ticket_number ON shared.support_tickets(ticket_number);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_tenant_id ON shared.support_tickets(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_status ON shared.support_tickets(status);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_priority ON shared.support_tickets(priority);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_created_by ON shared.support_tickets(created_by);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_assigned_to ON shared.support_tickets(assigned_to);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_ticket_number ON shared.support_tickets(ticket_number);
 
 -- Ticket Comments/Replies
 CREATE TABLE IF NOT EXISTS shared.ticket_comments (
@@ -39,9 +39,9 @@ CREATE TABLE IF NOT EXISTS shared.ticket_comments (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_ticket_comments_ticket_id ON shared.ticket_comments(ticket_id);
-CREATE INDEX idx_ticket_comments_user_id ON shared.ticket_comments(user_id);
-CREATE INDEX idx_ticket_comments_created_at ON shared.ticket_comments(created_at);
+CREATE INDEX IF NOT EXISTS idx_ticket_comments_ticket_id ON shared.ticket_comments(ticket_id);
+CREATE INDEX IF NOT EXISTS idx_ticket_comments_user_id ON shared.ticket_comments(user_id);
+CREATE INDEX IF NOT EXISTS idx_ticket_comments_created_at ON shared.ticket_comments(created_at);
 
 -- Ticket Attachments
 CREATE TABLE IF NOT EXISTS shared.ticket_attachments (
@@ -56,8 +56,8 @@ CREATE TABLE IF NOT EXISTS shared.ticket_attachments (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_ticket_attachments_ticket_id ON shared.ticket_attachments(ticket_id);
-CREATE INDEX idx_ticket_attachments_comment_id ON shared.ticket_attachments(comment_id);
+CREATE INDEX IF NOT EXISTS idx_ticket_attachments_ticket_id ON shared.ticket_attachments(ticket_id);
+CREATE INDEX IF NOT EXISTS idx_ticket_attachments_comment_id ON shared.ticket_attachments(comment_id);
 
 -- Platform Announcements
 CREATE TABLE IF NOT EXISTS shared.announcements (
@@ -78,11 +78,11 @@ CREATE TABLE IF NOT EXISTS shared.announcements (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_announcements_tenant_id ON shared.announcements(tenant_id);
-CREATE INDEX idx_announcements_type ON shared.announcements(type);
-CREATE INDEX idx_announcements_is_active ON shared.announcements(is_active) WHERE is_active = TRUE;
-CREATE INDEX idx_announcements_is_pinned ON shared.announcements(is_pinned) WHERE is_pinned = TRUE;
-CREATE INDEX idx_announcements_dates ON shared.announcements(start_date, end_date);
+CREATE INDEX IF NOT EXISTS idx_announcements_tenant_id ON shared.announcements(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_announcements_type ON shared.announcements(type);
+CREATE INDEX IF NOT EXISTS idx_announcements_is_active ON shared.announcements(is_active) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_announcements_is_pinned ON shared.announcements(is_pinned) WHERE is_pinned = TRUE;
+CREATE INDEX IF NOT EXISTS idx_announcements_dates ON shared.announcements(start_date, end_date);
 
 -- Announcement Views (track who has seen announcements)
 CREATE TABLE IF NOT EXISTS shared.announcement_views (
@@ -93,8 +93,8 @@ CREATE TABLE IF NOT EXISTS shared.announcement_views (
   UNIQUE (announcement_id, user_id)
 );
 
-CREATE INDEX idx_announcement_views_announcement_id ON shared.announcement_views(announcement_id);
-CREATE INDEX idx_announcement_views_user_id ON shared.announcement_views(user_id);
+CREATE INDEX IF NOT EXISTS idx_announcement_views_announcement_id ON shared.announcement_views(announcement_id);
+CREATE INDEX IF NOT EXISTS idx_announcement_views_user_id ON shared.announcement_views(user_id);
 
 -- In-App Messaging (Admin-to-Admin, Admin-to-User)
 CREATE TABLE IF NOT EXISTS shared.messages (
@@ -118,13 +118,13 @@ CREATE TABLE IF NOT EXISTS shared.messages (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_messages_tenant_id ON shared.messages(tenant_id);
-CREATE INDEX idx_messages_sender_id ON shared.messages(sender_id);
-CREATE INDEX idx_messages_recipient_id ON shared.messages(recipient_id);
-CREATE INDEX idx_messages_recipient_role ON shared.messages(recipient_role);
-CREATE INDEX idx_messages_is_read ON shared.messages(is_read) WHERE is_read = FALSE;
-CREATE INDEX idx_messages_is_archived ON shared.messages(is_archived) WHERE is_archived = FALSE;
-CREATE INDEX idx_messages_created_at ON shared.messages(created_at);
+CREATE INDEX IF NOT EXISTS idx_messages_tenant_id ON shared.messages(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON shared.messages(sender_id);
+CREATE INDEX IF NOT EXISTS idx_messages_recipient_id ON shared.messages(recipient_id);
+CREATE INDEX IF NOT EXISTS idx_messages_recipient_role ON shared.messages(recipient_role);
+CREATE INDEX IF NOT EXISTS idx_messages_is_read ON shared.messages(is_read) WHERE is_read = FALSE;
+CREATE INDEX IF NOT EXISTS idx_messages_is_archived ON shared.messages(is_archived) WHERE is_archived = FALSE;
+CREATE INDEX IF NOT EXISTS idx_messages_created_at ON shared.messages(created_at);
 
 -- Message Threads (for conversation tracking)
 CREATE TABLE IF NOT EXISTS shared.message_threads (
@@ -139,9 +139,9 @@ CREATE TABLE IF NOT EXISTS shared.message_threads (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_message_threads_tenant_id ON shared.message_threads(tenant_id);
-CREATE INDEX idx_message_threads_participants ON shared.message_threads USING GIN(participants);
-CREATE INDEX idx_message_threads_last_message_at ON shared.message_threads(last_message_at);
+CREATE INDEX IF NOT EXISTS idx_message_threads_tenant_id ON shared.message_threads(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_message_threads_participants ON shared.message_threads USING GIN(participants);
+CREATE INDEX IF NOT EXISTS idx_message_threads_last_message_at ON shared.message_threads(last_message_at);
 
 -- Knowledge Base Categories (must be created before articles)
 CREATE TABLE IF NOT EXISTS shared.kb_categories (
@@ -158,9 +158,9 @@ CREATE TABLE IF NOT EXISTS shared.kb_categories (
   UNIQUE (tenant_id, slug)
 );
 
-CREATE INDEX idx_kb_categories_tenant_id ON shared.kb_categories(tenant_id);
-CREATE INDEX idx_kb_categories_parent_id ON shared.kb_categories(parent_id);
-CREATE INDEX idx_kb_categories_slug ON shared.kb_categories(slug);
+CREATE INDEX IF NOT EXISTS idx_kb_categories_tenant_id ON shared.kb_categories(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_kb_categories_parent_id ON shared.kb_categories(parent_id);
+CREATE INDEX IF NOT EXISTS idx_kb_categories_slug ON shared.kb_categories(slug);
 
 -- Knowledge Base Articles
 CREATE TABLE IF NOT EXISTS shared.kb_articles (
@@ -185,12 +185,12 @@ CREATE TABLE IF NOT EXISTS shared.kb_articles (
   UNIQUE (tenant_id, slug)
 );
 
-CREATE INDEX idx_kb_articles_tenant_id ON shared.kb_articles(tenant_id);
-CREATE INDEX idx_kb_articles_category_id ON shared.kb_articles(category_id);
-CREATE INDEX idx_kb_articles_slug ON shared.kb_articles(slug);
-CREATE INDEX idx_kb_articles_is_published ON shared.kb_articles(is_published) WHERE is_published = TRUE;
-CREATE INDEX idx_kb_articles_is_featured ON shared.kb_articles(is_featured) WHERE is_featured = TRUE;
-CREATE INDEX idx_kb_articles_tags ON shared.kb_articles USING GIN(tags);
+CREATE INDEX IF NOT EXISTS idx_kb_articles_tenant_id ON shared.kb_articles(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_kb_articles_category_id ON shared.kb_articles(category_id);
+CREATE INDEX IF NOT EXISTS idx_kb_articles_slug ON shared.kb_articles(slug);
+CREATE INDEX IF NOT EXISTS idx_kb_articles_is_published ON shared.kb_articles(is_published) WHERE is_published = TRUE;
+CREATE INDEX IF NOT EXISTS idx_kb_articles_is_featured ON shared.kb_articles(is_featured) WHERE is_featured = TRUE;
+CREATE INDEX IF NOT EXISTS idx_kb_articles_tags ON shared.kb_articles USING GIN(tags);
 
 
 -- KB Article Feedback
@@ -204,8 +204,8 @@ CREATE TABLE IF NOT EXISTS shared.kb_article_feedback (
   UNIQUE (article_id, user_id, feedback_type)
 );
 
-CREATE INDEX idx_kb_article_feedback_article_id ON shared.kb_article_feedback(article_id);
-CREATE INDEX idx_kb_article_feedback_user_id ON shared.kb_article_feedback(user_id);
+CREATE INDEX IF NOT EXISTS idx_kb_article_feedback_article_id ON shared.kb_article_feedback(article_id);
+CREATE INDEX IF NOT EXISTS idx_kb_article_feedback_user_id ON shared.kb_article_feedback(user_id);
 
 -- Status Page (Uptime, Incidents, Maintenance)
 CREATE TABLE IF NOT EXISTS shared.status_incidents (
@@ -223,10 +223,10 @@ CREATE TABLE IF NOT EXISTS shared.status_incidents (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_status_incidents_tenant_id ON shared.status_incidents(tenant_id);
-CREATE INDEX idx_status_incidents_status ON shared.status_incidents(status);
-CREATE INDEX idx_status_incidents_severity ON shared.status_incidents(severity);
-CREATE INDEX idx_status_incidents_started_at ON shared.status_incidents(started_at);
+CREATE INDEX IF NOT EXISTS idx_status_incidents_tenant_id ON shared.status_incidents(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_status_incidents_status ON shared.status_incidents(status);
+CREATE INDEX IF NOT EXISTS idx_status_incidents_severity ON shared.status_incidents(severity);
+CREATE INDEX IF NOT EXISTS idx_status_incidents_started_at ON shared.status_incidents(started_at);
 
 -- Incident Updates
 CREATE TABLE IF NOT EXISTS shared.incident_updates (
@@ -238,8 +238,8 @@ CREATE TABLE IF NOT EXISTS shared.incident_updates (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_incident_updates_incident_id ON shared.incident_updates(incident_id);
-CREATE INDEX idx_incident_updates_created_at ON shared.incident_updates(created_at);
+CREATE INDEX IF NOT EXISTS idx_incident_updates_incident_id ON shared.incident_updates(incident_id);
+CREATE INDEX IF NOT EXISTS idx_incident_updates_created_at ON shared.incident_updates(created_at);
 
 -- Scheduled Maintenance
 CREATE TABLE IF NOT EXISTS shared.scheduled_maintenance (
@@ -258,9 +258,9 @@ CREATE TABLE IF NOT EXISTS shared.scheduled_maintenance (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_scheduled_maintenance_tenant_id ON shared.scheduled_maintenance(tenant_id);
-CREATE INDEX idx_scheduled_maintenance_status ON shared.scheduled_maintenance(status);
-CREATE INDEX idx_scheduled_maintenance_scheduled_start ON shared.scheduled_maintenance(scheduled_start);
+CREATE INDEX IF NOT EXISTS idx_scheduled_maintenance_tenant_id ON shared.scheduled_maintenance(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_scheduled_maintenance_status ON shared.scheduled_maintenance(status);
+CREATE INDEX IF NOT EXISTS idx_scheduled_maintenance_scheduled_start ON shared.scheduled_maintenance(scheduled_start);
 
 -- System Uptime Tracking
 CREATE TABLE IF NOT EXISTS shared.uptime_records (
@@ -273,10 +273,10 @@ CREATE TABLE IF NOT EXISTS shared.uptime_records (
   metadata JSONB DEFAULT '{}'::jsonb
 );
 
-CREATE INDEX idx_uptime_records_tenant_id ON shared.uptime_records(tenant_id);
-CREATE INDEX idx_uptime_records_service_name ON shared.uptime_records(service_name);
-CREATE INDEX idx_uptime_records_checked_at ON shared.uptime_records(checked_at);
-CREATE INDEX idx_uptime_records_status ON shared.uptime_records(status);
+CREATE INDEX IF NOT EXISTS idx_uptime_records_tenant_id ON shared.uptime_records(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_uptime_records_service_name ON shared.uptime_records(service_name);
+CREATE INDEX IF NOT EXISTS idx_uptime_records_checked_at ON shared.uptime_records(checked_at);
+CREATE INDEX IF NOT EXISTS idx_uptime_records_status ON shared.uptime_records(status);
 
 -- Generate ticket numbers function
 CREATE OR REPLACE FUNCTION generate_ticket_number() RETURNS TEXT AS $$

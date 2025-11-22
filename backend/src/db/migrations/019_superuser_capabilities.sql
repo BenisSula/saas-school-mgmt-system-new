@@ -22,19 +22,59 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_tenant_id ON shared.subscriptions(t
 CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON shared.subscriptions(status);
 
 -- Subscription history
+-- Note: This table may already exist from migration 004_platform_billing.sql
+-- We'll create it if it doesn't exist, but won't conflict with existing structure
 CREATE TABLE IF NOT EXISTS shared.subscription_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   subscription_id UUID NOT NULL REFERENCES shared.subscriptions(id) ON DELETE CASCADE,
-  changed_by UUID REFERENCES shared.users(id),
-  change_type VARCHAR(50) NOT NULL,
+  tenant_id UUID NOT NULL REFERENCES shared.tenants(id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL, -- 'created', 'updated', 'canceled', 'renewed', 'plan_changed'
   old_value JSONB,
   new_value JSONB,
-  reason TEXT,
-  changed_at TIMESTAMP NOT NULL DEFAULT NOW()
+  actor_id UUID REFERENCES shared.users(id),
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_subscription_history_subscription_id ON shared.subscription_history(subscription_id);
-CREATE INDEX IF NOT EXISTS idx_subscription_history_changed_at ON shared.subscription_history(changed_at);
+-- Only create indexes if columns exist
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables 
+    WHERE table_schema = 'shared' AND table_name = 'subscription_history'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_subscription_history_subscription_id 
+      ON shared.subscription_history(subscription_id);
+    
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns 
+      WHERE table_schema = 'shared' 
+      AND table_name = 'subscription_history' 
+      AND column_name = 'tenant_id'
+    ) THEN
+      CREATE INDEX IF NOT EXISTS idx_subscription_history_tenant_id 
+        ON shared.subscription_history(tenant_id);
+    END IF;
+    
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns 
+      WHERE table_schema = 'shared' 
+      AND table_name = 'subscription_history' 
+      AND column_name = 'created_at'
+    ) THEN
+      CREATE INDEX IF NOT EXISTS idx_subscription_history_created_at 
+        ON shared.subscription_history(created_at);
+    ELSIF EXISTS (
+      SELECT 1 FROM information_schema.columns 
+      WHERE table_schema = 'shared' 
+      AND table_name = 'subscription_history' 
+      AND column_name = 'changed_at'
+    ) THEN
+      CREATE INDEX IF NOT EXISTS idx_subscription_history_changed_at 
+        ON shared.subscription_history(changed_at);
+    END IF;
+  END IF;
+END $$;
 
 -- Manual overrides
 CREATE TABLE IF NOT EXISTS shared.manual_overrides (

@@ -48,7 +48,13 @@ export type Permission =
   | 'overrides:create'
   | 'overrides:revoke'
   | 'permission_overrides:manage'
-  | 'permission_overrides:view';
+  | 'permission_overrides:view'
+  | 'resources:upload'
+  | 'announcements:post'
+  | 'attendance:view_own_class'
+  | 'grades:view_own_class'
+  | 'billing:view'
+  | 'billing:manage';
 
 export const rolePermissions: Record<Role, Permission[]> = {
   student: [
@@ -66,27 +72,35 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'dashboard:view',
     'attendance:mark',
     'attendance:view',
+    'attendance:view_own_class',
     'grades:enter',
     'grades:edit',
+    'grades:view_own_class',
     'performance:generate',
     'messages:send',
     'messages:receive',
-    'students:view_own_class'
+    'students:view_own_class',
+    'resources:upload',
+    'announcements:post'
   ],
+  // Note: HOD is now an additional role, not a primary role
+  // HOD permissions are granted in addition to teacher permissions
   hod: [
     'dashboard:view',
     'attendance:view',
     'exams:view',
-    'grades:manage',
+    'grades:manage', // Department-level grade management
     'department-analytics',
     'reports:view',
     'performance:charts',
     'messages:send',
-    'users:manage',
-    'teachers:manage'
+    // Note: HOD does NOT get users:manage by default (only if explicitly granted)
+    // Note: HOD does NOT get teachers:manage by default (only if explicitly granted)
   ],
   admin: [
     'dashboard:view',
+    'billing:view',
+    'billing:manage',
     'attendance:manage',
     'attendance:view',
     'exams:manage',
