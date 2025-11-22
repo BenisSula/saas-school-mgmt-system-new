@@ -8,7 +8,7 @@ import { Button } from '../../components/ui/Button';
 import RouteMeta from '../../components/layout/RouteMeta';
 import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton';
 import { StatusBanner } from '../../components/ui/StatusBanner';
-import { Users, GraduationCap, UserCheck, Shield, AlertCircle } from 'lucide-react';
+import { Users, GraduationCap, UserCheck, Shield, AlertCircle, RefreshCw } from 'lucide-react';
 import type { TenantUser, TeacherProfile, StudentRecord } from '../../lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../hooks/useQuery';
@@ -187,7 +187,9 @@ export default function AdminOverviewPage() {
               Overview of school information, users, and statistics for your organization.
             </p>
           </div>
-          <Button onClick={handleRefresh}>Refresh</Button>
+          <Button onClick={handleRefresh} leftIcon={<RefreshCw className="h-4 w-4" />}>
+            Refresh
+          </Button>
         </header>
 
         {/* School Information */}
