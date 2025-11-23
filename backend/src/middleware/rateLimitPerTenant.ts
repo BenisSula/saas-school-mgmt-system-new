@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { getPool } from '../db/connection';
+import { extractIpAddress } from '../lib/requestUtils';
 
 /**
  * Per-tenant rate limiting middleware
@@ -20,7 +21,7 @@ export function rateLimitPerTenant(
       try {
         const endpointPattern = req.path;
         const method = req.method;
-        const identifier = req.user?.id || req.ip || 'anonymous';
+        const identifier = req.user?.id || extractIpAddress(req) || 'anonymous';
 
         // Calculate window boundaries
         const now = new Date();

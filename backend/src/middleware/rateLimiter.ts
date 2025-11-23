@@ -84,21 +84,3 @@ export const writeLimiter = rateLimit({
   legacyHeaders: false
 });
 
-/**
- * Get client identifier for rate limiting
- */
-export function getClientIdentifier(req: Request): string {
-  // Use user ID if authenticated, otherwise use IP
-  if (req.user?.id) {
-    return `user:${req.user.id}`;
-  }
-  
-  // Get IP from various headers (for proxy/load balancer scenarios)
-  const forwarded = req.headers['x-forwarded-for'];
-  const ip = forwarded
-    ? (typeof forwarded === 'string' ? forwarded.split(',')[0] : forwarded[0])
-    : req.socket.remoteAddress || 'unknown';
-  
-  return `ip:${ip}`;
-}
-

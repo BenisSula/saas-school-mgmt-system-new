@@ -7,7 +7,8 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import type { Pool } from 'pg';
 import { getPool } from '../db/connection';
-import { extractIpAddress, extractUserAgent } from './superuserHelpers';
+import { extractIpAddress } from './requestUtils';
+import { extractUserAgent } from './superuserHelpers';
 import { Role } from '../config/permissions';
 
 export const resetPasswordParamsSchema = z.object({

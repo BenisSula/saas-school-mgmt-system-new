@@ -5,6 +5,7 @@
 
 import rateLimit from 'express-rate-limit';
 import { Request } from 'express';
+import { extractIpAddress } from '../lib/requestUtils';
 
 /**
  * Standard mutation rate limiter - 30 requests per minute per user
@@ -21,10 +22,7 @@ export const mutationRateLimiter = rateLimit({
     if (req.user?.id) {
       return `mutation:user:${req.user.id}`;
     }
-    const forwarded = req.headers['x-forwarded-for'];
-    const ip = forwarded
-      ? (typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : forwarded[0])
-      : req.socket.remoteAddress || 'unknown';
+    const ip = extractIpAddress(req) || 'unknown';
     return `mutation:ip:${ip}`;
   },
   skip: (req: Request) => {
@@ -47,10 +45,7 @@ export const bulkOperationLimiter = rateLimit({
     if (req.user?.id) {
       return `bulk:user:${req.user.id}`;
     }
-    const forwarded = req.headers['x-forwarded-for'];
-    const ip = forwarded
-      ? (typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : forwarded[0])
-      : req.socket.remoteAddress || 'unknown';
+    const ip = extractIpAddress(req) || 'unknown';
     return `bulk:ip:${ip}`;
   }
 });
@@ -69,10 +64,7 @@ export const fileUploadLimiter = rateLimit({
     if (req.user?.id) {
       return `upload:user:${req.user.id}`;
     }
-    const forwarded = req.headers['x-forwarded-for'];
-    const ip = forwarded
-      ? (typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : forwarded[0])
-      : req.socket.remoteAddress || 'unknown';
+    const ip = extractIpAddress(req) || 'unknown';
     return `upload:ip:${ip}`;
   }
 });
@@ -91,10 +83,7 @@ export const exportLimiter = rateLimit({
     if (req.user?.id) {
       return `export:user:${req.user.id}`;
     }
-    const forwarded = req.headers['x-forwarded-for'];
-    const ip = forwarded
-      ? (typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : forwarded[0])
-      : req.socket.remoteAddress || 'unknown';
+    const ip = extractIpAddress(req) || 'unknown';
     return `export:ip:${ip}`;
   }
 });
@@ -113,10 +102,7 @@ export const attendanceLimiter = rateLimit({
     if (req.user?.id) {
       return `attendance:user:${req.user.id}`;
     }
-    const forwarded = req.headers['x-forwarded-for'];
-    const ip = forwarded
-      ? (typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : forwarded[0])
-      : req.socket.remoteAddress || 'unknown';
+    const ip = extractIpAddress(req) || 'unknown';
     return `attendance:ip:${ip}`;
   }
 });

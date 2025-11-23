@@ -9,51 +9,19 @@ import tenantResolver from '../../middleware/tenantResolver';
 import ensureTenantContext from '../../middleware/ensureTenantContext';
 import { requirePermission } from '../../middleware/rbac';
 import { validateInput } from '../../middleware/validateInput';
-import { z } from 'zod';
 import { adminCreateUser } from '../../services/adminUserService';
 import { getPool } from '../../db/connection';
 import { createSuccessResponse, createErrorResponse } from '../../lib/responseHelpers';
 import { listTenantUsers } from '../../services/userService';
 import { verifyTenantAndUserContext, verifyTenantContext } from '../../services/shared/adminHelpers';
 import { createAuditLog } from '../../services/audit/enhancedAuditService';
+import { createHODSchema, createTeacherSchema, createStudentSchema } from '../../validators/userRegistrationValidator';
 
 const router = Router();
 
 router.use(authenticate, tenantResolver(), ensureTenantContext(), requirePermission('users:manage'));
 
-const createHODSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  fullName: z.string().min(1, 'Full name is required'),
-  phone: z.string().optional().nullable(),
-  departmentId: z.string().uuid('Invalid department ID').optional().nullable(),
-  qualifications: z.string().optional(),
-  yearsOfExperience: z.number().int().positive().optional(),
-  subjects: z.array(z.string()).optional()
-});
-
-const createTeacherSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  fullName: z.string().min(1, 'Full name is required'),
-  phone: z.string().optional().nullable(),
-  qualifications: z.string().optional(),
-  yearsOfExperience: z.number().int().positive().optional(),
-  subjects: z.array(z.string()).optional(),
-  teacherId: z.string().optional()
-});
-
-const createStudentSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  fullName: z.string().min(1, 'Full name is required'),
-  gender: z.enum(['male', 'female', 'other']).optional(),
-  dateOfBirth: z.string().optional(),
-  parentGuardianName: z.string().optional(),
-  parentGuardianContact: z.string().optional(),
-  studentId: z.string().optional(),
-  classId: z.string().uuid('Invalid class ID').optional().nullable()
-});
+// User registration schemas imported from validators
 
 /**
  * POST /admin/users/hod/create

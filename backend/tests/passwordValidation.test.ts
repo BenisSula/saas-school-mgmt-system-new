@@ -1,46 +1,48 @@
 import { describe, it, expect } from '@jest/globals';
-import { validatePasswordStrength } from '../src/middleware/validation';
+import { validatePassword, getDefaultPasswordPolicy } from '../src/services/security/passwordPolicyService';
 
 describe('Password Strength Validation', () => {
+  const defaultPolicy = getDefaultPasswordPolicy();
+
   it('should accept strong password with all requirements', () => {
-    const result = validatePasswordStrength('StrongPass123!');
-    expect(result.valid).toBe(true);
+    const result = validatePassword('StrongPass123!', defaultPolicy);
+    expect(result.isValid).toBe(true);
     expect(result.errors).toHaveLength(0);
   });
 
   it('should reject password shorter than 8 characters', () => {
-    const result = validatePasswordStrength('Short1!');
-    expect(result.valid).toBe(false);
+    const result = validatePassword('Short1!', defaultPolicy);
+    expect(result.isValid).toBe(false);
     expect(result.errors).toContain('Password must be at least 8 characters long');
   });
 
   it('should reject password without uppercase letter', () => {
-    const result = validatePasswordStrength('lowercase123!');
-    expect(result.valid).toBe(false);
+    const result = validatePassword('lowercase123!', defaultPolicy);
+    expect(result.isValid).toBe(false);
     expect(result.errors).toContain('Password must contain at least one uppercase letter');
   });
 
   it('should reject password without lowercase letter', () => {
-    const result = validatePasswordStrength('UPPERCASE123!');
-    expect(result.valid).toBe(false);
+    const result = validatePassword('UPPERCASE123!', defaultPolicy);
+    expect(result.isValid).toBe(false);
     expect(result.errors).toContain('Password must contain at least one lowercase letter');
   });
 
   it('should reject password without number', () => {
-    const result = validatePasswordStrength('NoNumberPass!');
-    expect(result.valid).toBe(false);
+    const result = validatePassword('NoNumberPass!', defaultPolicy);
+    expect(result.isValid).toBe(false);
     expect(result.errors).toContain('Password must contain at least one number');
   });
 
   it('should reject password without symbol', () => {
-    const result = validatePasswordStrength('NoSymbolPass123');
-    expect(result.valid).toBe(false);
-    expect(result.errors).toContain('Password must contain at least one symbol');
+    const result = validatePassword('NoSymbolPass123', defaultPolicy);
+    expect(result.isValid).toBe(false);
+    expect(result.errors).toContain('Password must contain at least one special character');
   });
 
   it('should report all missing requirements', () => {
-    const result = validatePasswordStrength('weak');
-    expect(result.valid).toBe(false);
+    const result = validatePassword('weak', defaultPolicy);
+    expect(result.isValid).toBe(false);
     expect(result.errors.length).toBeGreaterThan(1);
     expect(result.errors).toContain('Password must be at least 8 characters long');
   });
@@ -49,8 +51,8 @@ describe('Password Strength Validation', () => {
     const symbols = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '-', '_', '+', '='];
     for (const symbol of symbols) {
       const password = `TestPass123${symbol}`;
-      const result = validatePasswordStrength(password);
-      expect(result.valid).toBe(true);
+      const result = validatePassword(password, defaultPolicy);
+      expect(result.isValid).toBe(true);
     }
   });
 });

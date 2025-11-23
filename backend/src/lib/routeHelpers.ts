@@ -8,35 +8,7 @@ import { z } from 'zod';
 import type { PoolClient } from 'pg';
 import { createSuccessResponse, createErrorResponse } from './responseHelpers';
 import { safeAuditLogFromRequest } from './auditHelpers';
-
-/**
- * Validates tenant context is available
- */
-export function requireTenantContext(req: Request, res: Response): boolean {
-  if (!req.tenantClient || !req.tenant) {
-    res.status(500).json(createErrorResponse('Tenant context missing'));
-    return false;
-  }
-  return true;
-}
-
-/**
- * Validates user context is available
- */
-export function requireUserContext(req: Request, res: Response): boolean {
-  if (!req.user) {
-    res.status(500).json(createErrorResponse('User context missing'));
-    return false;
-  }
-  return true;
-}
-
-/**
- * Validates both tenant and user context
- */
-export function requireContext(req: Request, res: Response): boolean {
-  return requireTenantContext(req, res) && requireUserContext(req, res);
-}
+import { validateContextOrRespond } from './contextHelpers';
 
 /**
  * Standardized error handler wrapper for async route handlers
@@ -59,12 +31,13 @@ export function createGetHandler<T>(options: {
   requirePermission?: string;
 }) {
   return asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    if (!requireTenantContext(req, res)) return;
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
 
     try {
       const resource = await options.getResource(
-        req.tenantClient!,
-        req.tenant!.schema,
+        context.tenantClient,
+        context.tenant.schema,
         req.params.id
       );
 
@@ -103,15 +76,16 @@ export function createPostHandler<TInput, TOutput>(options: {
   auditAction?: string;
 }) {
   return asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    if (!requireContext(req, res)) return;
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
 
     try {
       const resource = await options.createResource(
-        req.tenantClient!,
-        req.tenant!.schema,
+        context.tenantClient,
+        context.tenant.schema,
         req.body,
-        req.user?.id,
-        req.tenant!.id
+        context.user.id,
+        context.tenant.id
       );
 
       // Audit log if specified
@@ -146,12 +120,13 @@ export function createPutHandler<TInput, TOutput>(options: {
   getAuditDetails?: (req: Request, resource: TOutput) => Record<string, unknown>;
 }) {
   return asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    if (!requireContext(req, res)) return;
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
 
     try {
       const resource = await options.updateResource(
-        req.tenantClient!,
-        req.tenant!.schema,
+        context.tenantClient,
+        context.tenant.schema,
         req.params.id,
         req.body
       );
@@ -198,10 +173,11 @@ export function createDeleteHandler(options: {
   auditAction?: string;
 }) {
   return asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    if (!requireTenantContext(req, res)) return;
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
 
     try {
-      await options.deleteResource(req.tenantClient!, req.tenant!.schema, req.params.id);
+      await options.deleteResource(context.tenantClient, context.tenant.schema, req.params.id);
 
       // Audit log if specified
       if (options.auditAction && req.user) {
@@ -236,10 +212,11 @@ export function createUpsertHandlers<TInput, TOutput>(options: {
   schema: z.ZodSchema<TInput>;
 }) {
   const getHandler = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    if (!requireTenantContext(req, res)) return;
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
 
     try {
-      const resource = await options.getResource(req.tenantClient!, req.tenant!.schema);
+      const resource = await options.getResource(context.tenantClient, context.tenant.schema);
       res.json(resource ?? {});
     } catch (error) {
       next(error);
@@ -247,7 +224,8 @@ export function createUpsertHandlers<TInput, TOutput>(options: {
   });
 
   const putHandler = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    if (!requireContext(req, res)) return;
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
 
     const parsed = options.schema.safeParse(req.body);
     if (!parsed.success) {
@@ -256,8 +234,8 @@ export function createUpsertHandlers<TInput, TOutput>(options: {
 
     try {
       const resource = await options.upsertResource(
-        req.tenantClient!,
-        req.tenant!.schema,
+        context.tenantClient,
+        context.tenant.schema,
         parsed.data
       );
 
@@ -267,7 +245,7 @@ export function createUpsertHandlers<TInput, TOutput>(options: {
         {
           action: options.auditAction,
           resourceType: options.resourceName.toLowerCase(),
-          resourceId: req.tenant!.id,
+          resourceId: context.tenant.id,
           details: {
             updatedFields: Object.keys(parsed.data as Record<string, unknown>)
           },

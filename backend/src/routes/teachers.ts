@@ -21,7 +21,7 @@ import { safeAuditLogFromRequest } from '../lib/auditHelpers';
 import { createSuccessResponse, createErrorResponse, createPaginatedSuccessResponse } from '../lib/responseHelpers';
 import { validateContextOrRespond } from '../lib/contextHelpers';
 import { mutationRateLimiter } from '../middleware/mutationRateLimiter';
-import { createGetHandler, createPostHandler, createDeleteHandler, asyncHandler, requireTenantContext } from '../lib/routeHelpers';
+import { createGetHandler, createPostHandler, createDeleteHandler, asyncHandler } from '../lib/routeHelpers';
 import { markTeacherAttendance, getTeacherAttendance, bulkMarkTeacherAttendance } from '../services/teacherAttendanceService';
 import { submitTeacherGrades, getTeacherGrades, updateTeacherGrade } from '../services/teacherGradesService';
 import { uploadClassResource, getClassResources, deleteClassResource } from '../services/classResourcesService';
@@ -44,10 +44,11 @@ const listTeachersQuerySchema = z.object({
 });
 
 router.get('/', validateInput(listTeachersQuerySchema, 'query'), asyncHandler(async (req, res) => {
-  if (!requireTenantContext(req, res)) return;
+  const context = validateContextOrRespond(req, res);
+  if (!context) return;
 
   const pagination = req.pagination!;
-  const allTeachers = await listTeachers(req.tenantClient!, req.tenant!.schema);
+  const allTeachers = await listTeachers(context.tenantClient, context.tenant.schema);
   
   // Apply pagination
   const paginated = allTeachers.slice(pagination.offset, pagination.offset + pagination.limit);

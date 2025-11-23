@@ -14,7 +14,7 @@ import {
   logout
 } from '../services/authService';
 import { ValidationError } from '../middleware/validation';
-import { createErrorResponse } from '../lib/apiErrors';
+import { createErrorResponse } from '../lib/responseHelpers';
 import {
   findTenantByRegistrationCode,
   findTenantByName,
@@ -274,7 +274,8 @@ router.post('/change-password', authenticate, async (req, res) => {
     }
 
     const { changeOwnPassword } = await import('../services/userPasswordService');
-    const { extractIpAddress, extractUserAgent } = await import('../lib/superuserHelpers');
+    const { extractIpAddress } = await import('../lib/requestUtils');
+    const { extractUserAgent } = await import('../lib/superuserHelpers');
 
     const { getPool: getPoolFn } = await import('../db/connection');
     await changeOwnPassword(

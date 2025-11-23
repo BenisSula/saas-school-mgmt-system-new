@@ -1,12 +1,12 @@
 import { Role } from '../config/permissions';
 import {
   validateEmailFormat,
-  validatePasswordStrength,
   validateRole,
   sanitizeTenantName,
   ValidationError,
   ALLOWED_ROLES
 } from '../middleware/validation';
+import { validatePassword, getDefaultPasswordPolicy } from '../services/security/passwordPolicyService';
 
 export interface SignUpInputRaw {
   email: string;
@@ -60,8 +60,10 @@ export function validateSignupInput(input: SignUpInputRaw): SignUpInputNormalize
     throw new ValidationError('Password is required', 'password');
   }
 
-  const passwordValidation = validatePasswordStrength(input.password);
-  if (!passwordValidation.valid) {
+  // Use password policy service for validation (canonical)
+  const defaultPolicy = getDefaultPasswordPolicy();
+  const passwordValidation = validatePassword(input.password, defaultPolicy);
+  if (!passwordValidation.isValid) {
     throw new ValidationError(
       `Password validation failed: ${passwordValidation.errors.join(', ')}`,
       'password'

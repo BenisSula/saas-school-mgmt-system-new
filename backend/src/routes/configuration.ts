@@ -14,7 +14,7 @@ import {
   listClasses,
   listTerms
 } from '../services/termService';
-import { requireTenantContext } from '../lib/routeHelpers';
+import { validateContextOrRespond } from '../lib/contextHelpers';
 
 const router = Router();
 
@@ -29,9 +29,10 @@ const classIdSchema = z.object({
 router.use(authenticate, tenantResolver());
 
 router.get('/branding', requirePermission('settings:branding'), async (req, res, next) => {
-  if (!requireTenantContext(req, res)) return;
+  const context = validateContextOrRespond(req, res);
+  if (!context) return;
   try {
-    const branding = await getBranding(req.tenantClient!, req.tenant!.schema);
+    const branding = await getBranding(context.tenantClient, context.tenant.schema);
     res.json(branding);
   } catch (error) {
     next(error);
@@ -39,13 +40,14 @@ router.get('/branding', requirePermission('settings:branding'), async (req, res,
 });
 
 router.put('/branding', requirePermission('settings:branding'), async (req, res, next) => {
-  if (!requireTenantContext(req, res)) return;
+  const context = validateContextOrRespond(req, res);
+  if (!context) return;
   try {
     const parsed = brandingSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ message: parsed.error.message });
     }
-    const branding = await upsertBranding(req.tenantClient!, req.tenant!.schema, parsed.data);
+    const branding = await upsertBranding(context.tenantClient, context.tenant.schema, parsed.data);
     res.json(branding);
   } catch (error) {
     next(error);
@@ -53,7 +55,8 @@ router.put('/branding', requirePermission('settings:branding'), async (req, res,
 });
 
 router.post('/terms', requirePermission('settings:terms'), async (req, res, next) => {
-  if (!requireTenantContext(req, res)) return;
+  const context = validateContextOrRespond(req, res);
+  if (!context) return;
   try {
     const parsed = academicTermSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -67,7 +70,8 @@ router.post('/terms', requirePermission('settings:terms'), async (req, res, next
 });
 
 router.get('/terms', requirePermission('settings:terms'), async (req, res, next) => {
-  if (!requireTenantContext(req, res)) return;
+  const context = validateContextOrRespond(req, res);
+  if (!context) return;
   try {
     const terms = await listTerms(req.tenantClient!, req.tenant!.schema);
     res.json(terms);
@@ -77,7 +81,8 @@ router.get('/terms', requirePermission('settings:terms'), async (req, res, next)
 });
 
 router.put('/terms/:termId', requirePermission('settings:terms'), async (req, res, next) => {
-  if (!requireTenantContext(req, res)) return;
+  const context = validateContextOrRespond(req, res);
+  if (!context) return;
   try {
     const params = termIdSchema.safeParse(req.params);
     if (!params.success) {
@@ -95,7 +100,8 @@ router.put('/terms/:termId', requirePermission('settings:terms'), async (req, re
 });
 
 router.delete('/terms/:termId', requirePermission('settings:terms'), async (req, res, next) => {
-  if (!requireTenantContext(req, res)) return;
+  const context = validateContextOrRespond(req, res);
+  if (!context) return;
   try {
     const params = termIdSchema.safeParse(req.params);
     if (!params.success) {
@@ -109,7 +115,8 @@ router.delete('/terms/:termId', requirePermission('settings:terms'), async (req,
 });
 
 router.post('/classes', requirePermission('settings:classes'), async (req, res, next) => {
-  if (!requireTenantContext(req, res)) return;
+  const context = validateContextOrRespond(req, res);
+  if (!context) return;
   try {
     const parsed = classSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -123,7 +130,8 @@ router.post('/classes', requirePermission('settings:classes'), async (req, res, 
 });
 
 router.get('/classes', requirePermission('settings:classes'), async (req, res, next) => {
-  if (!requireTenantContext(req, res)) return;
+  const context = validateContextOrRespond(req, res);
+  if (!context) return;
   try {
     const classes = await listClasses(req.tenantClient!, req.tenant!.schema);
     res.json(classes);
@@ -133,7 +141,8 @@ router.get('/classes', requirePermission('settings:classes'), async (req, res, n
 });
 
 router.put('/classes/:classId', requirePermission('settings:classes'), async (req, res, next) => {
-  if (!requireTenantContext(req, res)) return;
+  const context = validateContextOrRespond(req, res);
+  if (!context) return;
   try {
     const params = classIdSchema.safeParse(req.params);
     if (!params.success) {
@@ -154,7 +163,8 @@ router.delete(
   '/classes/:classId',
   requirePermission('settings:classes'),
   async (req, res, next) => {
-    if (!requireTenantContext(req, res)) return;
+    const context = validateContextOrRespond(req, res);
+    if (!context) return;
     try {
       const params = classIdSchema.safeParse(req.params);
       if (!params.success) {

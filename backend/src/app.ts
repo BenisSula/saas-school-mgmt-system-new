@@ -33,7 +33,6 @@ import { metricsMiddleware } from './middleware/metrics';
 import { initializeErrorTracking } from './services/monitoring/errorTracking';
 import { requestLogger } from './services/monitoring/loggingService';
 import authenticate from './middleware/authenticate';
-import { requirePermission } from './middleware/rbac';
 import { tenantResolver } from './middleware/tenantResolver';
 import { apiLimiter, writeLimiter, adminActionLimiter, superuserStrictLimiter } from './middleware/rateLimiter';
 import { sanitizeInput } from './middleware/validateInput';
@@ -146,20 +145,9 @@ app.use('/api/notifications/email', emailNotificationsRouter);
 app.use('/api/support', supportRouter);
 app.use('/incident-response', incidentResponseRouter);
 
-app.get(
-  '/admin/overview',
-  authenticate,
-  tenantResolver({ optional: true }),
-  enhancedTenantIsolation,
-  requirePermission('users:manage'),
-  cachePolicies.admin,
-  (req, res) => {
-    res.status(200).json({
-      message: 'Welcome, admin',
-      tenant: req.tenant ?? null
-    });
-  }
-);
+// Admin overview routes
+import adminOverviewRouter from './routes/admin/overview';
+app.use('/admin/overview', authenticate, tenantResolver(), enhancedTenantIsolation, cachePolicies.admin, adminOverviewRouter);
 
 app.use('/admin', authenticate, tenantResolver(), enhancedTenantIsolation, adminActionLimiter, csrfProtection, auditAdminActions, parsePagination, cachePolicies.admin, adminAcademicsRouter);
 // Admin users routes (HOD management)

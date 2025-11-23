@@ -20,27 +20,8 @@ router.use(authenticate, tenantResolver(), ensureTenantContext());
 // Mount admin password routes
 router.use('/admin', adminPasswordsRouter);
 
-// Admin user registration schema
-const adminCreateUserSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-  role: z.enum(['student', 'teacher']),
-  fullName: z.string().min(2),
-  gender: z.enum(['male', 'female', 'other']).optional(),
-  address: z.string().optional(),
-  // Student fields
-  dateOfBirth: z.string().optional(),
-  parentGuardianName: z.string().optional(),
-  parentGuardianContact: z.string().optional(),
-  studentId: z.string().optional(),
-  classId: z.string().optional(),
-  // Teacher fields
-  phone: z.string().optional(),
-  qualifications: z.string().optional(),
-  yearsOfExperience: z.number().optional(),
-  subjects: z.array(z.string()).optional(),
-  teacherId: z.string().optional()
-});
+// Import user registration schema from validators
+import { adminCreateUserSchema } from '../validators/userRegistrationValidator';
 
 // Admin endpoint: Create new user with profile
 router.post('/register', requirePermission('users:manage'), validateInput(adminCreateUserSchema, 'body'), async (req, res, next) => {

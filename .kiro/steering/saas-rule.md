@@ -1,0 +1,18 @@
+---
+inclusion: manual
+---
+General engineering rules (apply across all phases)
+
+DRY & Modularity — extract duplicated logic to shared modules and utilities. Prefer small, well-named functions and components. Use a monorepo or clear separation backend/ and frontend/.
+
+File structure discipline — always locate new files by inspecting src/ tree; add files only where they logically belong. When unsure, add under shared/ or lib/ and refactor later.
+
+Test-before-delete — when replacing an existing module, add the new module + tests and deploy them to a test environment; once tests and QA pass, remove the old module.
+
+Security & privacy — use prepared statements/ORM parameterization, strong password hashing (bcrypt/argon2), HTTPS, Content Security Policy, input validation, rate limiting, and audit logging. Encrypt sensitive data at rest if needed.
+
+Multi-tenant principles — tenancy must be schema-based PostgreSQL isolation by default. Keep shared resources abstracted. Tenant onboarding flow must create schema and seed data.
+
+Observability & CI — structure git branches per feature, require tests and linter pass in CI. Use automated migrations, database backups, and monitoring.
+
+Incremental delivery — build minimum viable pieces of each feature and iterate.
