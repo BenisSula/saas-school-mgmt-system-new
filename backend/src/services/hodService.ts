@@ -1,7 +1,7 @@
 /**
  * HOD (Head of Department) Service
  * Handles HOD-specific operations: dashboard, teacher oversight, department analytics
- * 
+ *
  * DRY: Reuses existing services and utilities
  * Multi-tenant: All operations scoped to tenant and department
  */
@@ -136,10 +136,7 @@ export async function getHodOverview(
   const classesResult = await client.query<{
     id: string;
     grade_level: string | null;
-  }>(
-    `SELECT id, grade_level FROM ${schema}.classes WHERE department_id = $1`,
-    [departmentId]
-  );
+  }>(`SELECT id, grade_level FROM ${schema}.classes WHERE department_id = $1`, [departmentId]);
 
   const classes = classesResult.rows;
   const byLevel = new Map<string, number>();
@@ -178,34 +175,34 @@ export async function getHodOverview(
     resourceId: departmentId,
     details: { departmentName: department.name },
     severity: 'info',
-    tags: ['hod', 'dashboard', 'department']
+    tags: ['hod', 'dashboard', 'department'],
   });
 
   return {
     department: {
       id: department.id,
-      name: department.name
+      name: department.name,
     },
     teachers: {
       total: teachers.length,
       active: activeTeachers.length,
       bySubject: subjectsResult.rows.map((r) => ({
         subject: r.subject,
-        count: Number(r.count)
-      }))
+        count: Number(r.count),
+      })),
     },
     classes: {
       total: classes.length,
       byLevel: Array.from(byLevel.entries()).map(([level, count]) => ({
         level,
-        count
-      }))
+        count,
+      })),
     },
     performance: {
       avgScore: Number(performanceResult.rows[0]?.avg_score ?? 0),
       totalExams: Number(performanceResult.rows[0]?.exam_count ?? 0),
-      recentActivity: Number(activityResult.rows[0]?.count ?? 0)
-    }
+      recentActivity: Number(activityResult.rows[0]?.count ?? 0),
+    },
   };
 }
 
@@ -278,7 +275,7 @@ export async function listTeachersUnderHOD(
     email: row.email,
     subjects: Array.isArray(row.subjects) ? row.subjects : [],
     classes: Array.isArray(row.class_ids) ? row.class_ids.filter((id: unknown) => id !== null) : [],
-    lastActive: row.last_active ? new Date(row.last_active).toISOString() : null
+    lastActive: row.last_active ? new Date(row.last_active).toISOString() : null,
   }));
 }
 
@@ -399,28 +396,27 @@ export async function getDepartmentReport(
     resourceId: departmentId,
     details: { departmentName: department.name, filters },
     severity: 'info',
-    tags: ['hod', 'report', 'department']
+    tags: ['hod', 'report', 'department'],
   });
 
   return {
     department: {
       id: department.id,
-      name: department.name
+      name: department.name,
     },
     summary: {
       teachers: Number(teachersCount.rows[0]?.count ?? 0),
       classes: Number(classesCount.rows[0]?.count ?? 0),
-      students: Number(studentsCount.rows[0]?.count ?? 0)
+      students: Number(studentsCount.rows[0]?.count ?? 0),
     },
     performance: {
       avgScore: Number(performanceResult.rows[0]?.avg_score ?? 0),
       topPerformingClass: topClassResult.rows[0]?.class_name || null,
-      improvementTrend: 0 // TODO: Calculate trend from historical data
+      improvementTrend: 0, // TODO: Calculate trend from historical data
     },
     activity: {
       last7Days: Number(activity7Days.rows[0]?.count ?? 0),
-      last30Days: Number(activity30Days.rows[0]?.count ?? 0)
-    }
+      last30Days: Number(activity30Days.rows[0]?.count ?? 0),
+    },
   };
 }
-

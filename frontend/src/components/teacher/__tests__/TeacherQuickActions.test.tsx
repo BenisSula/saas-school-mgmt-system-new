@@ -39,4 +39,3 @@ describe('TeacherQuickActions', () => {
     expect(studentsLink).toHaveAttribute('href', '/dashboard/teacher/students');
   });
 });
-

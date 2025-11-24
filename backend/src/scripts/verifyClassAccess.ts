@@ -3,7 +3,7 @@ import { getPool, closePool } from '../db/connection';
 import { withTenantSearchPath } from '../db/tenantManager';
 import {
   listTeacherAssignmentsRows,
-  getTeacherClassRoster
+  getTeacherClassRoster,
 } from '../services/teacherDashboardService';
 
 async function verifyClassAccess() {
@@ -83,7 +83,7 @@ async function verifyClassAccess() {
                 teacherEmail: teacher.email ?? 'N/A',
                 class: clazz.name,
                 canAccess,
-                studentCount
+                studentCount,
               });
 
               if (canAccess) {
@@ -105,7 +105,7 @@ async function verifyClassAccess() {
                 teacherEmail: teacher.email ?? 'N/A',
                 class: clazz.name,
                 canAccess: false,
-                studentCount: 0
+                studentCount: 0,
               });
             }
           }
@@ -189,7 +189,7 @@ async function exportAllUserCredentials() {
   const adminPasswords = new Map([
     ['fatou.jallow@newhorizon.edu.gm', 'NhsAdmin@2025'],
     ['lamin.sowe@stpeterslamin.edu.gm', 'StpAdmin@2025'],
-    ['musu.bah@daddyjobe.edu.gm', 'DjcAdmin@2025']
+    ['musu.bah@daddyjobe.edu.gm', 'DjcAdmin@2025'],
   ]);
 
   // HOD passwords
@@ -202,7 +202,7 @@ async function exportAllUserCredentials() {
     ['ebrima.sanyang@stpeterslamin.edu.gm', 'StpArtsHOD@2025'],
     ['momodou.bojang@daddyjobe.edu.gm', 'DjcScienceHOD@2025'],
     ['isatou.jatta@daddyjobe.edu.gm', 'DjcCommerceHOD@2025'],
-    ['ousman.darboe@daddyjobe.edu.gm', 'DjcArtsHOD@2025']
+    ['ousman.darboe@daddyjobe.edu.gm', 'DjcArtsHOD@2025'],
   ]);
 
   // Teacher passwords
@@ -233,7 +233,7 @@ async function exportAllUserCredentials() {
     ['alieu.sanyang@daddyjobe.edu.gm', 'TeachDJC06@2025'],
     ['jainaba.camara@daddyjobe.edu.gm', 'TeachDJC07@2025'],
     ['lamin.bah@daddyjobe.edu.gm', 'TeachDJC08@2025'],
-    ['omar.jallow@daddyjobe.edu.gm', 'TeachDJC09@2025']
+    ['omar.jallow@daddyjobe.edu.gm', 'TeachDJC09@2025'],
   ]);
 
   console.log('='.repeat(80));
@@ -245,7 +245,7 @@ async function exportAllUserCredentials() {
     superadmin: [] as typeof users.rows,
     admin: [] as typeof users.rows,
     teacher: [] as typeof users.rows,
-    student: [] as typeof users.rows
+    student: [] as typeof users.rows,
   };
 
   for (const user of users.rows) {

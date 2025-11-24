@@ -58,13 +58,16 @@ export async function createAuditLog(
         entry.userAgent || null,
         entry.requestId || null,
         entry.severity || 'info',
-        entry.tags || []
+        entry.tags || [],
       ]
     );
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     // If tenant_id column doesn't exist, use older schema (migration 003)
-    if (errorMessage.includes('tenant_id') && (errorMessage.includes('does not exist') || errorMessage.includes('column'))) {
+    if (
+      errorMessage.includes('tenant_id') &&
+      (errorMessage.includes('does not exist') || errorMessage.includes('column'))
+    ) {
       // Fallback to older schema without tenant_id
       // Old schema: user_id, action, entity_type, entity_id, details, created_at
       await client.query(
@@ -79,7 +82,7 @@ export async function createAuditLog(
           entry.action,
           entry.resourceType || 'UNKNOWN',
           entry.resourceId || null,
-          JSON.stringify(entry.details)
+          JSON.stringify(entry.details),
         ]
       );
     } else {
@@ -199,8 +202,9 @@ export async function searchAuditLogs(
 
     // Build SELECT with only columns that exist
     // Base columns that should always exist
-    let selectColumns = 'id, tenant_id, user_id, action, resource_type, resource_id, details, ip_address, created_at';
-    
+    let selectColumns =
+      'id, tenant_id, user_id, action, resource_type, resource_id, details, ip_address, created_at';
+
     // Add optional columns if they exist
     if (hasSeverityColumn) {
       selectColumns += ', severity';
@@ -219,7 +223,7 @@ export async function searchAuditLogs(
       values
     );
 
-    const logs: AuditLogEntry[] = logsResult.rows.map(row => ({
+    const logs: AuditLogEntry[] = logsResult.rows.map((row) => ({
       id: row.id,
       tenantId: row.tenant_id,
       userId: row.user_id,
@@ -230,14 +234,16 @@ export async function searchAuditLogs(
       ipAddress: row.ip_address,
       userAgent: row.user_agent,
       requestId: row.request_id,
-      severity: hasSeverityColumn ? (row.severity as 'info' | 'warning' | 'error' | 'critical' | undefined) : undefined,
+      severity: hasSeverityColumn
+        ? (row.severity as 'info' | 'warning' | 'error' | 'critical' | undefined)
+        : undefined,
       tags: hasTagsColumn ? (row.tags as string[] | undefined) : undefined,
-      createdAt: row.created_at
+      createdAt: row.created_at,
     }));
 
     return {
       logs,
-      total
+      total,
     };
   } catch (error) {
     // Only log actual errors, not expected missing column errors
@@ -245,7 +251,7 @@ export async function searchAuditLogs(
       // Silently skip - expected when migrations haven't run
       return {
         logs: [],
-        total: 0
+        total: 0,
       };
     }
     throw error;
@@ -263,8 +269,18 @@ export async function exportAuditLogs(
   const { logs } = await searchAuditLogs(client, { ...filters, limit: 10000 });
 
   if (format === 'csv') {
-    const headers = ['ID', 'Tenant ID', 'User ID', 'Action', 'Resource Type', 'Resource ID', 'Severity', 'IP Address', 'Created At'];
-    const rows = logs.map(log => [
+    const headers = [
+      'ID',
+      'Tenant ID',
+      'User ID',
+      'Action',
+      'Resource Type',
+      'Resource ID',
+      'Severity',
+      'IP Address',
+      'Created At',
+    ];
+    const rows = logs.map((log) => [
       log.id,
       log.tenantId || '',
       log.userId || '',
@@ -273,12 +289,12 @@ export async function exportAuditLogs(
       log.resourceId || '',
       log.severity || '',
       log.ipAddress || '',
-      log.createdAt.toISOString()
+      log.createdAt.toISOString(),
     ]);
 
     return [
       headers.join(','),
-      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      ...rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')),
     ].join('\n');
   }
 
@@ -288,9 +304,7 @@ export async function exportAuditLogs(
 /**
  * Apply data retention policies
  */
-export async function applyRetentionPolicies(
-  client: PoolClient
-): Promise<number> {
+export async function applyRetentionPolicies(client: PoolClient): Promise<number> {
   const policiesResult = await client.query(
     `
       SELECT * FROM shared.audit_retention_policies
@@ -393,17 +407,22 @@ export async function processGdprExport(
 
   const request = requestResult.rows[0];
 
-  // Collect all user data (queries executed for side effects, data stored in export)
-  await client.query('SELECT * FROM shared.users WHERE id = $1', [request.user_id]);
-  await client.query('SELECT * FROM shared.audit_logs WHERE user_id = $1', [request.user_id]);
-  await client.query(
-    'SELECT id, ip_address, user_agent, created_at, last_activity_at FROM shared.sessions WHERE user_id = $1',
-    [request.user_id]
-  );
-  await client.query(
-    'SELECT id, type, name, created_at FROM shared.mfa_devices WHERE user_id = $1',
-    [request.user_id]
-  );
+  // OPTIMIZED: Execute all queries in parallel instead of sequentially
+  // This reduces total query time from ~4 sequential queries to parallel execution
+  const [userData, auditLogs, sessions, mfaDevices] = await Promise.all([
+    client.query('SELECT * FROM shared.users WHERE id = $1', [request.user_id]),
+    client.query('SELECT * FROM shared.audit_logs WHERE user_id = $1', [request.user_id]),
+    client.query(
+      'SELECT id, ip_address, user_agent, created_at, last_activity_at FROM shared.sessions WHERE user_id = $1',
+      [request.user_id]
+    ),
+    client.query('SELECT id, type, name, created_at FROM shared.mfa_devices WHERE user_id = $1', [
+      request.user_id,
+    ]),
+  ]);
+
+  // Data collected (queries executed for side effects, data stored in export)
+  // Note: Results are available but not used here as this is a placeholder for actual export logic
 
   // TODO: Upload to S3 or similar storage
   const exportUrl = `/api/gdpr/exports/${requestId}/download`;
@@ -451,17 +470,15 @@ export async function processGdprErasure(
     // Note: In production, you may want to anonymize instead of delete for compliance
 
     // Delete sessions
-    const sessionsResult = await client.query(
-      'DELETE FROM shared.sessions WHERE user_id = $1',
-      [request.user_id]
-    );
+    const sessionsResult = await client.query('DELETE FROM shared.sessions WHERE user_id = $1', [
+      request.user_id,
+    ]);
     totalDeleted += sessionsResult.rowCount || 0;
 
     // Delete MFA devices
-    const mfaResult = await client.query(
-      'DELETE FROM shared.mfa_devices WHERE user_id = $1',
-      [request.user_id]
-    );
+    const mfaResult = await client.query('DELETE FROM shared.mfa_devices WHERE user_id = $1', [
+      request.user_id,
+    ]);
     totalDeleted += mfaResult.rowCount || 0;
 
     // Anonymize audit logs
@@ -503,4 +520,3 @@ export async function processGdprErasure(
     throw error;
   }
 }
-

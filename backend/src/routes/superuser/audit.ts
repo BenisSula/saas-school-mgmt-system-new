@@ -4,12 +4,12 @@ import authorizeSuperUser from '../../middleware/authorizeSuperUser';
 import { getPool } from '../../db/connection';
 import {
   getPlatformAuditLogs,
-  getLoginAttempts
+  getLoginAttempts,
 } from '../../services/superuser/platformAuditService';
 import { exportAuditLogs } from '../../services/audit/enhancedAuditService';
 import {
   auditLogsQuerySchema,
-  auditLogsExportQuerySchema
+  auditLogsExportQuerySchema,
 } from '../../validators/superuserAuditValidator';
 import { Role } from '../../config/permissions';
 
@@ -26,7 +26,7 @@ router.get('/audit-logs', async (req, res, next) => {
   try {
     const pool = getPool();
     const client = await pool.connect();
-    
+
     try {
       const queryResult = auditLogsQuerySchema.safeParse(req.query);
       if (!queryResult.success) {
@@ -44,14 +44,10 @@ router.get('/audit-logs', async (req, res, next) => {
         startDate: queryResult.data.startDate,
         endDate: queryResult.data.endDate,
         limit: queryResult.data.limit || 50,
-        offset: queryResult.data.offset || 0
+        offset: queryResult.data.offset || 0,
       };
 
-      const result = await getPlatformAuditLogs(
-        client,
-        filters,
-        req.user!.role as Role
-      );
+      const result = await getPlatformAuditLogs(client, filters, req.user!.role as Role);
 
       res.json(result);
     } finally {
@@ -70,7 +66,7 @@ router.get('/audit-logs/export', async (req, res, next) => {
   try {
     const pool = getPool();
     const client = await pool.connect();
-    
+
     try {
       const queryResult = auditLogsExportQuerySchema.safeParse(req.query);
       if (!queryResult.success) {
@@ -87,7 +83,7 @@ router.get('/audit-logs/export', async (req, res, next) => {
         tags: queryResult.data.tags,
         startDate: queryResult.data.startDate,
         endDate: queryResult.data.endDate,
-        limit: 10000 // Large limit for exports
+        limit: 10000, // Large limit for exports
       };
 
       const format = queryResult.data.format || 'json';
@@ -118,7 +114,7 @@ router.get('/audit-logs/school/:schoolId', async (req, res, next) => {
   try {
     const pool = getPool();
     const client = await pool.connect();
-    
+
     try {
       const queryResult = auditLogsQuerySchema.safeParse(req.query);
       if (!queryResult.success) {
@@ -136,14 +132,10 @@ router.get('/audit-logs/school/:schoolId', async (req, res, next) => {
         startDate: queryResult.data.startDate,
         endDate: queryResult.data.endDate,
         limit: queryResult.data.limit || 50,
-        offset: queryResult.data.offset || 0
+        offset: queryResult.data.offset || 0,
       };
 
-      const result = await getPlatformAuditLogs(
-        client,
-        filters,
-        req.user!.role as Role
-      );
+      const result = await getPlatformAuditLogs(client, filters, req.user!.role as Role);
       res.json(result);
     } finally {
       client.release();
@@ -161,68 +153,69 @@ router.get('/audit-logs/stats', async (req, res, next) => {
   try {
     const pool = getPool();
     const client = await pool.connect();
-    
+
     try {
       const schoolId = req.query.schoolId as string | undefined;
       const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
-      
+
       let whereConditions: string[] = [];
       const params: unknown[] = [];
       let paramIndex = 1;
-      
+
       if (schoolId) {
         whereConditions.push(`tenant_id = $${paramIndex++}`);
         params.push(schoolId);
       }
-      
+
       if (startDate) {
         whereConditions.push(`created_at >= $${paramIndex++}`);
         params.push(startDate);
       }
-      
+
       if (endDate) {
         whereConditions.push(`created_at <= $${paramIndex++}`);
         params.push(endDate);
       }
-      
-      const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
-      
+
+      const whereClause =
+        whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
       // Get total count
       const totalResult = await client.query(
         `SELECT COUNT(*) as total FROM shared.audit_logs ${whereClause}`,
         params
       );
       const total = parseInt(totalResult.rows[0].total, 10);
-      
+
       // Get count by severity
       const severityResult = await client.query(
         `SELECT severity, COUNT(*) as count FROM shared.audit_logs ${whereClause} GROUP BY severity`,
         params
       );
       const bySeverity: Record<string, number> = {};
-      severityResult.rows.forEach(row => {
+      severityResult.rows.forEach((row) => {
         bySeverity[row.severity] = parseInt(row.count, 10);
       });
-      
+
       // Get count by action type (top 10)
       const actionResult = await client.query(
         `SELECT action, COUNT(*) as count FROM shared.audit_logs ${whereClause} GROUP BY action ORDER BY count DESC LIMIT 10`,
         params
       );
       const byAction: Record<string, number> = {};
-      actionResult.rows.forEach(row => {
+      actionResult.rows.forEach((row) => {
         byAction[row.action] = parseInt(row.count, 10);
       });
-      
+
       res.json({
         total,
         bySeverity,
         byAction,
         period: {
           startDate: startDate?.toISOString(),
-          endDate: endDate?.toISOString()
-        }
+          endDate: endDate?.toISOString(),
+        },
       });
     } finally {
       client.release();
@@ -239,7 +232,7 @@ router.get('/audit-logs/stats', async (req, res, next) => {
 router.get('/login-attempts', async (req, res, next) => {
   try {
     const pool = getPool();
-    
+
     // Parse query parameters
     const filters: {
       email?: string;
@@ -251,7 +244,7 @@ router.get('/login-attempts', async (req, res, next) => {
       limit?: number;
       offset?: number;
     } = {};
-    
+
     if (req.query.email && typeof req.query.email === 'string') {
       filters.email = req.query.email;
     }
@@ -259,7 +252,10 @@ router.get('/login-attempts', async (req, res, next) => {
       filters.userId = req.query.userId;
     }
     if (req.query.tenantId !== undefined) {
-      filters.tenantId = req.query.tenantId === 'null' || req.query.tenantId === '' ? null : req.query.tenantId as string;
+      filters.tenantId =
+        req.query.tenantId === 'null' || req.query.tenantId === ''
+          ? null
+          : (req.query.tenantId as string);
     }
     if (req.query.success !== undefined) {
       filters.success = req.query.success === 'true';
@@ -276,13 +272,9 @@ router.get('/login-attempts', async (req, res, next) => {
     if (req.query.offset) {
       filters.offset = parseInt(req.query.offset as string, 10);
     }
-    
-    const result = await getLoginAttempts(
-      pool,
-      filters,
-      req.user!.role as Role
-    );
-    
+
+    const result = await getLoginAttempts(pool, filters, req.user!.role as Role);
+
     res.json(result);
   } catch (error) {
     next(error);
@@ -297,16 +289,16 @@ router.get('/audit-logs/detail/:id', async (req, res, next) => {
   try {
     const pool = getPool();
     const client = await pool.connect();
-    
+
     try {
       const { id } = req.params;
-      
+
       // Validate UUID format
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (!uuidRegex.test(id)) {
         return res.status(400).json({ message: 'Invalid audit log ID' });
       }
-      
+
       // Get full audit log entry
       const result = await client.query(
         `
@@ -319,13 +311,13 @@ router.get('/audit-logs/detail/:id', async (req, res, next) => {
         `,
         [id]
       );
-      
+
       if (result.rows.length === 0) {
         return res.status(404).json({ message: 'Audit log not found' });
       }
-      
+
       const row = result.rows[0];
-      
+
       // Map to AuditLogEntry format
       const auditLog = {
         id: row.id,
@@ -340,9 +332,9 @@ router.get('/audit-logs/detail/:id', async (req, res, next) => {
         requestId: row.request_id,
         severity: row.severity,
         tags: row.tags || [],
-        createdAt: row.created_at
+        createdAt: row.created_at,
       };
-      
+
       res.json(auditLog);
     } finally {
       client.release();
@@ -353,4 +345,3 @@ router.get('/audit-logs/detail/:id', async (req, res, next) => {
 });
 
 export default router;
-

@@ -3,14 +3,18 @@ import authenticate from '../middleware/authenticate';
 import tenantResolver from '../middleware/tenantResolver';
 import ensureTenantContext from '../middleware/ensureTenantContext';
 import verifyTeacherAssignment from '../middleware/verifyTeacherAssignment';
-import { requireAnyPermission, requireSelfOrPermission, requirePermission } from '../middleware/rbac';
+import {
+  requireAnyPermission,
+  requireSelfOrPermission,
+  requirePermission,
+} from '../middleware/rbac';
 import { attendanceLimiter } from '../middleware/mutationRateLimiter';
 import {
   AttendanceMark,
   getAttendanceSummary,
   getClassReport,
   getStudentAttendance,
-  markAttendance
+  markAttendance,
 } from '../services/attendanceService';
 
 const router = Router();
@@ -43,13 +47,13 @@ router.post(
       // Server-side validation
       for (const record of payload) {
         if (!record.studentId || !record.classId || !record.date || !record.status) {
-          return res.status(400).json({ 
-            message: 'Each record must have studentId, classId, date, and status' 
+          return res.status(400).json({
+            message: 'Each record must have studentId, classId, date, and status',
           });
         }
         if (!['present', 'absent', 'late'].includes(record.status)) {
-          return res.status(400).json({ 
-            message: `Invalid status: ${record.status}. Must be 'present', 'absent', or 'late'` 
+          return res.status(400).json({
+            message: `Invalid status: ${record.status}. Must be 'present', 'absent', or 'late'`,
           });
         }
       }

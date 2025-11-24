@@ -37,7 +37,7 @@ export default function SuperuserSubscriptionsPage() {
   const updateSubscriptionMutation = useMutationWithInvalidation(
     async (payload: { schoolId: string; subscriptionType: SubscriptionTier }) => {
       await api.superuser.updateSchool(payload.schoolId, {
-        subscriptionType: payload.subscriptionType
+        subscriptionType: payload.subscriptionType,
       });
     },
     [queryKeys.superuser.schools(), queryKeys.superuser.subscriptions()] as unknown as unknown[][],
@@ -54,7 +54,7 @@ export default function SuperuserSubscriptionsPage() {
     return Array.from(counts.entries()).map(([tier, count]) => ({
       label: tier.charAt(0).toUpperCase() + tier.slice(1),
       value: count,
-      color: 'var(--brand-primary)'
+      color: 'var(--brand-primary)',
     }));
   }, [schools]);
 
@@ -70,7 +70,7 @@ export default function SuperuserSubscriptionsPage() {
       .filter(([, revenue]) => revenue > 0)
       .map(([tier, revenue]) => ({
         label: tier.charAt(0).toUpperCase() + tier.slice(1),
-        value: revenue
+        value: revenue,
       }));
   }, [schools]);
 
@@ -83,7 +83,7 @@ export default function SuperuserSubscriptionsPage() {
       totalRevenue,
       paidSubscriptions,
       trialSubscriptions,
-      totalSubscriptions: schools.length
+      totalSubscriptions: schools.length,
     };
   }, [revenueData, schools]);
 
@@ -93,7 +93,7 @@ export default function SuperuserSubscriptionsPage() {
         key: 'name',
         header: 'School',
         render: (row) => row.name,
-        sortable: true
+        sortable: true,
       },
       {
         key: 'subscriptionType',
@@ -104,16 +104,16 @@ export default function SuperuserSubscriptionsPage() {
             onChange={(e) =>
               updateSubscriptionMutation.mutate({
                 schoolId: row.id,
-                subscriptionType: e.target.value as SubscriptionTier
+                subscriptionType: e.target.value as SubscriptionTier,
               })
             }
             options={[
               { label: 'Trial', value: 'trial' },
               { label: 'Paid', value: 'paid' },
-              { label: 'Premium', value: 'premium' }
+              { label: 'Premium', value: 'premium' },
             ]}
           />
-        )
+        ),
       },
       {
         key: 'status',
@@ -128,18 +128,18 @@ export default function SuperuserSubscriptionsPage() {
           >
             {row.status || 'unknown'}
           </span>
-        )
+        ),
       },
       {
         key: 'userCount',
         header: 'Users',
-        render: (row) => row.userCount || 0
+        render: (row) => row.userCount || 0,
       },
       {
         key: 'billingEmail',
         header: 'Billing Email',
-        render: (row) => row.billingEmail || '—'
-      }
+        render: (row) => row.billingEmail || '—',
+      },
     ],
     [updateSubscriptionMutation]
   );
@@ -208,10 +208,7 @@ export default function SuperuserSubscriptionsPage() {
 
         {/* Tier Configuration Modal */}
         {showTierModal && (
-          <TierConfigurationModal
-            isOpen={showTierModal}
-            onClose={() => setShowTierModal(false)}
-          />
+          <TierConfigurationModal isOpen={showTierModal} onClose={() => setShowTierModal(false)} />
         )}
       </div>
     </RouteMeta>
@@ -234,33 +231,35 @@ function TierConfigurationModal({ isOpen, onClose }: { isOpen: boolean; onClose:
     try {
       const data = await api.superuser.getSubscriptionTierConfigs();
       setConfigs(
-        data.map((c: {
-          id: string;
-          tier: SubscriptionTier;
-          name: string;
-          description: string | null;
-          monthlyPrice: number;
-          yearlyPrice: number;
-          maxUsers: number | null;
-          maxStudents: number | null;
-          maxTeachers: number | null;
-          maxStorageGb: number | null;
-          features: Record<string, unknown>;
-          limits: Record<string, unknown>;
-          isActive: boolean;
-          createdAt: string;
-          updatedAt: string;
-        }) => ({
-          tier: c.tier,
-          name: c.name,
-          description: c.description || '',
-          monthlyPrice: c.monthlyPrice,
-          yearlyPrice: c.yearlyPrice,
-          maxUsers: c.maxUsers,
-          maxStudents: c.maxStudents,
-          maxTeachers: c.maxTeachers,
-          maxStorageGb: c.maxStorageGb
-        }))
+        data.map(
+          (c: {
+            id: string;
+            tier: SubscriptionTier;
+            name: string;
+            description: string | null;
+            monthlyPrice: number;
+            yearlyPrice: number;
+            maxUsers: number | null;
+            maxStudents: number | null;
+            maxTeachers: number | null;
+            maxStorageGb: number | null;
+            features: Record<string, unknown>;
+            limits: Record<string, unknown>;
+            isActive: boolean;
+            createdAt: string;
+            updatedAt: string;
+          }) => ({
+            tier: c.tier,
+            name: c.name,
+            description: c.description || '',
+            monthlyPrice: c.monthlyPrice,
+            yearlyPrice: c.yearlyPrice,
+            maxUsers: c.maxUsers,
+            maxStudents: c.maxStudents,
+            maxTeachers: c.maxTeachers,
+            maxStorageGb: c.maxStorageGb,
+          })
+        )
       );
     } catch (err) {
       toast.error((err as Error).message || 'Failed to load tier configurations');
@@ -283,8 +282,8 @@ function TierConfigurationModal({ isOpen, onClose }: { isOpen: boolean; onClose:
             maxUsers: c.maxUsers,
             maxStudents: c.maxStudents,
             maxTeachers: c.maxTeachers,
-            maxStorageGb: c.maxStorageGb
-          }
+            maxStorageGb: c.maxStorageGb,
+          },
         }))
       );
       toast.success('Tier configurations updated successfully');
@@ -296,10 +295,12 @@ function TierConfigurationModal({ isOpen, onClose }: { isOpen: boolean; onClose:
     }
   };
 
-  const updateConfig = (tier: SubscriptionTier, field: keyof TierConfig, value: string | number | null) => {
-    setConfigs((prev) =>
-      prev.map((c) => (c.tier === tier ? { ...c, [field]: value } : c))
-    );
+  const updateConfig = (
+    tier: SubscriptionTier,
+    field: keyof TierConfig,
+    value: string | number | null
+  ) => {
+    setConfigs((prev) => prev.map((c) => (c.tier === tier ? { ...c, [field]: value } : c)));
   };
 
   if (loading) {
@@ -331,40 +332,68 @@ function TierConfigurationModal({ isOpen, onClose }: { isOpen: boolean; onClose:
                 label="Monthly Price ($)"
                 type="number"
                 value={config.monthlyPrice}
-                onChange={(e) => updateConfig(config.tier, 'monthlyPrice', parseFloat(e.target.value) || 0)}
+                onChange={(e) =>
+                  updateConfig(config.tier, 'monthlyPrice', parseFloat(e.target.value) || 0)
+                }
               />
               <Input
                 label="Yearly Price ($)"
                 type="number"
                 value={config.yearlyPrice}
-                onChange={(e) => updateConfig(config.tier, 'yearlyPrice', parseFloat(e.target.value) || 0)}
+                onChange={(e) =>
+                  updateConfig(config.tier, 'yearlyPrice', parseFloat(e.target.value) || 0)
+                }
               />
               <Input
                 label="Max Users"
                 type="number"
                 value={config.maxUsers || ''}
-                onChange={(e) => updateConfig(config.tier, 'maxUsers', e.target.value ? parseInt(e.target.value, 10) : null)}
+                onChange={(e) =>
+                  updateConfig(
+                    config.tier,
+                    'maxUsers',
+                    e.target.value ? parseInt(e.target.value, 10) : null
+                  )
+                }
                 placeholder="Unlimited"
               />
               <Input
                 label="Max Students"
                 type="number"
                 value={config.maxStudents || ''}
-                onChange={(e) => updateConfig(config.tier, 'maxStudents', e.target.value ? parseInt(e.target.value, 10) : null)}
+                onChange={(e) =>
+                  updateConfig(
+                    config.tier,
+                    'maxStudents',
+                    e.target.value ? parseInt(e.target.value, 10) : null
+                  )
+                }
                 placeholder="Unlimited"
               />
               <Input
                 label="Max Teachers"
                 type="number"
                 value={config.maxTeachers || ''}
-                onChange={(e) => updateConfig(config.tier, 'maxTeachers', e.target.value ? parseInt(e.target.value, 10) : null)}
+                onChange={(e) =>
+                  updateConfig(
+                    config.tier,
+                    'maxTeachers',
+                    e.target.value ? parseInt(e.target.value, 10) : null
+                  )
+                }
                 placeholder="Unlimited"
               />
               <Input
                 label="Max Storage (GB)"
                 type="number"
                 value={config.maxStorageGb || ''}
-                onChange={(e) => updateConfig(config.tier, 'maxStorageGb', e.target.value ? parseInt(e.target.value, 10) : null)}
+                onChange={(e) =>
+                  updateConfig(
+                    config.tier,
+                    'maxStorageGb',
+                    e.target.value ? parseInt(e.target.value, 10) : null
+                  )
+                }
                 placeholder="Unlimited"
               />
             </div>

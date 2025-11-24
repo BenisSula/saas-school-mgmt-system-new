@@ -7,8 +7,8 @@ import { useRegisterForm } from '../hooks/useRegisterForm';
 const mockRegister = vi.fn();
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
-    register: mockRegister
-  })
+    register: mockRegister,
+  }),
 }));
 
 // Mock API for TenantSelector (used by useRegisterForm)
@@ -22,8 +22,8 @@ vi.mock('../lib/api', async (importOriginal) => {
     api: {
       ...actual.api,
       listSchools: mockListSchools,
-      lookupTenant: mockLookupTenant
-    }
+      lookupTenant: mockLookupTenant,
+    },
   };
 });
 
@@ -38,7 +38,7 @@ describe('useRegisterForm', () => {
       schools: [],
       count: 0,
       total: 0,
-      type: 'recent' as const
+      type: 'recent' as const,
     });
 
     // Default mock for lookupTenant
@@ -69,7 +69,7 @@ describe('useRegisterForm', () => {
     const { result } = renderHook(() =>
       useRegisterForm({
         defaultRole: 'student',
-        defaultTenantId: validTenantId
+        defaultTenantId: validTenantId,
       })
     );
 
@@ -99,15 +99,15 @@ describe('useRegisterForm', () => {
         role: 'student' as const,
         tenantId: validTenantId,
         isVerified: false,
-        status: 'pending' as const
-      }
+        status: 'pending' as const,
+      },
     };
 
     mockRegister.mockResolvedValue(mockAuthResponse);
 
     await act(async () => {
       await result.current.handleSubmit({
-        preventDefault: vi.fn()
+        preventDefault: vi.fn(),
       } as unknown as React.FormEvent<HTMLFormElement>);
     });
 
@@ -124,7 +124,7 @@ describe('useRegisterForm', () => {
     const { result } = renderHook(() =>
       useRegisterForm({
         defaultRole: 'teacher',
-        defaultTenantId: validTenantId
+        defaultTenantId: validTenantId,
       })
     );
 
@@ -154,15 +154,15 @@ describe('useRegisterForm', () => {
         role: 'teacher' as const,
         tenantId: validTenantId,
         isVerified: false,
-        status: 'pending' as const
-      }
+        status: 'pending' as const,
+      },
     };
 
     mockRegister.mockResolvedValue(mockAuthResponse);
 
     await act(async () => {
       await result.current.handleSubmit({
-        preventDefault: vi.fn()
+        preventDefault: vi.fn(),
       } as unknown as React.FormEvent<HTMLFormElement>);
     });
 
@@ -189,7 +189,7 @@ describe('useRegisterForm', () => {
 
     await act(async () => {
       await result.current.handleSubmit({
-        preventDefault: vi.fn()
+        preventDefault: vi.fn(),
       } as unknown as React.FormEvent<HTMLFormElement>);
     });
 
@@ -208,7 +208,7 @@ describe('useRegisterForm', () => {
         id: validTenantId,
         name: 'Test School',
         domain: null,
-        registrationCode: 'TEST123'
+        registrationCode: 'TEST123',
       });
     });
 
@@ -223,7 +223,7 @@ describe('useRegisterForm', () => {
       useRegisterForm({
         defaultRole: 'student',
         defaultTenantId: validTenantId,
-        onPending
+        onPending,
       })
     );
 
@@ -253,15 +253,15 @@ describe('useRegisterForm', () => {
         role: 'student' as const,
         tenantId: validTenantId,
         isVerified: false,
-        status: 'pending' as const
-      }
+        status: 'pending' as const,
+      },
     };
 
     mockRegister.mockResolvedValue(mockAuthResponse);
 
     await act(async () => {
       await result.current.handleSubmit({
-        preventDefault: vi.fn()
+        preventDefault: vi.fn(),
       } as unknown as React.FormEvent<HTMLFormElement>);
     });
 

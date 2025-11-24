@@ -41,7 +41,7 @@ export default function AdminDepartmentAnalyticsPage() {
     return departments.map((dept) => ({
       label: dept,
       value: teachers.filter((t: TeacherProfile) => t.subjects.includes(dept)).length,
-      color: 'var(--brand-primary)'
+      color: 'var(--brand-primary)',
     }));
   }, [departments, teachers]);
 
@@ -55,7 +55,7 @@ export default function AdminDepartmentAnalyticsPage() {
     return Array.from(classCounts.entries()).map(([label, value]) => ({
       label,
       value,
-      color: undefined // Will use default colors
+      color: undefined, // Will use default colors
     }));
   }, [students]);
 
@@ -63,7 +63,9 @@ export default function AdminDepartmentAnalyticsPage() {
   const classSizeTrend: LineChartDataPoint[] = useMemo(() => {
     return classes.map((clazz: SchoolClass) => ({
       label: clazz.name,
-      value: students.filter((s: StudentRecord) => s.class_uuid === clazz.id || s.class_id === clazz.id).length
+      value: students.filter(
+        (s: StudentRecord) => s.class_uuid === clazz.id || s.class_id === clazz.id
+      ).length,
     }));
   }, [classes, students]);
 
@@ -74,7 +76,7 @@ export default function AdminDepartmentAnalyticsPage() {
         totalTeachers: analyticsData.totalTeachers,
         totalStudents: analyticsData.totalStudents,
         totalClasses: classes.length,
-        avgClassSize: analyticsData.averageClassSize
+        avgClassSize: analyticsData.averageClassSize,
       };
     }
 
@@ -88,7 +90,7 @@ export default function AdminDepartmentAnalyticsPage() {
       totalTeachers,
       totalStudents,
       totalClasses,
-      avgClassSize: Math.round(avgClassSize * 10) / 10
+      avgClassSize: Math.round(avgClassSize * 10) / 10,
     };
   }, [teachers, students, classes, analyticsData, selectedDepartment]);
 
@@ -108,10 +110,12 @@ export default function AdminDepartmentAnalyticsPage() {
             <Select
               label="Department"
               value={selectedDepartment}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedDepartment(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                setSelectedDepartment(e.target.value)
+              }
               options={[
                 { label: 'All Departments', value: 'all' },
-                ...departments.map((dept) => ({ label: dept, value: dept }))
+                ...departments.map((dept) => ({ label: dept, value: dept })),
               ]}
             />
           </div>

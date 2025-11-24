@@ -10,7 +10,7 @@ import {
   LoginHistoryViewer,
   SessionManager,
   PasswordHistoryViewer,
-  UserActivityTimeline
+  UserActivityTimeline,
 } from '../../../../../components/superuser';
 import { SessionMap } from '../../../../../components/superuser/SessionMap';
 import { useWebSocket } from '../../../../../hooks/useWebSocket';
@@ -29,14 +29,14 @@ export default function UserActivityPage() {
   const {
     data: userData,
     isLoading: userLoading,
-    error: userError
+    error: userError,
   } = useQuery({
     queryKey: ['superuser', 'user', userId],
     queryFn: async () => {
       const users = await api.superuser.listUsers();
       return users.find((u) => u.id === userId);
     },
-    enabled: !!userId
+    enabled: !!userId,
   });
 
   // Fetch user sessions - hooks must be called unconditionally
@@ -46,7 +46,7 @@ export default function UserActivityPage() {
       return await api.superuser.getSessions(userId);
     },
     enabled: !!userId,
-    refetchInterval: 30000 // Poll every 30 seconds
+    refetchInterval: 30000, // Poll every 30 seconds
   });
 
   // WebSocket for real-time updates - hooks must be called unconditionally
@@ -59,7 +59,7 @@ export default function UserActivityPage() {
       ) {
         toast.success('New activity detected', { duration: 2000 });
       }
-    }
+    },
   });
 
   if (!userId) {
@@ -74,7 +74,7 @@ export default function UserActivityPage() {
     { id: 'timeline', label: 'Activity Timeline' },
     { id: 'sessions', label: 'Sessions' },
     { id: 'login-history', label: 'Login History' },
-    { id: 'password-history', label: 'Password History' }
+    { id: 'password-history', label: 'Password History' },
   ];
 
   if (userLoading) {

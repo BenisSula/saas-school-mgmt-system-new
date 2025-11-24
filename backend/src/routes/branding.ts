@@ -9,14 +9,19 @@ import { createUpsertHandlers } from '../lib/routeHelpers';
 
 const router = Router();
 
-router.use(authenticate, tenantResolver(), ensureTenantContext(), requirePermission('settings:branding'));
+router.use(
+  authenticate,
+  tenantResolver(),
+  ensureTenantContext(),
+  requirePermission('settings:branding')
+);
 
 const { getHandler, putHandler } = createUpsertHandlers({
   getResource: getBranding,
   upsertResource: upsertBranding,
   resourceName: 'Branding',
   auditAction: 'BRANDING_UPDATED',
-  schema: brandingSchema
+  schema: brandingSchema,
 });
 
 router.get('/', getHandler);

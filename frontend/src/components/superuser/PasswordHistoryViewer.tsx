@@ -21,14 +21,17 @@ const CHANGE_TYPE_LABELS: Record<PasswordChangeHistory['changeType'], string> = 
   self_reset: 'Self Reset',
   admin_reset: 'Admin Reset',
   admin_change: 'Admin Change',
-  forced_reset: 'Forced Reset'
+  forced_reset: 'Forced Reset',
 };
 
 const CHANGE_TYPE_COLORS: Record<PasswordChangeHistory['changeType'], string> = {
   self_reset: 'bg-[var(--brand-info)]/20 text-[var(--brand-info)] border-[var(--brand-info)]/30',
-  admin_reset: 'bg-[var(--brand-warning)]/20 text-[var(--brand-warning)] border-[var(--brand-warning)]/30',
-  admin_change: 'bg-[var(--brand-primary)]/20 text-[var(--brand-primary)] border-[var(--brand-primary)]/30',
-  forced_reset: 'bg-[var(--brand-error)]/20 text-[var(--brand-error)] border-[var(--brand-error)]/30'
+  admin_reset:
+    'bg-[var(--brand-warning)]/20 text-[var(--brand-warning)] border-[var(--brand-warning)]/30',
+  admin_change:
+    'bg-[var(--brand-primary)]/20 text-[var(--brand-primary)] border-[var(--brand-primary)]/30',
+  forced_reset:
+    'bg-[var(--brand-error)]/20 text-[var(--brand-error)] border-[var(--brand-error)]/30',
 };
 
 export function PasswordHistoryViewer({ userId, tenantId }: PasswordHistoryViewerProps) {
@@ -46,7 +49,7 @@ export function PasswordHistoryViewer({ userId, tenantId }: PasswordHistoryViewe
       tenantId,
       startDate,
       endDate,
-      changeTypeFilter
+      changeTypeFilter,
     ],
     queryFn: async () => {
       const filters: {
@@ -65,7 +68,7 @@ export function PasswordHistoryViewer({ userId, tenantId }: PasswordHistoryViewe
 
       return await api.superuser.getPasswordHistory(userId, filters);
     },
-    enabled: !!userId
+    enabled: !!userId,
   });
 
   const filteredHistory = useMemo(() => {
@@ -98,7 +101,7 @@ export function PasswordHistoryViewer({ userId, tenantId }: PasswordHistoryViewe
             </span>
           </div>
         ),
-        sortable: true
+        sortable: true,
       },
       {
         key: 'changeType',
@@ -110,7 +113,7 @@ export function PasswordHistoryViewer({ userId, tenantId }: PasswordHistoryViewe
             {CHANGE_TYPE_LABELS[entry.changeType]}
           </span>
         ),
-        sortable: true
+        sortable: true,
       },
       {
         key: 'changedBy',
@@ -128,14 +131,12 @@ export function PasswordHistoryViewer({ userId, tenantId }: PasswordHistoryViewe
                 </span>
               )}
               {entry.changedByRole && (
-                <span className="text-xs text-[var(--brand-muted)]">
-                  {entry.changedByRole}
-                </span>
+                <span className="text-xs text-[var(--brand-muted)]">{entry.changedByRole}</span>
               )}
             </div>
           </div>
         ),
-        sortable: true
+        sortable: true,
       },
       {
         key: 'ipAddress',
@@ -147,38 +148,32 @@ export function PasswordHistoryViewer({ userId, tenantId }: PasswordHistoryViewe
               {entry.ipAddress || '—'}
             </span>
           </div>
-        )
+        ),
       },
       {
         key: 'deviceInfo',
         header: 'Device Info',
         render: (entry) => (
-          <DeviceInfoCell
-            deviceInfo={entry.deviceInfo}
-            userAgent={entry.userAgent}
-          />
-        )
+          <DeviceInfoCell deviceInfo={entry.deviceInfo} userAgent={entry.userAgent} />
+        ),
       },
       {
         key: 'userAgent',
         header: 'User Agent',
         render: (entry) => (
-          <span className="text-[var(--brand-text-secondary)] text-sm truncate max-w-xs" title={entry.userAgent || undefined}>
+          <span
+            className="text-[var(--brand-text-secondary)] text-sm truncate max-w-xs"
+            title={entry.userAgent || undefined}
+          >
             {formatUserAgent(entry.userAgent)}
           </span>
-        )
+        ),
       },
       {
         key: 'metadata',
         header: 'Metadata',
-        render: (entry) => (
-          <MetadataCell
-            metadata={entry.metadata}
-            showReason
-            showNotification
-          />
-        )
-      }
+        render: (entry) => <MetadataCell metadata={entry.metadata} showReason showNotification />,
+      },
     ],
     []
   );
@@ -252,9 +247,9 @@ export function PasswordHistoryViewer({ userId, tenantId }: PasswordHistoryViewe
                   { label: 'Self Reset', value: 'self_reset' },
                   { label: 'Admin Reset', value: 'admin_reset' },
                   { label: 'Admin Change', value: 'admin_change' },
-                  { label: 'Forced Reset', value: 'forced_reset' }
-                ]
-              }
+                  { label: 'Forced Reset', value: 'forced_reset' },
+                ],
+              },
             ]}
             onClearFilters={handleClearFilters}
           />
@@ -272,4 +267,3 @@ export function PasswordHistoryViewer({ userId, tenantId }: PasswordHistoryViewe
     </div>
   );
 }
-

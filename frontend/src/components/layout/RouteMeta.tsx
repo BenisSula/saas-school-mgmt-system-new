@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from 'react';
 import {
   useDashboardRouteContext,
-  type DashboardRouteMeta
+  type DashboardRouteMeta,
 } from '../../context/DashboardRouteContext';
 
 export interface RouteMetaProps extends DashboardRouteMeta {

@@ -7,7 +7,7 @@ import { getPool } from '../src/db/connection';
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -56,7 +56,7 @@ describe('Admin → HOD & Teacher Flow Integration', () => {
 
     // Check if user already exists
     const existingUser = await pool.query('SELECT * FROM shared.users WHERE email = $1', [
-      adminEmail
+      adminEmail,
     ]);
 
     if (existingUser.rows.length === 0) {
@@ -73,7 +73,7 @@ describe('Admin → HOD & Teacher Flow Integration', () => {
     // Login to get token
     const loginResponse = await request(app).post('/auth/login').send({
       email: adminEmail,
-      password: adminPassword
+      password: adminPassword,
     });
 
     if (loginResponse.status === 200) {
@@ -93,7 +93,7 @@ describe('Admin → HOD & Teacher Flow Integration', () => {
       email: hodEmail,
       password: hodPassword,
       role: 'hod',
-      tenantId
+      tenantId,
     });
 
     // Check response - may be 201 (success), 400 (validation error), or 422 (unprocessable entity)
@@ -132,7 +132,7 @@ describe('Admin → HOD & Teacher Flow Integration', () => {
 
     // Step 4: Verify HOD is now active
     const activeHodCheck = await pool.query(`SELECT status FROM shared.users WHERE id = $1`, [
-      hodUserId
+      hodUserId,
     ]);
 
     expect(activeHodCheck.rows[0].status).toBe('active');
@@ -140,7 +140,7 @@ describe('Admin → HOD & Teacher Flow Integration', () => {
     // Step 5: HOD can login
     const hodLoginResponse = await request(app).post('/auth/login').send({
       email: hodEmail,
-      password: hodPassword
+      password: hodPassword,
     });
 
     expect(hodLoginResponse.status).toBe(200);
@@ -157,7 +157,7 @@ describe('Admin → HOD & Teacher Flow Integration', () => {
       email: teacherEmail,
       password: teacherPassword,
       role: 'teacher',
-      tenantId
+      tenantId,
     });
 
     expect(teacherSignupResponse.status).toBe(201);
@@ -188,7 +188,7 @@ describe('Admin → HOD & Teacher Flow Integration', () => {
 
     // Step 4: Verify Teacher is now active
     const activeTeacherCheck = await pool.query(`SELECT status FROM shared.users WHERE id = $1`, [
-      teacherUserId
+      teacherUserId,
     ]);
 
     expect(activeTeacherCheck.rows[0].status).toBe('active');
@@ -196,7 +196,7 @@ describe('Admin → HOD & Teacher Flow Integration', () => {
     // Step 5: Teacher can login
     const teacherLoginResponse = await request(app).post('/auth/login').send({
       email: teacherEmail,
-      password: teacherPassword
+      password: teacherPassword,
     });
 
     expect(teacherLoginResponse.status).toBe(200);

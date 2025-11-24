@@ -43,7 +43,7 @@ export interface AdminNotificationInput {
 function normaliseContext(context?: SessionContext) {
   return {
     ip: context?.ip ?? null,
-    userAgent: context?.userAgent ?? null
+    userAgent: context?.userAgent ?? null,
   };
 }
 
@@ -110,8 +110,8 @@ export async function recordLoginEvent(
         entityId: sessionId,
         details: {
           ip,
-          userAgent
-        }
+          userAgent,
+        },
       });
     } catch (auditError) {
       console.error('[platformMonitoring] Failed to record audit log:', auditError);
@@ -158,8 +158,8 @@ export async function recordLogoutEvent(
     entityId: sessionId ?? undefined,
     details: {
       ip,
-      userAgent
-    }
+      userAgent,
+    },
   });
 }
 
@@ -208,8 +208,8 @@ export async function rotateSessionToken(
     entityId: sessionId,
     details: {
       ip,
-      userAgent
-    }
+      userAgent,
+    },
   });
 }
 
@@ -265,7 +265,7 @@ export async function listAllPlatformUsers(): Promise<PlatformUserSummary[]> {
       row.date_of_birth instanceof Date ? row.date_of_birth.toISOString().split('T')[0] : null,
     enrollmentDate:
       row.enrollment_date instanceof Date ? row.enrollment_date.toISOString().split('T')[0] : null,
-    metadata: row.metadata ?? null
+    metadata: row.metadata ?? null,
   }));
 }
 
@@ -276,7 +276,7 @@ export async function sendNotificationToAdmins({
   targetRole = 'admin',
   targetRoles,
   metadata,
-  actorId
+  actorId,
 }: AdminNotificationInput): Promise<{ sentCount: number; notificationIds: string[] }> {
   if (!title?.trim() || !message?.trim()) {
     throw new Error('Notification title and message are required');
@@ -342,7 +342,7 @@ export async function sendNotificationToAdmins({
         effectiveRoles,
         title.trim(),
         message.trim(),
-        JSON.stringify(metadata ?? {})
+        JSON.stringify(metadata ?? {}),
       ]
     );
   }
@@ -357,8 +357,8 @@ export async function sendNotificationToAdmins({
       title,
       message,
       targetRoles: effectiveRoles,
-      recipients: recipientsResult.rowCount
-    }
+      recipients: recipientsResult.rowCount,
+    },
   });
 
   return { sentCount: recipientsResult.rowCount ?? 0, notificationIds };
@@ -409,8 +409,8 @@ export async function updatePlatformUserStatus(
     entityId: userId,
     details: {
       newStatus: status,
-      userEmail: row.email
-    }
+      userEmail: row.email,
+    },
   });
 
   return {
@@ -434,7 +434,7 @@ export async function updatePlatformUserStatus(
       row.date_of_birth instanceof Date ? row.date_of_birth.toISOString().split('T')[0] : null,
     enrollmentDate:
       row.enrollment_date instanceof Date ? row.enrollment_date.toISOString().split('T')[0] : null,
-    metadata: row.metadata ?? null
+    metadata: row.metadata ?? null,
   };
 }
 
@@ -452,12 +452,12 @@ export async function generatePlatformReport(
     entityType: 'REPORT' as const,
     entityId: reportId,
     details: {
-      reportType: type
-    }
+      reportType: type,
+    },
   });
 
   return {
-    id: reportId
+    id: reportId,
     // downloadUrl would be added when actual report generation is implemented
   };
 }
@@ -495,8 +495,8 @@ export async function updatePlatformSettings(
     entityType: 'SETTINGS' as const,
     entityId: 'platform',
     details: {
-      settings
-    }
+      settings,
+    },
   });
 
   // In production, you'd update a platform_settings table here

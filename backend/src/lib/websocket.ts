@@ -46,8 +46,8 @@ export class WebSocketManager {
       // Dynamic import to avoid requiring ws package if not needed
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { WebSocketServer: WSS } = require('ws');
-      
-      this.wss = (new WSS({
+
+      this.wss = new WSS({
         server,
         path: '/ws',
         verifyClient: (info: { origin: string }) => {
@@ -61,8 +61,8 @@ export class WebSocketManager {
             }
           }
           return true;
-        }
-      }) as unknown) as WSSLike;
+        },
+      }) as unknown as WSSLike;
 
       this.wss.on('connection', (ws: unknown, req: unknown) => {
         this.handleConnection(ws as AuthenticatedWebSocket, req);
@@ -72,10 +72,16 @@ export class WebSocketManager {
     } catch (error) {
       // WebSocket is optional - only log once in dev mode, silently ignore in production
       if (process.env.NODE_ENV !== 'production') {
-        const errorCode = error && typeof error === 'object' && 'code' in error ? (error as { code: string }).code : 'UNKNOWN';
+        const errorCode =
+          error && typeof error === 'object' && 'code' in error
+            ? (error as { code: string }).code
+            : 'UNKNOWN';
         if (errorCode === 'MODULE_NOT_FOUND') {
           // Expected: 'ws' package not installed - this is fine, WebSocket is optional
-          logger.info({}, '[WebSocket] Optional WebSocket support not available (install "ws" package to enable)');
+          logger.info(
+            {},
+            '[WebSocket] Optional WebSocket support not available (install "ws" package to enable)'
+          );
         } else {
           // Unexpected error - log it
           logger.warn({ err: error }, '[WebSocket] Unexpected error during initialization');
@@ -93,7 +99,7 @@ export class WebSocketManager {
 
     // Authenticate via token in query string or header
     const token = this.extractToken(req);
-    
+
     if (!token) {
       ws.close?.(1008, 'Authentication required');
       return;
@@ -135,7 +141,7 @@ export class WebSocketManager {
       this.send(ws, {
         type: 'connected',
         payload: { userId: ws.userId, tenantId: ws.tenantId },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       logger.info({ userId: ws.userId }, '[WebSocket] Client connected');
@@ -150,7 +156,7 @@ export class WebSocketManager {
    */
   private extractToken(req: unknown): string | null {
     const request = req as { url?: string; headers?: { authorization?: string } };
-    
+
     // Try Authorization header
     const authHeader = request.headers?.authorization;
     if (authHeader?.startsWith('Bearer ')) {
@@ -166,7 +172,7 @@ export class WebSocketManager {
         // Invalid URL
       }
     }
-    
+
     return null;
   }
 
@@ -181,7 +187,7 @@ export class WebSocketManager {
 
     try {
       const message: WebSocketMessage = JSON.parse(data.toString());
-      
+
       // Validate message structure
       if (!message.type || !message.payload) {
         this.sendError(ws, 'Invalid message format');
@@ -250,7 +256,7 @@ export class WebSocketManager {
     this.send(ws, {
       type: 'error',
       payload: { message: error },
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -258,9 +264,11 @@ export class WebSocketManager {
    * Broadcast message to all clients in a tenant
    */
   broadcastToTenant(tenantId: string, message: WebSocketMessage): void {
-    const clients = Array.from(this.clients.values()).flatMap((set) => Array.from(set)) as AuthenticatedWebSocket[];
+    const clients = Array.from(this.clients.values()).flatMap((set) =>
+      Array.from(set)
+    ) as AuthenticatedWebSocket[];
     const tenantClients = clients.filter((ws) => ws.tenantId === tenantId && ws.isAuthenticated);
-    
+
     tenantClients.forEach((ws) => {
       this.send(ws, message);
     });

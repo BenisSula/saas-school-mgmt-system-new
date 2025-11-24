@@ -54,7 +54,7 @@ export function createGetHandler<T>(options: {
             resourceType: options.resourceName.toLowerCase(),
             resourceId: req.params.id,
             details: { [`${options.resourceName.toLowerCase()}Id`]: req.params.id },
-            severity: 'info'
+            severity: 'info',
           },
           `${options.resourceName.toLowerCase()}s`
         );
@@ -71,7 +71,13 @@ export function createGetHandler<T>(options: {
  * Creates a standardized POST handler for creating resources
  */
 export function createPostHandler<TInput, TOutput>(options: {
-  createResource: (client: PoolClient, schema: string, input: TInput, actorId?: string, tenantId?: string) => Promise<TOutput>;
+  createResource: (
+    client: PoolClient,
+    schema: string,
+    input: TInput,
+    actorId?: string,
+    tenantId?: string
+  ) => Promise<TOutput>;
   resourceName: string;
   auditAction?: string;
 }) {
@@ -96,14 +102,18 @@ export function createPostHandler<TInput, TOutput>(options: {
             action: options.auditAction,
             resourceType: options.resourceName.toLowerCase(),
             resourceId: (resource as { id?: string })?.id,
-            details: { [`${options.resourceName.toLowerCase()}Id`]: (resource as { id?: string })?.id },
-            severity: 'info'
+            details: {
+              [`${options.resourceName.toLowerCase()}Id`]: (resource as { id?: string })?.id,
+            },
+            severity: 'info',
           },
           `${options.resourceName.toLowerCase()}s`
         );
       }
 
-      res.status(201).json(createSuccessResponse(resource, `${options.resourceName} created successfully`));
+      res
+        .status(201)
+        .json(createSuccessResponse(resource, `${options.resourceName} created successfully`));
     } catch (error) {
       next(error);
     }
@@ -114,7 +124,12 @@ export function createPostHandler<TInput, TOutput>(options: {
  * Creates a standardized PUT handler for updating resources
  */
 export function createPutHandler<TInput, TOutput>(options: {
-  updateResource: (client: PoolClient, schema: string, id: string, input: Partial<TInput>) => Promise<TOutput | null>;
+  updateResource: (
+    client: PoolClient,
+    schema: string,
+    id: string,
+    input: Partial<TInput>
+  ) => Promise<TOutput | null>;
   resourceName: string;
   auditAction?: string;
   getAuditDetails?: (req: Request, resource: TOutput) => Record<string, unknown>;
@@ -141,7 +156,7 @@ export function createPutHandler<TInput, TOutput>(options: {
           ? options.getAuditDetails(req, resource)
           : {
               [`${options.resourceName.toLowerCase()}Id`]: req.params.id,
-              updatedFields: Object.keys(req.body)
+              updatedFields: Object.keys(req.body),
             };
 
         await safeAuditLogFromRequest(
@@ -151,7 +166,7 @@ export function createPutHandler<TInput, TOutput>(options: {
             resourceType: options.resourceName.toLowerCase(),
             resourceId: req.params.id,
             details: auditDetails,
-            severity: 'info'
+            severity: 'info',
           },
           `${options.resourceName.toLowerCase()}s`
         );
@@ -188,13 +203,15 @@ export function createDeleteHandler(options: {
             resourceType: options.resourceName.toLowerCase(),
             resourceId: req.params.id,
             details: { [`${options.resourceName.toLowerCase()}Id`]: req.params.id },
-            severity: 'info'
+            severity: 'info',
           },
           `${options.resourceName.toLowerCase()}s`
         );
       }
 
-      res.status(200).json(createSuccessResponse(null, `${options.resourceName} deleted successfully`));
+      res
+        .status(200)
+        .json(createSuccessResponse(null, `${options.resourceName} deleted successfully`));
     } catch (error) {
       next(error);
     }
@@ -247,9 +264,9 @@ export function createUpsertHandlers<TInput, TOutput>(options: {
           resourceType: options.resourceName.toLowerCase(),
           resourceId: context.tenant.id,
           details: {
-            updatedFields: Object.keys(parsed.data as Record<string, unknown>)
+            updatedFields: Object.keys(parsed.data as Record<string, unknown>),
           },
-          severity: 'info'
+          severity: 'info',
         },
         options.resourceName.toLowerCase()
       );
@@ -276,4 +293,3 @@ export function validateBody<T>(schema: z.ZodSchema<T>) {
     next();
   };
 }
-

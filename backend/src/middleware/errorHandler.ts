@@ -17,11 +17,7 @@ export interface ApiError extends Error {
   };
 }
 
-export function errorHandler(
-  error: ApiError,
-  req: Request,
-  res: Response
-) {
+export function errorHandler(error: ApiError, req: Request, res: Response) {
   // Track error metrics (wrap in try-catch to prevent error handler from failing)
   const statusCode = error.statusCode || 500;
   const endpoint = req.path || 'unknown';
@@ -40,7 +36,7 @@ export function errorHandler(
       userAgent: req.get('user-agent'),
       ip: req.ip,
       url: req.url,
-      method: req.method
+      method: req.method,
     });
   } catch (trackingError) {
     console.error('[ErrorHandler] Failed to capture error in tracking system:', trackingError);
@@ -51,7 +47,7 @@ export function errorHandler(
     message: error.message,
     statusCode,
     endpoint,
-    stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
   });
 
   // Send error response
@@ -61,6 +57,6 @@ export function errorHandler(
     message: error.message || 'Internal server error',
     code: error.code,
     field: error.field,
-    ...(isDevelopment && { stack: error.stack })
+    ...(isDevelopment && { stack: error.stack }),
   });
 }

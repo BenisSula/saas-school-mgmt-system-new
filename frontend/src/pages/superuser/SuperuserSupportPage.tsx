@@ -11,7 +11,7 @@ export const SuperuserSupportPage: React.FC = () => {
     { id: 'tickets' as const, label: 'Support Tickets' },
     { id: 'messages' as const, label: 'Messages' },
     { id: 'kb' as const, label: 'Knowledge Base' },
-    { id: 'status' as const, label: 'Status Page' }
+    { id: 'status' as const, label: 'Status Page' },
   ];
 
   return (
@@ -43,4 +43,3 @@ export const SuperuserSupportPage: React.FC = () => {
     </div>
   );
 };
-

@@ -14,8 +14,8 @@ describe('SystemAlerts', () => {
         id: 'custom-1',
         type: 'error' as const,
         title: 'Custom Error',
-        message: 'This is a custom error message'
-      }
+        message: 'This is a custom error message',
+      },
     ];
 
     render(<SystemAlerts alerts={alerts} />);
@@ -92,8 +92,8 @@ describe('SystemAlerts', () => {
         id: 'custom-1',
         type: 'info' as const,
         title: 'Custom Info',
-        message: 'Custom message'
-      }
+        message: 'Custom message',
+      },
     ];
 
     render(<SystemAlerts alerts={customAlerts} showExpiredPasswords={true} />);
@@ -106,7 +106,9 @@ describe('SystemAlerts', () => {
   });
 
   it('applies custom className', () => {
-    const { container } = render(<SystemAlerts showExpiredPasswords={true} className="custom-class" />);
+    const { container } = render(
+      <SystemAlerts showExpiredPasswords={true} className="custom-class" />
+    );
 
     const alertsContainer = container.querySelector('.custom-class');
     expect(alertsContainer).toBeInTheDocument();
@@ -118,20 +120,20 @@ describe('SystemAlerts', () => {
         id: 'error-alert',
         type: 'error' as const,
         title: 'Error Alert',
-        message: 'Error message'
+        message: 'Error message',
       },
       {
         id: 'warning-alert',
         type: 'warning' as const,
         title: 'Warning Alert',
-        message: 'Warning message'
+        message: 'Warning message',
       },
       {
         id: 'info-alert',
         type: 'info' as const,
         title: 'Info Alert',
-        message: 'Info message'
-      }
+        message: 'Info message',
+      },
     ];
 
     render(<SystemAlerts alerts={alerts} />);
@@ -141,4 +143,3 @@ describe('SystemAlerts', () => {
     expect(screen.getByText(/Info Alert/i)).toBeInTheDocument();
   });
 });
-

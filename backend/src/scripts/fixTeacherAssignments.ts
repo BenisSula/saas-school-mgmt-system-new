@@ -120,8 +120,8 @@ async function fixTeacherAssignments() {
                       JSON.stringify({
                         migrated_from: assignment.current_class_id,
                         original_class: currentClassName,
-                        migration_date: new Date().toISOString()
-                      })
+                        migration_date: new Date().toISOString(),
+                      }),
                     ]
                   );
                   fixedCount++;

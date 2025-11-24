@@ -28,7 +28,7 @@ export const mutationRateLimiter = rateLimit({
   skip: (req: Request) => {
     // Skip for GET requests (read-only)
     return req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS';
-  }
+  },
 });
 
 /**
@@ -47,7 +47,7 @@ export const bulkOperationLimiter = rateLimit({
     }
     const ip = extractIpAddress(req) || 'unknown';
     return `bulk:ip:${ip}`;
-  }
+  },
 });
 
 /**
@@ -66,7 +66,7 @@ export const fileUploadLimiter = rateLimit({
     }
     const ip = extractIpAddress(req) || 'unknown';
     return `upload:ip:${ip}`;
-  }
+  },
 });
 
 /**
@@ -85,7 +85,7 @@ export const exportLimiter = rateLimit({
     }
     const ip = extractIpAddress(req) || 'unknown';
     return `export:ip:${ip}`;
-  }
+  },
 });
 
 /**
@@ -104,6 +104,5 @@ export const attendanceLimiter = rateLimit({
     }
     const ip = extractIpAddress(req) || 'unknown';
     return `attendance:ip:${ip}`;
-  }
+  },
 });
-

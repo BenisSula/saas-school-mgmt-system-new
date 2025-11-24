@@ -25,7 +25,7 @@ async function verifyTeacherAssignment(
   schema: string
 ): Promise<boolean> {
   const pool = getPool();
-  
+
   // Check if user is assigned as class teacher
   const result = await pool.query<{ count: string }>(
     `SELECT COUNT(*)::text as count
@@ -86,13 +86,17 @@ export function verifyTeacherOrAdminAccess(options?: {
     );
 
     if (!hasViewOwnClassPermission) {
-      return res.status(403).json(
-        createErrorResponse('Access denied. Required: users:manage or students:view_own_class')
-      );
+      return res
+        .status(403)
+        .json(
+          createErrorResponse('Access denied. Required: users:manage or students:view_own_class')
+        );
     }
 
     // For teachers, verify assignment to class
-    const classId = (req.query[classIdParam] || req.body[classIdParam] || req.params[classIdParam]) as string;
+    const classId = (req.query[classIdParam] ||
+      req.body[classIdParam] ||
+      req.params[classIdParam]) as string;
 
     if (!classId) {
       // If no classId specified, allow access (teacher can view all students in their classes)
@@ -109,12 +113,11 @@ export function verifyTeacherOrAdminAccess(options?: {
     );
 
     if (!isAssigned) {
-      return res.status(403).json(
-        createErrorResponse('Access denied. You are not assigned to this class.')
-      );
+      return res
+        .status(403)
+        .json(createErrorResponse('Access denied. You are not assigned to this class.'));
     }
 
     next();
   };
 }
-

@@ -28,7 +28,7 @@ export function AuthMultiSelect({
   helperText,
   placeholder = 'Select options',
   required = false,
-  containerClassName = ''
+  containerClassName = '',
 }: AuthMultiSelectProps) {
   const generatedId = useId();
   const selectId = `${generatedId}-multiselect`;

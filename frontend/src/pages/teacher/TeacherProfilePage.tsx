@@ -27,8 +27,8 @@ export default function TeacherProfilePage() {
             id: className,
             name: className,
             subjects: [],
-            isClassTeacher: false
-          }))
+            isClassTeacher: false,
+          })),
         } as TeacherProfileDetail;
       }
       // Convert TeacherProfile to TeacherProfileDetail format
@@ -42,8 +42,8 @@ export default function TeacherProfilePage() {
           id: className,
           name: className,
           subjects: [],
-          isClassTeacher: false
-        }))
+          isClassTeacher: false,
+        })),
       } as TeacherProfileDetail;
     },
     [teacherId]
@@ -53,7 +53,7 @@ export default function TeacherProfilePage() {
     useProfileData<TeacherProfileDetail>({
       userId: teacherId || undefined,
       profileLoader,
-      enabled: true
+      enabled: true,
     });
 
   const { uploadFile: handleFileUpload, deleteFile: handleFileDelete } = useFileUpload({
@@ -61,7 +61,7 @@ export default function TeacherProfilePage() {
     entityId: profile?.id,
     onUploadSuccess: (upload) => {
       setUploads((prev) => [upload, ...prev]);
-    }
+    },
   });
 
   const sections: ProfileSection[] = useMemo(
@@ -86,7 +86,7 @@ export default function TeacherProfilePage() {
               </div>
             )}
           </Section>
-        )
+        ),
       },
       {
         id: 'subjects',
@@ -110,7 +110,7 @@ export default function TeacherProfilePage() {
               </div>
             )}
           </Section>
-        )
+        ),
       },
       {
         id: 'classes',
@@ -149,13 +149,13 @@ export default function TeacherProfilePage() {
               </div>
             )}
           </Section>
-        )
+        ),
       },
       {
         id: 'activity-history',
         title: 'Activity history',
         description: 'Recent actions and events',
-        content: <ActivityHistory activities={activities} />
+        content: <ActivityHistory activities={activities} />,
       },
       {
         id: 'uploads',
@@ -174,7 +174,7 @@ export default function TeacherProfilePage() {
               setUploads((prev) => prev.filter((u) => u.id !== uploadId));
             }}
           />
-        )
+        ),
       },
       {
         id: 'audit-logs',
@@ -188,8 +188,8 @@ export default function TeacherProfilePage() {
               window.location.reload();
             }}
           />
-        )
-      }
+        ),
+      },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [profile, activities, auditLogs, uploads, setUploads]

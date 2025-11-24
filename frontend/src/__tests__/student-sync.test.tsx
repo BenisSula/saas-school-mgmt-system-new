@@ -47,15 +47,15 @@ describe('Student results synchronization', () => {
         name: 'Midterm Assessment',
         examDate: '2025-03-10',
         averageScore: 72,
-        subjectCount: 2
+        subjectCount: 2,
       },
       {
         examId: 'exam-2',
         name: 'Final Assessment',
         examDate: '2025-06-15',
         averageScore: 85,
-        subjectCount: 2
-      }
+        subjectCount: 2,
+      },
     ]);
 
     vi.spyOn(api.student, 'listSubjects').mockResolvedValue([
@@ -65,7 +65,7 @@ describe('Student results synchronization', () => {
         code: 'MATH',
         dropRequested: false,
         dropStatus: 'none',
-        dropRequestedAt: null
+        dropRequestedAt: null,
       },
       {
         subjectId: 'subject-eng',
@@ -73,8 +73,8 @@ describe('Student results synchronization', () => {
         code: 'ENG',
         dropRequested: false,
         dropStatus: 'none',
-        dropRequestedAt: null
-      }
+        dropRequestedAt: null,
+      },
     ]);
 
     const getResultMock = vi.spyOn(api, 'getStudentResult');
@@ -86,8 +86,8 @@ describe('Student results synchronization', () => {
       remarks: null,
       breakdown: [
         { subject: 'Mathematics', score: 95, grade: 'A' },
-        { subject: 'English', score: 85, grade: 'B' }
-      ]
+        { subject: 'English', score: 85, grade: 'B' },
+      ],
     });
     getResultMock.mockResolvedValueOnce({
       student_id: 'student-001',
@@ -97,8 +97,8 @@ describe('Student results synchronization', () => {
       remarks: null,
       breakdown: [
         { subject: 'Mathematics', score: 78, grade: 'B' },
-        { subject: 'English', score: 72, grade: 'B' }
-      ]
+        { subject: 'English', score: 72, grade: 'B' },
+      ],
     });
 
     renderStudentResults();

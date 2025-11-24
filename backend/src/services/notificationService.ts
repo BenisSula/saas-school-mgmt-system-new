@@ -40,7 +40,11 @@ export async function getUserNotifications(
     type: row.type || 'info',
     read: row.read || false,
     createdAt: new Date(row.created_at),
-    metadata: row.metadata ? (typeof row.metadata === 'string' ? JSON.parse(row.metadata) : row.metadata) : undefined
+    metadata: row.metadata
+      ? typeof row.metadata === 'string'
+        ? JSON.parse(row.metadata)
+        : row.metadata
+      : undefined,
   }));
 }
 
@@ -94,7 +98,7 @@ export async function createNotification(
       notification.title,
       notification.message,
       notification.type || 'info',
-      notification.metadata ? JSON.stringify(notification.metadata) : null
+      notification.metadata ? JSON.stringify(notification.metadata) : null,
     ]
   );
 
@@ -107,7 +111,10 @@ export async function createNotification(
     type: row.type || 'info',
     read: row.read || false,
     createdAt: new Date(row.created_at),
-    metadata: row.metadata ? (typeof row.metadata === 'string' ? JSON.parse(row.metadata) : row.metadata) : undefined
+    metadata: row.metadata
+      ? typeof row.metadata === 'string'
+        ? JSON.parse(row.metadata)
+        : row.metadata
+      : undefined,
   };
 }
-

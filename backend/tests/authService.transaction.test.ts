@@ -58,8 +58,8 @@ describe('Auth Service - Transaction Rollback', () => {
       role: 'admin',
       tenantName: testTenantName,
       profile: {
-        fullName: 'Test Admin'
-      }
+        fullName: 'Test Admin',
+      },
     };
 
     // Mock a scenario where schema creation might fail
@@ -70,10 +70,10 @@ describe('Auth Service - Transaction Rollback', () => {
       await signUp(input);
       // If signup succeeds, verify data integrity
       const userResult = await pool.query('SELECT * FROM shared.users WHERE email = $1', [
-        testEmail
+        testEmail,
       ]);
       const tenantResult = await pool.query('SELECT * FROM shared.tenants WHERE name = $1', [
-        testTenantName
+        testTenantName,
       ]);
 
       // If both exist, transaction succeeded
@@ -84,10 +84,10 @@ describe('Auth Service - Transaction Rollback', () => {
     } catch {
       // If signup fails, verify no partial data was created
       const userResult = await pool.query('SELECT * FROM shared.users WHERE email = $1', [
-        testEmail
+        testEmail,
       ]);
       const tenantResult = await pool.query('SELECT * FROM shared.tenants WHERE name = $1', [
-        testTenantName
+        testTenantName,
       ]);
 
       // Transaction should be rolled back - either both exist (success) or neither exists (rollback)
@@ -111,8 +111,8 @@ describe('Auth Service - Transaction Rollback', () => {
       role: 'admin',
       tenantName: testTenantName,
       profile: {
-        fullName: 'Atomic Admin'
-      }
+        fullName: 'Atomic Admin',
+      },
     };
 
     const result = await signUp(input);
@@ -125,7 +125,7 @@ describe('Auth Service - Transaction Rollback', () => {
 
     // Verify tenant was created
     const tenantResult = await pool.query('SELECT * FROM shared.tenants WHERE name = $1', [
-      testTenantName
+      testTenantName,
     ]);
     expect(tenantResult.rows).toHaveLength(1);
     expect(tenantResult.rows[0].name).toBe(testTenantName);
@@ -152,7 +152,7 @@ describe('Auth Service - Transaction Rollback', () => {
       email: testEmail,
       password: 'StrongPass123!',
       role: 'admin',
-      tenantName: testTenantName
+      tenantName: testTenantName,
     };
 
     // First signup should succeed
@@ -163,7 +163,7 @@ describe('Auth Service - Transaction Rollback', () => {
 
     // Verify only one tenant was created (from first signup)
     const tenantResult = await pool.query('SELECT * FROM shared.tenants WHERE name = $1', [
-      testTenantName
+      testTenantName,
     ]);
     expect(tenantResult.rows).toHaveLength(1);
   });

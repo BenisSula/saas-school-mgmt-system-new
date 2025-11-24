@@ -39,7 +39,7 @@ export function generateOAuthAuthorizationUrl(
     client_id: clientId,
     redirect_uri: redirectUri,
     scope: scopes.join(' '),
-    state
+    state,
   });
 
   return `${authorizationUrl}?${params.toString()}`;
@@ -66,13 +66,13 @@ export async function exchangeAuthorizationCode(
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`
+      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
     },
     body: new URLSearchParams({
       grant_type: 'authorization_code',
       code,
-      redirect_uri: redirectUri
-    })
+      redirect_uri: redirectUri,
+    }),
   });
 
   if (!response.ok) {
@@ -89,7 +89,7 @@ export async function exchangeAuthorizationCode(
     accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token,
     idToken: tokens.id_token,
-    expiresIn: tokens.expires_in
+    expiresIn: tokens.expires_in,
   };
 }
 
@@ -102,8 +102,8 @@ export async function getUserInfo(
 ): Promise<Record<string, unknown>> {
   const response = await fetch(userinfoUrl, {
     headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
+      Authorization: `Bearer ${accessToken}`,
+    },
   });
 
   if (!response.ok) {
@@ -151,7 +151,7 @@ export async function createOAuthProvider(
       input.jitProvisioning || false,
       input.jitDefaultRole || 'teacher',
       JSON.stringify(input.attributeMapping || {}),
-      input.createdBy || null
+      input.createdBy || null,
     ]
   );
 
@@ -179,7 +179,7 @@ export async function processOAuthCallback(
 }> {
   // Get provider
   const providerResult = await client.query('SELECT * FROM shared.sso_providers WHERE id = $1', [
-    providerId
+    providerId,
   ]);
 
   if (providerResult.rowCount === 0) {
@@ -300,7 +300,7 @@ export async function processOAuthCallback(
       refreshTokenEncrypted,
       tokens.idToken || null,
       JSON.stringify(userInfo),
-      expiresAt
+      expiresAt,
     ]
   );
 
@@ -311,7 +311,7 @@ export async function processOAuthCallback(
     isNewUser,
     accessToken: tokens.accessToken,
     refreshToken: tokens.refreshToken,
-    idToken: tokens.idToken
+    idToken: tokens.idToken,
   };
 }
 
@@ -356,7 +356,7 @@ export async function refreshOAuthToken(
   expiresIn?: number;
 }> {
   const providerResult = await client.query('SELECT * FROM shared.sso_providers WHERE id = $1', [
-    providerId
+    providerId,
   ]);
 
   if (providerResult.rowCount === 0) {
@@ -370,12 +370,12 @@ export async function refreshOAuthToken(
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      Authorization: `Basic ${Buffer.from(`${provider.client_id}:${clientSecret}`).toString('base64')}`
+      Authorization: `Basic ${Buffer.from(`${provider.client_id}:${clientSecret}`).toString('base64')}`,
     },
     body: new URLSearchParams({
       grant_type: 'refresh_token',
-      refresh_token: refreshToken
-    })
+      refresh_token: refreshToken,
+    }),
   });
 
   if (!response.ok) {
@@ -390,6 +390,6 @@ export async function refreshOAuthToken(
   return {
     accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token,
-    expiresIn: tokens.expires_in
+    expiresIn: tokens.expires_in,
   };
 }

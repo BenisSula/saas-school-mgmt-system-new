@@ -6,7 +6,7 @@ import {
   listOverrides,
   revokeOverride,
   getActiveOverridesForTarget,
-  type OverrideType
+  type OverrideType,
 } from '../../services/superuser/overrideService';
 
 const router = Router();
@@ -19,13 +19,18 @@ const createOverrideSchema = z.object({
     'feature_access',
     'quota_override',
     'rate_limit',
-    'other'
+    'other',
   ]),
   targetId: z.string().uuid(),
   action: z.string().min(1),
   reason: z.string().min(1),
-  expiresAt: z.string().refine((val) => val === undefined || !isNaN(Date.parse(val)), { message: 'Invalid datetime format' }).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional()
+  expiresAt: z
+    .string()
+    .refine((val) => val === undefined || !isNaN(Date.parse(val)), {
+      message: 'Invalid datetime format',
+    })
+    .optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 // Create override
@@ -42,7 +47,7 @@ router.post('/', async (req, res, next) => {
 
     const input = {
       ...parsed.data,
-      expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : undefined
+      expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : undefined,
     };
 
     const override = await createOverride(input, req.user.id);
@@ -106,15 +111,15 @@ router.get('/target/:overrideType/:targetId', async (req, res, next) => {
       'feature_access',
       'quota_override',
       'rate_limit',
-      'other'
+      'other',
     ];
-    
+
     if (!validOverrideTypes.includes(req.params.overrideType as OverrideType)) {
-      return res.status(400).json({ 
-        message: `Invalid override type. Must be one of: ${validOverrideTypes.join(', ')}` 
+      return res.status(400).json({
+        message: `Invalid override type. Must be one of: ${validOverrideTypes.join(', ')}`,
       });
     }
-    
+
     const overrides = await getActiveOverridesForTarget(
       req.params.overrideType as OverrideType,
       req.params.targetId
@@ -128,11 +133,7 @@ router.get('/target/:overrideType/:targetId', async (req, res, next) => {
 // Revoke override
 router.post('/:id/revoke', async (req, res, next) => {
   try {
-    const override = await revokeOverride(
-      req.params.id,
-      req.body.reason,
-      req.user?.id ?? null
-    );
+    const override = await revokeOverride(req.params.id, req.body.reason, req.user?.id ?? null);
     res.json(override);
   } catch (error) {
     next(error);
@@ -140,4 +141,3 @@ router.post('/:id/revoke', async (req, res, next) => {
 });
 
 export default router;
-

@@ -7,13 +7,24 @@ interface LogPayload {
   [key: string]: unknown;
 }
 
+/**
+ * Deep clone payload to avoid mutating original objects
+ * Uses structuredClone for better performance than JSON.parse(JSON.stringify())
+ * Falls back to shallow copy if structuredClone is not available
+ */
 function formatPayload(payload?: LogPayload): LogPayload | undefined {
   if (!payload) {
     return undefined;
   }
   try {
+    // Use structuredClone for better performance and handling of complex types
+    if (typeof structuredClone !== 'undefined') {
+      return structuredClone(payload);
+    }
+    // Fallback for older environments
     return JSON.parse(JSON.stringify(payload));
   } catch {
+    // If cloning fails, return original (better than losing the log)
     return payload;
   }
 }
@@ -70,5 +81,5 @@ export const logger = {
         console.debug(formatMessage(message || 'Debug', context), formatPayload(payload));
       }
     }
-  }
+  },
 };

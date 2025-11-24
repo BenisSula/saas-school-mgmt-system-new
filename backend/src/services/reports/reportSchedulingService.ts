@@ -20,10 +20,7 @@ export interface CreateScheduledReportInput {
 /**
  * Calculate next run time based on schedule
  */
-function calculateNextRun(
-  scheduleType: string,
-  scheduleConfig: Record<string, unknown>
-): Date {
+function calculateNextRun(scheduleType: string, scheduleConfig: Record<string, unknown>): Date {
   const now = new Date();
   const nextRun = new Date(now);
 
@@ -107,7 +104,7 @@ export async function createScheduledReport(
       input.exportFormat,
       input.recipients,
       nextRun,
-      input.createdBy || null
+      input.createdBy || null,
     ]
   );
 
@@ -142,10 +139,9 @@ export async function updateScheduledReportNextRun(
   client: PoolClient,
   scheduledReportId: string
 ): Promise<void> {
-  const reportResult = await client.query(
-    'SELECT * FROM shared.scheduled_reports WHERE id = $1',
-    [scheduledReportId]
-  );
+  const reportResult = await client.query('SELECT * FROM shared.scheduled_reports WHERE id = $1', [
+    scheduledReportId,
+  ]);
 
   if ((reportResult.rowCount ?? 0) === 0) {
     throw new Error('Scheduled report not found');
@@ -295,4 +291,3 @@ export async function deleteScheduledReport(
     throw new Error('Scheduled report not found');
   }
 }
-

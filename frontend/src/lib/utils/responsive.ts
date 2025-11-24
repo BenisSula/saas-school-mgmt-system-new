@@ -9,7 +9,7 @@ export const breakpoints = {
   md: '768px',
   lg: '1024px',
   xl: '1280px',
-  '2xl': '1536px'
+  '2xl': '1536px',
 } as const;
 
 export type Breakpoint = keyof typeof breakpoints;
@@ -23,7 +23,7 @@ export const mediaQueries = {
   md: `(min-width: ${breakpoints.md})`,
   lg: `(min-width: ${breakpoints.lg})`,
   xl: `(min-width: ${breakpoints.xl})`,
-  '2xl': `(min-width: ${breakpoints['2xl']})`
+  '2xl': `(min-width: ${breakpoints['2xl']})`,
 } as const;
 
 /**
@@ -36,7 +36,7 @@ export const spacing = {
   lg: '1.5rem', // 24px
   xl: '2rem', // 32px
   '2xl': '3rem', // 48px
-  '3xl': '4rem' // 64px
+  '3xl': '4rem', // 64px
 } as const;
 
 /**
@@ -50,5 +50,5 @@ export const typography = {
   xl: { fontSize: '1.25rem', lineHeight: '1.75rem' }, // 20px
   '2xl': { fontSize: '1.5rem', lineHeight: '2rem' }, // 24px
   '3xl': { fontSize: '1.875rem', lineHeight: '2.25rem' }, // 30px
-  '4xl': { fontSize: '2.25rem', lineHeight: '2.5rem' } // 36px
+  '4xl': { fontSize: '2.25rem', lineHeight: '2.5rem' }, // 36px
 } as const;

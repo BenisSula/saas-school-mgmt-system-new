@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { memo, type ReactNode } from 'react';
 import { Card } from '../ui/Card';
 
 export interface DetailField {
@@ -17,8 +17,9 @@ export interface DetailCardProps {
 /**
  * Reusable component for displaying detailed information in a card format
  * Uses DRY principle - single component for all detail views
+ * Memoized to prevent unnecessary re-renders
  */
-export function DetailCard({ title, fields, actions, className = '' }: DetailCardProps) {
+function DetailCardComponent({ title, fields, actions, className = '' }: DetailCardProps) {
   return (
     <Card className={`p-6 ${className}`}>
       <div className="mb-4 flex items-center justify-between">
@@ -27,10 +28,7 @@ export function DetailCard({ title, fields, actions, className = '' }: DetailCar
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         {fields.map((field, index) => (
-          <div
-            key={index}
-            className={field.span === 2 ? 'md:col-span-2' : ''}
-          >
+          <div key={index} className={field.span === 2 ? 'md:col-span-2' : ''}>
             <div className="space-y-1">
               <label className="text-xs font-semibold uppercase tracking-wide text-[var(--brand-muted)]">
                 {field.label}
@@ -46,5 +44,5 @@ export function DetailCard({ title, fields, actions, className = '' }: DetailCar
   );
 }
 
+export const DetailCard = memo(DetailCardComponent);
 export default DetailCard;
-

@@ -36,7 +36,7 @@ export function useFileUpload(options: UseFileUploadOptions = {}) {
           mimetype: file.type,
           description,
           entityType: options.entityType,
-          entityId: options.entityId
+          entityId: options.entityId,
         });
 
         const upload: FileUpload = {
@@ -47,7 +47,7 @@ export function useFileUpload(options: UseFileUploadOptions = {}) {
           uploadedAt: result.uploadedAt.toISOString(),
           uploadedBy: result.uploadedBy,
           description: description || null,
-          downloadUrl: result.fileUrl
+          downloadUrl: result.fileUrl,
         };
 
         options.onUploadSuccess?.(upload);
@@ -65,24 +65,20 @@ export function useFileUpload(options: UseFileUploadOptions = {}) {
     [options]
   );
 
-  const deleteFile = useCallback(
-    async (fileId: string): Promise<void> => {
-      try {
-        await api.deleteFileUpload(fileId);
-        toast.success('File deleted successfully');
-      } catch (error) {
-        const err = error as Error;
-        toast.error(err.message || 'Failed to delete file');
-        throw err;
-      }
-    },
-    []
-  );
+  const deleteFile = useCallback(async (fileId: string): Promise<void> => {
+    try {
+      await api.deleteFileUpload(fileId);
+      toast.success('File deleted successfully');
+    } catch (error) {
+      const err = error as Error;
+      toast.error(err.message || 'Failed to delete file');
+      throw err;
+    }
+  }, []);
 
   return {
     uploadFile,
     deleteFile,
-    uploading
+    uploading,
   };
 }
-

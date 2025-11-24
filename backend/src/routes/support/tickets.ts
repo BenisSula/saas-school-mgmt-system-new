@@ -10,7 +10,7 @@ import {
   updateTicket,
   addTicketComment,
   getTicketComments,
-  getTicketWithComments
+  getTicketWithComments,
 } from '../../services/support/ticketingService';
 import { z } from 'zod';
 
@@ -24,7 +24,7 @@ const createTicketSchema = z.object({
   description: z.string().min(1),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
   category: z.enum(['technical', 'billing', 'feature_request', 'bug', 'other']).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional()
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const updateTicketSchema = z.object({
@@ -33,18 +33,22 @@ const updateTicketSchema = z.object({
   status: z.enum(['open', 'in_progress', 'resolved', 'closed', 'pending']).optional(),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
   category: z.enum(['technical', 'billing', 'feature_request', 'bug', 'other']).optional(),
-  assignedTo: z.string().uuid().nullable().optional()
+  assignedTo: z.string().uuid().nullable().optional(),
 });
 
 const createCommentSchema = z.object({
   content: z.string().min(1),
   isInternal: z.boolean().optional(),
-  attachments: z.array(z.object({
-    fileName: z.string(),
-    fileUrl: z.string(),
-    fileSize: z.number(),
-    mimeType: z.string()
-  })).optional()
+  attachments: z
+    .array(
+      z.object({
+        fileName: z.string(),
+        fileUrl: z.string(),
+        fileSize: z.number(),
+        mimeType: z.string(),
+      })
+    )
+    .optional(),
 });
 
 // Create ticket
@@ -61,7 +65,7 @@ router.post('/', requirePermission('support:raise'), async (req, res, next) => {
       const ticket = await createTicket(client, {
         ...parsed.data,
         tenantId: req.tenant?.id,
-        createdBy: req.user?.id || ''
+        createdBy: req.user?.id || '',
       });
       res.status(201).json(ticket);
     } finally {
@@ -86,7 +90,7 @@ router.get('/', requirePermission('support:view'), async (req, res, next) => {
         createdBy: req.query.createdBy as string,
         assignedTo: req.query.assignedTo as string,
         limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
-        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined
+        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
     } finally {
@@ -143,12 +147,7 @@ router.patch('/:id', requirePermission('support:manage'), async (req, res, next)
     const pool = getPool();
     const client = await pool.connect();
     try {
-      const ticket = await updateTicket(
-        client,
-        req.params.id,
-        parsed.data,
-        req.user?.id
-      );
+      const ticket = await updateTicket(client, req.params.id, parsed.data, req.user?.id);
       res.json(ticket);
     } finally {
       client.release();
@@ -172,7 +171,7 @@ router.post('/:id/comments', requirePermission('support:view'), async (req, res,
       const comment = await addTicketComment(client, {
         ticketId: req.params.id,
         userId: req.user?.id || '',
-        ...parsed.data
+        ...parsed.data,
       });
       res.status(201).json(comment);
     } finally {
@@ -207,4 +206,3 @@ router.get('/:id/comments', requirePermission('support:view'), async (req, res, 
 });
 
 export default router;
-

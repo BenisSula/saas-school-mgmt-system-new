@@ -25,15 +25,15 @@ jest.mock('../src/middleware/authenticate', () => ({
       role: 'admin',
       tenantId: 'tenant_alpha',
       email: 'admin@example.com',
-      tokenId: 'token'
+      tokenId: 'token',
     };
     next();
-  }
+  },
 }));
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -57,7 +57,7 @@ describe('Admin academics routes', () => {
     await createTenant(
       {
         name: 'Test School',
-        schemaName: 'tenant_alpha'
+        schemaName: 'tenant_alpha',
       },
       pool
     );

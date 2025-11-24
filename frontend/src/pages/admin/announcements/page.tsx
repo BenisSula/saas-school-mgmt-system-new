@@ -16,7 +16,7 @@ import { Plus } from 'lucide-react';
 import {
   useAnnouncements,
   useCreateAnnouncement,
-  type Announcement
+  type Announcement,
 } from '../../../hooks/queries/admin/useAnnouncements';
 
 export default function AdminAnnouncementsPage() {
@@ -27,14 +27,14 @@ export default function AdminAnnouncementsPage() {
     content: '',
     targetRoles: [] as Array<'admin' | 'hod' | 'teacher' | 'student'>,
     priority: 'normal' as 'low' | 'normal' | 'high' | 'urgent',
-    expiresAt: ''
+    expiresAt: '',
   });
 
   const filters = {
     targetRole:
       targetRoleFilter !== 'all'
         ? (targetRoleFilter as 'admin' | 'hod' | 'teacher' | 'student')
-        : undefined
+        : undefined,
   };
 
   const { data, isLoading, error } = useAnnouncements(filters);
@@ -48,7 +48,7 @@ export default function AdminAnnouncementsPage() {
     createMutation.mutate(
       {
         ...formData,
-        expiresAt: formData.expiresAt || undefined
+        expiresAt: formData.expiresAt || undefined,
       },
       {
         onSuccess: () => {
@@ -58,9 +58,9 @@ export default function AdminAnnouncementsPage() {
             content: '',
             targetRoles: [],
             priority: 'normal',
-            expiresAt: ''
+            expiresAt: '',
           });
-        }
+        },
       }
     );
   };
@@ -69,12 +69,12 @@ export default function AdminAnnouncementsPage() {
     if (formData.targetRoles.includes(role)) {
       setFormData({
         ...formData,
-        targetRoles: formData.targetRoles.filter((r) => r !== role)
+        targetRoles: formData.targetRoles.filter((r) => r !== role),
       });
     } else {
       setFormData({
         ...formData,
-        targetRoles: [...formData.targetRoles, role]
+        targetRoles: [...formData.targetRoles, role],
       });
     }
   };
@@ -84,12 +84,12 @@ export default function AdminAnnouncementsPage() {
     {
       key: 'content',
       label: 'Content',
-      render: (announcement) => <div className="max-w-md truncate">{announcement.content}</div>
+      render: (announcement) => <div className="max-w-md truncate">{announcement.content}</div>,
     },
     {
       key: 'targetRoles',
       label: 'Target Roles',
-      render: (announcement) => announcement.targetRoles.join(', ')
+      render: (announcement) => announcement.targetRoles.join(', '),
     },
     {
       key: 'priority',
@@ -108,19 +108,19 @@ export default function AdminAnnouncementsPage() {
         >
           {announcement.priority}
         </span>
-      )
+      ),
     },
     {
       key: 'createdAt',
       label: 'Created',
-      render: (announcement) => new Date(announcement.createdAt).toLocaleString()
+      render: (announcement) => new Date(announcement.createdAt).toLocaleString(),
     },
     {
       key: 'expiresAt',
       label: 'Expires',
       render: (announcement) =>
-        announcement.expiresAt ? new Date(announcement.expiresAt).toLocaleString() : 'Never'
-    }
+        announcement.expiresAt ? new Date(announcement.expiresAt).toLocaleString() : 'Never',
+    },
   ];
 
   if (isLoading) {
@@ -176,7 +176,7 @@ export default function AdminAnnouncementsPage() {
             { value: 'admin', label: 'Admin' },
             { value: 'hod', label: 'HOD' },
             { value: 'teacher', label: 'Teacher' },
-            { value: 'student', label: 'Student' }
+            { value: 'student', label: 'Student' },
           ]}
         />
 
@@ -226,14 +226,14 @@ export default function AdminAnnouncementsPage() {
               onChange={(e) =>
                 setFormData({
                   ...formData,
-                  priority: e.target.value as 'low' | 'normal' | 'high' | 'urgent'
+                  priority: e.target.value as 'low' | 'normal' | 'high' | 'urgent',
                 })
               }
               options={[
                 { value: 'low', label: 'Low' },
                 { value: 'normal', label: 'Normal' },
                 { value: 'high', label: 'High' },
-                { value: 'urgent', label: 'Urgent' }
+                { value: 'urgent', label: 'Urgent' },
               ]}
             />
             <Input

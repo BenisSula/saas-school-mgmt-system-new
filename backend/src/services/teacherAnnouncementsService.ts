@@ -53,13 +53,7 @@ export async function postClassAnnouncement(
       VALUES ($1, $2, $3, $4, $5::jsonb)
       RETURNING *
     `,
-    [
-      tenantId,
-      input.classId,
-      teacherId,
-      input.message,
-      JSON.stringify(input.attachments || [])
-    ]
+    [tenantId, input.classId, teacherId, input.message, JSON.stringify(input.attachments || [])]
   );
 
   const announcement = result.rows[0];
@@ -75,9 +69,9 @@ export async function postClassAnnouncement(
       details: {
         teacherId,
         classId: input.classId,
-        messageLength: input.message.length
+        messageLength: input.message.length,
       },
-      severity: 'info'
+      severity: 'info',
     });
   } catch (auditError) {
     console.error('[teacherAnnouncementsService] Failed to create audit log:', auditError);
@@ -113,7 +107,10 @@ export async function getClassAnnouncements(
 
   return result.rows.map((row) => ({
     ...row,
-    attachments: row.attachments ? (typeof row.attachments === 'string' ? JSON.parse(row.attachments) : row.attachments) : null
+    attachments: row.attachments
+      ? typeof row.attachments === 'string'
+        ? JSON.parse(row.attachments)
+        : row.attachments
+      : null,
   }));
 }
-

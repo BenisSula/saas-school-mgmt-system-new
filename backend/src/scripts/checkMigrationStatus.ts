@@ -41,7 +41,9 @@ async function checkMigrationStatus(): Promise<void> {
       FROM information_schema.tables 
       WHERE table_schema = 'shared' AND table_name = 'payments';
     `);
-    console.log(`\n${paymentsCheck.rows[0].count > 0 ? '✅' : '❌'} payments table ${paymentsCheck.rows[0].count > 0 ? 'exists' : 'does not exist'}`);
+    console.log(
+      `\n${paymentsCheck.rows[0].count > 0 ? '✅' : '❌'} payments table ${paymentsCheck.rows[0].count > 0 ? 'exists' : 'does not exist'}`
+    );
 
     // Check if invoices table exists
     const invoicesCheck = await pool.query(`
@@ -49,7 +51,9 @@ async function checkMigrationStatus(): Promise<void> {
       FROM information_schema.tables 
       WHERE table_schema = 'shared' AND table_name = 'invoices';
     `);
-    console.log(`${invoicesCheck.rows[0].count > 0 ? '✅' : '❌'} invoices table ${invoicesCheck.rows[0].count > 0 ? 'exists' : 'does not exist'}`);
+    console.log(
+      `${invoicesCheck.rows[0].count > 0 ? '✅' : '❌'} invoices table ${invoicesCheck.rows[0].count > 0 ? 'exists' : 'does not exist'}`
+    );
 
     // Check if external_events table exists
     const externalEventsCheck = await pool.query(`
@@ -57,15 +61,15 @@ async function checkMigrationStatus(): Promise<void> {
       FROM information_schema.tables 
       WHERE table_schema = 'shared' AND table_name = 'external_events';
     `);
-    console.log(`${externalEventsCheck.rows[0].count > 0 ? '✅' : '❌'} external_events table ${externalEventsCheck.rows[0].count > 0 ? 'exists' : 'does not exist'}`);
+    console.log(
+      `${externalEventsCheck.rows[0].count > 0 ? '✅' : '❌'} external_events table ${externalEventsCheck.rows[0].count > 0 ? 'exists' : 'does not exist'}`
+    );
 
     // List all migrations
     console.log('\n📋 Migration files:');
     const migrationsDir = path.resolve(__dirname, '../db/migrations');
-    const files = (await fs.readdir(migrationsDir))
-      .filter((file) => file.endsWith('.sql'))
-      .sort();
-    
+    const files = (await fs.readdir(migrationsDir)).filter((file) => file.endsWith('.sql')).sort();
+
     files.forEach((file, index) => {
       console.log(`   ${index + 1}. ${file}`);
     });
@@ -74,7 +78,6 @@ async function checkMigrationStatus(): Promise<void> {
     console.log('   1. Table structure mismatch between migrations 004 and 019');
     console.log('   2. Missing columns in existing tables');
     console.log('   3. Index creation on non-existent columns');
-
   } catch (error) {
     console.error('Error checking migration status:', error);
   } finally {
@@ -86,4 +89,3 @@ checkMigrationStatus().catch((error) => {
   console.error('Unhandled error:', error);
   process.exit(1);
 });
-

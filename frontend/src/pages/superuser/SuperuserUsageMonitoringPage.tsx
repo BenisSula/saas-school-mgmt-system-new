@@ -44,8 +44,8 @@ export default function SuperuserUsageMonitoringPage() {
           activeUsers: tenantUsage.activeUsers || 0,
           storageUsed: tenantUsage.storageUsed || 0,
           apiCalls: tenantUsage.apiCalls || 0,
-          lastActivity: tenantUsage.lastActivity || new Date().toISOString()
-        }
+          lastActivity: tenantUsage.lastActivity || new Date().toISOString(),
+        },
       ];
     }
 
@@ -56,7 +56,7 @@ export default function SuperuserUsageMonitoringPage() {
       activeUsers: school.userCount || 0,
       storageUsed: 0, // Would need to fetch per-tenant usage
       apiCalls: 0, // Would need to fetch per-tenant usage
-      lastActivity: school.createdAt || new Date().toISOString()
+      lastActivity: school.createdAt || new Date().toISOString(),
     }));
   }, [schools, selectedTenantId, tenantUsage]);
 
@@ -68,7 +68,7 @@ export default function SuperuserUsageMonitoringPage() {
       .map((item) => ({
         label: item.tenantName,
         value: Math.round(item.storageUsed * 10) / 10,
-        color: 'var(--brand-primary)'
+        color: 'var(--brand-primary)',
       }));
   }, [tenantUsageData]);
 
@@ -78,7 +78,7 @@ export default function SuperuserUsageMonitoringPage() {
       .sort((a, b) => b.apiCalls - a.apiCalls)
       .map((item) => ({
         label: item.tenantName.length > 15 ? `${item.tenantName.slice(0, 15)}...` : item.tenantName,
-        value: item.apiCalls
+        value: item.apiCalls,
       }));
   }, [tenantUsageData]);
 
@@ -92,7 +92,7 @@ export default function SuperuserUsageMonitoringPage() {
         avgStoragePerTenant:
           schools.length > 0
             ? Math.round(((platformUsage.totalStorage || 0) / schools.length) * 10) / 10
-            : 0
+            : 0,
       };
     }
 
@@ -107,7 +107,7 @@ export default function SuperuserUsageMonitoringPage() {
       totalActiveUsers,
       totalStorage: Math.round(totalStorage * 10) / 10,
       totalApiCalls,
-      avgStoragePerTenant: Math.round(avgStoragePerTenant * 10) / 10
+      avgStoragePerTenant: Math.round(avgStoragePerTenant * 10) / 10,
     };
   }, [tenantUsageData, platformUsage, schools.length]);
 
@@ -117,32 +117,32 @@ export default function SuperuserUsageMonitoringPage() {
         key: 'tenantName',
         header: 'Tenant',
         render: (row) => row.tenantName,
-        sortable: true
+        sortable: true,
       },
       {
         key: 'activeUsers',
         header: 'Active Users',
         render: (row) => row.activeUsers,
-        sortable: true
+        sortable: true,
       },
       {
         key: 'storageUsed',
         header: 'Storage (GB)',
         render: (row) => `${Math.round(row.storageUsed * 10) / 10} GB`,
-        sortable: true
+        sortable: true,
       },
       {
         key: 'apiCalls',
         header: 'API Calls',
         render: (row) => formatNumber(row.apiCalls),
-        sortable: true
+        sortable: true,
       },
       {
         key: 'lastActivity',
         header: 'Last Activity',
         render: (row) => formatDate(row.lastActivity),
-        sortable: true
-      }
+        sortable: true,
+      },
     ],
     []
   );
@@ -166,7 +166,7 @@ export default function SuperuserUsageMonitoringPage() {
               onChange={(e) => setSelectedTenantId(e.target.value)}
               options={[
                 { label: 'All Tenants', value: 'all' },
-                ...schools.map((s) => ({ label: s.name, value: s.id }))
+                ...schools.map((s) => ({ label: s.name, value: s.id })),
               ]}
               disabled={schoolsLoading}
             />

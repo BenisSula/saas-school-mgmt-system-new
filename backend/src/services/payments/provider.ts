@@ -34,7 +34,7 @@ class MockPaymentProvider implements PaymentProvider {
     return {
       provider: this.providerName,
       clientSecret: `cs_${input.invoiceId}`,
-      paymentId: `pay_${input.invoiceId}`
+      paymentId: `pay_${input.invoiceId}`,
     };
   }
 
@@ -47,7 +47,7 @@ class MockPaymentProvider implements PaymentProvider {
       amount: Number(data.amount ?? 0),
       currency: (data.currency as string) ?? 'USD',
       invoiceId: (data.invoiceId as string) ?? 'unknown',
-      rawPayload: payload
+      rawPayload: payload,
     };
   }
 
@@ -59,7 +59,7 @@ class MockPaymentProvider implements PaymentProvider {
       amount: 0,
       currency: 'USD',
       invoiceId: paymentId.replace('pay_', ''),
-      rawPayload: {}
+      rawPayload: {},
     };
   }
 }

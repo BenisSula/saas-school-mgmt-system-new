@@ -31,10 +31,10 @@ export function DeleteButton<TData = unknown, TVariables = unknown>({
   variant = 'ghost',
   onSuccess,
   onError,
-  confirmMessage
+  confirmMessage,
 }: DeleteButtonProps<TData, TVariables>) {
   const queryClient = useQueryClient();
-  
+
   const handleClick = async () => {
     // Show confirmation if provided
     if (confirmMessage) {
@@ -43,20 +43,20 @@ export function DeleteButton<TData = unknown, TVariables = unknown>({
     }
 
     const toastId = `delete-${typeof variables === 'string' ? variables : 'item'}`;
-    
+
     // Show pending toast
     toast.loading(messages.pending, { id: toastId });
 
     try {
       await mutation.mutateAsync(variables);
-      
+
       // Invalidate queries if provided
       if (invalidateQueries) {
         invalidateQueries.forEach((queryKey) => {
           queryClient.invalidateQueries({ queryKey });
         });
       }
-      
+
       toast.dismiss(toastId);
       toast.success(messages.success);
       onSuccess?.();
@@ -81,4 +81,3 @@ export function DeleteButton<TData = unknown, TVariables = unknown>({
     </Button>
   );
 }
-

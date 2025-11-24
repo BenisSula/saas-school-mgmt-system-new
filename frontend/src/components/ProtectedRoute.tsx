@@ -20,7 +20,7 @@ export function ProtectedRoute({
   requireAllPermissions = false,
   fallback,
   loadingFallback,
-  children
+  children,
 }: ProtectedRouteProps) {
   const { isLoading, user } = useAuth();
   const navigate = useNavigate();
@@ -92,13 +92,14 @@ export function ProtectedRoute({
     // For HOD routes, check if user is HOD (has 'hod' in additional_roles)
     if (allowedRoles) {
       const userIsHOD = isHOD(user);
-      const hasAllowedRole = allowedRoles.includes(user.role) || (userIsHOD && allowedRoles.includes('teacher'));
-      
+      const hasAllowedRole =
+        allowedRoles.includes(user.role) || (userIsHOD && allowedRoles.includes('teacher'));
+
       if (!hasAllowedRole) {
         setHasRedirected(true);
         navigate('/not-authorized', {
           replace: true,
-          state: { from: location.pathname }
+          state: { from: location.pathname },
         });
         return;
       }
@@ -109,7 +110,7 @@ export function ProtectedRoute({
       setHasRedirected(true);
       navigate('/not-authorized', {
         replace: true,
-        state: { from: location.pathname }
+        state: { from: location.pathname },
       });
       return;
     }
@@ -121,7 +122,7 @@ export function ProtectedRoute({
     hasRequiredPermissions,
     navigate,
     location.pathname,
-    hasRedirected
+    hasRedirected,
   ]);
 
   if (isLoading) {
@@ -159,8 +160,9 @@ export function ProtectedRoute({
   // For HOD routes, check if user is HOD (has 'hod' in additional_roles)
   if (allowedRoles) {
     const userIsHOD = isHOD(user);
-    const hasAllowedRole = allowedRoles.includes(user.role) || (userIsHOD && allowedRoles.includes('teacher'));
-    
+    const hasAllowedRole =
+      allowedRoles.includes(user.role) || (userIsHOD && allowedRoles.includes('teacher'));
+
     if (!hasAllowedRole) {
       // Will be handled by useEffect redirect, but show fallback while redirecting
       return fallback ?? defaultAccessDeniedPrompt;

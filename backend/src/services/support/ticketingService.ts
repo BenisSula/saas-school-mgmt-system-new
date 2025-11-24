@@ -63,7 +63,7 @@ export async function createTicket(client: PoolClient, input: CreateTicketInput)
       input.priority || 'medium',
       input.category || 'other',
       input.createdBy,
-      JSON.stringify(input.metadata || {})
+      JSON.stringify(input.metadata || {}),
     ]
   );
 
@@ -174,7 +174,7 @@ export async function getTickets(
 
   return {
     tickets: ticketsResult.rows,
-    total
+    total,
   };
 }
 
@@ -274,13 +274,13 @@ export async function addTicketComment(
       input.userId,
       input.content,
       input.isInternal || false,
-      JSON.stringify(input.attachments || [])
+      JSON.stringify(input.attachments || []),
     ]
   );
 
   // Update ticket updated_at
   await client.query('UPDATE shared.support_tickets SET updated_at = NOW() WHERE id = $1', [
-    input.ticketId
+    input.ticketId,
   ]);
 
   return result.rows[0];
@@ -336,6 +336,6 @@ export async function getTicketWithComments(
 
   return {
     ...ticket,
-    comments
+    comments,
   };
 }

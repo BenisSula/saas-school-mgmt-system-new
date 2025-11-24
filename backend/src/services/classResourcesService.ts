@@ -60,7 +60,7 @@ export async function uploadClassResource(
     tenantId,
     description: input.description,
     entityType: 'teacher',
-    entityId: teacherId
+    entityId: teacherId,
   });
 
   // Save resource metadata
@@ -80,7 +80,7 @@ export async function uploadClassResource(
       input.description || null,
       uploadResult.fileUrl,
       uploadResult.mimeType,
-      uploadResult.fileSize
+      uploadResult.fileSize,
     ]
   );
 
@@ -98,9 +98,9 @@ export async function uploadClassResource(
         teacherId,
         classId: input.classId,
         title: input.title,
-        fileType: uploadResult.mimeType
+        fileType: uploadResult.mimeType,
       },
-      severity: 'info'
+      severity: 'info',
     });
   } catch (auditError) {
     console.error('[classResourcesService] Failed to create audit log:', auditError);
@@ -190,9 +190,9 @@ export async function deleteClassResource(
       resourceId,
       details: {
         teacherId,
-        classId: resource.class_id
+        classId: resource.class_id,
       },
-      severity: 'info'
+      severity: 'info',
     });
   } catch (auditError) {
     console.error('[classResourcesService] Failed to create audit log:', auditError);
@@ -200,4 +200,3 @@ export async function deleteClassResource(
 
   return true;
 }
-

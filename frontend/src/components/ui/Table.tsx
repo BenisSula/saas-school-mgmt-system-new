@@ -23,7 +23,7 @@ function TableComponent<T>({
   data,
   caption,
   emptyMessage = 'No records found.',
-  onRowClick
+  onRowClick,
 }: TableProps<T>) {
   const { tokens } = useBrand();
   if (data.length === 0) {
@@ -45,7 +45,7 @@ function TableComponent<T>({
       style={
         {
           '--brand-secondary': tokens.secondary,
-          '--brand-secondary-contrast': tokens.secondaryContrast
+          '--brand-secondary-contrast': tokens.secondaryContrast,
         } as CSSProperties
       }
       variants={fadeIn}

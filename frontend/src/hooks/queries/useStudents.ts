@@ -19,10 +19,7 @@ export interface UseStudentsFilters {
  * Hook to fetch students with optional filters
  */
 export function useStudents(filters?: UseStudentsFilters) {
-  const queryKey = useMemo(
-    () => [...queryKeys.admin.students(), filters] as const,
-    [filters]
-  );
+  const queryKey = useMemo(() => [...queryKeys.admin.students(), filters] as const, [filters]);
 
   return useQuery({
     queryKey,
@@ -62,7 +59,14 @@ export function useCreateStudent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { firstName: string; lastName: string; dateOfBirth?: string; classId?: string; admissionNumber?: string; parentContacts?: Array<{ name: string; relationship: string; phone: string }> }) => {
+    mutationFn: async (data: {
+      firstName: string;
+      lastName: string;
+      dateOfBirth?: string;
+      classId?: string;
+      admissionNumber?: string;
+      parentContacts?: Array<{ name: string; relationship: string; phone: string }>;
+    }) => {
       toast.loading('Creating student...', { id: 'create-student' });
       try {
         const response = await api.createStudent(data);
@@ -91,7 +95,13 @@ export function useUpdateStudent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Parameters<typeof api.updateStudent>[1] }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Parameters<typeof api.updateStudent>[1];
+    }) => {
       toast.loading('Updating student...', { id: `update-student-${id}` });
       try {
         const response = await api.updateStudent(id, data);
@@ -169,4 +179,3 @@ export function useBulkDeleteStudents() {
     },
   });
 }
-

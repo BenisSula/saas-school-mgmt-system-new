@@ -3,7 +3,7 @@ import type { PoolClient } from 'pg';
 import {
   getPaymentProvider,
   type PaymentIntentRequest,
-  type PaymentIntentResponse
+  type PaymentIntentResponse,
 } from '../payments/provider';
 import { markInvoiceAsPaid, updateInvoiceStatus } from './invoiceService';
 // getSubscriptionById not used in this file but may be needed for future implementations
@@ -55,8 +55,8 @@ export async function createPaymentIntent(
     invoiceId,
     metadata: {
       tenantId,
-      invoiceNumber: invoice.invoice_number
-    }
+      invoiceNumber: invoice.invoice_number,
+    },
   };
 
   return await provider.createPaymentIntent(paymentRequest);
@@ -105,7 +105,7 @@ export async function recordPlatformPayment(
         input.provider,
         input.providerPaymentId,
         input.paymentMethod || null,
-        JSON.stringify(input.metadata || {})
+        JSON.stringify(input.metadata || {}),
       ]
     );
 
@@ -240,7 +240,7 @@ export async function getPaymentHistory(
 
   return {
     payments: paymentsResult.rows,
-    total
+    total,
   };
 }
 
@@ -256,7 +256,7 @@ export async function processDunning(
   try {
     // Get invoice
     const invoiceResult = await client.query('SELECT * FROM shared.invoices WHERE id = $1', [
-      invoiceId
+      invoiceId,
     ]);
 
     if (invoiceResult.rowCount === 0) {

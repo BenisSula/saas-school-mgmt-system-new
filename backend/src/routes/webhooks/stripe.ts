@@ -11,7 +11,7 @@ import type { PoolClient } from 'pg';
 import { getPool } from '../../db/connection';
 import {
   handleStripeInvoice,
-  handleStripePaymentIntent
+  handleStripePaymentIntent,
 } from '../../services/billing/stripeService';
 import { createAuditLog } from '../../services/audit/enhancedAuditService';
 import { getErrorMessage } from '../../utils/errorUtils';
@@ -24,19 +24,14 @@ router.use(express.raw({ type: 'application/json' }));
 /**
  * Verify Stripe webhook signature
  */
-function verifyStripeSignature(
-  payload: string | Buffer,
-  signature: string
-): Stripe.Event {
+function verifyStripeSignature(payload: string | Buffer, signature: string): Stripe.Event {
   if (!process.env.STRIPE_WEBHOOK_SECRET) {
-    throw new Error('STRIPE_WEBHOOK_SECRET environment variable is required. Please set it in your .env file.');
+    throw new Error(
+      'STRIPE_WEBHOOK_SECRET environment variable is required. Please set it in your .env file.'
+    );
   }
   try {
-    return Stripe.webhooks.constructEvent(
-      payload,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
+    return Stripe.webhooks.constructEvent(payload, signature, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (error) {
     throw new Error(`Webhook signature verification failed: ${getErrorMessage(error)}`);
   }
@@ -45,10 +40,7 @@ function verifyStripeSignature(
 /**
  * Check if event has already been processed (idempotency)
  */
-async function isEventProcessed(
-  client: PoolClient,
-  eventId: string
-): Promise<boolean> {
+async function isEventProcessed(client: PoolClient, eventId: string): Promise<boolean> {
   const result = await client.query(
     'SELECT id FROM shared.external_events WHERE provider = $1 AND provider_event_id = $2 AND processed_at IS NOT NULL',
     ['stripe', eventId]
@@ -168,7 +160,7 @@ async function handleInvoicePaymentFailed(
     resourceType: 'invoice',
     resourceId: invoice.id,
     details: { invoiceId: invoice.id, attemptCount: invoice.attempt_count },
-    severity: 'warning'
+    severity: 'warning',
   });
 
   // TODO: Send notification to tenant admins
@@ -198,11 +190,15 @@ async function handleSubscriptionUpdated(
     WHERE stripe_subscription_id = $6`,
     [
       subscription.status,
-      new Date((subscription as unknown as { current_period_start: number }).current_period_start * 1000),
-      new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000),
+      new Date(
+        (subscription as unknown as { current_period_start: number }).current_period_start * 1000
+      ),
+      new Date(
+        (subscription as unknown as { current_period_end: number }).current_period_end * 1000
+      ),
       subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
       subscription.cancel_at_period_end,
-      subscription.id
+      subscription.id,
     ]
   );
 
@@ -213,7 +209,7 @@ async function handleSubscriptionUpdated(
     resourceType: 'subscription',
     resourceId: subscription.id,
     details: { subscriptionId: subscription.id, status: subscription.status },
-    severity: 'info'
+    severity: 'info',
   });
 }
 
@@ -246,7 +242,7 @@ async function handleSubscriptionDeleted(
     resourceType: 'subscription',
     resourceId: subscription.id,
     details: { subscriptionId: subscription.id },
-    severity: 'info'
+    severity: 'info',
   });
 }
 
@@ -280,19 +276,16 @@ async function handlePaymentIntentFailed(
     resourceId: paymentIntent.id,
     details: {
       paymentIntentId: paymentIntent.id,
-      error: paymentIntent.last_payment_error?.message
+      error: paymentIntent.last_payment_error?.message,
     },
-    severity: 'warning'
+    severity: 'warning',
   });
 }
 
 /**
  * Handle charge refunded
  */
-async function handleChargeRefunded(
-  client: PoolClient,
-  charge: Stripe.Charge
-): Promise<void> {
+async function handleChargeRefunded(client: PoolClient, charge: Stripe.Charge): Promise<void> {
   // Update payment status
   await client.query(
     `UPDATE shared.payments SET
@@ -311,10 +304,9 @@ async function handleChargeRefunded(
       resourceType: 'payment',
       resourceId: charge.id,
       details: { chargeId: charge.id, amount: charge.amount_refunded },
-      severity: 'info'
+      severity: 'info',
     });
   }
 }
 
 export default router;
-

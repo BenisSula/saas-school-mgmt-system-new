@@ -25,7 +25,7 @@ export interface AuthPanelProps {
 const panelMotion = {
   initial: { opacity: 0, scale: 0.92, y: 12 },
   animate: { opacity: 1, scale: 1, y: 0 },
-  exit: { opacity: 0, scale: 0.94, y: 12 }
+  exit: { opacity: 0, scale: 0.94, y: 12 },
 };
 
 export function AuthPanel({
@@ -37,7 +37,7 @@ export function AuthPanel({
   onRegisterSuccess,
   onRegisterPending,
   loginFormProps,
-  registerFormProps
+  registerFormProps,
 }: AuthPanelProps) {
   useBrand(); // Ensure theme context is available
   const [activeTab, setActiveTab] = useState<AuthView>(mode);

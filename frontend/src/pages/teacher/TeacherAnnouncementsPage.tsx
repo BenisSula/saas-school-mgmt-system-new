@@ -28,7 +28,7 @@ export default function TeacherAnnouncementsPage() {
 
     await postMutation.mutateAsync({
       classId: selectedClassId,
-      message: message.trim()
+      message: message.trim(),
     });
     setMessage('');
     setShowForm(false);

@@ -10,7 +10,7 @@ import {
   api,
   type StudentExamSummary,
   type StudentResult,
-  type StudentSubjectSummary
+  type StudentSubjectSummary,
 } from '../../lib/api';
 
 interface DropFeedback {
@@ -162,7 +162,7 @@ export default function StudentResultsPage() {
     () => [
       {
         header: 'Subject',
-        key: 'subject'
+        key: 'subject',
       },
       {
         header: 'Score',
@@ -176,16 +176,16 @@ export default function StudentResultsPage() {
             </div>
             <span>{row.score.toFixed(1)}</span>
           </div>
-        )
+        ),
       },
       {
         header: 'Grade',
-        key: 'grade'
+        key: 'grade',
       },
       {
         header: 'Actions',
-        render: (row) => renderDropButton(row.subject)
-      }
+        render: (row) => renderDropButton(row.subject),
+      },
     ],
     [renderDropButton]
   );
@@ -245,7 +245,7 @@ export default function StudentResultsPage() {
               }}
               options={examSummaries.map((exam) => ({
                 value: exam.examId,
-                label: exam.name
+                label: exam.name,
               }))}
             />
             <Button

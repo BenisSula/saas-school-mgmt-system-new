@@ -21,7 +21,7 @@ import {
   useCreateStudent,
   useDisableUser,
   useEnableUser,
-  type AdminUser
+  type AdminUser,
 } from '../../../hooks/queries/admin/useAdminUsers';
 import { useDepartments } from '../../../hooks/queries/admin/useDepartments';
 import { useClasses } from '../../../hooks/queries/useClasses';
@@ -37,7 +37,7 @@ export default function AdminUsersPage() {
     password: '',
     fullName: '',
     phone: '',
-    departmentId: ''
+    departmentId: '',
   });
   const [teacherFormData, setTeacherFormData] = useState({
     email: '',
@@ -45,7 +45,7 @@ export default function AdminUsersPage() {
     fullName: '',
     phone: '',
     qualifications: '',
-    yearsOfExperience: ''
+    yearsOfExperience: '',
   });
   const [studentFormData, setStudentFormData] = useState({
     email: '',
@@ -56,12 +56,12 @@ export default function AdminUsersPage() {
     parentGuardianName: '',
     parentGuardianContact: '',
     studentId: '',
-    classId: ''
+    classId: '',
   });
 
   const filters = {
     role: roleFilter !== 'all' ? roleFilter : undefined,
-    status: statusFilter !== 'all' ? statusFilter : undefined
+    status: statusFilter !== 'all' ? statusFilter : undefined,
   };
 
   const { data: usersData, isLoading, error } = useAdminUsers(filters);
@@ -78,13 +78,13 @@ export default function AdminUsersPage() {
       {
         ...hodFormData,
         departmentId: hodFormData.departmentId || undefined,
-        phone: hodFormData.phone || undefined
+        phone: hodFormData.phone || undefined,
       },
       {
         onSuccess: () => {
           setIsCreateHODModalOpen(false);
           setHODFormData({ email: '', password: '', fullName: '', phone: '', departmentId: '' });
-        }
+        },
       }
     );
   };
@@ -97,7 +97,7 @@ export default function AdminUsersPage() {
         qualifications: teacherFormData.qualifications || undefined,
         yearsOfExperience: teacherFormData.yearsOfExperience
           ? Number(teacherFormData.yearsOfExperience)
-          : undefined
+          : undefined,
       },
       {
         onSuccess: () => {
@@ -108,9 +108,9 @@ export default function AdminUsersPage() {
             fullName: '',
             phone: '',
             qualifications: '',
-            yearsOfExperience: ''
+            yearsOfExperience: '',
           });
-        }
+        },
       }
     );
   };
@@ -120,7 +120,7 @@ export default function AdminUsersPage() {
       {
         ...studentFormData,
         gender: (studentFormData.gender as 'male' | 'female' | 'other') || undefined,
-        classId: studentFormData.classId || undefined
+        classId: studentFormData.classId || undefined,
       },
       {
         onSuccess: () => {
@@ -134,9 +134,9 @@ export default function AdminUsersPage() {
             parentGuardianName: '',
             parentGuardianContact: '',
             studentId: '',
-            classId: ''
+            classId: '',
           });
-        }
+        },
       }
     );
   };
@@ -169,12 +169,12 @@ export default function AdminUsersPage() {
         >
           {user.status}
         </span>
-      )
+      ),
     },
     {
       key: 'isVerified',
       label: 'Verified',
-      render: (user) => (user.isVerified ? 'Yes' : 'No')
+      render: (user) => (user.isVerified ? 'Yes' : 'No'),
     },
     {
       key: 'actions',
@@ -201,8 +201,8 @@ export default function AdminUsersPage() {
             </Button>
           )}
         </ActionButtonGroup>
-      )
-    }
+      ),
+    },
   ];
 
   if (isLoading) {
@@ -273,7 +273,7 @@ export default function AdminUsersPage() {
               { value: 'all', label: 'All Roles' },
               { value: 'hod', label: 'HOD' },
               { value: 'teacher', label: 'Teacher' },
-              { value: 'student', label: 'Student' }
+              { value: 'student', label: 'Student' },
             ]}
           />
           <Select
@@ -284,7 +284,7 @@ export default function AdminUsersPage() {
               { value: 'all', label: 'All Status' },
               { value: 'active', label: 'Active' },
               { value: 'disabled', label: 'Disabled' },
-              { value: 'pending', label: 'Pending' }
+              { value: 'pending', label: 'Pending' },
             ]}
           />
         </div>
@@ -329,7 +329,7 @@ export default function AdminUsersPage() {
               onChange={(e) => setHODFormData({ ...hodFormData, departmentId: e.target.value })}
               options={[
                 { value: '', label: 'Select department' },
-                ...departments.map((d) => ({ value: d.id, label: d.name }))
+                ...departments.map((d) => ({ value: d.id, label: d.name })),
               ]}
             />
             <div className="flex gap-2 justify-end">
@@ -436,7 +436,7 @@ export default function AdminUsersPage() {
                 { value: '', label: 'Select gender' },
                 { value: 'male', label: 'Male' },
                 { value: 'female', label: 'Female' },
-                { value: 'other', label: 'Other' }
+                { value: 'other', label: 'Other' },
               ]}
             />
             <Input
@@ -460,7 +460,7 @@ export default function AdminUsersPage() {
               onChange={(e) => setStudentFormData({ ...studentFormData, classId: e.target.value })}
               options={[
                 { value: '', label: 'Select class' },
-                ...classes.map((c) => ({ value: c.id, label: c.name }))
+                ...classes.map((c) => ({ value: c.id, label: c.name })),
               ]}
             />
             <Input

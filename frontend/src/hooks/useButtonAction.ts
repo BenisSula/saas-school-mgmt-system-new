@@ -37,7 +37,7 @@ export function useButtonAction<TData = unknown, TVariables = unknown>(
     },
     onError: (error: Error) => {
       onError?.(error);
-    }
+    },
   });
 
   const execute = async (
@@ -64,14 +64,13 @@ export function useButtonAction<TData = unknown, TVariables = unknown>(
       onError: (error) => {
         onError?.(error);
         config?.additionalError?.(error);
-      }
+      },
     });
   };
 
   return {
     mutation,
     execute,
-    isLoading: mutation.isPending
+    isLoading: mutation.isPending,
   };
 }
-

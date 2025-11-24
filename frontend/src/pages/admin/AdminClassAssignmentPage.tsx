@@ -4,13 +4,19 @@ import {
   useClasses,
   useStudents,
   useTeachers,
-  useSubjects
+  useSubjects,
 } from '../../hooks/queries/useAdminQueries';
 import { DataTable, type DataTableColumn } from '../../components/tables/DataTable';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
 import { Modal } from '../../components/ui/Modal';
-import { api, type StudentRecord, type SchoolClass, type TeacherProfile, type Subject } from '../../lib/api';
+import {
+  api,
+  type StudentRecord,
+  type SchoolClass,
+  type TeacherProfile,
+  type Subject,
+} from '../../lib/api';
 import RouteMeta from '../../components/layout/RouteMeta';
 import { toast } from 'sonner';
 
@@ -28,7 +34,7 @@ export default function AdminClassAssignmentPage() {
   const [showTeacherModal, setShowTeacherModal] = useState(false);
   const [assignmentForm, setAssignmentForm] = useState<AssignmentForm>({
     classId: '',
-    isClassTeacher: false
+    isClassTeacher: false,
   });
 
   const { data: classesData, isLoading: classesLoading } = useClasses();
@@ -48,7 +54,9 @@ export default function AdminClassAssignmentPage() {
 
   const classStudents = useMemo(
     () =>
-      students.filter((s: StudentRecord) => s.class_uuid === selectedClassId || s.class_id === selectedClassId),
+      students.filter(
+        (s: StudentRecord) => s.class_uuid === selectedClassId || s.class_id === selectedClassId
+      ),
     [students, selectedClassId]
   );
 
@@ -70,7 +78,7 @@ export default function AdminClassAssignmentPage() {
       await api.admin.assignTeacher(payload.teacherId, {
         classId: payload.classId,
         subjectId: payload.subjectId,
-        isClassTeacher: payload.isClassTeacher
+        isClassTeacher: payload.isClassTeacher,
       });
     },
     [queryKeys.admin.teachers(), queryKeys.admin.classes()] as unknown as unknown[][],
@@ -84,7 +92,7 @@ export default function AdminClassAssignmentPage() {
     }
     assignStudentMutation.mutate({
       studentId: assignmentForm.studentId,
-      classId: assignmentForm.classId
+      classId: assignmentForm.classId,
     });
     setShowStudentModal(false);
     setAssignmentForm({ classId: '', isClassTeacher: false });
@@ -99,7 +107,7 @@ export default function AdminClassAssignmentPage() {
       teacherId: assignmentForm.teacherId,
       classId: assignmentForm.classId,
       subjectId: assignmentForm.subjectId,
-      isClassTeacher: assignmentForm.isClassTeacher || false
+      isClassTeacher: assignmentForm.isClassTeacher || false,
     });
     setShowTeacherModal(false);
     setAssignmentForm({ classId: '', isClassTeacher: false });
@@ -110,17 +118,17 @@ export default function AdminClassAssignmentPage() {
       {
         key: 'name',
         header: 'Student Name',
-        render: (row: StudentRecord) => `${row.first_name} ${row.last_name}`
+        render: (row: StudentRecord) => `${row.first_name} ${row.last_name}`,
       },
       {
         key: 'admissionNumber',
         header: 'Admission Number',
-        render: (row: StudentRecord) => row.admission_number || '—'
+        render: (row: StudentRecord) => row.admission_number || '—',
       },
       {
         key: 'class',
         header: 'Current Class',
-        render: (row: StudentRecord) => row.class_id || 'Not assigned'
+        render: (row: StudentRecord) => row.class_id || 'Not assigned',
       },
       {
         key: 'actions',
@@ -136,8 +144,8 @@ export default function AdminClassAssignmentPage() {
           >
             Reassign
           </Button>
-        )
-      }
+        ),
+      },
     ],
     [assignmentForm, selectedClassId]
   );
@@ -166,13 +174,15 @@ export default function AdminClassAssignmentPage() {
 
         {/* Class Selector */}
         <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
-            <Select
-              label="Select Class"
-              value={selectedClassId}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedClassId(e.target.value)}
-              options={classes.map((c: SchoolClass) => ({ label: c.name, value: c.id }))}
-              disabled={classesLoading || classes.length === 0}
-            />
+          <Select
+            label="Select Class"
+            value={selectedClassId}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+              setSelectedClassId(e.target.value)
+            }
+            options={classes.map((c: SchoolClass) => ({ label: c.name, value: c.id }))}
+            disabled={classesLoading || classes.length === 0}
+          />
         </div>
 
         {/* Class Students Table */}
@@ -210,13 +220,15 @@ export default function AdminClassAssignmentPage() {
                 }
                 options={students.map((s: StudentRecord) => ({
                   label: `${s.first_name} ${s.last_name}`,
-                  value: s.id
+                  value: s.id,
                 }))}
               />
               <Select
                 label="Class"
                 value={assignmentForm.classId}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setAssignmentForm({ ...assignmentForm, classId: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setAssignmentForm({ ...assignmentForm, classId: e.target.value })
+                }
                 options={classes.map((c: SchoolClass) => ({ label: c.name, value: c.id }))}
               />
               <div className="flex justify-end gap-2">
@@ -253,7 +265,9 @@ export default function AdminClassAssignmentPage() {
               <Select
                 label="Class"
                 value={assignmentForm.classId}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setAssignmentForm({ ...assignmentForm, classId: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setAssignmentForm({ ...assignmentForm, classId: e.target.value })
+                }
                 options={classes.map((c: SchoolClass) => ({ label: c.name, value: c.id }))}
               />
               <Select

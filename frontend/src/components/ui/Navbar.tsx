@@ -27,7 +27,7 @@ export interface NavbarProps {
 
 const navItemVariants = {
   hidden: { opacity: 0, y: -6 },
-  visible: { opacity: 1, y: 0 }
+  visible: { opacity: 1, y: 0 },
 };
 
 function NavbarComponent({
@@ -38,7 +38,7 @@ function NavbarComponent({
   sidebarOpen,
   user,
   onLogout,
-  onShowAuthPanel
+  onShowAuthPanel,
 }: NavbarProps) {
   const { tokens } = useBrand();
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
@@ -84,7 +84,7 @@ function NavbarComponent({
             <motion.div
               className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-semibold uppercase text-white shadow-lg"
               style={{
-                background: `linear-gradient(135deg, ${tokens.primary}, ${tokens.accent})`
+                background: `linear-gradient(135deg, ${tokens.primary}, ${tokens.accent})`,
               }}
               initial={{ scale: 0.9, rotate: -5 }}
               animate={{ scale: 1, rotate: 0 }}

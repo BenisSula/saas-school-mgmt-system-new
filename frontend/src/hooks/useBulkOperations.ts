@@ -78,6 +78,6 @@ export function useBulkOperations(options: UseBulkOperationsOptions = {}) {
     toggleAllSelection,
     clearSelection,
     handleBulkDelete,
-    setSelectedRows
+    setSelectedRows,
   };
 }

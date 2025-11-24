@@ -11,13 +11,15 @@ import { PaginatedTable } from '../../components/admin/PaginatedTable';
 import { ExportButtons } from '../../components/admin/ExportButtons';
 import { createExportHandlers } from '../../hooks/useExport';
 import { useQueryClient } from '@tanstack/react-query';
-import { useStudents, useUpdateStudent, useBulkDeleteStudents } from '../../hooks/queries/useStudents';
+import {
+  useStudents,
+  useUpdateStudent,
+  useBulkDeleteStudents,
+} from '../../hooks/queries/useStudents';
 import { useClasses } from '../../hooks/queries/useClasses';
 import { useDebounce } from '../../hooks/useDebounce';
 import { queryKeys } from '../../hooks/useQuery';
-import {
-  type StudentRecord,
-} from '../../lib/api';
+import { type StudentRecord } from '../../lib/api';
 import type { TableColumn } from '../../components/ui/Table';
 import { ViewButton, AssignButton, ActionButtonGroup } from '../../components/table-actions';
 import { FormModal } from '../../components/shared';
@@ -39,7 +41,7 @@ interface StudentFilters {
 const defaultFilters: StudentFilters = {
   search: '',
   classId: 'all',
-  enrollmentStatus: 'all'
+  enrollmentStatus: 'all',
 };
 
 export function StudentsManagementPage() {
@@ -59,13 +61,13 @@ export function StudentsManagementPage() {
   const [parentName, setParentName] = useState<string>('');
   const [parentContact, setParentContact] = useState<string>('');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
-  
+
   // CSV Import
   const csvImportMutation = useCSVImport({
     entityType: 'students',
-    invalidateQueries: [[...queryKeys.admin.students()]] as unknown as unknown[][]
+    invalidateQueries: [[...queryKeys.admin.students()]] as unknown as unknown[][],
   });
-  
+
   // Debounce search filter to prevent excessive API calls
   const debouncedSearch = useDebounce(filters.search, 500);
 
@@ -85,34 +87,41 @@ export function StudentsManagementPage() {
   }, [filters.classId, filters.enrollmentStatus, debouncedSearch]);
 
   // Fetch data using React Query hooks
-  const { data: students = [], isLoading: studentsLoading, error: studentsError } = useStudents(apiFilters);
+  const {
+    data: students = [],
+    isLoading: studentsLoading,
+    error: studentsError,
+  } = useStudents(apiFilters);
   const { data: classes = [], isLoading: classesLoading } = useClasses();
 
   // Advanced filter fields (defined after classes is fetched)
-  const advancedFilterFields: AdvancedFilterField[] = useMemo(() => [
-    {
-      key: 'classId',
-      label: 'Class',
-      type: 'select',
-      options: [
-        { label: 'All classes', value: 'all' },
-        ...classes.map((c) => ({ label: c.name, value: c.id }))
-      ]
-    },
-    {
-      key: 'enrollmentStatus',
-      label: 'Enrollment Status',
-      type: 'select',
-      options: [
-        { label: 'All statuses', value: 'all' },
-        { label: 'Active', value: 'active' },
-        { label: 'Graduated', value: 'graduated' },
-        { label: 'Transferred', value: 'transferred' },
-        { label: 'Suspended', value: 'suspended' },
-        { label: 'Withdrawn', value: 'withdrawn' }
-      ]
-    }
-  ], [classes]);
+  const advancedFilterFields: AdvancedFilterField[] = useMemo(
+    () => [
+      {
+        key: 'classId',
+        label: 'Class',
+        type: 'select',
+        options: [
+          { label: 'All classes', value: 'all' },
+          ...classes.map((c) => ({ label: c.name, value: c.id })),
+        ],
+      },
+      {
+        key: 'enrollmentStatus',
+        label: 'Enrollment Status',
+        type: 'select',
+        options: [
+          { label: 'All statuses', value: 'all' },
+          { label: 'Active', value: 'active' },
+          { label: 'Graduated', value: 'graduated' },
+          { label: 'Transferred', value: 'transferred' },
+          { label: 'Suspended', value: 'suspended' },
+          { label: 'Withdrawn', value: 'withdrawn' },
+        ],
+      },
+    ],
+    [classes]
+  );
 
   // Mutations
   const updateStudentMutation = useUpdateStudent();
@@ -151,10 +160,9 @@ export function StudentsManagementPage() {
     setShowClassModal(true);
   };
 
-
   const handleManageParent = (student: StudentRecord) => {
     setSelectedStudent(student);
-    
+
     // Get parent contacts from current student data
     const rawStudent = students.find((s) => s.id === student.id);
     if (
@@ -172,7 +180,12 @@ export function StudentsManagementPage() {
     setShowParentModal(true);
   };
 
-  const getParentMutationVariables = (): { id: string; data: { parentContacts: Array<{ name: string; relationship: string; phone: string }> } } | undefined => {
+  const getParentMutationVariables = ():
+    | {
+        id: string;
+        data: { parentContacts: Array<{ name: string; relationship: string; phone: string }> };
+      }
+    | undefined => {
     if (!selectedStudent || !parentName || !parentContact) {
       return undefined;
     }
@@ -184,12 +197,12 @@ export function StudentsManagementPage() {
 
     const updatedContacts = [
       ...existingContacts.filter((c) => c.name !== parentName),
-      { name: parentName, relationship: 'Parent', phone: parentContact }
+      { name: parentName, relationship: 'Parent', phone: parentContact },
     ];
 
     return {
       id: selectedStudent.id,
-      data: { parentContacts: updatedContacts }
+      data: { parentContacts: updatedContacts },
     };
   };
 
@@ -205,7 +218,7 @@ export function StudentsManagementPage() {
     bulkDeleteMutation.mutate(Array.from(selectedRows), {
       onSuccess: () => {
         setSelectedRows(new Set());
-      }
+      },
     });
   };
 
@@ -216,7 +229,7 @@ export function StudentsManagementPage() {
       'Last Name': s.last_name,
       'Admission Number': s.admission_number || 'N/A',
       Class: s.class_id || 'N/A',
-      'Enrollment Status': s.enrollment_status || 'active'
+      'Enrollment Status': s.enrollment_status || 'active',
     }));
 
     const handlers = createExportHandlers(exportData, 'students', [
@@ -224,7 +237,7 @@ export function StudentsManagementPage() {
       'Last Name',
       'Admission Number',
       'Class',
-      'Enrollment Status'
+      'Enrollment Status',
     ]);
 
     // For PDF/Excel, use backend endpoint with filters
@@ -234,14 +247,14 @@ export function StudentsManagementPage() {
       filters: {
         classId: filters.classId !== 'all' ? filters.classId : undefined,
         enrollmentStatus: filters.enrollmentStatus !== 'all' ? filters.enrollmentStatus : undefined,
-        search: filters.search || undefined
-      }
+        search: filters.search || undefined,
+      },
     };
 
     return {
       ...handlers,
       exportPDF: () => handlers.exportPDF('/reports/export', exportPayload),
-      exportExcel: () => handlers.exportExcel('/reports/export', exportPayload)
+      exportExcel: () => handlers.exportExcel('/reports/export', exportPayload),
     };
   }, [filteredStudents, filters]);
 
@@ -290,7 +303,7 @@ export function StudentsManagementPage() {
           aria-label={`Select ${row.first_name} ${row.last_name}`}
         />
       ),
-      align: 'center'
+      align: 'center',
     },
     {
       header: 'Name',
@@ -303,7 +316,7 @@ export function StudentsManagementPage() {
             <p className="text-xs text-[var(--brand-muted)]">#{row.admission_number}</p>
           )}
         </div>
-      )
+      ),
     },
     {
       header: 'Class',
@@ -311,7 +324,7 @@ export function StudentsManagementPage() {
         <span className="text-sm text-[var(--brand-surface-contrast)]">
           {row.class_id || 'Not assigned'}
         </span>
-      )
+      ),
     },
     {
       header: 'Actions',
@@ -327,16 +340,13 @@ export function StudentsManagementPage() {
             Details
           </Button>
           <ViewButton onClick={() => handleViewProfile(row)} />
-          <AssignButton 
-            onClick={() => handleAssignClass(row)} 
-            label="Assign Class"
-          />
+          <AssignButton onClick={() => handleAssignClass(row)} label="Assign Class" />
           <Button size="sm" variant="ghost" onClick={() => handleManageParent(row)}>
             Parent
           </Button>
         </ActionButtonGroup>
-      )
-    }
+      ),
+    },
   ];
 
   if (loading) {
@@ -346,7 +356,6 @@ export function StudentsManagementPage() {
       </RouteMeta>
     );
   }
-
 
   return (
     <RouteMeta title="Students management">
@@ -370,7 +379,11 @@ export function StudentsManagementPage() {
               <Upload className="h-4 w-4" />
               Import CSV
             </Button>
-            <Button variant="outline" onClick={() => setShowActivityLog(!showActivityLog)} className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowActivityLog(!showActivityLog)}
+              className="gap-2"
+            >
               Activity Log
             </Button>
             <ExportButtons
@@ -398,13 +411,13 @@ export function StudentsManagementPage() {
             filters={{
               search: filters.search,
               classId: filters.classId,
-              enrollmentStatus: filters.enrollmentStatus
+              enrollmentStatus: filters.enrollmentStatus,
             }}
             onFiltersChange={(newFilters) => {
               setFilters({
                 search: newFilters.search || '',
                 classId: newFilters.classId || 'all',
-                enrollmentStatus: newFilters.enrollmentStatus || 'all'
+                enrollmentStatus: newFilters.enrollmentStatus || 'all',
               });
             }}
             onReset={() => setFilters(defaultFilters)}
@@ -425,10 +438,7 @@ export function StudentsManagementPage() {
         )}
 
         {filteredStudents.length === 0 && students.length === 0 ? (
-          <EmptyState
-            type="students"
-            onAction={() => setShowCreateModal(true)}
-          />
+          <EmptyState type="students" onAction={() => setShowCreateModal(true)} />
         ) : filteredStudents.length === 0 ? (
           <EmptyState
             type="generic"
@@ -484,16 +494,19 @@ export function StudentsManagementPage() {
                   <div className="text-sm text-[var(--brand-surface-contrast)]">
                     {Array.isArray(selectedStudent.parent_contacts) &&
                     selectedStudent.parent_contacts.length > 0 ? (
-                      selectedStudent.parent_contacts.map(
-                        (parent: unknown, idx: number) => {
-                          const p = parent as { name?: string; phone?: string; relationship?: string };
-                          return (
-                            <div key={idx}>
-                              {p.name} {p.relationship ? `(${p.relationship})` : ''} - {p.phone || 'No contact'}
-                            </div>
-                          );
-                        }
-                      )
+                      selectedStudent.parent_contacts.map((parent: unknown, idx: number) => {
+                        const p = parent as {
+                          name?: string;
+                          phone?: string;
+                          relationship?: string;
+                        };
+                        return (
+                          <div key={idx}>
+                            {p.name} {p.relationship ? `(${p.relationship})` : ''} -{' '}
+                            {p.phone || 'No contact'}
+                          </div>
+                        );
+                      })
                     ) : (
                       <span className="text-[var(--brand-muted)]">No parent information</span>
                     )}
@@ -526,15 +539,19 @@ export function StudentsManagementPage() {
               setSelectedClass('');
             }}
             mutation={updateStudentMutation}
-            variables={selectedClass ? {
-              id: selectedStudent.id,
-              data: { classId: selectedClass }
-            } : undefined}
+            variables={
+              selectedClass
+                ? {
+                    id: selectedStudent.id,
+                    data: { classId: selectedClass },
+                  }
+                : undefined
+            }
             invalidateQueries={[queryKeys.admin.students()] as unknown as unknown[][]}
             messages={{
               pending: 'Assigning class...',
               success: 'Class assigned successfully',
-              error: 'Failed to assign class'
+              error: 'Failed to assign class',
             }}
             saveLabel="Assign"
             onSuccess={() => {
@@ -549,7 +566,7 @@ export function StudentsManagementPage() {
                 onChange={(e) => setSelectedClass(e.target.value)}
                 options={[
                   { label: 'Select a class', value: '' },
-                  ...classes.map((c) => ({ label: c.name, value: c.id }))
+                  ...classes.map((c) => ({ label: c.name, value: c.id })),
                 ]}
               />
             </div>
@@ -572,7 +589,7 @@ export function StudentsManagementPage() {
             messages={{
               pending: 'Saving parent information...',
               success: 'Parent information saved successfully',
-              error: 'Failed to save parent information'
+              error: 'Failed to save parent information',
             }}
             onSuccess={() => {
               setParentName('');
@@ -617,7 +634,16 @@ export function StudentsManagementPage() {
               return result;
             }}
             entityType="students"
-            acceptedColumns={['email', 'fullName', 'password', 'dateOfBirth', 'classId', 'studentId', 'parentGuardianName', 'parentGuardianContact']}
+            acceptedColumns={[
+              'email',
+              'fullName',
+              'password',
+              'dateOfBirth',
+              'classId',
+              'studentId',
+              'parentGuardianName',
+              'parentGuardianContact',
+            ]}
           />
         )}
 

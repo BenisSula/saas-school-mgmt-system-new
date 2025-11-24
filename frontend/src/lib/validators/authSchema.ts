@@ -17,7 +17,7 @@ const fullNameSchema = z.string().min(2, 'Name must be at least 2 characters lon
 const genderSchema = z
   .enum(['male', 'female', 'other'])
   .refine((val) => ['male', 'female', 'other'].includes(val), {
-    message: 'Please select a valid gender'
+    message: 'Please select a valid gender',
   });
 const phoneSchema = z
   .string()
@@ -36,10 +36,10 @@ export const baseRegistrationSchema = z.object({
   confirmPassword: z.string(),
   role: z.enum(allowedSelfRegisterRoles).refine((val) => allowedSelfRegisterRoles.includes(val), {
     message:
-      'Invalid role. Only student and teacher can self-register. Admin registration requires creating a new organization.'
+      'Invalid role. Only student and teacher can self-register. Admin registration requires creating a new organization.',
   }),
   tenantId: z.string().uuid().optional(),
-  tenantName: z.string().min(3, 'Organization name must be at least 3 characters').optional()
+  tenantName: z.string().min(3, 'Organization name must be at least 3 characters').optional(),
 });
 
 // Student-specific fields
@@ -62,7 +62,7 @@ export const studentProfileSchema = z.object({
   parentGuardianContact: phoneSchema,
   studentId: z.string().optional(),
   classId: z.string().min(1, 'Class/Grade is required').optional(),
-  address: z.string().min(10, 'Address must be at least 10 characters long').trim()
+  address: z.string().min(10, 'Address must be at least 10 characters long').trim(),
 });
 
 // Teacher-specific fields
@@ -80,7 +80,7 @@ export const teacherProfileSchema = z.object({
     .array(z.string().min(1, 'Subject cannot be empty'))
     .min(1, 'Please select at least one subject'),
   teacherId: z.string().optional(),
-  address: z.string().min(10, 'Address must be at least 10 characters long').trim()
+  address: z.string().min(10, 'Address must be at least 10 characters long').trim(),
 });
 
 // Combined student registration schema
@@ -88,15 +88,15 @@ export const studentRegistrationSchema = baseRegistrationSchema
   .merge(studentProfileSchema)
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',
-    path: ['confirmPassword']
+    path: ['confirmPassword'],
   })
   .refine((data) => data.role === 'student', {
     message: 'Role must be student',
-    path: ['role']
+    path: ['role'],
   })
   .refine((data) => data.tenantId || data.tenantName, {
     message: 'Either tenantId or tenantName is required for student registration',
-    path: ['tenantId']
+    path: ['tenantId'],
   });
 
 // Combined teacher registration schema
@@ -104,30 +104,30 @@ export const teacherRegistrationSchema = baseRegistrationSchema
   .merge(teacherProfileSchema)
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',
-    path: ['confirmPassword']
+    path: ['confirmPassword'],
   })
   .refine((data) => data.role === 'teacher', {
     message: 'Role must be teacher',
-    path: ['role']
+    path: ['role'],
   })
   .refine((data) => data.tenantId || data.tenantName, {
     message: 'Either tenantId or tenantName is required for teacher registration',
-    path: ['tenantId']
+    path: ['tenantId'],
   });
 
 // Admin registration schema (simpler)
 export const adminRegistrationSchema = baseRegistrationSchema
   .extend({
     fullName: fullNameSchema,
-    tenantName: z.string().min(3, 'Organization name must be at least 3 characters').optional()
+    tenantName: z.string().min(3, 'Organization name must be at least 3 characters').optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',
-    path: ['confirmPassword']
+    path: ['confirmPassword'],
   })
   .refine((data) => data.role === 'admin', {
     message: 'Role must be admin',
-    path: ['role']
+    path: ['role'],
   });
 
 // Type exports

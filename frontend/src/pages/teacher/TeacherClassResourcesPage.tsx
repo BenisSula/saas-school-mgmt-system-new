@@ -13,7 +13,7 @@ import { useTeacherClasses } from '../../hooks/queries/useTeachers';
 import {
   useClassResources,
   useUploadResource,
-  useDeleteResource
+  useDeleteResource,
 } from '../../hooks/queries/useTeacherPhase7';
 import { FileText, Upload, Trash2, Download } from 'lucide-react';
 import { formatDate } from '../../lib/utils/date';

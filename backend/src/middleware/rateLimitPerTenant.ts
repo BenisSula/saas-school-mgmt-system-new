@@ -5,10 +5,7 @@ import { extractIpAddress } from '../lib/requestUtils';
 /**
  * Per-tenant rate limiting middleware
  */
-export function rateLimitPerTenant(
-  requestsPerWindow: number,
-  windowSeconds: number
-) {
+export function rateLimitPerTenant(requestsPerWindow: number, windowSeconds: number) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.tenant?.id) {
@@ -42,14 +39,7 @@ export function rateLimitPerTenant(
               updated_at = NOW()
             RETURNING request_count
           `,
-          [
-            req.tenant.id,
-            endpointPattern,
-            method,
-            identifier,
-            windowStart,
-            windowEnd
-          ]
+          [req.tenant.id, endpointPattern, method, identifier, windowStart, windowEnd]
         );
 
         const requestCount = parseInt(trackingResult.rows[0].request_count, 10);
@@ -67,13 +57,16 @@ export function rateLimitPerTenant(
             message: 'Rate limit exceeded',
             limit: requestsPerWindow,
             window: `${windowSeconds}s`,
-            retryAfter: windowSeconds
+            retryAfter: windowSeconds,
           });
         }
 
         // Add rate limit info to headers
         res.setHeader('X-RateLimit-Limit', requestsPerWindow.toString());
-        res.setHeader('X-RateLimit-Remaining', Math.max(0, requestsPerWindow - requestCount).toString());
+        res.setHeader(
+          'X-RateLimit-Remaining',
+          Math.max(0, requestsPerWindow - requestCount).toString()
+        );
         res.setHeader('X-RateLimit-Reset', windowEnd.getTime().toString());
 
         next();
@@ -85,4 +78,3 @@ export function rateLimitPerTenant(
     }
   };
 }
-

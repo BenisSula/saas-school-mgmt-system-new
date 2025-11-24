@@ -39,7 +39,7 @@ export async function recordPaymentEvent(client: PoolClient, schema: string, eve
         : event.type === 'payment.failed'
           ? 'failed'
           : 'refunded',
-      JSON.stringify(event.rawPayload ?? {})
+      JSON.stringify(event.rawPayload ?? {}),
     ]
   );
 
@@ -50,6 +50,6 @@ export async function recordPaymentEvent(client: PoolClient, schema: string, eve
     invoiceId: event.invoiceId,
     provider: event.provider,
     paymentId: event.paymentId,
-    status: event.type
+    status: event.type,
   });
 }

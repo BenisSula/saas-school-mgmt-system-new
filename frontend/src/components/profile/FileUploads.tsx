@@ -28,7 +28,7 @@ export function FileUploads({
   onDelete,
   canUpload = false,
   canDelete = false,
-  emptyMessage = 'No files uploaded'
+  emptyMessage = 'No files uploaded',
 }: FileUploadsProps) {
   const [uploading, setUploading] = useState(false);
   const [description, setDescription] = useState('');

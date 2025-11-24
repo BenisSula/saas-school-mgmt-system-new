@@ -7,7 +7,7 @@ import { bulkUpsertGrades } from '../src/services/examService';
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -279,8 +279,8 @@ describe('Service-level Teacher Assignment Checks', () => {
                 classId: classId,
                 status: 'present',
                 markedBy: teacherUserId,
-                date: uniqueDate
-              }
+                date: uniqueDate,
+              },
             ],
             teacherUserId
           )
@@ -305,8 +305,8 @@ describe('Service-level Teacher Assignment Checks', () => {
                 classId: otherClassId, // Not assigned
                 status: 'present',
                 markedBy: teacherUserId,
-                date: uniqueDate
-              }
+                date: uniqueDate,
+              },
             ],
             teacherUserId
           )
@@ -351,8 +351,8 @@ describe('Service-level Teacher Assignment Checks', () => {
                 classId: otherClassId,
                 status: 'present',
                 markedBy: adminUserId,
-                date: uniqueDate
-              }
+                date: uniqueDate,
+              },
             ],
             adminUserId
           )
@@ -377,8 +377,8 @@ describe('Service-level Teacher Assignment Checks', () => {
                 studentId,
                 subject: 'Mathematics',
                 score: 85,
-                classId: classId
-              }
+                classId: classId,
+              },
             ],
             teacherUserId
           )
@@ -401,8 +401,8 @@ describe('Service-level Teacher Assignment Checks', () => {
                 studentId,
                 subject: 'Mathematics',
                 score: 85,
-                classId: otherClassId // Not assigned
-              }
+                classId: otherClassId, // Not assigned
+              },
             ],
             teacherUserId
           )
@@ -435,8 +435,8 @@ describe('Service-level Teacher Assignment Checks', () => {
                 studentId,
                 subject: 'Mathematics',
                 score: 85,
-                classId: otherClassId
-              }
+                classId: otherClassId,
+              },
             ],
             adminUserId
           )

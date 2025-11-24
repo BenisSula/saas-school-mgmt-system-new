@@ -12,18 +12,18 @@ import {
   createOrUpdateClass,
   deleteClass,
   listClasses,
-  listTerms
+  listTerms,
 } from '../services/termService';
 import { validateContextOrRespond } from '../lib/contextHelpers';
 
 const router = Router();
 
 const termIdSchema = z.object({
-  termId: z.string().uuid('Invalid term identifier')
+  termId: z.string().uuid('Invalid term identifier'),
 });
 
 const classIdSchema = z.object({
-  classId: z.string().uuid('Invalid class identifier')
+  classId: z.string().uuid('Invalid class identifier'),
 });
 
 router.use(authenticate, tenantResolver());
@@ -107,7 +107,7 @@ router.delete('/terms/:termId', requirePermission('settings:terms'), async (req,
     if (!params.success) {
       return res.status(400).json({ message: params.error.message });
     }
-      await deleteTerm(req.tenantClient!, req.tenant!.schema, params.data.termId);
+    await deleteTerm(req.tenantClient!, req.tenant!.schema, params.data.termId);
     res.status(204).send();
   } catch (error) {
     next(error);

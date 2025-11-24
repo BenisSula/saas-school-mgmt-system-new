@@ -5,7 +5,7 @@ import { createTeacher } from './teacherService';
 import {
   transformToStudentInput,
   transformToTeacherInput,
-  type RegistrationProfileData
+  type RegistrationProfileData,
 } from '../lib/profileTransformUtils';
 
 /**
@@ -68,7 +68,7 @@ export async function processPendingProfile(
     // Clear pending profile data after successful creation (for both student and teacher)
     if (recordId) {
       await mainClient.query(`UPDATE shared.users SET pending_profile_data = NULL WHERE id = $1`, [
-        userId
+        userId,
       ]);
     }
 
@@ -77,7 +77,7 @@ export async function processPendingProfile(
     console.error('[profileService] Error processing pending profile:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to process profile'
+      error: error instanceof Error ? error.message : 'Failed to process profile',
     };
   } finally {
     mainClient.release();
@@ -115,7 +115,7 @@ export async function cleanupPendingProfile(
     console.error('[profileService] Error cleaning up pending profile:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to cleanup profile'
+      error: error instanceof Error ? error.message : 'Failed to cleanup profile',
     };
   } finally {
     client.release();

@@ -7,7 +7,7 @@ import { isSuperuser } from '../lib/superuserHelpers';
  */
 export function authorizeSuperUser(req: Request, res: Response, next: NextFunction) {
   const user = req.user;
-  
+
   if (!user) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
@@ -20,4 +20,3 @@ export function authorizeSuperUser(req: Request, res: Response, next: NextFuncti
 }
 
 export default authorizeSuperUser;
-

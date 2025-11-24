@@ -10,7 +10,7 @@ import { AuthErrorBanner } from '../auth/fields/AuthErrorBanner';
 import { sanitizeText } from '../../lib/sanitize';
 import {
   studentRegistrationSchema,
-  teacherRegistrationSchema
+  teacherRegistrationSchema,
 } from '../../lib/validators/authSchema';
 import type { ZodError } from 'zod';
 
@@ -27,12 +27,12 @@ const SUBJECT_OPTIONS = [
   { label: 'Physical Education', value: 'physical_education' },
   { label: 'Arts', value: 'arts' },
   { label: 'Music', value: 'music' },
-  { label: 'Computer Science', value: 'computer_science' }
+  { label: 'Computer Science', value: 'computer_science' },
 ];
 
 export function AdminUserRegistrationModal({
   onClose,
-  onSuccess
+  onSuccess,
 }: AdminUserRegistrationModalProps) {
   const [role, setRole] = useState<'student' | 'teacher'>('student');
   const [email, setEmail] = useState('');
@@ -89,7 +89,7 @@ export function AdminUserRegistrationModal({
           parentGuardianContact: parentGuardianContact || undefined,
           studentId: studentId || undefined,
           classId: classId || undefined,
-          address: address || undefined
+          address: address || undefined,
         };
         schema = studentRegistrationSchema;
       } else {
@@ -105,7 +105,7 @@ export function AdminUserRegistrationModal({
           yearsOfExperience: yearsOfExperience ? parseInt(yearsOfExperience, 10) : 0,
           subjects,
           teacherId: teacherId || undefined,
-          address: address || undefined
+          address: address || undefined,
         };
         schema = teacherRegistrationSchema;
       }
@@ -165,7 +165,7 @@ export function AdminUserRegistrationModal({
         role,
         fullName,
         ...(gender ? { gender: gender as 'male' | 'female' | 'other' } : {}),
-        ...(address ? { address } : {})
+        ...(address ? { address } : {}),
       };
 
       if (isStudent) {
@@ -235,7 +235,7 @@ export function AdminUserRegistrationModal({
               }}
               options={[
                 { label: 'Student', value: 'student' },
-                { label: 'Teacher', value: 'teacher' }
+                { label: 'Teacher', value: 'teacher' },
               ]}
             />
           </div>
@@ -314,7 +314,7 @@ export function AdminUserRegistrationModal({
                   { label: 'Select gender', value: '' },
                   { label: 'Male', value: 'male' },
                   { label: 'Female', value: 'female' },
-                  { label: 'Other', value: 'other' }
+                  { label: 'Other', value: 'other' },
                 ]}
               />
             </div>

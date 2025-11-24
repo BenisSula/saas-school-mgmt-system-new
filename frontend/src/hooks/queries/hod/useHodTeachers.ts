@@ -37,7 +37,6 @@ export function useHodTeachers(filters?: UseHodTeachersFilters) {
     enabled: !!tenantId,
     staleTime: 30_000, // 30 seconds
     retry: 1,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
   });
 }
-

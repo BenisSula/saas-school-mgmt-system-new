@@ -21,7 +21,7 @@ const envVars: EnvVar[] = [
         return 'Must start with sk_test_ or sk_live_';
       }
       return true;
-    }
+    },
   },
   {
     name: 'STRIPE_WEBHOOK_SECRET',
@@ -32,7 +32,7 @@ const envVars: EnvVar[] = [
         return 'Must start with whsec_';
       }
       return true;
-    }
+    },
   },
   {
     name: 'BILLING_DEFAULT_CURRENCY',
@@ -43,18 +43,18 @@ const envVars: EnvVar[] = [
         return 'Must be a 3-letter currency code';
       }
       return true;
-    }
+    },
   },
   {
     name: 'DATABASE_URL',
     required: true,
-    description: 'PostgreSQL database connection string'
+    description: 'PostgreSQL database connection string',
   },
   {
     name: 'JWT_SECRET',
     required: true,
-    description: 'JWT signing secret'
-  }
+    description: 'JWT signing secret',
+  },
 ];
 
 function validateEnv(): void {
@@ -134,4 +134,3 @@ function validateEnv(): void {
 }
 
 validateEnv();
-

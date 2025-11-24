@@ -66,7 +66,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'messages:receive',
     'students:view_self',
     'profile:view_self',
-    'support:raise'
+    'support:raise',
   ],
   teacher: [
     'dashboard:view',
@@ -81,7 +81,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'messages:receive',
     'students:view_own_class',
     'resources:upload',
-    'announcements:post'
+    'announcements:post',
   ],
   // Note: HOD is now an additional role, not a primary role
   // HOD permissions are granted in addition to teacher permissions
@@ -127,7 +127,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'announcements:manage',
     'kb:manage',
     'status:view',
-    'status:manage'
+    'status:manage',
   ],
   superadmin: [
     'dashboard:view',
@@ -168,8 +168,8 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'overrides:create',
     'overrides:revoke',
     'permission_overrides:manage',
-    'permission_overrides:view'
-  ]
+    'permission_overrides:view',
+  ],
 };
 
 export function hasPermission(role: Role, permission: Permission): boolean {

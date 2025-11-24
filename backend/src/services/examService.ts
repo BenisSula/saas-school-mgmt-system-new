@@ -94,7 +94,7 @@ export async function listExams(client: PoolClient, schema: string) {
     metadata: row.metadata,
     createdAt: row.created_at,
     classes: Number(row.class_count) || 0,
-    sessions: Number(row.session_count) || 0
+    sessions: Number(row.session_count) || 0,
   }));
 }
 
@@ -126,7 +126,7 @@ export async function createExam(
   console.info('[audit] exam_created', {
     tenantSchema: schema,
     examId: result.rows[0].id,
-    actorId: actorId ?? null
+    actorId: actorId ?? null,
   });
 
   return result.rows[0];
@@ -149,15 +149,12 @@ export async function deleteExam(
   }
 
   // Delete exam (cascade will handle related sessions and grades if foreign keys are set up)
-  await client.query(
-    `DELETE FROM ${qualified(schema, EXAM_TABLE)} WHERE id = $1`,
-    [examId]
-  );
+  await client.query(`DELETE FROM ${qualified(schema, EXAM_TABLE)} WHERE id = $1`, [examId]);
 
   console.info('[audit] exam_deleted', {
     tenantSchema: schema,
     examId,
-    actorId: actorId ?? null
+    actorId: actorId ?? null,
   });
 }
 
@@ -185,7 +182,7 @@ export async function createExamSession(
     tenantSchema: schema,
     examId,
     sessionId: result.rows[0].id,
-    actorId: actorId ?? null
+    actorId: actorId ?? null,
   });
 
   return result.rows[0];
@@ -282,7 +279,7 @@ export async function bulkUpsertGrades(
         grade,
         entry.remarks ?? remark,
         actorId ?? null,
-        entry.classId ?? null
+        entry.classId ?? null,
       ]
     );
     upserted.push(result.rows[0]);
@@ -292,22 +289,19 @@ export async function bulkUpsertGrades(
   if (actorId && entries.length > 0) {
     const firstEntry = entries[0];
     try {
-      await createAuditLog(
-        client,
-        {
-          tenantId: tenantId || undefined,
-          userId: actorId,
-          action: 'GRADES_ENTERED',
-          resourceType: 'grades',
-          resourceId: examId,
-          details: {
-            examId: examId,
-            classId: firstEntry.classId,
-            gradeCount: entries.length
-          },
-          severity: 'info'
-        }
-      );
+      await createAuditLog(client, {
+        tenantId: tenantId || undefined,
+        userId: actorId,
+        action: 'GRADES_ENTERED',
+        resourceType: 'grades',
+        resourceId: examId,
+        details: {
+          examId: examId,
+          classId: firstEntry.classId,
+          gradeCount: entries.length,
+        },
+        severity: 'info',
+      });
     } catch (auditError) {
       console.error('[examService] Failed to create audit log for grade entry:', auditError);
     }
@@ -317,7 +311,7 @@ export async function bulkUpsertGrades(
     tenantSchema: schema,
     examId,
     entries: entries.length,
-    actorId: actorId ?? null
+    actorId: actorId ?? null,
   });
 
   return upserted;
@@ -356,7 +350,7 @@ export async function computeStudentResult(
         ORDER BY total DESC, student_id ASC
       `,
       [examId]
-    )
+    ),
   ]);
 
   const exam = examResult.rows[0] ?? null;
@@ -387,7 +381,7 @@ export async function computeStudentResult(
       total: row.total,
       average: row.average,
       grade: gradeInfo.grade,
-      position: rank
+      position: rank,
     };
     if (row.student_id === studentId) {
       position = rank;
@@ -410,15 +404,15 @@ export async function computeStudentResult(
       average,
       percentage,
       grade,
-      position
+      position,
     },
     subjects,
     aggregates: {
       highest,
       lowest,
-      classAverage
+      classAverage,
     },
-    leaderboard
+    leaderboard,
   };
 }
 
@@ -462,7 +456,7 @@ export async function generateExamExport(
         row.last_name,
         row.subject,
         row.score.toFixed(2),
-        row.grade ?? ''
+        row.grade ?? '',
       ]
         .map((value) => `"${String(value).replace(/"/g, '""')}"`)
         .join(',')
@@ -471,12 +465,12 @@ export async function generateExamExport(
     console.info('[audit] exam_export', {
       tenantSchema: schema,
       examId,
-      format: 'csv'
+      format: 'csv',
     });
     return {
       buffer: Buffer.from(csv, 'utf-8'),
       contentType: 'text/csv',
-      filename: `${safeName}-results.csv`
+      filename: `${safeName}-results.csv`,
     };
   }
 
@@ -506,12 +500,12 @@ export async function generateExamExport(
   console.info('[audit] exam_export', {
     tenantSchema: schema,
     examId,
-    format: 'pdf'
+    format: 'pdf',
   });
 
   return {
     buffer: pdfBuffer,
     contentType: 'application/pdf',
-    filename: `${safeName}-results.pdf`
+    filename: `${safeName}-results.pdf`,
   };
 }

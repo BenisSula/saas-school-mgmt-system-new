@@ -4,7 +4,11 @@
  */
 
 import { Router } from 'express';
-import { getHealthStatus, getReadinessStatus, getLivenessStatus } from '../services/monitoring/healthService';
+import {
+  getHealthStatus,
+  getReadinessStatus,
+  getLivenessStatus,
+} from '../services/monitoring/healthService';
 
 const router = Router();
 
@@ -22,7 +26,7 @@ router.get('/detailed', async (_req, res) => {
   } catch (error) {
     res.status(503).json({
       status: 'unhealthy',
-      error: error instanceof Error ? error.message : 'Health check failed'
+      error: error instanceof Error ? error.message : 'Health check failed',
     });
   }
 });
@@ -36,7 +40,7 @@ router.get('/ready', async (_req, res) => {
   } catch (error) {
     res.status(503).json({
       ready: false,
-      error: error instanceof Error ? error.message : 'Readiness check failed'
+      error: error instanceof Error ? error.message : 'Readiness check failed',
     });
   }
 });

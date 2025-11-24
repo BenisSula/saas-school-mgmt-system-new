@@ -26,9 +26,9 @@ export function AnnouncementForm({ classId, onSuccess, onCancel }: AnnouncementF
 
     await postMutation.mutateAsync({
       classId,
-      message: message.trim()
+      message: message.trim(),
     });
-    
+
     setMessage('');
     onSuccess?.();
   };
@@ -50,10 +50,7 @@ export function AnnouncementForm({ classId, onSuccess, onCancel }: AnnouncementF
             Cancel
           </Button>
         )}
-        <Button
-          onClick={handleSubmit}
-          disabled={!message.trim() || postMutation.isPending}
-        >
+        <Button onClick={handleSubmit} disabled={!message.trim() || postMutation.isPending}>
           <Send className="mr-2 h-4 w-4" />
           {postMutation.isPending ? 'Posting...' : 'Post Announcement'}
         </Button>
@@ -61,4 +58,3 @@ export function AnnouncementForm({ classId, onSuccess, onCancel }: AnnouncementF
     </div>
   );
 }
-

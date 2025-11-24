@@ -16,4 +16,3 @@ export type { PermissionDeniedProps } from './PermissionDenied';
 
 export { FormModal } from './FormModal';
 export type { FormModalProps } from './FormModal';
-

@@ -8,7 +8,7 @@ import {
   hasAdditionalRole,
   isHOD,
   getAllUserRoles,
-  getHODDepartmentId
+  getHODDepartmentId,
 } from '../../src/lib/roleUtils';
 import type { UserWithRoles } from '../../src/lib/roleUtils';
 
@@ -18,7 +18,7 @@ describe('Role Utilities', () => {
       const user: UserWithRoles = {
         id: 'user-1',
         role: 'teacher',
-        additional_roles: [{ role: 'hod', granted_at: '2025-01-01T00:00:00Z' }]
+        additional_roles: [{ role: 'hod', granted_at: '2025-01-01T00:00:00Z' }],
       };
 
       expect(hasAdditionalRole(user, 'hod')).toBe(true);
@@ -28,7 +28,7 @@ describe('Role Utilities', () => {
       const user: UserWithRoles = {
         id: 'user-1',
         role: 'teacher',
-        additional_roles: []
+        additional_roles: [],
       };
 
       expect(hasAdditionalRole(user, 'hod')).toBe(false);
@@ -44,7 +44,7 @@ describe('Role Utilities', () => {
       const user: UserWithRoles = {
         id: 'user-1',
         role: 'teacher',
-        additional_roles: [{ role: 'hod', granted_at: '2025-01-01T00:00:00Z' }]
+        additional_roles: [{ role: 'hod', granted_at: '2025-01-01T00:00:00Z' }],
       };
 
       expect(isHOD(user)).toBe(true);
@@ -54,7 +54,7 @@ describe('Role Utilities', () => {
       const user: UserWithRoles = {
         id: 'user-1',
         role: 'teacher',
-        additional_roles: []
+        additional_roles: [],
       };
 
       expect(isHOD(user)).toBe(false);
@@ -68,8 +68,8 @@ describe('Role Utilities', () => {
         role: 'teacher',
         additional_roles: [
           { role: 'hod', granted_at: '2025-01-01T00:00:00Z' },
-          { role: 'class_teacher', granted_at: '2025-01-01T00:00:00Z' }
-        ]
+          { role: 'class_teacher', granted_at: '2025-01-01T00:00:00Z' },
+        ],
       };
 
       const roles = getAllUserRoles(user);
@@ -82,7 +82,7 @@ describe('Role Utilities', () => {
       const user: UserWithRoles = {
         id: 'user-1',
         role: 'teacher',
-        additional_roles: []
+        additional_roles: [],
       };
 
       const roles = getAllUserRoles(user);
@@ -99,9 +99,9 @@ describe('Role Utilities', () => {
           {
             role: 'hod',
             granted_at: '2025-01-01T00:00:00Z',
-            metadata: { departmentId: 'dept-123' }
-          }
-        ]
+            metadata: { departmentId: 'dept-123' },
+          },
+        ],
       };
 
       expect(getHODDepartmentId(user)).toBe('dept-123');
@@ -111,7 +111,7 @@ describe('Role Utilities', () => {
       const user: UserWithRoles = {
         id: 'user-1',
         role: 'teacher',
-        additional_roles: []
+        additional_roles: [],
       };
 
       expect(getHODDepartmentId(user)).toBeNull();
@@ -125,13 +125,12 @@ describe('Role Utilities', () => {
           {
             role: 'hod',
             granted_at: '2025-01-01T00:00:00Z',
-            metadata: {}
-          }
-        ]
+            metadata: {},
+          },
+        ],
       };
 
       expect(getHODDepartmentId(user)).toBeNull();
     });
   });
 });
-

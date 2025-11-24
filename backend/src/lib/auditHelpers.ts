@@ -32,7 +32,10 @@ export async function safeAuditLog(
   routeContext?: string
 ): Promise<void> {
   if (!client) {
-    logger.warn({ routeContext, action: params.action }, 'Cannot create audit log: database client missing');
+    logger.warn(
+      { routeContext, action: params.action },
+      'Cannot create audit log: database client missing'
+    );
     return;
   }
 
@@ -44,7 +47,7 @@ export async function safeAuditLog(
       resourceType: params.resourceType,
       resourceId: params.resourceId,
       details: params.details || {},
-      severity: params.severity || 'info'
+      severity: params.severity || 'info',
     });
   } catch (auditError) {
     const context = routeContext ? `[${routeContext}]` : '[audit]';
@@ -52,7 +55,7 @@ export async function safeAuditLog(
       {
         routeContext,
         action: params.action,
-        error: auditError instanceof Error ? auditError.message : String(auditError)
+        error: auditError instanceof Error ? auditError.message : String(auditError),
       },
       `${context} Failed to create audit log`
     );
@@ -94,11 +97,10 @@ export async function safeAuditLogFromRequest(
       details: {
         ...params.details,
         updatedBy: req.user.email,
-        role: req.user.role
+        role: req.user.role,
       },
-      severity: params.severity
+      severity: params.severity,
     },
     routeContext
   );
 }
-

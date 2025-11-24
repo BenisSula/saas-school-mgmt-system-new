@@ -107,4 +107,3 @@ export function serializeJsonField(value: unknown): string {
   }
   return JSON.stringify(value);
 }
-

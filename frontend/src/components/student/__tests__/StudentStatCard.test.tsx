@@ -9,13 +9,7 @@ import { StudentStatCard } from '../StudentStatCard';
 
 describe('StudentStatCard', () => {
   it('renders title and value', () => {
-    render(
-      <StudentStatCard
-        title="Total Classes"
-        value={5}
-        icon={TrendingUp}
-      />
-    );
+    render(<StudentStatCard title="Total Classes" value={5} icon={TrendingUp} />);
 
     expect(screen.getByText('Total Classes')).toBeInTheDocument();
     expect(screen.getByText('5')).toBeInTheDocument();
@@ -23,12 +17,7 @@ describe('StudentStatCard', () => {
 
   it('renders description when provided', () => {
     render(
-      <StudentStatCard
-        title="Attendance"
-        value="85%"
-        description="This term"
-        icon={TrendingUp}
-      />
+      <StudentStatCard title="Attendance" value="85%" description="This term" icon={TrendingUp} />
     );
 
     expect(screen.getByText('This term')).toBeInTheDocument();
@@ -48,4 +37,3 @@ describe('StudentStatCard', () => {
     expect(trendText).toBeInTheDocument();
   });
 });
-

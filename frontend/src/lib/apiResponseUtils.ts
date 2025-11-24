@@ -17,4 +17,3 @@ export function unwrapApiResponse<T>(response: T | { data?: T } | undefined): T 
   // Otherwise return as-is (unwrapped format)
   return response as T;
 }
-

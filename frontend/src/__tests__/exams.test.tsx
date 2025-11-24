@@ -11,8 +11,8 @@ import { api } from '../lib/api';
 function renderWithDashboard(ui: ReactElement) {
   const queryClient = new QueryClient({
     defaultOptions: {
-      queries: { retry: false }
-    }
+      queries: { retry: false },
+    },
   });
 
   return render(
@@ -49,9 +49,7 @@ describe('Exam pages', () => {
     renderWithDashboard(<AdminExamConfigPage />);
     // Use getByRole to find the heading, which is more reliable
     // The heading is "Exam Configuration" not "Examination Configuration"
-    expect(
-      await screen.findByRole('heading', { name: /Exam Configuration/i })
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /Exam Configuration/i })).toBeInTheDocument();
     // The page may not have "Upcoming Exams" text if there are no exams
     // Just verify the page renders correctly
     expect(screen.getByText(/Manage exams and grading scales/i)).toBeInTheDocument();

@@ -9,7 +9,7 @@ import {
   createTenant,
   runTenantMigrations,
   seedTenant,
-  withTenantSearchPath
+  withTenantSearchPath,
 } from '../db/tenantManager';
 import { rolePermissions, Role } from '../config/permissions';
 import { recordSharedAuditLog, recordTenantAuditLog } from '../services/auditLogService';
@@ -96,25 +96,25 @@ const SUPERUSER_CREDENTIALS = {
   email: process.env.SEED_SUPERUSER_EMAIL ?? 'owner@saas-platform.system',
   password: process.env.SEED_SUPERUSER_PASSWORD ?? 'SuperOwner#2025!',
   name: process.env.SEED_SUPERUSER_NAME ?? 'Platform Owner',
-  username: 'superuser'
+  username: 'superuser',
 };
 
 export const schoolAdmins = [
   {
     school: 'New Horizon Senior Secondary School',
     email: 'fatou.jallow@newhorizon.edu.gm',
-    username: 'nhs_admin'
+    username: 'nhs_admin',
   },
   {
     school: 'St. Peter’s Senior Secondary School',
     email: 'lamin.sowe@stpeterslamin.edu.gm',
-    username: 'stp_admin'
+    username: 'stp_admin',
   },
   {
     school: 'Daddy Jobe Comprehensive Senior Secondary School',
     email: 'musu.bah@daddyjobe.edu.gm',
-    username: 'djc_admin'
-  }
+    username: 'djc_admin',
+  },
 ];
 
 const SCHOOL_SEEDS: SchoolSeed[] = [
@@ -128,7 +128,7 @@ const SCHOOL_SEEDS: SchoolSeed[] = [
       fullName: 'Fatou Jallow',
       email: 'fatou.jallow@newhorizon.edu.gm',
       username: 'nhs_admin',
-      password: 'NhsAdmin@2025'
+      password: 'NhsAdmin@2025',
     },
     departments: [
       {
@@ -140,8 +140,8 @@ const SCHOOL_SEEDS: SchoolSeed[] = [
           roleKey: 'hod_science',
           username: 'nhs_hod_science',
           password: 'NhsScienceHOD@2025',
-          permissions: ['department-analytics', 'reports:view']
-        }
+          permissions: ['department-analytics', 'reports:view'],
+        },
       },
       {
         name: 'Commerce',
@@ -152,8 +152,8 @@ const SCHOOL_SEEDS: SchoolSeed[] = [
           roleKey: 'hod_commerce',
           username: 'nhs_hod_commerce',
           password: 'NhsCommerceHOD@2025',
-          permissions: ['department-analytics', 'reports:view']
-        }
+          permissions: ['department-analytics', 'reports:view'],
+        },
       },
       {
         name: 'Arts',
@@ -164,10 +164,10 @@ const SCHOOL_SEEDS: SchoolSeed[] = [
           roleKey: 'hod_arts',
           username: 'nhs_hod_arts',
           password: 'NhsArtsHOD@2025',
-          permissions: ['department-analytics', 'reports:view']
-        }
-      }
-    ]
+          permissions: ['department-analytics', 'reports:view'],
+        },
+      },
+    ],
   },
   {
     name: 'St. Peter’s Senior Secondary School',
@@ -179,7 +179,7 @@ const SCHOOL_SEEDS: SchoolSeed[] = [
       fullName: 'Lamin Sowe',
       email: 'lamin.sowe@stpeterslamin.edu.gm',
       username: 'stp_admin',
-      password: 'StpAdmin@2025'
+      password: 'StpAdmin@2025',
     },
     departments: [
       {
@@ -191,8 +191,8 @@ const SCHOOL_SEEDS: SchoolSeed[] = [
           roleKey: 'hod_science',
           username: 'stp_hod_science',
           password: 'StpScienceHOD@2025',
-          permissions: ['department-analytics', 'attendance:view', 'performance:charts']
-        }
+          permissions: ['department-analytics', 'attendance:view', 'performance:charts'],
+        },
       },
       {
         name: 'Commerce',
@@ -203,8 +203,8 @@ const SCHOOL_SEEDS: SchoolSeed[] = [
           roleKey: 'hod_commerce',
           username: 'stp_hod_commerce',
           password: 'StpCommerceHOD@2025',
-          permissions: ['department-analytics', 'attendance:view', 'performance:charts']
-        }
+          permissions: ['department-analytics', 'attendance:view', 'performance:charts'],
+        },
       },
       {
         name: 'Arts',
@@ -215,10 +215,10 @@ const SCHOOL_SEEDS: SchoolSeed[] = [
           roleKey: 'hod_arts',
           username: 'stp_hod_arts',
           password: 'StpArtsHOD@2025',
-          permissions: ['department-analytics', 'attendance:view', 'performance:charts']
-        }
-      }
-    ]
+          permissions: ['department-analytics', 'attendance:view', 'performance:charts'],
+        },
+      },
+    ],
   },
   {
     name: 'Daddy Jobe Comprehensive Senior Secondary School',
@@ -230,7 +230,7 @@ const SCHOOL_SEEDS: SchoolSeed[] = [
       fullName: 'Musu Bah',
       email: 'musu.bah@daddyjobe.edu.gm',
       username: 'djc_admin',
-      password: 'DjcAdmin@2025'
+      password: 'DjcAdmin@2025',
     },
     departments: [
       {
@@ -242,8 +242,8 @@ const SCHOOL_SEEDS: SchoolSeed[] = [
           roleKey: 'hod_science',
           username: 'djc_hod_science',
           password: 'DjcScienceHOD@2025',
-          permissions: ['department-analytics', 'reports:view']
-        }
+          permissions: ['department-analytics', 'reports:view'],
+        },
       },
       {
         name: 'Commerce',
@@ -254,8 +254,8 @@ const SCHOOL_SEEDS: SchoolSeed[] = [
           roleKey: 'hod_commerce',
           username: 'djc_hod_commerce',
           password: 'DjcCommerceHOD@2025',
-          permissions: ['department-analytics', 'reports:view']
-        }
+          permissions: ['department-analytics', 'reports:view'],
+        },
       },
       {
         name: 'Arts',
@@ -266,11 +266,11 @@ const SCHOOL_SEEDS: SchoolSeed[] = [
           roleKey: 'hod_arts',
           username: 'djc_hod_arts',
           password: 'DjcArtsHOD@2025',
-          permissions: ['department-analytics', 'reports:view']
-        }
-      }
-    ]
-  }
+          permissions: ['department-analytics', 'reports:view'],
+        },
+      },
+    ],
+  },
 ];
 
 const BROADCAST_NOTIFICATIONS: BroadcastNotificationSeed[] = [
@@ -279,22 +279,22 @@ const BROADCAST_NOTIFICATIONS: BroadcastNotificationSeed[] = [
     title: 'Welcome to the 2025 Academic Session',
     message: 'All departments have been successfully created. HODs may begin assigning teachers.',
     targetRoles: ['hod', 'teacher', 'student'],
-    status: 'sent'
+    status: 'sent',
   },
   {
     registrationCode: 'STP-LMN-2025',
     title: 'Department Hierarchy Setup Complete',
     message: 'Admins can now review department dashboards.',
     targetRoles: ['hod'],
-    status: 'sent'
+    status: 'sent',
   },
   {
     registrationCode: 'DJC-CSR-2025',
     title: 'Department Heads Assigned',
     message: 'Please verify departmental data before teacher assignment begins.',
     targetRoles: ['hod', 'teacher'],
-    status: 'sent'
-  }
+    status: 'sent',
+  },
 ];
 
 const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
@@ -308,7 +308,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 10',
       role: 'Classroom Teacher',
       username: 'nhs_pjagne',
-      password: 'TeachNHS01@2025'
+      password: 'TeachNHS01@2025',
     },
     {
       fullName: 'Jainaba Ceesay',
@@ -319,7 +319,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 11',
       role: 'Classroom Teacher',
       username: 'nhs_jceesay',
-      password: 'TeachNHS02@2025'
+      password: 'TeachNHS02@2025',
     },
     {
       fullName: 'Lamin Jammeh',
@@ -330,7 +330,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 12',
       role: 'Subject Teacher',
       username: 'nhs_ljammeh',
-      password: 'TeachNHS03@2025'
+      password: 'TeachNHS03@2025',
     },
     {
       fullName: 'Mariama Bah',
@@ -341,7 +341,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 10',
       role: 'Subject Teacher',
       username: 'nhs_mbah',
-      password: 'TeachNHS04@2025'
+      password: 'TeachNHS04@2025',
     },
     {
       fullName: 'Aisha Touray',
@@ -352,7 +352,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 11',
       role: 'Subject Teacher',
       username: 'nhs_atouray',
-      password: 'TeachNHS05@2025'
+      password: 'TeachNHS05@2025',
     },
     {
       fullName: 'Modou Colley',
@@ -363,7 +363,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 10',
       role: 'Classroom Teacher',
       username: 'nhs_mcolley',
-      password: 'TeachNHS06@2025'
+      password: 'TeachNHS06@2025',
     },
     {
       fullName: 'Fatou Sowe',
@@ -374,7 +374,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 11',
       role: 'Subject Teacher',
       username: 'nhs_fsowe',
-      password: 'TeachNHS07@2025'
+      password: 'TeachNHS07@2025',
     },
     {
       fullName: 'Ebrima Faal',
@@ -385,7 +385,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 12',
       role: 'Subject Teacher',
       username: 'nhs_efaal',
-      password: 'TeachNHS08@2025'
+      password: 'TeachNHS08@2025',
     },
     {
       fullName: 'Haddy Jatta',
@@ -396,8 +396,8 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 12',
       role: 'Classroom Teacher',
       username: 'nhs_hjatta',
-      password: 'TeachNHS09@2025'
-    }
+      password: 'TeachNHS09@2025',
+    },
   ],
   'STP-LMN-2025': [
     {
@@ -409,7 +409,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 10',
       role: 'Classroom Teacher',
       username: 'stp_oceesay',
-      password: 'TeachSTP01@2025'
+      password: 'TeachSTP01@2025',
     },
     {
       fullName: 'Mariama Jawara',
@@ -420,7 +420,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 11',
       role: 'Classroom Teacher',
       username: 'stp_mjawara',
-      password: 'TeachSTP02@2025'
+      password: 'TeachSTP02@2025',
     },
     {
       fullName: 'Sainabou Jallow',
@@ -431,7 +431,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 12',
       role: 'Subject Teacher',
       username: 'stp_sjallow',
-      password: 'TeachSTP03@2025'
+      password: 'TeachSTP03@2025',
     },
     {
       fullName: 'Musa Touray',
@@ -442,7 +442,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 10',
       role: 'Subject Teacher',
       username: 'stp_mtouray',
-      password: 'TeachSTP04@2025'
+      password: 'TeachSTP04@2025',
     },
     {
       fullName: 'Binta Bah',
@@ -453,7 +453,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 11',
       role: 'Subject Teacher',
       username: 'stp_bbah',
-      password: 'TeachSTP05@2025'
+      password: 'TeachSTP05@2025',
     },
     {
       fullName: 'Ousman Ceesay',
@@ -464,7 +464,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 10',
       role: 'Classroom Teacher',
       username: 'stp_oceesay2',
-      password: 'TeachSTP06@2025'
+      password: 'TeachSTP06@2025',
     },
     {
       fullName: 'Isatou Cham',
@@ -475,7 +475,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 11',
       role: 'Subject Teacher',
       username: 'stp_icham',
-      password: 'TeachSTP07@2025'
+      password: 'TeachSTP07@2025',
     },
     {
       fullName: 'Abdoulie Baldeh',
@@ -486,7 +486,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 12',
       role: 'Subject Teacher',
       username: 'stp_abaldeh',
-      password: 'TeachSTP08@2025'
+      password: 'TeachSTP08@2025',
     },
     {
       fullName: 'Haddy Sanyang',
@@ -497,8 +497,8 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 12',
       role: 'Classroom Teacher',
       username: 'stp_hsanyang',
-      password: 'TeachSTP09@2025'
-    }
+      password: 'TeachSTP09@2025',
+    },
   ],
   'DJC-CSR-2025': [
     {
@@ -510,7 +510,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 10',
       role: 'Classroom Teacher',
       username: 'djc_lceesay',
-      password: 'TeachDJC01@2025'
+      password: 'TeachDJC01@2025',
     },
     {
       fullName: 'Haddy Jallow',
@@ -521,7 +521,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 11',
       role: 'Classroom Teacher',
       username: 'djc_hjallow',
-      password: 'TeachDJC02@2025'
+      password: 'TeachDJC02@2025',
     },
     {
       fullName: 'Modou Darboe',
@@ -532,7 +532,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 12',
       role: 'Subject Teacher',
       username: 'djc_mdarboe',
-      password: 'TeachDJC03@2025'
+      password: 'TeachDJC03@2025',
     },
     {
       fullName: 'Mariam Kinteh',
@@ -543,7 +543,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 10',
       role: 'Subject Teacher',
       username: 'djc_mkinteh',
-      password: 'TeachDJC04@2025'
+      password: 'TeachDJC04@2025',
     },
     {
       fullName: 'Fatoumata Ceesay',
@@ -554,7 +554,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 11',
       role: 'Subject Teacher',
       username: 'djc_fceesay',
-      password: 'TeachDJC05@2025'
+      password: 'TeachDJC05@2025',
     },
     {
       fullName: 'Alieu Sanyang',
@@ -565,7 +565,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 10',
       role: 'Classroom Teacher',
       username: 'djc_asanyang',
-      password: 'TeachDJC06@2025'
+      password: 'TeachDJC06@2025',
     },
     {
       fullName: 'Jainaba Camara',
@@ -576,7 +576,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 11',
       role: 'Subject Teacher',
       username: 'djc_jcamara',
-      password: 'TeachDJC07@2025'
+      password: 'TeachDJC07@2025',
     },
     {
       fullName: 'Lamin Bah',
@@ -587,7 +587,7 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 12',
       role: 'Subject Teacher',
       username: 'djc_lbah',
-      password: 'TeachDJC08@2025'
+      password: 'TeachDJC08@2025',
     },
     {
       fullName: 'Omar Jallow',
@@ -598,15 +598,15 @@ const TEACHER_SEEDS: Record<string, TeacherSeed[]> = {
       className: 'Grade 12',
       role: 'Classroom Teacher',
       username: 'djc_ojallow',
-      password: 'TeachDJC09@2025'
-    }
-  ]
+      password: 'TeachDJC09@2025',
+    },
+  ],
 };
 
 const CLASS_STRUCTURE: ClassStructureSeed[] = [
   { department: 'Science', gradeLevel: 'Grade 10', sections: ['A', 'B', 'C'] },
   { department: 'Commerce', gradeLevel: 'Grade 11', sections: ['A', 'B', 'C'] },
-  { department: 'Arts', gradeLevel: 'Grade 12', sections: ['A', 'B', 'C'] }
+  { department: 'Arts', gradeLevel: 'Grade 12', sections: ['A', 'B', 'C'] },
 ];
 
 const ACADEMIC_YEAR = '2023-2024';
@@ -614,16 +614,16 @@ const ACADEMIC_YEAR = '2023-2024';
 const DEPARTMENT_SUBJECTS: Record<string, DepartmentSubjectMap> = {
   Science: {
     core: ['Mathematics', 'English', 'Religious Study'],
-    electives: ['Chemistry', 'Physics', 'Biology']
+    electives: ['Chemistry', 'Physics', 'Biology'],
   },
   Commerce: {
     core: ['Mathematics', 'English', 'Religious Study'],
-    electives: ['Accounting', 'Commerce', 'Economics']
+    electives: ['Accounting', 'Commerce', 'Economics'],
   },
   Arts: {
     core: ['Mathematics', 'English', 'Religious Study'],
-    electives: ['History', 'Government', 'Literature']
-  }
+    electives: ['History', 'Government', 'Literature'],
+  },
 };
 
 const FEMALE_FIRST_NAMES = [
@@ -638,7 +638,7 @@ const FEMALE_FIRST_NAMES = [
   'Saffie',
   'Ramatoulie',
   'Aisha',
-  'Sainabou'
+  'Sainabou',
 ];
 
 const MALE_FIRST_NAMES = [
@@ -653,7 +653,7 @@ const MALE_FIRST_NAMES = [
   'Laminou',
   'Buba',
   'Musa',
-  'Baboucarr'
+  'Baboucarr',
 ];
 
 const LAST_NAMES = [
@@ -670,13 +670,13 @@ const LAST_NAMES = [
   'Darboe',
   'Bojang',
   'Faal',
-  'Sanyang'
+  'Sanyang',
 ];
 
 const SCHOOL_EMAIL_DOMAINS: Record<string, string> = {
   'NHS-BJL-2025': 'newhorizon.edu.gm',
   'STP-LMN-2025': 'stpeterslamin.edu.gm',
-  'DJC-CSR-2025': 'daddyjobe.edu.gm'
+  'DJC-CSR-2025': 'daddyjobe.edu.gm',
 };
 
 const teacherCacheBySchool = new Map<string, TeacherContext[]>();
@@ -755,18 +755,18 @@ function gradeDobRange(gradeLevel: 'Grade 10' | 'Grade 11' | 'Grade 12'): {
     case 'Grade 10':
       return {
         start: new Date('2007-01-01'),
-        end: new Date('2009-12-31')
+        end: new Date('2009-12-31'),
       };
     case 'Grade 11':
       return {
         start: new Date('2006-01-01'),
-        end: new Date('2008-12-31')
+        end: new Date('2008-12-31'),
       };
     case 'Grade 12':
     default:
       return {
         start: new Date('2005-01-01'),
-        end: new Date('2007-12-31')
+        end: new Date('2007-12-31'),
       };
   }
 }
@@ -898,7 +898,7 @@ async function upsertDepartment(
       slug,
       department.hod.email,
       department.hod.phone,
-      JSON.stringify({ source: 'seed-phase2', tenantId })
+      JSON.stringify({ source: 'seed-phase2', tenantId }),
     ]
   );
 
@@ -913,8 +913,8 @@ async function upsertDepartment(
       schoolId,
       tenantId,
       name: department.name,
-      slug
-    }
+      slug,
+    },
   });
 
   return {
@@ -923,8 +923,8 @@ async function upsertDepartment(
       school: schoolName,
       department: department.name,
       slug,
-      registrationCode: ''
-    }
+      registrationCode: '',
+    },
   };
 }
 
@@ -1012,7 +1012,7 @@ async function upsertUserAccount(options: {
         options.gender ?? null,
         options.dateOfBirth ?? null,
         options.enrollmentDate ?? null,
-        metadata
+        metadata,
       ]
     );
     return { id: userId, passwordHash };
@@ -1063,7 +1063,7 @@ async function upsertUserAccount(options: {
       options.gender ?? null,
       options.dateOfBirth ?? null,
       options.enrollmentDate ?? null,
-      metadata
+      metadata,
     ]
   );
 
@@ -1093,7 +1093,7 @@ async function ensureClassRecord(
   school: SchoolSeed
 ): Promise<string> {
   const existing = await client.query<{ id: string }>(`SELECT id FROM classes WHERE name = $1`, [
-    className
+    className,
   ]);
 
   if ((existing.rowCount ?? 0) > 0) {
@@ -1126,14 +1126,14 @@ async function ensureDetailedClassRecord(
   }
 ): Promise<string> {
   const existing = await client.query<{ id: string }>(`SELECT id FROM classes WHERE name = $1`, [
-    options.className
+    options.className,
   ]);
 
   const metadata = {
     registrationCode: options.registrationCode,
     departmentId: options.departmentId,
     gradeLevel: options.gradeLevel,
-    section: options.section
+    section: options.section,
   };
 
   if ((existing.rowCount ?? 0) > 0) {
@@ -1161,7 +1161,7 @@ async function ensureDetailedClassRecord(
         options.classTeacherId,
         options.capacity,
         options.academicYear,
-        JSON.stringify(metadata)
+        JSON.stringify(metadata),
       ]
     );
     return classId;
@@ -1196,7 +1196,7 @@ async function ensureDetailedClassRecord(
       options.classTeacherId,
       options.capacity,
       options.academicYear,
-      JSON.stringify(metadata)
+      JSON.stringify(metadata),
     ]
   );
 
@@ -1213,7 +1213,7 @@ async function ensureSubjectRecord(
   const metadata = {
     department,
     className,
-    registrationCode
+    registrationCode,
   };
   const code = generateSubjectCode(subjectName, className, registrationCode);
 
@@ -1407,8 +1407,8 @@ async function ensureNotificationBroadcast(
       JSON.stringify({
         scope: 'broadcast',
         schoolId,
-        registrationCode: seed.registrationCode
-      })
+        registrationCode: seed.registrationCode,
+      }),
     ]
   );
 }
@@ -1472,7 +1472,7 @@ async function ensureSuperUser(summary: SeedSummary): Promise<string> {
         normalizedEmail,
         passwordHash,
         SUPERUSER_CREDENTIALS.username,
-        SUPERUSER_CREDENTIALS.name
+        SUPERUSER_CREDENTIALS.name,
       ]
     );
   }
@@ -1486,8 +1486,8 @@ async function ensureSuperUser(summary: SeedSummary): Promise<string> {
     entityId: superUserId,
     details: {
       email: normalizedEmail,
-      name: SUPERUSER_CREDENTIALS.name
-    }
+      name: SUPERUSER_CREDENTIALS.name,
+    },
   });
 
   summary.superuser = {
@@ -1496,7 +1496,7 @@ async function ensureSuperUser(summary: SeedSummary): Promise<string> {
     username: SUPERUSER_CREDENTIALS.username,
     fullName: SUPERUSER_CREDENTIALS.name,
     passwordPlain: SUPERUSER_CREDENTIALS.password,
-    passwordHash
+    passwordHash,
   };
 
   return superUserId;
@@ -1532,7 +1532,7 @@ async function ensureSchoolSetup(
         name: school.name,
         schemaName,
         subscriptionType: 'paid',
-        billingEmail: school.contactEmail
+        billingEmail: school.contactEmail,
       },
       pool
     );
@@ -1570,7 +1570,7 @@ async function ensureSchoolSetup(
       school.contactPhone,
       school.contactEmail,
       school.registrationCode,
-      JSON.stringify({ source: 'seed-phase2' })
+      JSON.stringify({ source: 'seed-phase2' }),
     ]
   );
 
@@ -1584,8 +1584,8 @@ async function ensureSchoolSetup(
     details: {
       school: school.name,
       schema: schemaName,
-      registrationCode: school.registrationCode
-    }
+      registrationCode: school.registrationCode,
+    },
   });
 
   const adminAccount = await upsertUserAccount({
@@ -1600,7 +1600,7 @@ async function ensureSchoolSetup(
     isTeachingStaff: false,
     createdBy: superUserId,
     status: 'active',
-    auditLogEnabled: true
+    auditLogEnabled: true,
   });
 
   await upsertUserRole(adminAccount.id, 'admin', superUserId, { source: 'seed-phase2' });
@@ -1613,7 +1613,7 @@ async function ensureSchoolSetup(
     school: school.name,
     registrationCode: school.registrationCode,
     passwordPlain: school.admin.password,
-    passwordHash: adminAccount.passwordHash
+    passwordHash: adminAccount.passwordHash,
   });
 
   await withTenantSearchPath(pool, schemaName, async (client) => {
@@ -1621,7 +1621,7 @@ async function ensureSchoolSetup(
     if ((existing.rowCount ?? 0) === 0) {
       await client.query(`INSERT INTO schools (name, address) VALUES ($1, $2::jsonb)`, [
         school.name,
-        JSON.stringify({ city: 'Banjul', country: 'GM', address: school.address })
+        JSON.stringify({ city: 'Banjul', country: 'GM', address: school.address }),
       ]);
     }
   });
@@ -1631,7 +1631,7 @@ async function ensureSchoolSetup(
     schemaName,
     schoolId,
     adminId: adminAccount.id,
-    adminPasswordHash: adminAccount.passwordHash
+    adminPasswordHash: adminAccount.passwordHash,
   };
 }
 
@@ -1653,7 +1653,7 @@ async function seedDepartmentsAndHods(
       school: school.name,
       department: department.name,
       slug: slugify(department.name),
-      registrationCode: school.registrationCode
+      registrationCode: school.registrationCode,
     });
 
     const hodAccount = await upsertUserAccount({
@@ -1669,14 +1669,14 @@ async function seedDepartmentsAndHods(
       isTeachingStaff: false,
       createdBy: context.adminId,
       status: 'active',
-      auditLogEnabled: true
+      auditLogEnabled: true,
     });
 
     await upsertUserRole(hodAccount.id, 'hod', context.adminId, {
       departmentId,
       roleKey: department.hod.roleKey,
       permissions: department.hod.permissions,
-      source: 'seed-phase2'
+      source: 'seed-phase2',
     });
 
     await recordSharedAuditLog({
@@ -1687,8 +1687,8 @@ async function seedDepartmentsAndHods(
       details: {
         email: department.hod.email,
         departmentId,
-        roleKey: department.hod.roleKey
-      }
+        roleKey: department.hod.roleKey,
+      },
     });
 
     summary.hods.push({
@@ -1700,7 +1700,7 @@ async function seedDepartmentsAndHods(
       registrationCode: school.registrationCode,
       department: department.name,
       passwordPlain: department.hod.password,
-      passwordHash: hodAccount.passwordHash
+      passwordHash: hodAccount.passwordHash,
     });
   }
 }
@@ -1752,7 +1752,7 @@ async function seedTeachers(
       isTeachingStaff: true,
       createdBy: context.adminId,
       status: 'active',
-      auditLogEnabled: true
+      auditLogEnabled: true,
     });
 
     await upsertUserRole(account.id, 'teacher', context.adminId, {
@@ -1762,7 +1762,7 @@ async function seedTeachers(
       role: teacher.role,
       school: school.name,
       registrationCode: school.registrationCode,
-      source: 'seed-phase3'
+      source: 'seed-phase3',
     });
 
     teacherContexts.push({ seed: teacher, account, departmentId });
@@ -1820,7 +1820,7 @@ async function seedTeachers(
             teacher.seed.fullName,
             teacher.seed.email,
             JSON.stringify([teacher.seed.subject]),
-            JSON.stringify([teacher.seed.className])
+            JSON.stringify([teacher.seed.className]),
           ]
         );
 
@@ -1858,8 +1858,8 @@ async function seedTeachers(
             JSON.stringify({
               role: teacher.seed.role,
               source: 'seed-phase3',
-              department: teacher.seed.department
-            })
+              department: teacher.seed.department,
+            }),
           ]
         );
 
@@ -1867,7 +1867,7 @@ async function seedTeachers(
           seed: teacher.seed,
           accountId: teacher.account.id,
           classId,
-          subjectId
+          subjectId,
         });
       }
 
@@ -1891,7 +1891,7 @@ async function seedTeachers(
       className: teacher.seed.className,
       isClassTeacher: teacher.seed.role === 'Classroom Teacher',
       passwordPlain: teacher.seed.password,
-      passwordHash: teacher.account.passwordHash
+      passwordHash: teacher.account.passwordHash,
     });
   }
 
@@ -1957,7 +1957,7 @@ async function seedStudentsAndEnrollment(
             classTeacherId: classTeacher?.account.id ?? null,
             capacity: 30,
             academicYear: ACADEMIC_YEAR,
-            registrationCode: school.registrationCode
+            registrationCode: school.registrationCode,
           });
 
           classRecords.push({
@@ -1967,7 +1967,7 @@ async function seedStudentsAndEnrollment(
             departmentName: structure.department,
             departmentId,
             section,
-            classTeacherId: classTeacher?.account.id ?? null
+            classTeacherId: classTeacher?.account.id ?? null,
           });
         }
       }
@@ -1993,7 +1993,7 @@ async function seedStudentsAndEnrollment(
       classRecord,
       summary,
       usedEmails,
-      usedUsernames
+      usedUsernames,
     });
   }
 }
@@ -2037,8 +2037,8 @@ async function resolveClassSubjects(
             department: classRecord.departmentName,
             gradeLevel: classRecord.gradeLevel,
             section: classRecord.section,
-            registrationCode: school.registrationCode
-          })
+            registrationCode: school.registrationCode,
+          }),
         ]
       );
     }
@@ -2067,7 +2067,7 @@ async function seedStudentsForClass(options: {
   const domain = SCHOOL_EMAIL_DOMAINS[school.registrationCode] ?? 'school.edu.gm';
   const departmentSubjects = DEPARTMENT_SUBJECTS[classRecord.departmentName] ?? {
     core: [],
-    electives: []
+    electives: [],
   };
   const subjects = [...departmentSubjects.core, ...departmentSubjects.electives];
   const subjectIdMap = await resolveClassSubjects(
@@ -2123,7 +2123,7 @@ async function seedStudentsForClass(options: {
       gradeLevel: classRecord.gradeLevel,
       section: classRecord.section,
       registrationCode: school.registrationCode,
-      className: classRecord.className
+      className: classRecord.className,
     };
     const account = await upsertUserAccount({
       email,
@@ -2142,14 +2142,14 @@ async function seedStudentsForClass(options: {
       gender,
       dateOfBirth: dob,
       enrollmentDate,
-      metadata
+      metadata,
     });
 
     await upsertUserRole(account.id, 'student', context.adminId, {
       department: classRecord.departmentName,
       className: classRecord.className,
       registrationCode: school.registrationCode,
-      source: 'seed-phase4'
+      source: 'seed-phase4',
     });
 
     const admissionNumber = generateAdmissionNumber(
@@ -2184,8 +2184,8 @@ async function seedStudentsForClass(options: {
         amount: 2500,
         balance: Number(invoiceBalance.toFixed(2)),
         status: invoiceStatus,
-        dueDate: invoiceDueDate.toISOString().split('T')[0]!
-      }
+        dueDate: invoiceDueDate.toISOString().split('T')[0]!,
+      },
     });
   }
 
@@ -2232,11 +2232,11 @@ async function seedStudentsForClass(options: {
                 gradeLevel: classRecord.gradeLevel,
                 section: classRecord.section,
                 academicYear: ACADEMIC_YEAR,
-                admissionNumber: student.admissionNumber
+                admissionNumber: student.admissionNumber,
               }),
               student.gender,
               classRecord.className,
-              actualStudentId
+              actualStudentId,
             ]
           );
         } else {
@@ -2286,9 +2286,9 @@ async function seedStudentsForClass(options: {
                 gradeLevel: classRecord.gradeLevel,
                 section: classRecord.section,
                 academicYear: ACADEMIC_YEAR,
-                admissionNumber: student.admissionNumber
+                admissionNumber: student.admissionNumber,
               }),
-              student.gender
+              student.gender,
             ]
           );
           actualStudentId = studentInsertResult.rows[0]!.id;
@@ -2328,8 +2328,8 @@ async function seedStudentsForClass(options: {
                 department: classRecord.departmentName,
                 gradeLevel: classRecord.gradeLevel,
                 section: classRecord.section,
-                subject
-              })
+                subject,
+              }),
             ]
           );
         }
@@ -2359,8 +2359,8 @@ async function seedStudentsForClass(options: {
             ACADEMIC_YEAR,
             JSON.stringify({
               paymentStatus: student.invoice.status,
-              createdBy: 'seed-phase4'
-            })
+              createdBy: 'seed-phase4',
+            }),
           ]
         );
 
@@ -2378,8 +2378,8 @@ async function seedStudentsForClass(options: {
             'Term 1',
             JSON.stringify({
               registrationCode: school.registrationCode,
-              className: classRecord.className
-            })
+              className: classRecord.className,
+            }),
           ]
         );
       }
@@ -2425,8 +2425,8 @@ async function seedStudentsForClass(options: {
               registrationCode: school.registrationCode,
               className: classRecord.className,
               submittedBy: concernStudent.email,
-              source: 'seed-phase4'
-            })
+              source: 'seed-phase4',
+            }),
           ]
         );
       }
@@ -2466,9 +2466,9 @@ async function seedStudentsForClass(options: {
           registrationCode: school.registrationCode,
           className: classRecord.className,
           department: classRecord.departmentName,
-          source: 'seed-phase4'
+          source: 'seed-phase4',
         }),
-        ACADEMIC_YEAR
+        ACADEMIC_YEAR,
       ]
     );
 
@@ -2484,8 +2484,8 @@ async function seedStudentsForClass(options: {
         className: classRecord.className,
         department: classRecord.departmentName,
         academicYear: ACADEMIC_YEAR,
-        admissionNumber: student.admissionNumber
-      }
+        admissionNumber: student.admissionNumber,
+      },
     });
 
     await recordTenantAuditLog(context.schemaName, {
@@ -2500,8 +2500,8 @@ async function seedStudentsForClass(options: {
         className: classRecord.className,
         department: classRecord.departmentName,
         academicYear: ACADEMIC_YEAR,
-        admissionNumber: student.admissionNumber
-      }
+        admissionNumber: student.admissionNumber,
+      },
     });
 
     await recordTenantAuditLog(context.schemaName, {
@@ -2516,8 +2516,8 @@ async function seedStudentsForClass(options: {
         subjects,
         className: classRecord.className,
         department: classRecord.departmentName,
-        academicYear: ACADEMIC_YEAR
-      }
+        academicYear: ACADEMIC_YEAR,
+      },
     });
 
     await recordTenantAuditLog(context.schemaName, {
@@ -2532,8 +2532,8 @@ async function seedStudentsForClass(options: {
         balance: student.invoice.balance,
         status: student.invoice.status,
         dueDate: student.invoice.dueDate,
-        className: classRecord.className
-      }
+        className: classRecord.className,
+      },
     });
 
     await recordSharedAuditLog({
@@ -2547,8 +2547,8 @@ async function seedStudentsForClass(options: {
         title: `Welcome to ${school.name}`,
         academicYear: ACADEMIC_YEAR,
         department: classRecord.departmentName,
-        section: classRecord.section
-      }
+        section: classRecord.section,
+      },
     });
 
     summary.students.push({
@@ -2562,7 +2562,7 @@ async function seedStudentsForClass(options: {
       className: classRecord.className,
       status: 'active',
       passwordPlain: student.passwordPlain,
-      passwordHash: student.passwordHash
+      passwordHash: student.passwordHash,
     });
   }
 }
@@ -2599,8 +2599,8 @@ async function logTeacherActivities(
         className: seed.className,
         subject: seed.subject,
         action: 'mark',
-        source: 'seed-phase3'
-      }
+        source: 'seed-phase3',
+      },
     });
 
     await recordSharedAuditLog({
@@ -2615,8 +2615,8 @@ async function logTeacherActivities(
         className: seed.className,
         subject: seed.subject,
         action: 'enter',
-        source: 'seed-phase3'
-      }
+        source: 'seed-phase3',
+      },
     });
 
     await recordSharedAuditLog({
@@ -2631,8 +2631,8 @@ async function logTeacherActivities(
         className: seed.className,
         subject: seed.subject,
         action: 'performance_report',
-        source: 'seed-phase3'
-      }
+        source: 'seed-phase3',
+      },
     });
 
     await recordSharedAuditLog({
@@ -2648,8 +2648,8 @@ async function logTeacherActivities(
         className: seed.className,
         subject: seed.subject,
         messageType: 'broadcast',
-        source: 'seed-phase3'
-      }
+        source: 'seed-phase3',
+      },
     });
   }
 }
@@ -2674,7 +2674,7 @@ async function seedNotifications(
     registrationCode: school.registrationCode,
     title: notificationSeed.title,
     targetRoles: notificationSeed.targetRoles,
-    status: notificationSeed.status
+    status: notificationSeed.status,
   });
 }
 
@@ -2687,14 +2687,14 @@ async function main() {
       username: '',
       fullName: '',
       passwordPlain: '',
-      passwordHash: ''
+      passwordHash: '',
     },
     admins: [],
     hods: [],
     teachers: [],
     students: [],
     departments: [],
-    notifications: []
+    notifications: [],
   };
 
   try {

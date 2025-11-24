@@ -103,9 +103,9 @@ export async function registerUser(
             yearsOfExperience: input.yearsOfExperience,
             subjects: input.subjects,
             teacherId: input.teacherId,
-            role: input.role
+            role: input.role,
           }
-        : null
+        : null,
   });
 
   let profileId: string | undefined;
@@ -128,7 +128,7 @@ export async function registerUser(
         userId: createdUser.id,
         profileId,
         role: input.role,
-        actorId
+        actorId,
       });
     }
   }
@@ -139,6 +139,6 @@ export async function registerUser(
     email: createdUser.email,
     role: createdUser.role,
     status: userStatus,
-    isVerified: isVerified
+    isVerified: isVerified,
   };
 }

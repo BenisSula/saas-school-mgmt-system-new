@@ -10,7 +10,7 @@ import {
   generateAccessToken,
   generateRefreshToken,
   storeRefreshToken,
-  TokenPayload
+  TokenPayload,
 } from '../services/tokenService';
 import { recordSharedAuditLog } from '../services/auditLogService';
 import { Role } from '../config/permissions';
@@ -79,7 +79,7 @@ const ROLE_GROUP_KEY: Record<RoleBucket, keyof ExportJsonShape> = {
   Admin: 'Admins',
   HOD: 'HODs',
   Teacher: 'Teachers',
-  Student: 'Students'
+  Student: 'Students',
 };
 
 const EXPECTED_ROLE_COUNTS: Record<RoleBucket, number> = {
@@ -87,7 +87,7 @@ const EXPECTED_ROLE_COUNTS: Record<RoleBucket, number> = {
   Admin: 3,
   HOD: 9,
   Teacher: 27,
-  Student: 810
+  Student: 810,
 };
 
 const SUPERUSER_EMAIL = (
@@ -100,7 +100,7 @@ const ADMIN_PASSWORDS = new Map<string, string>(
   [
     ['fatou.jallow@newhorizon.edu.gm', 'NhsAdmin@2025'],
     ['lamin.sowe@stpeterslamin.edu.gm', 'StpAdmin@2025'],
-    ['musu.bah@daddyjobe.edu.gm', 'DjcAdmin@2025']
+    ['musu.bah@daddyjobe.edu.gm', 'DjcAdmin@2025'],
   ].map(([email, password]) => [email.toLowerCase(), password] as const)
 );
 
@@ -114,7 +114,7 @@ const HOD_PASSWORDS = new Map<string, string>(
     ['ebrima.sanyang@stpeterslamin.edu.gm', 'StpArtsHOD@2025'],
     ['momodou.bojang@daddyjobe.edu.gm', 'DjcScienceHOD@2025'],
     ['isatou.jatta@daddyjobe.edu.gm', 'DjcCommerceHOD@2025'],
-    ['ousman.darboe@daddyjobe.edu.gm', 'DjcArtsHOD@2025']
+    ['ousman.darboe@daddyjobe.edu.gm', 'DjcArtsHOD@2025'],
   ].map(([email, password]) => [email.toLowerCase(), password] as const)
 );
 
@@ -146,7 +146,7 @@ const TEACHER_PASSWORDS = new Map<string, string>(
     ['alieu.sanyang@daddyjobe.edu.gm', 'TeachDJC06@2025'],
     ['jainaba.camara@daddyjobe.edu.gm', 'TeachDJC07@2025'],
     ['lamin.bah@daddyjobe.edu.gm', 'TeachDJC08@2025'],
-    ['omar.jallow@daddyjobe.edu.gm', 'TeachDJC09@2025']
+    ['omar.jallow@daddyjobe.edu.gm', 'TeachDJC09@2025'],
   ].map(([email, password]) => [email.toLowerCase(), password] as const)
 );
 
@@ -160,7 +160,7 @@ const CSV_HEADERS = [
   'class_id',
   'login_status',
   'last_login',
-  'last_logout'
+  'last_logout',
 ] as const;
 
 function sanitize(value: string | null | undefined): string {
@@ -352,7 +352,7 @@ async function fetchSessionAggregates(pool: Pool): Promise<Map<string, SessionAg
   result.rows.forEach((row) => {
     map.set(row.user_id, {
       last_login: row.last_login ? new Date(row.last_login).toISOString() : null,
-      last_logout: row.last_logout ? new Date(row.last_logout).toISOString() : null
+      last_logout: row.last_logout ? new Date(row.last_logout).toISOString() : null,
     });
   });
 
@@ -394,7 +394,7 @@ function buildExportUsers(
       class_id: roleBucket === 'Student' ? classAssignment.class_id : null,
       login_status: loginStatus,
       last_login: sessionInfo?.last_login ?? null,
-      last_logout: sessionInfo?.last_logout ?? null
+      last_logout: sessionInfo?.last_logout ?? null,
     };
 
     grouped.get(roleBucket)!.push(exportRecord);
@@ -413,7 +413,7 @@ function serializeJson(grouped: Map<RoleBucket, ExportUser[]>): ExportJsonShape 
     Admins: grouped.get('Admin') ?? [],
     HODs: grouped.get('HOD') ?? [],
     Teachers: grouped.get('Teacher') ?? [],
-    Students: grouped.get('Student') ?? []
+    Students: grouped.get('Student') ?? [],
   };
 }
 
@@ -435,7 +435,7 @@ function serializeCsv(grouped: Map<RoleBucket, ExportUser[]>): string {
           sanitize(user.class_id),
           sanitize(user.login_status),
           sanitize(user.last_login),
-          sanitize(user.last_logout)
+          sanitize(user.last_logout),
         ])
       );
     }
@@ -590,8 +590,8 @@ async function performFrontendSyncVerification(
               email: candidate.email,
               role: bucket,
               verificationPhase: 'phase7',
-              accessTokenSample: accessToken ? accessToken.slice(0, 24) : undefined
-            }
+              accessTokenSample: accessToken ? accessToken.slice(0, 24) : undefined,
+            },
           });
           notes = 'Authenticated against /auth/login successfully.';
         } else {
@@ -601,7 +601,7 @@ async function performFrontendSyncVerification(
             userId: baseRow.id,
             tenantId: baseRow.tenant_id ?? 'shared',
             email: candidate.email,
-            role: (baseRow.role as Role) ?? 'student'
+            role: (baseRow.role as Role) ?? 'student',
           } as TokenPayload;
 
           const accessToken = generateAccessToken(payload);
@@ -621,8 +621,8 @@ async function performFrontendSyncVerification(
               role: bucket,
               verificationPhase: 'phase7',
               simulated: true,
-              tokenSample: accessToken.slice(0, 24)
-            }
+              tokenSample: accessToken.slice(0, 24),
+            },
           });
         }
       } catch (error) {
@@ -635,7 +635,7 @@ async function performFrontendSyncVerification(
         email: candidate.email,
         method,
         status,
-        notes
+        notes,
       });
     }
   }
@@ -670,11 +670,11 @@ async function writeAuditReport(summary: {
       role_count_mismatches: summary.roleMismatches.map((mismatch) => ({
         role: mismatch.role,
         expected: mismatch.expected,
-        actual: mismatch.actual
+        actual: mismatch.actual,
       })),
       export_files: ['/exports/credentials/all_users.json', '/exports/credentials/all_users.csv'],
-      report_generated_at: summary.reportTimestamp
-    }
+      report_generated_at: summary.reportTimestamp,
+    },
   };
 
   await fs.writeFile(AUDIT_REPORT_PATH, `${JSON.stringify(payload, null, 2)}\n`, 'utf-8');
@@ -689,14 +689,14 @@ async function main(): Promise<void> {
     const [baseUsers, roleAssignments, tenants] = await Promise.all([
       fetchBaseUsers(pool),
       fetchRoleAssignments(pool),
-      fetchTenants(pool)
+      fetchTenants(pool),
     ]);
 
     const [sessions, schoolIds, departmentIds, studentClassData] = await Promise.all([
       fetchSessionAggregates(pool),
       fetchSchools(pool),
       fetchDepartments(pool),
-      fetchStudentClasses(pool, tenants)
+      fetchStudentClasses(pool, tenants),
     ]);
 
     const baseLookup = new Map<string, BaseUserRow>();
@@ -761,7 +761,7 @@ async function main(): Promise<void> {
       unlinkedRecords,
       reportTimestamp: new Date().toISOString(),
       roleMismatches,
-      sessionAnomalies: sessionIssues.length
+      sessionAnomalies: sessionIssues.length,
     });
 
     console.log('[export] Credential dataset exported successfully.');

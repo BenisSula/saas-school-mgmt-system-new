@@ -71,4 +71,3 @@ export function parseDeviceInfo(userAgent: string | null): Record<string, unknow
 
   return info;
 }
-

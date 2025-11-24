@@ -19,7 +19,7 @@ import {
   Info,
   XCircle,
   Eye,
-  Monitor
+  Monitor,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -37,7 +37,7 @@ const SEVERITY_COLORS: Record<string, string> = {
   warning:
     'bg-[var(--brand-warning)]/20 text-[var(--brand-warning)] border-[var(--brand-warning)]/30',
   error: 'bg-[var(--brand-error)]/20 text-[var(--brand-error)] border-[var(--brand-error)]/30',
-  critical: 'bg-[var(--brand-error)]/30 text-[var(--brand-error)] border-[var(--brand-error)]/50'
+  critical: 'bg-[var(--brand-error)]/30 text-[var(--brand-error)] border-[var(--brand-error)]/50',
 };
 
 import type { ReactNode } from 'react';
@@ -46,7 +46,7 @@ const SEVERITY_ICONS: Record<string, ReactNode> = {
   info: <Info className="h-4 w-4" />,
   warning: <AlertTriangle className="h-4 w-4" />,
   error: <XCircle className="h-4 w-4" />,
-  critical: <AlertCircle className="h-4 w-4" />
+  critical: <AlertCircle className="h-4 w-4" />,
 };
 
 export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLogViewerProps) {
@@ -72,7 +72,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
       currentPage,
       pageSize,
       initialFilters.tenantId,
-      initialFilters.userId
+      initialFilters.userId,
     ],
     queryFn: async () => {
       const filters: {
@@ -85,7 +85,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
         limit?: number;
         offset?: number;
       } = {
-        ...initialFilters
+        ...initialFilters,
       };
 
       if (startDate) filters.startDate = new Date(startDate).toISOString();
@@ -98,7 +98,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
       filters.offset = (currentPage - 1) * pageSize;
 
       return await api.superuser.getPlatformAuditLogs(filters);
-    }
+    },
   });
 
   const handleExport = async (format: 'csv' | 'json' = 'json') => {
@@ -113,7 +113,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
         format?: 'csv' | 'json';
       } = {
         ...initialFilters,
-        format
+        format,
       };
 
       if (startDate) filters.startDate = new Date(startDate).toISOString();
@@ -177,7 +177,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
             </span>
           );
         },
-        sortable: true
+        sortable: true,
       },
       {
         key: 'severity',
@@ -193,7 +193,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
             </span>
           );
         },
-        sortable: true
+        sortable: true,
       },
       {
         key: 'action',
@@ -206,7 +206,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
             </span>
           </div>
         ),
-        sortable: true
+        sortable: true,
       },
       {
         key: 'resourceType',
@@ -220,7 +220,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
               </div>
             )}
           </div>
-        )
+        ),
       },
       {
         key: 'userEmail',
@@ -229,7 +229,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
           <span className="text-[var(--brand-text-secondary)]">
             {log.userEmail || log.userId || 'System'}
           </span>
-        )
+        ),
       },
       {
         key: 'ipAddress',
@@ -238,7 +238,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
           <span className="text-[var(--brand-text-secondary)] font-mono text-sm">
             {log.ipAddress || '—'}
           </span>
-        )
+        ),
       },
       {
         key: 'userAgent',
@@ -253,7 +253,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
               {formatUserAgent(log.userAgent)}
             </span>
           </div>
-        )
+        ),
       },
       {
         key: 'requestId',
@@ -262,12 +262,12 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
           <span className="text-[var(--brand-text-secondary)] font-mono text-xs">
             {formatRequestId(log.requestId)}
           </span>
-        )
+        ),
       },
       {
         key: 'tags',
         header: 'Tags',
-        render: (log) => <TagsCell tags={log.tags} maxDisplay={3} />
+        render: (log) => <TagsCell tags={log.tags} maxDisplay={3} />,
       },
       {
         key: 'actions',
@@ -284,8 +284,8 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
           >
             View Details
           </Button>
-        )
-      }
+        ),
+      },
     ],
     []
   );
@@ -382,8 +382,8 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
                   { label: 'Info', value: 'info' },
                   { label: 'Warning', value: 'warning' },
                   { label: 'Error', value: 'error' },
-                  { label: 'Critical', value: 'critical' }
-                ]
+                  { label: 'Critical', value: 'critical' },
+                ],
               },
               {
                 label: 'Action',
@@ -391,9 +391,9 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
                 onChange: setActionFilter,
                 options: [
                   { label: 'All Actions', value: 'all' },
-                  ...uniqueActions.map((action) => ({ label: action, value: action }))
-                ]
-              }
+                  ...uniqueActions.map((action) => ({ label: action, value: action })),
+                ],
+              },
             ]}
             onClearFilters={handleClearFilters}
           />

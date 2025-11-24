@@ -13,7 +13,9 @@ const WEBHOOK_ENDPOINT = `${API_BASE_URL}/api/webhooks/stripe`;
 async function testWebhook(): Promise<void> {
   if (!STRIPE_WEBHOOK_SECRET) {
     console.error('❌ STRIPE_WEBHOOK_SECRET is not set');
-    console.error('   For local testing, run: stripe listen --forward-to localhost:3001/api/webhooks/stripe');
+    console.error(
+      '   For local testing, run: stripe listen --forward-to localhost:3001/api/webhooks/stripe'
+    );
     console.error('   Then copy the webhook secret to your .env file');
     process.exit(1);
   }
@@ -34,8 +36,8 @@ async function testWebhook(): Promise<void> {
       object: 'list' as const,
       data: [],
       has_more: false,
-      url: ''
-    }
+      url: '',
+    },
   };
 
   const testEvent: Stripe.Event = {
@@ -45,22 +47,22 @@ async function testWebhook(): Promise<void> {
     created: Math.floor(Date.now() / 1000),
     data: {
       object: testSubscription as unknown as Stripe.Subscription,
-      previous_attributes: {}
+      previous_attributes: {},
     },
     livemode: false,
     pending_webhooks: 0,
     request: {
       id: null,
-      idempotency_key: null
+      idempotency_key: null,
     },
-    type: 'customer.subscription.updated'
+    type: 'customer.subscription.updated',
   };
 
   // Create signature
   const payload = JSON.stringify(testEvent);
   const signature = Stripe.webhooks.generateTestHeaderString({
     payload,
-    secret: STRIPE_WEBHOOK_SECRET
+    secret: STRIPE_WEBHOOK_SECRET,
   });
 
   console.log('📤 Sending test webhook event...');
@@ -72,9 +74,9 @@ async function testWebhook(): Promise<void> {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'stripe-signature': signature
+        'stripe-signature': signature,
       },
-      body: payload
+      body: payload,
     });
 
     const responseText = await response.text();
@@ -114,4 +116,3 @@ testWebhook().catch((error) => {
   console.error('Unhandled error:', error);
   process.exit(1);
 });
-

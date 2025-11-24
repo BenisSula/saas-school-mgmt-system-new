@@ -7,9 +7,7 @@ import path from 'path';
 
 async function fixMigrationTriggers(): Promise<void> {
   const migrationsDir = path.resolve(__dirname, '../db/migrations');
-  const files = (await fs.readdir(migrationsDir))
-    .filter((file) => file.endsWith('.sql'))
-    .sort();
+  const files = (await fs.readdir(migrationsDir)).filter((file) => file.endsWith('.sql')).sort();
 
   console.log(`Found ${files.length} migration files\n`);
 
@@ -54,7 +52,7 @@ async function fixMigrationTriggers(): Promise<void> {
           const dropStatement = `DROP TRIGGER IF EXISTS ${triggerName} ON ${tableName};\n`;
           replacements.push({
             old: fullTrigger,
-            new: dropStatement + fullTrigger
+            new: dropStatement + fullTrigger,
           });
         }
       }
@@ -80,4 +78,3 @@ fixMigrationTriggers().catch((error) => {
   console.error('Error:', error);
   process.exit(1);
 });
-

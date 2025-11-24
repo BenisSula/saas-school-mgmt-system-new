@@ -43,18 +43,18 @@ export default function AdminExamConfigPage() {
         key: 'name',
         header: 'Exam Name',
         render: (row) => row.name,
-        sortable: true
+        sortable: true,
       },
       {
         key: 'examDate',
         header: 'Date',
         render: (row) => formatDate(row.examDate),
-        sortable: true
+        sortable: true,
       },
       {
         key: 'classes',
         header: 'Classes',
-        render: (row) => `${row.classes || 0} classes`
+        render: (row) => `${row.classes || 0} classes`,
       },
       {
         key: 'actions',
@@ -68,7 +68,11 @@ export default function AdminExamConfigPage() {
               size="sm"
               variant="ghost"
               onClick={() => {
-                if (window.confirm(`Are you sure you want to delete "${row.name}"? This action cannot be undone.`)) {
+                if (
+                  window.confirm(
+                    `Are you sure you want to delete "${row.name}"? This action cannot be undone.`
+                  )
+                ) {
                   deleteExamMutation.mutate(row.id);
                 }
               }}
@@ -77,8 +81,8 @@ export default function AdminExamConfigPage() {
               Delete
             </Button>
           </div>
-        )
-      }
+        ),
+      },
     ],
     [deleteExamMutation]
   );
@@ -88,7 +92,7 @@ export default function AdminExamConfigPage() {
     createExamMutation.mutate({
       name: examForm.name,
       description: examForm.description || undefined,
-      examDate: examForm.examDate || undefined
+      examDate: examForm.examDate || undefined,
     });
     setShowExamModal(false);
     setExamForm({ name: '', description: '', examDate: '' });

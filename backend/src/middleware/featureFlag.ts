@@ -18,7 +18,7 @@ export function requireFeatureFlag(flagKey: string) {
         if (!enabled) {
           return res.status(403).json({
             message: 'Feature not available',
-            flagKey
+            flagKey,
           });
         }
 
@@ -52,7 +52,7 @@ export async function addFeatureFlags(
         advancedAnalytics: await isFeatureEnabled(client, 'advanced_analytics', tenantId),
         sso: await isFeatureEnabled(client, 'sso', tenantId),
         mobileApp: await isFeatureEnabled(client, 'mobile_app', tenantId),
-        aiInsights: await isFeatureEnabled(client, 'ai_insights', tenantId)
+        aiInsights: await isFeatureEnabled(client, 'ai_insights', tenantId),
       };
 
       next();

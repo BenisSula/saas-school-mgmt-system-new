@@ -3,7 +3,7 @@ import {
   buildWhereClause,
   buildWhereClauseFromFilters,
   buildOrderByClause,
-  buildLimitClause
+  buildLimitClause,
 } from '../src/lib/queryUtils';
 
 describe('queryUtils', () => {
@@ -23,7 +23,7 @@ describe('queryUtils', () => {
     it('should build WHERE clause with multiple conditions', () => {
       const result = buildWhereClause([
         { column: 'status', value: 'active' },
-        { column: 'role', value: 'teacher' }
+        { column: 'role', value: 'teacher' },
       ]);
       expect(result.whereClause).toBe('WHERE status = $1 AND role = $2');
       expect(result.params).toEqual(['active', 'teacher']);
@@ -31,7 +31,7 @@ describe('queryUtils', () => {
 
     it('should use custom operator when provided', () => {
       const result = buildWhereClause([
-        { column: 'created_at', value: '2024-01-01', operator: '>=' }
+        { column: 'created_at', value: '2024-01-01', operator: '>=' },
       ]);
       expect(result.whereClause).toBe('WHERE created_at >= $1');
       expect(result.params).toEqual(['2024-01-01']);
@@ -54,7 +54,7 @@ describe('queryUtils', () => {
     it('should build WHERE clause from filter object', () => {
       const result = buildWhereClauseFromFilters({
         status: 'active',
-        role: 'teacher'
+        role: 'teacher',
       });
       expect(result.whereClause).toBe('WHERE status = $1 AND role = $2');
       expect(result.params).toEqual(['active', 'teacher']);
@@ -65,7 +65,7 @@ describe('queryUtils', () => {
         status: 'active',
         role: undefined,
         tenant_id: null,
-        verified: true
+        verified: true,
       });
       expect(result.whereClause).toBe('WHERE status = $1 AND verified = $2');
       expect(result.params).toEqual(['active', true]);
@@ -75,7 +75,7 @@ describe('queryUtils', () => {
       const result = buildWhereClauseFromFilters({
         id: 123,
         is_verified: true,
-        count: 0
+        count: 0,
       });
       expect(result.whereClause).toBe('WHERE id = $1 AND is_verified = $2 AND count = $3');
       expect(result.params).toEqual([123, true, 0]);
@@ -84,7 +84,7 @@ describe('queryUtils', () => {
     it('should handle table-prefixed column names', () => {
       const result = buildWhereClauseFromFilters({
         'u.tenant_id': 'test-tenant-id',
-        'u.status': 'active'
+        'u.status': 'active',
       });
       expect(result.whereClause).toBe('WHERE u.tenant_id = $1 AND u.status = $2');
       expect(result.params).toEqual(['test-tenant-id', 'active']);
@@ -106,7 +106,7 @@ describe('queryUtils', () => {
       expect(
         buildOrderByClause([
           { column: 'created_at', direction: 'DESC' },
-          { column: 'name', direction: 'ASC' }
+          { column: 'name', direction: 'ASC' },
         ])
       ).toBe('ORDER BY created_at DESC, name ASC');
     });

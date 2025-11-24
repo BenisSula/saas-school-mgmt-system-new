@@ -50,7 +50,10 @@ export function verifyTenantContext(
  * Verify user context exists
  * DRY: Common validation pattern
  */
-export function verifyUserContext(user: UserContext | undefined): { isValid: boolean; error?: string } {
+export function verifyUserContext(user: UserContext | undefined): {
+  isValid: boolean;
+  error?: string;
+} {
   if (!user) {
     return { isValid: false, error: 'User context missing' };
   }
@@ -76,4 +79,3 @@ export function verifyTenantAndUserContext(
   }
   return { isValid: true };
 }
-

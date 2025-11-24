@@ -26,7 +26,7 @@ const SUBJECT_OPTIONS = [
   { label: 'Physical Education', value: 'physical_education' },
   { label: 'Arts', value: 'arts' },
   { label: 'Music', value: 'music' },
-  { label: 'Computer Science', value: 'computer_science' }
+  { label: 'Computer Science', value: 'computer_science' },
 ];
 
 export function CreateHODModal({ onClose, onSuccess }: CreateHODModalProps) {
@@ -58,7 +58,9 @@ export function CreateHODModal({ onClose, onSuccess }: CreateHODModalProps) {
 
   const departmentOptions = useMemo(() => {
     const subjectNames = subjectsData.map((s) => s.name);
-    const uniqueSubjects = Array.from(new Set([...subjectNames, ...SUBJECT_OPTIONS.map((s) => s.label)]));
+    const uniqueSubjects = Array.from(
+      new Set([...subjectNames, ...SUBJECT_OPTIONS.map((s) => s.label)])
+    );
     return uniqueSubjects.map((name) => ({ label: name, value: name }));
   }, [subjectsData]);
 
@@ -84,15 +86,15 @@ export function CreateHODModal({ onClose, onSuccess }: CreateHODModalProps) {
         yearsOfExperience: yearsOfExperience ? parseInt(yearsOfExperience, 10) : 0,
         subjects,
         teacherId: teacherId || undefined,
-        address: address || undefined
+        address: address || undefined,
       };
       teacherRegistrationSchema.parse(formData);
-      
+
       if (!department) {
         setFieldErrors((prev) => ({ ...prev, department: 'Department is required for HOD' }));
         return false;
       }
-      
+
       setFieldErrors({});
       return true;
     } catch (err) {
@@ -136,18 +138,20 @@ export function CreateHODModal({ onClose, onSuccess }: CreateHODModalProps) {
         ...(qualifications ? { qualifications } : {}),
         ...(yearsOfExperience ? { yearsOfExperience: parseInt(yearsOfExperience, 10) } : {}),
         ...(subjects.length > 0 ? { subjects } : {}),
-        ...(teacherId ? { teacherId } : {})
+        ...(teacherId ? { teacherId } : {}),
       };
 
       const result = await api.registerUser(teacherPayload);
-      
+
       // Step 2: Assign HOD role
       try {
         await api.updateUserRole(result.userId, 'hod');
       } catch (roleError) {
         // If role assignment fails, we still have the teacher account
         console.error('[CreateHODModal] Failed to assign HOD role:', roleError);
-        toast.warning('Teacher account created, but HOD role assignment failed. You can assign it manually.');
+        toast.warning(
+          'Teacher account created, but HOD role assignment failed. You can assign it manually.'
+        );
       }
 
       // Step 3: Assign department
@@ -156,7 +160,9 @@ export function CreateHODModal({ onClose, onSuccess }: CreateHODModalProps) {
           await api.admin.assignHODDepartment(result.userId, department);
         } catch (deptError) {
           console.error('[CreateHODModal] Failed to assign department:', deptError);
-          toast.warning('HOD created, but department assignment failed. You can assign it manually.');
+          toast.warning(
+            'HOD created, but department assignment failed. You can assign it manually.'
+          );
         }
       }
 
@@ -194,7 +200,8 @@ export function CreateHODModal({ onClose, onSuccess }: CreateHODModalProps) {
             Create Head of Department
           </h2>
           <p className="mt-2 text-sm text-[var(--brand-muted)]">
-            Create a new teacher account and assign HOD role with department. The HOD will be immediately active.
+            Create a new teacher account and assign HOD role with department. The HOD will be
+            immediately active.
           </p>
         </header>
 
@@ -273,7 +280,7 @@ export function CreateHODModal({ onClose, onSuccess }: CreateHODModalProps) {
                   { label: 'Select gender', value: '' },
                   { label: 'Male', value: 'male' },
                   { label: 'Female', value: 'female' },
-                  { label: 'Other', value: 'other' }
+                  { label: 'Other', value: 'other' },
                 ]}
               />
             </div>
@@ -371,10 +378,7 @@ export function CreateHODModal({ onClose, onSuccess }: CreateHODModalProps) {
                 setDepartment(e.target.value);
                 clearFieldError('department');
               }}
-              options={[
-                { label: 'Select department', value: '' },
-                ...departmentOptions
-              ]}
+              options={[{ label: 'Select department', value: '' }, ...departmentOptions]}
               required
             />
             {fieldErrors.department && (
@@ -406,4 +410,3 @@ export function CreateHODModal({ onClose, onSuccess }: CreateHODModalProps) {
     </div>
   );
 }
-

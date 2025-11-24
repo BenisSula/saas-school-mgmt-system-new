@@ -13,6 +13,6 @@ export function useSearch(
     queryKey: ['search', query, options],
     queryFn: () => api.search(query, options),
     enabled: query.trim().length >= 2, // Only search if query is at least 2 characters
-    staleTime: 30000 // Cache for 30 seconds
+    staleTime: 30000, // Cache for 30 seconds
   });
 }

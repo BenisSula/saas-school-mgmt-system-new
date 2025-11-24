@@ -1,7 +1,7 @@
 /**
  * Admin Department Management Service
  * Handles department CRUD operations within tenant context
- * 
+ *
  * DRY: Reuses existing audit logging and validation utilities
  * Multi-tenant: All operations scoped to tenant's school
  */
@@ -44,12 +44,14 @@ export async function createDepartment(
 ): Promise<DepartmentRecord> {
   // Use getPool() for shared schema queries (departments table is in shared schema)
   const pool = getPool();
-  
+
   // Generate slug if not provided
-  const slug = input.slug || input.name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  const slug =
+    input.slug ||
+    input.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
 
   // Check for duplicate slug within school
   const duplicateCheck = await pool.query(
@@ -83,7 +85,7 @@ export async function createDepartment(
       slug,
       input.contactEmail || null,
       input.contactPhone || null,
-      JSON.stringify(input.metadata || {})
+      JSON.stringify(input.metadata || {}),
     ]
   );
 
@@ -97,7 +99,7 @@ export async function createDepartment(
     resourceId: department.id,
     details: { name: input.name, slug },
     severity: 'info',
-    tags: ['department', 'admin']
+    tags: ['department', 'admin'],
   });
 
   return {
@@ -109,7 +111,7 @@ export async function createDepartment(
     contactPhone: department.contact_phone,
     metadata: department.metadata,
     createdAt: department.created_at,
-    updatedAt: department.updated_at
+    updatedAt: department.updated_at,
   };
 }
 
@@ -150,7 +152,7 @@ export async function listDepartments(
       [schoolId]
     );
 
-    return result.rows.map(row => ({
+    return result.rows.map((row) => ({
       id: row.id,
       schoolId: row.school_id,
       name: row.name,
@@ -161,7 +163,7 @@ export async function listDepartments(
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       hodCount: Number(row.hod_count),
-      teacherCount: Number(row.teacher_count)
+      teacherCount: Number(row.teacher_count),
     }));
   } else {
     const result = await pool.query<{
@@ -182,7 +184,7 @@ export async function listDepartments(
       [schoolId]
     );
 
-    return result.rows.map(row => ({
+    return result.rows.map((row) => ({
       id: row.id,
       schoolId: row.school_id,
       name: row.name,
@@ -191,7 +193,7 @@ export async function listDepartments(
       contactPhone: row.contact_phone,
       metadata: row.metadata,
       createdAt: row.created_at,
-      updatedAt: row.updated_at
+      updatedAt: row.updated_at,
     }));
   }
 }
@@ -235,7 +237,7 @@ export async function getDepartmentById(
     contactPhone: row.contact_phone,
     metadata: row.metadata,
     createdAt: row.created_at,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
   };
 }
 
@@ -326,7 +328,7 @@ export async function updateDepartment(
     resourceId: departmentId,
     details: { updates: input },
     severity: 'info',
-    tags: ['department', 'admin']
+    tags: ['department', 'admin'],
   });
 
   return {
@@ -338,7 +340,7 @@ export async function updateDepartment(
     contactPhone: updated.contact_phone,
     metadata: updated.metadata,
     createdAt: updated.created_at,
-    updatedAt: updated.updated_at
+    updatedAt: updated.updated_at,
   };
 }
 
@@ -366,13 +368,15 @@ export async function deleteDepartment(
   );
   const userCount = Number(userCheck.rows[0]?.count ?? 0);
   if (userCount > 0) {
-    throw new Error(`Cannot delete department: ${userCount} user(s) are assigned to this department`);
+    throw new Error(
+      `Cannot delete department: ${userCount} user(s) are assigned to this department`
+    );
   }
 
-  await pool.query(
-    `DELETE FROM shared.departments WHERE id = $1 AND school_id = $2`,
-    [departmentId, schoolId]
-  );
+  await pool.query(`DELETE FROM shared.departments WHERE id = $1 AND school_id = $2`, [
+    departmentId,
+    schoolId,
+  ]);
 
   // Audit log
   await createAuditLog(client, {
@@ -382,7 +386,7 @@ export async function deleteDepartment(
     resourceId: departmentId,
     details: { name: existing.name },
     severity: 'info',
-    tags: ['department', 'admin']
+    tags: ['department', 'admin'],
   });
 }
 
@@ -405,10 +409,9 @@ export async function assignHODToDepartment(
   }
 
   // Verify user exists and belongs to tenant
-  const userCheck = await pool.query(
-    `SELECT id, tenant_id FROM shared.users WHERE id = $1`,
-    [userId]
-  );
+  const userCheck = await pool.query(`SELECT id, tenant_id FROM shared.users WHERE id = $1`, [
+    userId,
+  ]);
   if (userCheck.rows.length === 0) {
     throw new Error('User not found');
   }
@@ -430,10 +433,10 @@ export async function assignHODToDepartment(
   }
 
   // Update user's department
-  await pool.query(
-    `UPDATE shared.users SET department_id = $1 WHERE id = $2`,
-    [departmentId, userId]
-  );
+  await pool.query(`UPDATE shared.users SET department_id = $1 WHERE id = $2`, [
+    departmentId,
+    userId,
+  ]);
 
   // Audit log
   await createAuditLog(client, {
@@ -443,7 +446,6 @@ export async function assignHODToDepartment(
     resourceId: departmentId,
     details: { userId, departmentName: department.name },
     severity: 'info',
-    tags: ['department', 'hod', 'admin']
+    tags: ['department', 'hod', 'admin'],
   });
 }
-

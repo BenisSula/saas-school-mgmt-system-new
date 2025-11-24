@@ -10,7 +10,11 @@ import { PaginatedTable } from '../../components/admin/PaginatedTable';
 import { ExportButtons } from '../../components/admin/ExportButtons';
 import { createExportHandlers } from '../../hooks/useExport';
 import { useQueryClient } from '@tanstack/react-query';
-import { useHODs, useAssignHODDepartment, useBulkRemoveHODRoles } from '../../hooks/queries/useHODs';
+import {
+  useHODs,
+  useAssignHODDepartment,
+  useBulkRemoveHODRoles,
+} from '../../hooks/queries/useHODs';
 import { useTeachers } from '../../hooks/queries/useTeachers';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useQuery } from '../../hooks/useQuery';
@@ -34,7 +38,7 @@ interface HODFilters {
 
 const defaultFilters: HODFilters = {
   search: '',
-  department: 'all'
+  department: 'all',
 };
 
 interface HODRecord extends TeacherProfile {
@@ -57,14 +61,14 @@ export function HODsManagementPage() {
   const [selectedHODId, setSelectedHODId] = useState<string | null>(null);
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
-  
+
   // CSV Import
   const csvImportMutation = useCSVImport({
     entityType: 'hods',
     invalidateQueries: [
       [...queryKeys.admin.hods()],
-      [...queryKeys.admin.teachers()]
-    ] as unknown as unknown[][]
+      [...queryKeys.admin.teachers()],
+    ] as unknown as unknown[][],
   });
 
   // Debounce search filter to prevent excessive API calls
@@ -99,23 +103,32 @@ export function HODsManagementPage() {
   const loading = hodsLoading || subjectsLoading;
   const error = hodsError ? (hodsError as Error).message : null;
 
+  // Optimize: Use reduce instead of map().filter() for better performance
   const uniqueDepartments = useMemo(() => {
-    const depts = new Set(filteredHODs.map((hod) => hod.department).filter((d): d is string => !!d));
+    const depts = new Set<string>();
+    for (const hod of filteredHODs) {
+      if (hod.department) {
+        depts.add(hod.department);
+      }
+    }
     return Array.from(depts);
   }, [filteredHODs]);
-  
+
   // Advanced filter fields (defined after uniqueDepartments)
-  const advancedFilterFields: AdvancedFilterField[] = useMemo(() => [
-    {
-      key: 'department',
-      label: 'Department',
-      type: 'select',
-      options: [
-        { label: 'All departments', value: 'all' },
-        ...uniqueDepartments.map((d) => ({ label: d, value: d }))
-      ]
-    }
-  ], [uniqueDepartments]);
+  const advancedFilterFields: AdvancedFilterField[] = useMemo(
+    () => [
+      {
+        key: 'department',
+        label: 'Department',
+        type: 'select',
+        options: [
+          { label: 'All departments', value: 'all' },
+          ...uniqueDepartments.map((d) => ({ label: d, value: d })),
+        ],
+      },
+    ],
+    [uniqueDepartments]
+  );
 
   const handleViewProfile = (hod: HODRecord) => {
     setSelectedHOD(hod);
@@ -142,14 +155,14 @@ export function HODsManagementPage() {
     assignDepartmentMutation.mutate(
       {
         userId: selectedHOD.id,
-        department: selectedDepartment
+        department: selectedDepartment,
       },
       {
         onSuccess: () => {
           setShowDepartmentModal(false);
           setSelectedHOD(null);
           setSelectedDepartment('');
-        }
+        },
       }
     );
   };
@@ -164,14 +177,18 @@ export function HODsManagementPage() {
       return;
     }
 
-    if (!window.confirm(`Remove HOD role from ${selectedRows.size} teacher(s)? This action cannot be undone.`)) {
+    if (
+      !window.confirm(
+        `Remove HOD role from ${selectedRows.size} teacher(s)? This action cannot be undone.`
+      )
+    ) {
       return;
     }
 
     bulkRemoveMutation.mutate(Array.from(selectedRows), {
       onSuccess: () => {
         setSelectedRows(new Set());
-      }
+      },
     });
   };
 
@@ -182,7 +199,7 @@ export function HODsManagementPage() {
       Email: hod.email,
       Department: hod.department || 'N/A',
       Subjects: hod.subjects.join('; '),
-      'Teachers Under Oversight': hod.teachersUnderOversight || 0
+      'Teachers Under Oversight': hod.teachersUnderOversight || 0,
     }));
 
     const handlers = createExportHandlers(exportData, 'hods', [
@@ -190,7 +207,7 @@ export function HODsManagementPage() {
       'Email',
       'Department',
       'Subjects',
-      'Teachers Under Oversight'
+      'Teachers Under Oversight',
     ]);
 
     // For PDF/Excel, use backend endpoint with filters
@@ -198,14 +215,14 @@ export function HODsManagementPage() {
       type: 'hods' as const,
       title: 'HODs Export',
       filters: {
-        search: filters.search || undefined
-      }
+        search: filters.search || undefined,
+      },
     };
 
     return {
       ...handlers,
       exportPDF: () => handlers.exportPDF('/reports/export', exportPayload),
-      exportExcel: () => handlers.exportExcel('/reports/export', exportPayload)
+      exportExcel: () => handlers.exportExcel('/reports/export', exportPayload),
     };
   }, [filteredHODs, filters]);
 
@@ -254,7 +271,7 @@ export function HODsManagementPage() {
           aria-label={`Select ${row.name}`}
         />
       ),
-      align: 'center'
+      align: 'center',
     },
     {
       header: 'Name',
@@ -263,7 +280,7 @@ export function HODsManagementPage() {
           <p className="font-semibold text-[var(--brand-surface-contrast)]">{row.name}</p>
           <p className="text-xs text-[var(--brand-muted)]">{row.email}</p>
         </div>
-      )
+      ),
     },
     {
       header: 'Department',
@@ -271,7 +288,7 @@ export function HODsManagementPage() {
         <span className="rounded-full bg-[var(--brand-primary)]/20 px-2 py-1 text-xs font-semibold text-[var(--brand-primary)]">
           {row.department || 'General'}
         </span>
-      )
+      ),
     },
     {
       header: 'Subjects',
@@ -295,7 +312,7 @@ export function HODsManagementPage() {
             </span>
           )}
         </div>
-      )
+      ),
     },
     {
       header: 'Teachers',
@@ -304,7 +321,7 @@ export function HODsManagementPage() {
           {row.teachersUnderOversight || 0} teachers
         </span>
       ),
-      align: 'center'
+      align: 'center',
     },
     {
       header: 'Actions',
@@ -327,8 +344,8 @@ export function HODsManagementPage() {
             Analytics
           </Button>
         </ActionButtonGroup>
-      )
-    }
+      ),
+    },
   ];
 
   if (loading) {
@@ -370,7 +387,11 @@ export function HODsManagementPage() {
               <Upload className="h-4 w-4" />
               Import CSV
             </Button>
-            <Button variant="outline" onClick={() => setShowActivityLog(!showActivityLog)} className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowActivityLog(!showActivityLog)}
+              className="gap-2"
+            >
               Activity Log
             </Button>
             <ExportButtons
@@ -397,21 +418,19 @@ export function HODsManagementPage() {
             fields={advancedFilterFields}
             filters={{
               search: filters.search,
-              department: filters.department
+              department: filters.department,
             }}
             onFiltersChange={(newFilters) => {
               setFilters({
                 search: newFilters.search || '',
-                department: newFilters.department || 'all'
+                department: newFilters.department || 'all',
               });
             }}
             onReset={() => setFilters(defaultFilters)}
             searchPlaceholder="Search by name, email, department..."
           />
           <div className="mt-4 flex items-center justify-between text-sm text-[var(--brand-muted)]">
-            <span>
-              Showing {filteredHODs.length} HODs
-            </span>
+            <span>Showing {filteredHODs.length} HODs</span>
           </div>
         </section>
 
@@ -423,10 +442,7 @@ export function HODsManagementPage() {
         )}
 
         {filteredHODs.length === 0 && !hodsLoading ? (
-          <EmptyState
-            type="hods"
-            onAction={() => setShowCreateModal(true)}
-          />
+          <EmptyState type="hods" onAction={() => setShowCreateModal(true)} />
         ) : filteredHODs.length === 0 ? (
           <EmptyState
             type="generic"
@@ -529,7 +545,7 @@ export function HODsManagementPage() {
                 options={[
                   { label: 'Select a department', value: '' },
                   ...subjects.map((s) => ({ label: s.name, value: s.name })),
-                  ...uniqueDepartments.map((d) => ({ label: d, value: d }))
+                  ...uniqueDepartments.map((d) => ({ label: d, value: d })),
                 ]}
               />
               <div className="flex justify-end gap-3 pt-2">
@@ -624,7 +640,15 @@ export function HODsManagementPage() {
               return result;
             }}
             entityType="hods"
-            acceptedColumns={['email', 'fullName', 'password', 'phone', 'qualifications', 'subjects', 'department']}
+            acceptedColumns={[
+              'email',
+              'fullName',
+              'password',
+              'phone',
+              'qualifications',
+              'subjects',
+              'department',
+            ]}
           />
         )}
 

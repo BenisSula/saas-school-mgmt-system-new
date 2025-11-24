@@ -51,7 +51,7 @@ export async function createSubscription(
 
   // Verify tenant exists
   const tenantCheck = await pool.query('SELECT id FROM shared.tenants WHERE id = $1', [
-    input.tenantId
+    input.tenantId,
   ]);
   if (tenantCheck.rowCount === 0) {
     throw new Error('Tenant not found');
@@ -86,7 +86,7 @@ export async function createSubscription(
       input.currentPeriodStart || now,
       input.currentPeriodEnd || null,
       input.trialEndDate || null,
-      JSON.stringify(input.customLimits || {})
+      JSON.stringify(input.customLimits || {}),
     ]
   );
 
@@ -112,8 +112,8 @@ export async function createSubscription(
     details: {
       tenantId: input.tenantId,
       tier: input.tier,
-      status
-    }
+      status,
+    },
   });
 
   return subscription;
@@ -136,7 +136,9 @@ export async function getSubscriptionByTenantId(
 /**
  * Get subscription by ID
  */
-export async function getSubscriptionById(subscriptionId: string): Promise<SubscriptionRecord | null> {
+export async function getSubscriptionById(
+  subscriptionId: string
+): Promise<SubscriptionRecord | null> {
   const pool = getPool();
   const result = await pool.query<SubscriptionRecord>(
     'SELECT * FROM shared.subscriptions WHERE id = $1',
@@ -225,12 +227,7 @@ export async function updateSubscription(
       )
       VALUES ($1, $2, 'updated', $3::jsonb, $4::jsonb, 'Subscription updated by superuser')
     `,
-    [
-      subscriptionId,
-      actorId || null,
-      JSON.stringify(oldValue),
-      JSON.stringify(newValue)
-    ]
+    [subscriptionId, actorId || null, JSON.stringify(oldValue), JSON.stringify(newValue)]
   );
 
   // Audit log
@@ -241,8 +238,8 @@ export async function updateSubscription(
     entityId: subscriptionId,
     details: {
       tenantId: newValue.tenantId,
-      changes: input
-    }
+      changes: input,
+    },
   });
 
   return newValue;
@@ -256,11 +253,7 @@ export async function suspendSubscription(
   reason?: string,
   actorId?: string | null
 ): Promise<SubscriptionRecord> {
-  return updateSubscription(
-    subscriptionId,
-    { status: 'suspended' },
-    actorId
-  );
+  return updateSubscription(subscriptionId, { status: 'suspended' }, actorId);
 }
 
 /**
@@ -271,23 +264,17 @@ export async function cancelSubscription(
   reason?: string,
   actorId?: string | null
 ): Promise<SubscriptionRecord> {
-  return updateSubscription(
-    subscriptionId,
-    { status: 'cancelled' },
-    actorId
-  );
+  return updateSubscription(subscriptionId, { status: 'cancelled' }, actorId);
 }
 
 /**
  * List all subscriptions
  */
-export async function listSubscriptions(
-  filters?: {
-    tier?: SubscriptionTier;
-    status?: SubscriptionStatus;
-    tenantId?: string;
-  }
-): Promise<SubscriptionRecord[]> {
+export async function listSubscriptions(filters?: {
+  tier?: SubscriptionTier;
+  status?: SubscriptionStatus;
+  tenantId?: string;
+}): Promise<SubscriptionRecord[]> {
   const pool = getPool();
   const conditions: string[] = [];
   const values: unknown[] = [];
@@ -339,4 +326,3 @@ export async function getSubscriptionHistory(
   );
   return result.rows;
 }
-

@@ -26,14 +26,16 @@ async function verifyStripeConfig(): Promise<void> {
 
   if (!stripeWebhookSecret) {
     console.warn('\n⚠️  STRIPE_WEBHOOK_SECRET is not set. Webhook verification will fail.');
-    console.warn('   For local development, use: stripe listen --forward-to localhost:3001/api/webhooks/stripe');
+    console.warn(
+      '   For local development, use: stripe listen --forward-to localhost:3001/api/webhooks/stripe'
+    );
   }
 
   // Test Stripe API connection
   console.log('\n🔌 Testing Stripe API Connection...');
   try {
     const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2025-11-17.clover'
+      apiVersion: '2025-11-17.clover',
     });
 
     // Test API connection by retrieving account
@@ -69,7 +71,9 @@ async function verifyStripeConfig(): Promise<void> {
       for (const price of prices.data.slice(0, 3)) {
         const amount = price.unit_amount ? (price.unit_amount / 100).toFixed(2) : 'N/A';
         const currency = price.currency.toUpperCase();
-        console.log(`    - ${price.id}: ${currency} ${amount}/${price.recurring?.interval || 'one-time'}`);
+        console.log(
+          `    - ${price.id}: ${currency} ${amount}/${price.recurring?.interval || 'one-time'}`
+        );
       }
     } else {
       console.warn('  ⚠️  No prices found. Create prices in Stripe Dashboard.');
@@ -96,4 +100,3 @@ verifyStripeConfig().catch((error) => {
   console.error('Unhandled error:', error);
   process.exit(1);
 });
-

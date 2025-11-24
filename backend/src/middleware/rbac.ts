@@ -4,7 +4,7 @@ import { logUnauthorizedAttempt } from '../services/auditLogService';
 import {
   FRIENDLY_FORBIDDEN_MESSAGE,
   FRIENDLY_MISSING_TARGET_ID,
-  FRIENDLY_TENANT_CONTEXT_ERROR
+  FRIENDLY_TENANT_CONTEXT_ERROR,
 } from '../lib/friendlyMessages';
 
 export interface AuthenticatedRequest extends Request {
@@ -60,7 +60,7 @@ export function requireRole(allowedRoles: Role[]) {
         path: req.originalUrl ?? req.path,
         method: req.method,
         reason: 'Role not permitted',
-        details: { allowedRoles, userRole: user.role }
+        details: { allowedRoles, userRole: user.role },
       });
 
       return res.status(403).json({ message: FRIENDLY_FORBIDDEN_MESSAGE });
@@ -128,7 +128,7 @@ export function requireSelfOrPermission(permission?: Permission, idParam = 'stud
         entityId: targetId,
         path: req.originalUrl ?? req.path,
         method: req.method,
-        reason: permission ? `Missing permission: ${permission}` : 'Self-access denied'
+        reason: permission ? `Missing permission: ${permission}` : 'Self-access denied',
       });
 
       if (!req.tenantClient || !req.tenant) {
@@ -154,7 +154,7 @@ export function requireAnyPermission(...permissions: Permission[]) {
 
     // Get all user roles (primary + additional) for permission checking
     const userRoles: string[] = [req.user.role];
-    
+
     // Add additional roles if available
     const userWithRoles = req.user as { additional_roles?: Array<{ role: string }> };
     if (userWithRoles.additional_roles && Array.isArray(userWithRoles.additional_roles)) {
@@ -167,8 +167,8 @@ export function requireAnyPermission(...permissions: Permission[]) {
     });
 
     if (!hasAnyPermission) {
-      return res.status(403).json({ 
-        message: `Forbidden. Required one of: ${permissions.join(', ')}` 
+      return res.status(403).json({
+        message: `Forbidden. Required one of: ${permissions.join(', ')}`,
       });
     }
 
@@ -222,14 +222,14 @@ export function requireSuperuser() {
 /**
  * Enforces role hierarchy when modifying user roles.
  * Prevents lower-privileged users from assigning higher-privileged roles.
- * 
+ *
  * Role hierarchy (highest to lowest):
  * - superadmin
  * - admin
  * - hod
  * - teacher
  * - student
- * 
+ *
  * @param targetRoleParam - Parameter name for the target role being assigned (default: 'role')
  */
 export function enforceRoleHierarchy(targetRoleParam = 'role') {
@@ -245,8 +245,9 @@ export function enforceRoleHierarchy(targetRoleParam = 'role') {
         return next();
       }
 
-      const targetRole = req.body[targetRoleParam] || req.params[targetRoleParam] || req.query[targetRoleParam];
-      
+      const targetRole =
+        req.body[targetRoleParam] || req.params[targetRoleParam] || req.query[targetRoleParam];
+
       if (!targetRole) {
         return next(); // No role assignment, skip check
       }
@@ -257,7 +258,7 @@ export function enforceRoleHierarchy(targetRoleParam = 'role') {
         admin: 4,
         hod: 3,
         teacher: 2,
-        student: 1
+        student: 1,
       };
 
       const userLevel = roleHierarchy[user.role] ?? 0;
@@ -274,12 +275,12 @@ export function enforceRoleHierarchy(targetRoleParam = 'role') {
             userRole: user.role,
             attemptedRole: targetRole,
             userLevel,
-            targetLevel
-          }
+            targetLevel,
+          },
         });
 
         return res.status(403).json({
-          message: 'Cannot assign role equal to or higher than your own'
+          message: 'Cannot assign role equal to or higher than your own',
         });
       }
 
@@ -291,4 +292,3 @@ export function enforceRoleHierarchy(targetRoleParam = 'role') {
 }
 
 export default requireRole;
-

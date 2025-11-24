@@ -27,7 +27,7 @@ export function Notifications({
   notifications = [],
   onNotificationClick,
   onMarkAllRead,
-  className = ''
+  className = '',
 }: NotificationsProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);

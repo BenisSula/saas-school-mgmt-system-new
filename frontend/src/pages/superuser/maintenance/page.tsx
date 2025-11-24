@@ -14,7 +14,7 @@ import {
   XCircle,
   Loader2,
   Trash2,
-  Activity
+  Activity,
 } from 'lucide-react';
 
 export default function SuperuserMaintenancePage() {
@@ -25,18 +25,18 @@ export default function SuperuserMaintenancePage() {
   // Fetch schools for selection
   const { data: schools, isLoading: schoolsLoading } = useQuery({
     queryKey: ['superuser', 'schools'],
-    queryFn: () => api.superuser.listSchools()
+    queryFn: () => api.superuser.listSchools(),
   });
 
   // Fetch schema health
   const {
     data: healthData,
     isLoading: healthLoading,
-    refetch: refetchHealth
+    refetch: refetchHealth,
   } = useQuery({
     queryKey: ['superuser', 'maintenance', 'schema-health', selectedTenantId],
     queryFn: () => api.superuser.checkSchemaHealth(selectedTenantId || undefined),
-    enabled: true
+    enabled: true,
   });
 
   // Run migrations mutation
@@ -52,7 +52,7 @@ export default function SuperuserMaintenancePage() {
     },
     onError: (error: Error) => {
       toast.error(`Failed to run migrations: ${error.message}`);
-    }
+    },
   });
 
   // Clear cache mutation
@@ -68,7 +68,7 @@ export default function SuperuserMaintenancePage() {
     },
     onError: (error: Error) => {
       toast.error(`Failed to clear cache: ${error.message}`);
-    }
+    },
   });
 
   const handleRunMigrations = () => {

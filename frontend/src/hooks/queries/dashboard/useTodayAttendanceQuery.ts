@@ -50,11 +50,11 @@ export function todayAttendanceQueryOptions(tenantId: string | null) {
       return {
         presentCount,
         absentCount,
-        attendanceRate
+        attendanceRate,
       };
     },
     enabled: !!tenantId,
-    ...dashboardQueryConfig
+    ...dashboardQueryConfig,
   });
 }
 
@@ -71,8 +71,7 @@ export function useTodayAttendanceQuery() {
     select: (data): TodayAttendance => ({
       presentCount: data.presentCount,
       absentCount: data.absentCount,
-      attendanceRate: data.attendanceRate
-    })
+      attendanceRate: data.attendanceRate,
+    }),
   });
 }
-

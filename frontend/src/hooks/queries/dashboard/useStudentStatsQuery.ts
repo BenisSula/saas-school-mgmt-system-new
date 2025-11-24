@@ -41,10 +41,7 @@ export function studentStatsQueryOptions(tenantId: string | null) {
 
       // TODO: Replace with dedicated endpoint /admin/students/stats when available
       // For now, fetch all students and compute stats client-side
-      const [students, classes] = await Promise.all([
-        api.listStudents(),
-        api.listClasses()
-      ]);
+      const [students, classes] = await Promise.all([api.listStudents(), api.listClasses()]);
 
       const classMap = new Map(classes.map((c) => [c.id, c.name]));
 
@@ -63,7 +60,7 @@ export function studentStatsQueryOptions(tenantId: string | null) {
       const studentsByClass = Array.from(classCountMap.entries()).map(([classId, count]) => ({
         classId,
         className: classMap.get(classId) || 'Unassigned',
-        count
+        count,
       }));
 
       // Count by gender
@@ -83,11 +80,11 @@ export function studentStatsQueryOptions(tenantId: string | null) {
         activeStudents,
         studentsByClass,
         maleCount,
-        femaleCount
+        femaleCount,
       };
     },
     enabled: !!tenantId,
-    ...dashboardQueryConfig
+    ...dashboardQueryConfig,
   });
 }
 
@@ -106,8 +103,7 @@ export function useStudentStatsQuery() {
       activeStudents: data.activeStudents,
       studentsByClass: data.studentsByClass,
       maleCount: data.maleCount,
-      femaleCount: data.femaleCount
-    })
+      femaleCount: data.femaleCount,
+    }),
   });
 }
-

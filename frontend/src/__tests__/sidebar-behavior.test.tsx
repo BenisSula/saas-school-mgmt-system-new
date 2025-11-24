@@ -29,8 +29,8 @@ beforeEach(() => {
       removeEventListener: vi.fn(),
       addListener: vi.fn(),
       removeListener: vi.fn(),
-      dispatchEvent: vi.fn()
-    })
+      dispatchEvent: vi.fn(),
+    }),
   });
 });
 
@@ -44,7 +44,7 @@ describe('Sidebar role links', () => {
           role: 'admin',
           tenantId: 'tenant',
           isVerified: true,
-          status: 'active'
+          status: 'active',
         }}
         onLogout={() => {}}
       >
@@ -77,7 +77,7 @@ describe('Sidebar role links', () => {
           role: 'teacher',
           tenantId: 'tenant',
           isVerified: true,
-          status: 'active'
+          status: 'active',
         }}
         onLogout={() => {}}
       >
@@ -106,7 +106,7 @@ describe('Sidebar role links', () => {
           role: 'student',
           tenantId: 'tenant',
           isVerified: true,
-          status: 'active'
+          status: 'active',
         }}
         onLogout={() => {}}
       >
@@ -131,7 +131,7 @@ describe('Sidebar role links', () => {
           role: 'superadmin',
           tenantId: null,
           isVerified: true,
-          status: 'active'
+          status: 'active',
         }}
         onLogout={() => {}}
       >
@@ -152,7 +152,7 @@ describe('Sidebar persistence', () => {
   function TestSidebarPersistence({ storageKey }: { storageKey: string }) {
     const { collapsed, toggleCollapsed } = useSidebar({
       storageKey: storageKey,
-      initialOpen: true
+      initialOpen: true,
     });
     return (
       <button type="button" onClick={toggleCollapsed}>
@@ -198,7 +198,7 @@ describe('Content area layout', () => {
           role: 'admin',
           tenantId: 'tenant',
           isVerified: true,
-          status: 'active'
+          status: 'active',
         }}
         onLogout={() => {}}
       >

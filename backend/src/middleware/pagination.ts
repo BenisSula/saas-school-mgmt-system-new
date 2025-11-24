@@ -30,13 +30,13 @@ export function parsePagination(req: Request, _res: Response, next: NextFunction
   const limit = Math.min(Math.max(parseInt(req.query.limit as string, 10) || 20, 1), 100);
   const offset = Math.max(parseInt(req.query.offset as string, 10) || 0, 0);
   const page = Math.max(parseInt(req.query.page as string, 10) || 1, 1);
-  
+
   req.pagination = {
     limit,
     offset: offset || (page - 1) * limit,
-    page
+    page,
   };
-  
+
   next();
 }
 
@@ -49,7 +49,7 @@ export function createPaginatedResponse<T>(
   pagination: PaginationParams
 ): PaginatedResponse<T> {
   const totalPages = total !== undefined ? Math.ceil(total / pagination.limit) : undefined;
-  
+
   return {
     data,
     pagination: {
@@ -57,8 +57,7 @@ export function createPaginatedResponse<T>(
       offset: pagination.offset,
       total,
       page: pagination.page,
-      totalPages
-    }
+      totalPages,
+    },
   };
 }
-

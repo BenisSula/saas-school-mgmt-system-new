@@ -21,7 +21,7 @@ import {
   useDeleteAdminClass,
   useAssignClassTeacher,
   useAssignStudentsToClass,
-  type AdminClass
+  type AdminClass,
 } from '../../../hooks/queries/admin/useAdminClasses';
 import { useTeachers } from '../../../hooks/queries/useTeachers';
 import { useStudents } from '../../../hooks/queries/useStudents';
@@ -39,7 +39,7 @@ export default function AdminClassesPage() {
     section: '',
     departmentId: '',
     capacity: '',
-    academicYear: ''
+    academicYear: '',
   });
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
@@ -58,7 +58,7 @@ export default function AdminClassesPage() {
       {
         ...formData,
         capacity: formData.capacity ? Number(formData.capacity) : undefined,
-        departmentId: formData.departmentId || undefined
+        departmentId: formData.departmentId || undefined,
       },
       {
         onSuccess: () => {
@@ -70,9 +70,9 @@ export default function AdminClassesPage() {
             section: '',
             departmentId: '',
             capacity: '',
-            academicYear: ''
+            academicYear: '',
           });
-        }
+        },
       }
     );
   };
@@ -86,7 +86,7 @@ export default function AdminClassesPage() {
       section: classItem.section || '',
       departmentId: classItem.departmentId || '',
       capacity: classItem.capacity?.toString() || '',
-      academicYear: classItem.academicYear || ''
+      academicYear: classItem.academicYear || '',
     });
     setIsEditModalOpen(true);
   };
@@ -99,14 +99,14 @@ export default function AdminClassesPage() {
         payload: {
           ...formData,
           capacity: formData.capacity ? Number(formData.capacity) : undefined,
-          departmentId: formData.departmentId || undefined
-        }
+          departmentId: formData.departmentId || undefined,
+        },
       },
       {
         onSuccess: () => {
           setIsEditModalOpen(false);
           setSelectedClass(null);
-        }
+        },
       }
     );
   };
@@ -131,7 +131,7 @@ export default function AdminClassesPage() {
         onSuccess: () => {
           setIsAssignTeacherModalOpen(false);
           setSelectedClass(null);
-        }
+        },
       }
     );
   };
@@ -150,7 +150,7 @@ export default function AdminClassesPage() {
           setIsAssignStudentsModalOpen(false);
           setSelectedClass(null);
           setSelectedStudentIds([]);
-        }
+        },
       }
     );
   };
@@ -162,12 +162,12 @@ export default function AdminClassesPage() {
     {
       key: 'studentCount',
       label: 'Students',
-      render: (classItem) => classItem.studentCount ?? 0
+      render: (classItem) => classItem.studentCount ?? 0,
     },
     {
       key: 'teacherName',
       label: 'Class Teacher',
-      render: (classItem) => classItem.teacherName || 'Not assigned'
+      render: (classItem) => classItem.teacherName || 'Not assigned',
     },
     {
       key: 'actions',
@@ -193,8 +193,8 @@ export default function AdminClassesPage() {
             Assign Students
           </Button>
         </ActionButtonGroup>
-      )
-    }
+      ),
+    },
   ];
 
   if (isLoading) {
@@ -356,8 +356,8 @@ export default function AdminClassesPage() {
                 { value: '', label: 'Select a teacher' },
                 ...teachers.map((t) => ({
                   value: t.id || '',
-                  label: t.name || t.email || ''
-                }))
+                  label: t.name || t.email || '',
+                })),
               ]}
             />
             <div className="flex gap-2 justify-end">

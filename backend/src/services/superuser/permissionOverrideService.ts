@@ -57,13 +57,7 @@ export async function grantPermissionOverride(
         WHERE user_id = $4 AND permission = $5
         RETURNING *
       `,
-      [
-        actorId,
-        input.reason || null,
-        input.expiresAt || null,
-        input.userId,
-        input.permission
-      ]
+      [actorId, input.reason || null, input.expiresAt || null, input.userId, input.permission]
     );
   } else {
     // Create new override
@@ -75,13 +69,7 @@ export async function grantPermissionOverride(
         VALUES ($1, $2, TRUE, $3, $4, $5)
         RETURNING *
       `,
-      [
-        input.userId,
-        input.permission,
-        actorId,
-        input.reason || null,
-        input.expiresAt || null
-      ]
+      [input.userId, input.permission, actorId, input.reason || null, input.expiresAt || null]
     );
   }
 
@@ -96,8 +84,8 @@ export async function grantPermissionOverride(
     details: {
       userId: input.userId,
       permission: input.permission,
-      reason: input.reason
-    }
+      reason: input.reason,
+    },
   });
 
   return override;
@@ -136,8 +124,8 @@ export async function revokePermissionOverride(
     details: {
       userId: input.userId,
       permission: input.permission,
-      reason: input.reason
-    }
+      reason: input.reason,
+    },
   });
 }
 
@@ -236,4 +224,3 @@ export async function cleanupExpiredPermissionOverrides(): Promise<number> {
   );
   return result.rowCount || 0;
 }
-

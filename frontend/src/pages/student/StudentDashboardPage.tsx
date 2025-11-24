@@ -28,7 +28,7 @@ export default function StudentDashboardPage() {
       present: attendance.summary.present,
       total: attendance.summary.total,
       percentage: Math.round(attendance.summary.percentage),
-      recent
+      recent,
     };
   }, [attendance]);
 
@@ -60,7 +60,7 @@ export default function StudentDashboardPage() {
     if (!attendance?.history) return [];
     return attendance.history.slice(-30).map((item) => ({
       label: formatDateShort(item.attendance_date),
-      value: item.status === 'present' ? 1 : item.status === 'late' ? 0.5 : 0
+      value: item.status === 'present' ? 1 : item.status === 'late' ? 0.5 : 0,
     }));
   }, [attendance]);
 
@@ -71,7 +71,7 @@ export default function StudentDashboardPage() {
       label: subject.subject,
       value: subject.score,
       color:
-        subject.score >= 70 ? 'var(--brand-primary)' : subject.score >= 50 ? '#f59e0b' : '#ef4444'
+        subject.score >= 70 ? 'var(--brand-primary)' : subject.score >= 50 ? '#f59e0b' : '#ef4444',
     }));
   }, [result]);
 
@@ -84,7 +84,7 @@ export default function StudentDashboardPage() {
     return [
       { label: 'Paid', value: paid, color: '#10b981' },
       { label: 'Pending', value: pending, color: '#f59e0b' },
-      { label: 'Overdue', value: overdue, color: '#ef4444' }
+      { label: 'Overdue', value: overdue, color: '#ef4444' },
     ];
   }, [invoices]);
 
@@ -94,18 +94,18 @@ export default function StudentDashboardPage() {
         key: 'attendance_date',
         header: 'Date',
         render: (row) => formatDate(row.attendance_date),
-        sortable: true
+        sortable: true,
       },
       {
         key: 'class_id',
         header: 'Class',
-        render: (row) => row.class_id ?? '—'
+        render: (row) => row.class_id ?? '—',
       },
       {
         key: 'status',
         header: 'Status',
-        render: (row) => <StatusBadge status={row.status} />
-      }
+        render: (row) => <StatusBadge status={row.status} />,
+      },
     ],
     []
   );
@@ -115,28 +115,28 @@ export default function StudentDashboardPage() {
       {
         label: 'Profile',
         description: 'Update contact information or request a class change.',
-        action: () => navigate('/student/profile')
+        action: () => navigate('/student/profile'),
       },
       {
         label: 'Attendance',
         description: 'Review your attendance history and export records.',
-        action: () => navigate('/student/attendance')
+        action: () => navigate('/student/attendance'),
       },
       {
         label: 'Exams & results',
         description: 'Load exam breakdowns, request subject drops, and monitor grades.',
-        action: () => navigate('/student/results')
+        action: () => navigate('/student/results'),
       },
       {
         label: 'Fees',
         description: 'Track invoices, payments, and print receipts.',
-        action: () => navigate('/student/fees')
+        action: () => navigate('/student/fees'),
       },
       {
         label: 'Messages',
         description: 'Stay in touch with teachers and school leadership.',
-        action: () => navigate('/student/messages')
-      }
+        action: () => navigate('/student/messages'),
+      },
     ],
     [navigate]
   );
@@ -251,7 +251,7 @@ export default function StudentDashboardPage() {
             value={`${attendanceSummary.percentage}%`}
             change={{
               value: attendanceSummary.percentage,
-              label: `${attendanceSummary.present} of ${attendanceSummary.total} sessions`
+              label: `${attendanceSummary.present} of ${attendanceSummary.total} sessions`,
             }}
             icon={<Calendar className="h-5 w-5" />}
             trend={

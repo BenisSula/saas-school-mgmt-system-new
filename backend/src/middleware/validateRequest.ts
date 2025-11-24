@@ -17,7 +17,7 @@ export function validateRequest<T extends z.ZodTypeAny>(
     if (!result.success) {
       return res.status(400).json({
         message: formatValidationErrors(result.error),
-        errors: result.error.issues
+        errors: result.error.issues,
       });
     }
 
@@ -26,4 +26,3 @@ export function validateRequest<T extends z.ZodTypeAny>(
     next();
   };
 }
-

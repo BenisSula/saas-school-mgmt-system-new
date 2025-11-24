@@ -13,18 +13,28 @@ import { z } from 'zod';
 import { getPool } from '../../db/connection';
 import { createSuccessResponse, createErrorResponse } from '../../lib/responseHelpers';
 import { createAuditLog } from '../../services/audit/enhancedAuditService';
-import { verifyTenantAndUserContext, verifyTenantContext } from '../../services/shared/adminHelpers';
+import {
+  verifyTenantAndUserContext,
+  verifyTenantContext,
+} from '../../services/shared/adminHelpers';
 
 const router = Router();
 
-router.use(authenticate, tenantResolver(), ensureTenantContext(), requirePermission('users:manage'));
+router.use(
+  authenticate,
+  tenantResolver(),
+  ensureTenantContext(),
+  requirePermission('users:manage')
+);
 
 const announcementSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   content: z.string().min(1, 'Content is required'),
-  targetRoles: z.array(z.enum(['admin', 'hod', 'teacher', 'student'])).min(1, 'At least one target role is required'),
+  targetRoles: z
+    .array(z.enum(['admin', 'hod', 'teacher', 'student']))
+    .min(1, 'At least one target role is required'),
   priority: z.enum(['low', 'normal', 'high', 'urgent']).optional().default('normal'),
-  expiresAt: z.string().datetime().optional().nullable()
+  expiresAt: z.string().datetime().optional().nullable(),
 });
 
 /**
@@ -63,7 +73,7 @@ router.post('/announcements', validateInput(announcementSchema, 'body'), async (
           req.body.targetRoles,
           req.body.priority,
           user.id,
-          req.body.expiresAt ? new Date(req.body.expiresAt) : null
+          req.body.expiresAt ? new Date(req.body.expiresAt) : null,
         ]
       );
       announcementId = result.rows[0].id;
@@ -81,7 +91,7 @@ router.post('/announcements', validateInput(announcementSchema, 'body'), async (
           req.body.targetRoles,
           req.body.priority,
           user.id,
-          req.body.expiresAt ? new Date(req.body.expiresAt) : null
+          req.body.expiresAt ? new Date(req.body.expiresAt) : null,
         ]
       );
       announcementId = result.rows[0].id;
@@ -96,13 +106,15 @@ router.post('/announcements', validateInput(announcementSchema, 'body'), async (
       details: {
         title: req.body.title,
         targetRoles: req.body.targetRoles,
-        priority: req.body.priority
+        priority: req.body.priority,
       },
       severity: 'info',
-      tags: ['announcement', 'admin']
+      tags: ['announcement', 'admin'],
     });
 
-    res.status(201).json(createSuccessResponse({ id: announcementId }, 'Announcement created successfully'));
+    res
+      .status(201)
+      .json(createSuccessResponse({ id: announcementId }, 'Announcement created successfully'));
   } catch (error) {
     next(error);
   } finally {
@@ -114,101 +126,107 @@ router.post('/announcements', validateInput(announcementSchema, 'body'), async (
  * GET /admin/announcements
  * List all announcements
  */
-router.get('/announcements', validateInput(z.object({
-  limit: z.number().int().positive().max(100).optional().default(50),
-  offset: z.number().int().nonnegative().optional().default(0),
-  targetRole: z.enum(['admin', 'hod', 'teacher', 'student']).optional()
-}), 'query'), async (req, res, next) => {
-  const pool = getPool();
-  try {
-    const tenantCheck = verifyTenantContext(req.tenant, req.tenantClient);
-    if (!tenantCheck.isValid) {
-      return res.status(500).json(createErrorResponse(tenantCheck.error!));
-    }
-
-    // TypeScript: After validation, we know these are defined
-    const tenant = req.tenant!;
-    const schema = tenant.schema;
-    const limit = Number(req.query.limit ?? 50);
-    const offset = Number(req.query.offset ?? 0);
-    let announcements: unknown[] = [];
-    let total = 0;
-
+router.get(
+  '/announcements',
+  validateInput(
+    z.object({
+      limit: z.number().int().positive().max(100).optional().default(50),
+      offset: z.number().int().nonnegative().optional().default(0),
+      targetRole: z.enum(['admin', 'hod', 'teacher', 'student']).optional(),
+    }),
+    'query'
+  ),
+  async (req, res, next) => {
+    const pool = getPool();
     try {
-      // Try tenant schema first
-      const conditions: string[] = [];
-      const values: unknown[] = [];
-      let paramIndex = 1;
-
-      if (req.query.targetRole) {
-        conditions.push(`$${paramIndex++} = ANY(target_roles)`);
-        values.push(req.query.targetRole);
+      const tenantCheck = verifyTenantContext(req.tenant, req.tenantClient);
+      if (!tenantCheck.isValid) {
+        return res.status(500).json(createErrorResponse(tenantCheck.error!));
       }
 
-      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+      // TypeScript: After validation, we know these are defined
+      const tenant = req.tenant!;
+      const schema = tenant.schema;
+      const limit = Number(req.query.limit ?? 50);
+      const offset = Number(req.query.offset ?? 0);
+      let announcements: unknown[] = [];
+      let total = 0;
 
-      if (!req.tenantClient) {
-        return res.status(500).json(createErrorResponse('Tenant client not available'));
-      }
+      try {
+        // Try tenant schema first
+        const conditions: string[] = [];
+        const values: unknown[] = [];
+        let paramIndex = 1;
 
-      // Get total count
-      const countResult = await req.tenantClient.query<{ count: string }>(
-        `SELECT COUNT(*)::text as count FROM ${schema}.announcements ${whereClause}`,
-        values
-      );
-      total = Number(countResult.rows[0]?.count ?? 0);
+        if (req.query.targetRole) {
+          conditions.push(`$${paramIndex++} = ANY(target_roles)`);
+          values.push(req.query.targetRole);
+        }
 
-      // Get paginated results
-      values.push(limit, offset);
-      const result = await req.tenantClient.query(
-        `SELECT 
+        const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+        if (!req.tenantClient) {
+          return res.status(500).json(createErrorResponse('Tenant client not available'));
+        }
+
+        // Get total count
+        const countResult = await req.tenantClient.query<{ count: string }>(
+          `SELECT COUNT(*)::text as count FROM ${schema}.announcements ${whereClause}`,
+          values
+        );
+        total = Number(countResult.rows[0]?.count ?? 0);
+
+        // Get paginated results
+        values.push(limit, offset);
+        const result = await req.tenantClient.query(
+          `SELECT 
           id, title, content, target_roles, priority, created_by, created_at, expires_at
          FROM ${schema}.announcements
          ${whereClause}
          ORDER BY created_at DESC
          LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
-        values
-      );
-      announcements = result.rows;
-    } catch {
-      // Fallback to shared.notifications
-      const conditions: string[] = ['tenant_id = $1'];
-      const values: unknown[] = [tenant.id];
-      let paramIndex = 2;
+          values
+        );
+        announcements = result.rows;
+      } catch {
+        // Fallback to shared.notifications
+        const conditions: string[] = ['tenant_id = $1'];
+        const values: unknown[] = [tenant.id];
+        let paramIndex = 2;
 
-      if (req.query.targetRole) {
-        conditions.push(`$${paramIndex++} = ANY(target_roles)`);
-        values.push(req.query.targetRole);
-      }
+        if (req.query.targetRole) {
+          conditions.push(`$${paramIndex++} = ANY(target_roles)`);
+          values.push(req.query.targetRole);
+        }
 
-      const whereClause = `WHERE ${conditions.join(' AND ')}`;
+        const whereClause = `WHERE ${conditions.join(' AND ')}`;
 
-      // Get total count
-      const countResult = await pool.query<{ count: string }>(
-        `SELECT COUNT(*)::text as count FROM shared.notifications ${whereClause}`,
-        values
-      );
-      total = Number(countResult.rows[0]?.count ?? 0);
+        // Get total count
+        const countResult = await pool.query<{ count: string }>(
+          `SELECT COUNT(*)::text as count FROM shared.notifications ${whereClause}`,
+          values
+        );
+        total = Number(countResult.rows[0]?.count ?? 0);
 
-      // Get paginated results
-      values.push(limit, offset);
-      const result = await pool.query(
-        `SELECT 
+        // Get paginated results
+        values.push(limit, offset);
+        const result = await pool.query(
+          `SELECT 
           id, title, content, target_roles, priority, created_by, created_at, expires_at
          FROM shared.notifications
          ${whereClause}
          ORDER BY created_at DESC
          LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
-        values
-      );
-      announcements = result.rows;
-    }
+          values
+        );
+        announcements = result.rows;
+      }
 
-    res.json(createSuccessResponse({ announcements, total }));
-  } catch (error) {
-    next(error);
+      res.json(createSuccessResponse({ announcements, total }));
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 export default router;
-

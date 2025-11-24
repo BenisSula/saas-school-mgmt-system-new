@@ -16,7 +16,12 @@ const authenticator = {
     timeBuffer.writeUInt32BE(time, 4);
     const hash = crypto.createHmac('sha1', secretBuffer).update(timeBuffer).digest();
     const offset = hash[hash.length - 1] & 0xf;
-    const code = ((hash[offset] & 0x7f) << 24 | (hash[offset + 1] & 0xff) << 16 | (hash[offset + 2] & 0xff) << 8 | hash[offset + 3] & 0xff) % 1000000;
+    const code =
+      (((hash[offset] & 0x7f) << 24) |
+        ((hash[offset + 1] & 0xff) << 16) |
+        ((hash[offset + 2] & 0xff) << 8) |
+        (hash[offset + 3] & 0xff)) %
+      1000000;
     return code.toString().padStart(6, '0');
   },
   verify: (token: string, secret: string) => {
@@ -31,7 +36,7 @@ const authenticator = {
   check: (token: string, secret: string) => {
     // Alias for verify
     return authenticator.verify(token, secret);
-  }
+  },
 };
 
 export const mfaDeviceTypeSchema = z.enum(['totp', 'sms', 'email', 'backup_code']);
@@ -55,13 +60,16 @@ export interface VerifyMfaCodeInput {
 /**
  * Generate TOTP secret and QR code data URL
  */
-export function generateTotpSecret(userEmail: string, issuer: string = 'SaaS School Management'): {
+export function generateTotpSecret(
+  userEmail: string,
+  issuer: string = 'SaaS School Management'
+): {
   secret: string;
   qrCodeUrl: string;
 } {
   const secret = authenticator.generateSecret();
   const otpAuthUrl = authenticator.keyuri(userEmail, issuer, secret);
-  
+
   // Generate QR code data URL (simplified - in production, use a QR code library)
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpAuthUrl)}`;
 
@@ -81,10 +89,9 @@ export async function createMfaDevice(
 
   if (input.type === 'totp') {
     // Generate TOTP secret
-    const userResult = await client.query(
-      'SELECT email FROM shared.users WHERE id = $1',
-      [input.userId]
-    );
+    const userResult = await client.query('SELECT email FROM shared.users WHERE id = $1', [
+      input.userId,
+    ]);
     if (userResult.rowCount === 0) {
       throw new Error('User not found');
     }
@@ -100,7 +107,7 @@ export async function createMfaDevice(
   }
 
   // Hash backup codes before storing
-  const hashedBackupCodes = backupCodes.map(code => 
+  const hashedBackupCodes = backupCodes.map((code) =>
     crypto.createHash('sha256').update(code).digest('hex')
   );
 
@@ -112,20 +119,13 @@ export async function createMfaDevice(
       VALUES ($1, $2, $3, $4, $5, $6, FALSE)
       RETURNING *
     `,
-    [
-      deviceId,
-      input.userId,
-      input.type,
-      input.name,
-      secret,
-      hashedBackupCodes
-    ]
+    [deviceId, input.userId, input.type, input.name, secret, hashedBackupCodes]
   );
 
   // Return device with unhashed backup codes for initial display (only once)
   return {
     ...result.rows[0],
-    backupCodes: input.type === 'totp' ? backupCodes : undefined
+    backupCodes: input.type === 'totp' ? backupCodes : undefined,
   };
 }
 
@@ -165,10 +165,10 @@ export async function verifyMfaCode(
     if (isValid) {
       // Remove used backup code
       const updatedCodes = device.backup_codes.filter((code: string) => code !== hashedCode);
-      await client.query(
-        'UPDATE shared.mfa_devices SET backup_codes = $1 WHERE id = $2',
-        [updatedCodes, input.deviceId]
-      );
+      await client.query('UPDATE shared.mfa_devices SET backup_codes = $1 WHERE id = $2', [
+        updatedCodes,
+        input.deviceId,
+      ]);
     }
   } else {
     // SMS/email verification handled externally
@@ -190,7 +190,7 @@ export async function verifyMfaCode(
       '***', // Don't store actual code
       isValid,
       input.ipAddress || null,
-      input.userAgent || null
+      input.userAgent || null,
     ]
   );
 
@@ -202,10 +202,9 @@ export async function verifyMfaCode(
     );
   } else if (isValid) {
     // Update last used timestamp
-    await client.query(
-      'UPDATE shared.mfa_devices SET last_used_at = NOW() WHERE id = $1',
-      [input.deviceId]
-    );
+    await client.query('UPDATE shared.mfa_devices SET last_used_at = NOW() WHERE id = $1', [
+      input.deviceId,
+    ]);
   }
 
   return { success: isValid, isBackupCode };
@@ -214,10 +213,7 @@ export async function verifyMfaCode(
 /**
  * Get MFA devices for a user
  */
-export async function getMfaDevices(
-  client: PoolClient,
-  userId: string
-): Promise<unknown[]> {
+export async function getMfaDevices(client: PoolClient, userId: string): Promise<unknown[]> {
   const result = await client.query(
     `
       SELECT id, type, name, is_enabled, is_verified, last_used_at, created_at
@@ -278,10 +274,7 @@ export async function deleteMfaDevice(
 /**
  * Check if user has MFA enabled
  */
-export async function isMfaEnabled(
-  client: PoolClient,
-  userId: string
-): Promise<boolean> {
+export async function isMfaEnabled(client: PoolClient, userId: string): Promise<boolean> {
   const result = await client.query(
     `
       SELECT COUNT(*) as count
@@ -293,4 +286,3 @@ export async function isMfaEnabled(
 
   return parseInt(result.rows[0].count, 10) > 0;
 }
-

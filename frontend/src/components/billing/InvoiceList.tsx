@@ -41,22 +41,23 @@ export function InvoiceList() {
     );
   }
 
-  const formatAmount = (cents?: number, currency = 'USD') => {
+  // Memoize formatters to avoid recreating on every render
+  const formatAmount = useCallback((cents?: number, currency = 'USD') => {
     if (!cents) return 'N/A';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency
+      currency,
     }).format(cents / 100);
-  };
+  }, []);
 
-  const formatDate = (dateString?: string) => {
+  const formatDate = useCallback((dateString?: string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
-  };
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -135,4 +136,3 @@ export function InvoiceList() {
     </div>
   );
 }
-

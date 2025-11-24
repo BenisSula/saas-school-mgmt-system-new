@@ -19,8 +19,10 @@ export function getUserAdditionalRoles(user: TenantUser): Array<string> {
 /**
  * Check if a user has a specific additional role
  */
-export function hasAdditionalRole(user: TenantUser | AuthUser | null | undefined, role: string): boolean {
+export function hasAdditionalRole(
+  user: TenantUser | AuthUser | null | undefined,
+  role: string
+): boolean {
   if (!user) return false;
   return user.additional_roles?.some((r) => r.role === role) ?? false;
 }
-

@@ -1,6 +1,6 @@
 /**
  * Backend Library Utilities - Barrel Export
- * 
+ *
  * Centralized exports for all backend utility modules
  * Use: import { functionName } from '../lib'
  */
@@ -14,7 +14,7 @@ export {
   createErrorResponse,
   createPaginatedSuccessResponse,
   type ApiResponse,
-  type ApiErrorResponse
+  type ApiErrorResponse,
 } from './responseHelpers';
 
 // Context validation
@@ -48,4 +48,3 @@ export * from './websocket';
 // Serializers
 export * from './serializers/deviceInfoSerializer';
 export * from './serializers/userSerializer';
-

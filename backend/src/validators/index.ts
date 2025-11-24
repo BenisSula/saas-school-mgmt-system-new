@@ -1,6 +1,6 @@
 /**
  * Backend Validators - Barrel Export
- * 
+ *
  * Centralized exports for all validation schemas
  * Use: import { schemaName } from '../validators'
  */
@@ -10,7 +10,7 @@ export {
   adminCreateUserSchema,
   createHODSchema,
   createTeacherSchema,
-  createStudentSchema
+  createStudentSchema,
 } from './userRegistrationValidator';
 
 // User validators
@@ -47,4 +47,3 @@ export * from './superuserInvestigationValidator';
 export * from './superuserLoginAttemptsValidator';
 export * from './superuserPasswordValidator';
 export * from './superuserSessionValidator';
-

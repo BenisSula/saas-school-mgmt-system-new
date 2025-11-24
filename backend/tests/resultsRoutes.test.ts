@@ -24,7 +24,7 @@ const currentUser: NonNullable<MockAuthRequest['user']> = {
   role: 'admin',
   tenantId: 'tenant_alpha',
   email: 'admin@test.com',
-  tokenId: 'token'
+  tokenId: 'token',
 };
 
 jest.mock('../src/middleware/authenticate', () => ({
@@ -32,7 +32,7 @@ jest.mock('../src/middleware/authenticate', () => ({
   default: (req: MockAuthRequest, _res: Response, next: NextFunction) => {
     req.user = { ...currentUser };
     next();
-  }
+  },
 }));
 
 jest.mock('../src/middleware/tenantResolver', () => {
@@ -42,14 +42,14 @@ jest.mock('../src/middleware/tenantResolver', () => {
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 jest.mock('../src/services/examService', () => {
   const actual = jest.requireActual('../src/services/examService');
   return {
     ...actual,
-    computeStudentResult: jest.fn()
+    computeStudentResult: jest.fn(),
   };
 });
 
@@ -98,7 +98,7 @@ describe('Results routes RBAC', () => {
     studentBId = crypto.randomUUID();
 
     await pool.query("INSERT INTO tenant_alpha.classes (id, name) VALUES ($1, 'Grade 9')", [
-      classId
+      classId,
     ]);
 
     await pool.query(
@@ -112,7 +112,7 @@ describe('Results routes RBAC', () => {
       id: adminUserId,
       role: 'admin' as const,
       tenantId,
-      email: 'admin@test.com'
+      email: 'admin@test.com',
     });
     computeStudentResultMock.mockReset();
   });
@@ -122,7 +122,7 @@ describe('Results routes RBAC', () => {
       id: studentAId,
       role: 'student' as const,
       email: 'studentA@test.com',
-      tenantId
+      tenantId,
     });
 
     const before = await pool.query(
@@ -151,7 +151,7 @@ describe('Results routes RBAC', () => {
       id: 'admin-user',
       role: 'admin' as const,
       email: 'admin@test.com',
-      tenantId
+      tenantId,
     });
 
     const mockResult: StudentResult = {
@@ -162,15 +162,15 @@ describe('Results routes RBAC', () => {
         average: 95,
         percentage: 95,
         grade: 'A',
-        position: null
+        position: null,
       },
       subjects: [],
       aggregates: {
         highest: 95,
         lowest: 95,
-        classAverage: 95
+        classAverage: 95,
       },
-      leaderboard: []
+      leaderboard: [],
     };
 
     computeStudentResultMock.mockResolvedValue(mockResult);

@@ -1,9 +1,9 @@
 /**
  * Dashboard Query Hooks
- * 
+ *
  * All hooks are multi-tenant aware and use React Query v5 features.
  * Each hook includes tenantId in the query key and handles tenant switching gracefully.
- * 
+ *
  * All hooks use shared query configuration from './queryConfig' (DRY principle).
  */
 
@@ -33,4 +33,3 @@ export type { LoginAttempt, LoginAttemptsResponse } from './useLoginAttemptsQuer
 
 export { useRecentActivityQuery, recentActivityQueryOptions } from './useRecentActivityQuery';
 export type { RecentActivity, RecentActivityResponse } from './useRecentActivityQuery';
-

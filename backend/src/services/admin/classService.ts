@@ -1,7 +1,7 @@
 /**
  * Admin Class Management Service
  * Handles class CRUD operations within tenant schema
- * 
+ *
  * DRY: Reuses existing audit logging utilities
  * Multi-tenant: All operations scoped to tenant schema
  */
@@ -84,7 +84,7 @@ export async function createClass(
       input.departmentId || null,
       input.capacity || null,
       input.academicYear || null,
-      JSON.stringify(input.metadata || {})
+      JSON.stringify(input.metadata || {}),
     ]
   );
 
@@ -98,7 +98,7 @@ export async function createClass(
     resourceId: classRecord.id,
     details: { name: input.name, gradeLevel: input.gradeLevel },
     severity: 'info',
-    tags: ['class', 'admin']
+    tags: ['class', 'admin'],
   });
 
   return {
@@ -113,7 +113,7 @@ export async function createClass(
     academicYear: classRecord.academic_year,
     metadata: classRecord.metadata,
     createdAt: classRecord.created_at,
-    updatedAt: classRecord.updated_at
+    updatedAt: classRecord.updated_at,
   };
 }
 
@@ -156,7 +156,7 @@ export async function listClasses(
       []
     );
 
-    return result.rows.map(row => ({
+    return result.rows.map((row) => ({
       id: row.id,
       name: row.name,
       description: row.description,
@@ -170,7 +170,7 @@ export async function listClasses(
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       studentCount: Number(row.student_count),
-      teacherName: row.teacher_name || undefined
+      teacherName: row.teacher_name || undefined,
     }));
   } else {
     const result = await client.query<{
@@ -193,7 +193,7 @@ export async function listClasses(
       []
     );
 
-    return result.rows.map(row => ({
+    return result.rows.map((row) => ({
       id: row.id,
       name: row.name,
       description: row.description,
@@ -205,7 +205,7 @@ export async function listClasses(
       academicYear: row.academic_year,
       metadata: row.metadata,
       createdAt: row.created_at,
-      updatedAt: row.updated_at
+      updatedAt: row.updated_at,
     }));
   }
 }
@@ -255,7 +255,7 @@ export async function getClassById(
     academicYear: row.academic_year,
     metadata: row.metadata,
     createdAt: row.created_at,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
   };
 }
 
@@ -362,7 +362,7 @@ export async function updateClass(
     resourceId: classId,
     details: { updates: input },
     severity: 'info',
-    tags: ['class', 'admin']
+    tags: ['class', 'admin'],
   });
 
   return {
@@ -377,7 +377,7 @@ export async function updateClass(
     academicYear: updated.academic_year,
     metadata: updated.metadata,
     createdAt: updated.created_at,
-    updatedAt: updated.updated_at
+    updatedAt: updated.updated_at,
   };
 }
 
@@ -406,10 +406,7 @@ export async function deleteClass(
     throw new Error(`Cannot delete class: ${studentCount} student(s) are enrolled in this class`);
   }
 
-  await client.query(
-    `DELETE FROM ${schemaName}.classes WHERE id = $1`,
-    [classId]
-  );
+  await client.query(`DELETE FROM ${schemaName}.classes WHERE id = $1`, [classId]);
 
   // Audit log
   await createAuditLog(client, {
@@ -419,7 +416,7 @@ export async function deleteClass(
     resourceId: classId,
     details: { name: existing.name },
     severity: 'info',
-    tags: ['class', 'admin']
+    tags: ['class', 'admin'],
   });
 }
 
@@ -462,7 +459,7 @@ export async function assignClassTeacher(
     resourceId: classId,
     details: { teacherUserId, className: classRecord.name },
     severity: 'info',
-    tags: ['class', 'teacher', 'admin']
+    tags: ['class', 'teacher', 'admin'],
   });
 }
 
@@ -517,9 +514,8 @@ export async function assignStudentsToClass(
     resourceId: classId,
     details: { studentIds, assigned, failed, className: classRecord.name },
     severity: 'info',
-    tags: ['class', 'students', 'admin']
+    tags: ['class', 'students', 'admin'],
   });
 
   return { assigned, failed };
 }
-

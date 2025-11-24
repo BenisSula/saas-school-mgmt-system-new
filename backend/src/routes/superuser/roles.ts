@@ -13,7 +13,7 @@ router.use(authenticate, requireSuperuser());
 
 const rolePermissionsUpdateSchema = z.object({
   permissions: z.array(z.string()),
-  reason: z.string()
+  reason: z.string(),
 });
 
 /**
@@ -39,12 +39,12 @@ router.get('/permissions/propagation', async (req, res, next) => {
       { role: 'admin', level: 4 },
       { role: 'hod', level: 3 },
       { role: 'teacher', level: 2 },
-      { role: 'student', level: 1 }
+      { role: 'student', level: 1 },
     ];
-    
+
     res.json({
       hierarchy,
-      permissions: rolePermissions
+      permissions: rolePermissions,
     });
   } catch (error) {
     next(error);
@@ -61,32 +61,32 @@ router.get('/:role/permissions/impact', async (req, res, next) => {
     if (!rolePermissions[role]) {
       return res.status(404).json({ message: 'Role not found' });
     }
-    
-    const proposedPermissions = req.query.proposedPermissions 
-      ? JSON.parse(req.query.proposedPermissions as string) as Permission[]
+
+    const proposedPermissions = req.query.proposedPermissions
+      ? (JSON.parse(req.query.proposedPermissions as string) as Permission[])
       : [];
-    
+
     const currentPermissions = rolePermissions[role] || [];
     const currentSet = new Set(currentPermissions);
     const proposedSet = new Set(proposedPermissions);
-    
+
     const addedPermissions = proposedPermissions.filter((p) => !currentSet.has(p));
     const removedPermissions = currentPermissions.filter((p) => !proposedSet.has(p));
-    
+
     const pool = getPool();
     const userCountResult = await pool.query(
       `SELECT COUNT(*) as count FROM shared.users WHERE role = $1`,
       [role]
     );
-    
+
     const affectedUsers = parseInt(userCountResult.rows[0].count, 10);
-    
+
     res.json({
       affectedUsers,
       currentPermissions,
       proposedPermissions,
       addedPermissions,
-      removedPermissions
+      removedPermissions,
     });
   } catch (error) {
     next(error);
@@ -102,25 +102,25 @@ router.patch('/:role/permissions', async (req, res, next) => {
     if (req.params.role === 'superadmin') {
       return res.status(403).json({ message: 'Cannot modify superadmin role permissions' });
     }
-    
+
     const role = req.params.role as Role;
     if (!rolePermissions[role]) {
       return res.status(404).json({ message: 'Role not found' });
     }
-    
+
     const parsed = rolePermissionsUpdateSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ message: parsed.error.message });
     }
-    
+
     const pool = getPool();
     const client = await pool.connect();
-    
+
     try {
       const currentPermissions = rolePermissions[role] || [];
       const currentSet = new Set(currentPermissions);
       const proposedSet = new Set(parsed.data.permissions);
-      
+
       const addedPermissions = parsed.data.permissions.filter((p) => {
         const perm = p as Permission;
         return !currentSet.has(perm);
@@ -129,43 +129,41 @@ router.patch('/:role/permissions', async (req, res, next) => {
         const perm = p as Permission;
         return !proposedSet.has(perm);
       });
-      
+
       const userCountResult = await pool.query(
         `SELECT COUNT(*) as count FROM shared.users WHERE role = $1`,
         [role]
       );
       const affectedUsers = parseInt(userCountResult.rows[0].count, 10);
-      
-      await createAuditLog(
-        client,
-        {
-          tenantId: undefined,
-          userId: req.user?.id ?? '',
-          action: 'ROLE_PERMISSIONS_CHANGED',
-          resourceType: 'role',
-          resourceId: role,
-          details: {
-            role,
-            currentPermissions,
-            proposedPermissions: parsed.data.permissions,
-            addedPermissions,
-            removedPermissions,
-            affectedUsers,
-            reason: parsed.data.reason,
-            note: 'Permission changes require code deployment to take effect'
-          },
-          severity: 'critical'
-        }
-      );
-      
-      res.json({ 
+
+      await createAuditLog(client, {
+        tenantId: undefined,
+        userId: req.user?.id ?? '',
+        action: 'ROLE_PERMISSIONS_CHANGED',
+        resourceType: 'role',
+        resourceId: role,
+        details: {
+          role,
+          currentPermissions,
+          proposedPermissions: parsed.data.permissions,
+          addedPermissions,
+          removedPermissions,
+          affectedUsers,
+          reason: parsed.data.reason,
+          note: 'Permission changes require code deployment to take effect',
+        },
+        severity: 'critical',
+      });
+
+      res.json({
         success: true,
-        message: 'Permission change logged. Note: Actual permission changes require code deployment.',
+        message:
+          'Permission change logged. Note: Actual permission changes require code deployment.',
         impact: {
           affectedUsers,
           addedPermissions,
-          removedPermissions
-        }
+          removedPermissions,
+        },
       });
     } finally {
       client.release();
@@ -176,4 +174,3 @@ router.patch('/:role/permissions', async (req, res, next) => {
 });
 
 export default router;
-

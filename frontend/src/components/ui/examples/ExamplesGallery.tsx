@@ -8,17 +8,17 @@ import { Table } from '../Table';
 const demoOptions = [
   { label: 'Option A', value: 'A' },
   { label: 'Option B', value: 'B' },
-  { label: 'Option C', value: 'C' }
+  { label: 'Option C', value: 'C' },
 ];
 
 const demoTableColumns = [
   { header: 'Name', key: 'name' as const },
-  { header: 'Role', key: 'role' as const }
+  { header: 'Role', key: 'role' as const },
 ];
 
 const demoTableData = [
   { name: 'Jane Doe', role: 'Teacher' },
-  { name: 'John Smith', role: 'Admin' }
+  { name: 'John Smith', role: 'Admin' },
 ];
 
 /**

@@ -25,7 +25,7 @@ export function StudentResourceCard({
   fileUrl,
   size,
   createdAt,
-  onDownload
+  onDownload,
 }: StudentResourceCardProps) {
   const handleDownload = () => {
     if (onDownload) {

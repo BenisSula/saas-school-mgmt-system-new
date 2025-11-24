@@ -24,7 +24,7 @@ const ALLOWED_MIME_TYPES = [
   'application/pdf',
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'text/plain'
+  'text/plain',
 ];
 
 export interface FileUploadResult {
@@ -120,8 +120,8 @@ async function uploadToStorage(filename: string, fileData: Buffer): Promise<stri
         region: S3_REGION,
         credentials: {
           accessKeyId: S3_ACCESS_KEY_ID,
-          secretAccessKey: S3_SECRET_ACCESS_KEY
-        }
+          secretAccessKey: S3_SECRET_ACCESS_KEY,
+        },
       });
 
       const key = `uploads/${filename}`;
@@ -131,7 +131,7 @@ async function uploadToStorage(filename: string, fileData: Buffer): Promise<stri
           Bucket: S3_BUCKET,
           Key: key,
           Body: fileData,
-          ContentType: 'application/octet-stream'
+          ContentType: 'application/octet-stream',
         })
       );
 
@@ -179,7 +179,7 @@ export async function uploadFile(input: FileUploadInput): Promise<FileUploadResu
         mimeType: input.file.mimetype,
         fileUrl,
         uploadedBy: input.userId,
-        uploadedAt: new Date()
+        uploadedAt: new Date(),
       };
     }
 
@@ -205,7 +205,7 @@ export async function uploadFile(input: FileUploadInput): Promise<FileUploadResu
         input.tenantId,
         input.description || null,
         input.entityType || null,
-        input.entityId || null
+        input.entityId || null,
       ]
     );
 
@@ -218,7 +218,7 @@ export async function uploadFile(input: FileUploadInput): Promise<FileUploadResu
       mimeType: row.mime_type,
       fileUrl: row.file_url,
       uploadedBy: row.uploaded_by,
-      uploadedAt: row.uploaded_at
+      uploadedAt: row.uploaded_at,
     };
   });
 }
@@ -256,7 +256,7 @@ export async function getUserFileUploads(
       mimeType: row.mime_type,
       fileUrl: row.file_url,
       uploadedBy: row.uploaded_by,
-      uploadedAt: row.uploaded_at
+      uploadedAt: row.uploaded_at,
     }));
   });
 }
@@ -326,8 +326,8 @@ export async function deleteFileUpload(
           region: S3_REGION,
           credentials: {
             accessKeyId: S3_ACCESS_KEY_ID,
-            secretAccessKey: S3_SECRET_ACCESS_KEY
-          }
+            secretAccessKey: S3_SECRET_ACCESS_KEY,
+          },
         });
 
         // Extract key from URL
@@ -337,7 +337,7 @@ export async function deleteFileUpload(
         await s3Client.send(
           new DeleteObjectCommand({
             Bucket: S3_BUCKET,
-            Key: key
+            Key: key,
           })
         );
       } else {

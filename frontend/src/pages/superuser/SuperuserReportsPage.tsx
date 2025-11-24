@@ -26,7 +26,10 @@ function SuperuserReportsPage() {
   const [loadingReports, setLoadingReports] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [selectedReportForSchedule, setSelectedReportForSchedule] = useState<{ id: string; name: string } | null>(null);
+  const [selectedReportForSchedule, setSelectedReportForSchedule] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const loadReports = useCallback(async () => {
     setLoadingReports(true);
@@ -34,7 +37,7 @@ function SuperuserReportsPage() {
     try {
       const [definitionsResult, customResult] = await Promise.all([
         api.reports.getReportDefinitions(),
-        api.reports.getCustomReports()
+        api.reports.getCustomReports(),
       ]);
       setReportDefinitions((definitionsResult.reports || []) as ReportDefinition[]);
       setCustomReports((customResult.customReports || []) as CustomReport[]);
@@ -61,7 +64,9 @@ function SuperuserReportsPage() {
 
   return (
     <div className="superuser-reports-page p-6">
-      <h1 className="text-3xl font-bold mb-6 text-[var(--brand-text-primary)]">Advanced Reports & Analytics</h1>
+      <h1 className="text-3xl font-bold mb-6 text-[var(--brand-text-primary)]">
+        Advanced Reports & Analytics
+      </h1>
 
       <div className="mb-4 border-b border-[var(--brand-border)]">
         <nav className="flex gap-4">
@@ -123,7 +128,9 @@ function SuperuserReportsPage() {
                 </button>
                 <button
                   onClick={() => {
-                    const report = [...reportDefinitions, ...customReports].find(r => r.id === selectedReportId);
+                    const report = [...reportDefinitions, ...customReports].find(
+                      (r) => r.id === selectedReportId
+                    );
                     if (report) {
                       setSelectedReportForSchedule({ id: report.id, name: report.name });
                       setShowScheduleModal(true);
@@ -138,8 +145,10 @@ function SuperuserReportsPage() {
             </div>
           ) : (
             <div className="bg-[var(--brand-surface)] rounded-lg shadow-md border border-[var(--brand-border)] p-6">
-              <h2 className="text-2xl font-bold mb-4 text-[var(--brand-text-primary)]">Available Reports</h2>
-              
+              <h2 className="text-2xl font-bold mb-4 text-[var(--brand-text-primary)]">
+                Available Reports
+              </h2>
+
               {error && (
                 <div className="mb-4 p-3 bg-[var(--brand-error)]/10 text-[var(--brand-error)] border border-[var(--brand-error)]/20 rounded">
                   {error}
@@ -147,7 +156,9 @@ function SuperuserReportsPage() {
               )}
 
               {loadingReports ? (
-                <div className="p-6 text-center text-[var(--brand-text-secondary)]">Loading reports...</div>
+                <div className="p-6 text-center text-[var(--brand-text-secondary)]">
+                  Loading reports...
+                </div>
               ) : (
                 <>
                   {reportDefinitions.length === 0 && customReports.length === 0 ? (
@@ -158,7 +169,9 @@ function SuperuserReportsPage() {
                     <div className="space-y-6">
                       {reportDefinitions.length > 0 && (
                         <div>
-                          <h3 className="text-xl font-semibold mb-3 text-[var(--brand-text-primary)]">Report Definitions</h3>
+                          <h3 className="text-xl font-semibold mb-3 text-[var(--brand-text-primary)]">
+                            Report Definitions
+                          </h3>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {reportDefinitions.map((report) => (
                               <div
@@ -166,9 +179,13 @@ function SuperuserReportsPage() {
                                 className="border border-[var(--brand-border)] rounded-lg p-4 bg-[var(--brand-surface-secondary)] hover:shadow-md hover:bg-[var(--brand-surface-tertiary)] cursor-pointer transition-all"
                                 onClick={() => handleReportSelect(report.id)}
                               >
-                                <h4 className="font-semibold text-lg mb-2 text-[var(--brand-text-primary)]">{report.name}</h4>
+                                <h4 className="font-semibold text-lg mb-2 text-[var(--brand-text-primary)]">
+                                  {report.name}
+                                </h4>
                                 {report.description && (
-                                  <p className="text-sm text-[var(--brand-text-secondary)] mb-2">{report.description}</p>
+                                  <p className="text-sm text-[var(--brand-text-secondary)] mb-2">
+                                    {report.description}
+                                  </p>
                                 )}
                                 {report.category && (
                                   <span className="inline-block px-2 py-1 bg-[var(--brand-primary-light)] text-[var(--brand-primary)] text-xs rounded">
@@ -183,7 +200,9 @@ function SuperuserReportsPage() {
 
                       {customReports.length > 0 && (
                         <div>
-                          <h3 className="text-xl font-semibold mb-3 text-[var(--brand-text-primary)]">Custom Reports</h3>
+                          <h3 className="text-xl font-semibold mb-3 text-[var(--brand-text-primary)]">
+                            Custom Reports
+                          </h3>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {customReports.map((report) => (
                               <div
@@ -191,9 +210,13 @@ function SuperuserReportsPage() {
                                 className="border border-[var(--brand-border)] rounded-lg p-4 bg-[var(--brand-surface-secondary)] hover:shadow-md hover:bg-[var(--brand-surface-tertiary)] cursor-pointer transition-all"
                                 onClick={() => handleReportSelect(report.id)}
                               >
-                                <h4 className="font-semibold text-lg mb-2 text-[var(--brand-text-primary)]">{report.name}</h4>
+                                <h4 className="font-semibold text-lg mb-2 text-[var(--brand-text-primary)]">
+                                  {report.name}
+                                </h4>
                                 {report.description && (
-                                  <p className="text-sm text-[var(--brand-text-secondary)] mb-2">{report.description}</p>
+                                  <p className="text-sm text-[var(--brand-text-secondary)] mb-2">
+                                    {report.description}
+                                  </p>
                                 )}
                                 <span className="inline-block px-2 py-1 bg-[var(--brand-accent-light)] text-[var(--brand-accent)] text-xs rounded">
                                   Custom

@@ -27,7 +27,7 @@ export async function upsertBranding(client: PoolClient, schema: string, payload
         payload.secondaryColor ?? null,
         serializeJsonField(payload.themeFlags ?? {}),
         serializeJsonField(payload.typography ?? {}),
-        serializeJsonField(payload.navigation ?? {})
+        serializeJsonField(payload.navigation ?? {}),
       ]
     );
 
@@ -54,7 +54,7 @@ export async function upsertBranding(client: PoolClient, schema: string, payload
       serializeJsonField(payload.themeFlags ?? existing.theme_flags ?? {}),
       serializeJsonField(payload.typography ?? existing.typography ?? {}),
       serializeJsonField(payload.navigation ?? existing.navigation ?? {}),
-      existing.id
+      existing.id,
     ]
   );
 

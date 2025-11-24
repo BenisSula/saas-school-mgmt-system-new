@@ -34,7 +34,7 @@ export function usePagination(options: PaginationOptions = {}) {
   const {
     initialPage = DEFAULT_PAGE,
     initialPageSize = DEFAULT_PAGE_SIZE,
-    totalItems = 0
+    totalItems = 0,
   } = options;
 
   const [page, setPage] = useState(initialPage);
@@ -50,10 +50,13 @@ export function usePagination(options: PaginationOptions = {}) {
 
   const limit = pageSize;
 
-  const goToPage = useCallback((newPage: number) => {
-    const validPage = Math.max(1, Math.min(newPage, totalPages));
-    setPage(validPage);
-  }, [totalPages]);
+  const goToPage = useCallback(
+    (newPage: number) => {
+      const validPage = Math.max(1, Math.min(newPage, totalPages));
+      setPage(validPage);
+    },
+    [totalPages]
+  );
 
   const nextPage = useCallback(() => {
     if (page < totalPages) {
@@ -84,7 +87,7 @@ export function usePagination(options: PaginationOptions = {}) {
     totalItems,
     totalPages,
     offset,
-    limit
+    limit,
   };
 
   const controls: PaginationControls = {
@@ -92,12 +95,11 @@ export function usePagination(options: PaginationOptions = {}) {
     nextPage,
     previousPage,
     setPageSize: handleSetPageSize,
-    reset
+    reset,
   };
 
   return {
     ...state,
-    ...controls
+    ...controls,
   };
 }
-

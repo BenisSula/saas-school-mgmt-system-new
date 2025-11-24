@@ -7,7 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
-  type ReactNode
+  type ReactNode,
 } from 'react';
 
 export interface DashboardRouteMeta {
@@ -32,11 +32,11 @@ export interface DashboardRouteProviderProps {
 export function DashboardRouteProvider({
   defaultTitle = '',
   defaultDescription = '',
-  children
+  children,
 }: DashboardRouteProviderProps) {
   const defaultMetaRef = useRef<DashboardRouteMeta>({
     title: defaultTitle,
-    description: defaultDescription
+    description: defaultDescription,
   });
 
   const [meta, setMeta] = useState<DashboardRouteMeta>(defaultMetaRef.current);
@@ -45,7 +45,7 @@ export function DashboardRouteProvider({
   useEffect(() => {
     const nextDefault = {
       title: defaultTitle ?? '',
-      description: defaultDescription ?? ''
+      description: defaultDescription ?? '',
     };
     const previousDefault = defaultMetaRef.current;
     defaultMetaRef.current = nextDefault;
@@ -61,7 +61,7 @@ export function DashboardRouteProvider({
   const setRouteMeta = useCallback((next: DashboardRouteMeta) => {
     setMeta((current) => ({
       title: next.title ?? current.title,
-      description: next.description ?? current.description
+      description: next.description ?? current.description,
     }));
   }, []);
 
@@ -75,7 +75,7 @@ export function DashboardRouteProvider({
       title: meta.title,
       description: meta.description,
       setMeta: setRouteMeta,
-      resetMeta: resetRouteMeta
+      resetMeta: resetRouteMeta,
     }),
     [meta.description, meta.title, resetRouteMeta, setRouteMeta, titleId]
   );

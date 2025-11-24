@@ -49,7 +49,6 @@ export function useHodDepartmentReport(filters?: UseHodDepartmentReportFilters) 
     enabled: !!tenantId,
     staleTime: 60_000, // 1 minute
     retry: 1,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
   });
 }
-

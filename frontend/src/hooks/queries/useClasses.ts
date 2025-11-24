@@ -70,7 +70,13 @@ export function useUpdateClass() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Parameters<typeof api.updateClass>[1] }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Parameters<typeof api.updateClass>[1];
+    }) => {
       toast.loading('Updating class...', { id: `update-class-${id}` });
       try {
         const response = await api.updateClass(id, data);
@@ -122,4 +128,3 @@ export function useDeleteClass() {
     },
   });
 }
-

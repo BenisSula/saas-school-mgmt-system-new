@@ -15,7 +15,7 @@ const cardMotion = {
   initial: { opacity: 0, scale: 0.95, y: 20 },
   animate: { opacity: 1, scale: 1, y: 0 },
   exit: { opacity: 0, scale: 0.98, y: 10 },
-  transition: { type: 'spring', stiffness: 300, damping: 30 }
+  transition: { type: 'spring', stiffness: 300, damping: 30 },
 };
 
 export function AuthFormLayout({
@@ -23,7 +23,7 @@ export function AuthFormLayout({
   subtitle,
   children,
   footer,
-  className = ''
+  className = '',
 }: AuthFormLayoutProps) {
   useBrand(); // Ensure theme context is available
 

@@ -4,13 +4,16 @@ import authorizeSuperUser from '../../middleware/authorizeSuperUser';
 import {
   adminResetPassword,
   adminForceChangePassword,
-  getPasswordHistory
+  getPasswordHistory,
 } from '../../services/superuser/passwordManagementService';
 import {
   passwordHistoryParamsSchema,
-  passwordHistoryQuerySchema
+  passwordHistoryQuerySchema,
 } from '../../validators/superuserPasswordValidator';
-import { createPasswordResetHandler, createPasswordChangeHandler } from '../../lib/passwordRouteHelpers';
+import {
+  createPasswordResetHandler,
+  createPasswordChangeHandler,
+} from '../../lib/passwordRouteHelpers';
 import type { Role } from '../../config/permissions';
 
 const router = Router();
@@ -22,17 +25,23 @@ router.use(authenticate, authorizeSuperUser);
  * POST /superuser/users/:userId/reset-password
  * Reset user password (generates temporary password)
  */
-router.post('/users/:userId/reset-password', createPasswordResetHandler({
-  resetPassword: adminResetPassword
-}));
+router.post(
+  '/users/:userId/reset-password',
+  createPasswordResetHandler({
+    resetPassword: adminResetPassword,
+  })
+);
 
 /**
  * POST /superuser/users/:userId/change-password
  * Force change user password
  */
-router.post('/users/:userId/change-password', createPasswordChangeHandler({
-  changePassword: adminForceChangePassword
-}));
+router.post(
+  '/users/:userId/change-password',
+  createPasswordChangeHandler({
+    changePassword: adminForceChangePassword,
+  })
+);
 
 /**
  * GET /superuser/users/:userId/password-history
@@ -43,7 +52,7 @@ router.get('/users/:userId/password-history', async (req, res, next) => {
     const { getPool } = await import('../../db/connection');
     const pool = getPool();
     const paramsResult = passwordHistoryParamsSchema.safeParse(req.params);
-    
+
     if (!paramsResult.success) {
       return res.status(400).json({ message: 'Invalid user ID' });
     }
@@ -62,15 +71,10 @@ router.get('/users/:userId/password-history', async (req, res, next) => {
       startDate: queryResult.data.startDate,
       endDate: queryResult.data.endDate,
       limit: queryResult.data.limit,
-      offset: queryResult.data.offset
+      offset: queryResult.data.offset,
     };
 
-    const result = await getPasswordHistory(
-      pool,
-      filters,
-      req.user!.role as Role,
-      req.user!.id
-    );
+    const result = await getPasswordHistory(pool, filters, req.user!.role as Role, req.user!.id);
 
     res.json(result);
   } catch (error) {
@@ -79,4 +83,3 @@ router.get('/users/:userId/password-history', async (req, res, next) => {
 });
 
 export default router;
-

@@ -28,15 +28,15 @@ jest.mock('../src/middleware/authenticate', () => ({
       role: 'teacher',
       tenantId: 'tenant_alpha',
       email: 'jane@example.com',
-      tokenId: 'token'
+      tokenId: 'token',
     };
     next();
-  }
+  },
 }));
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -61,7 +61,7 @@ describe('Teacher dashboard routes', () => {
     const tenant = await createTenant(
       {
         name: 'Teacher School',
-        schemaName: 'tenant_alpha'
+        schemaName: 'tenant_alpha',
       },
       pool
     );

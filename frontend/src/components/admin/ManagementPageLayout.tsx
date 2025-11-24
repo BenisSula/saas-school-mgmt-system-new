@@ -29,7 +29,7 @@ export function ManagementPageLayout({
   onExportPDF,
   onExportExcel,
   bulkActionButton,
-  children
+  children,
 }: ManagementPageLayoutProps) {
   return (
     <RouteMeta title={title}>

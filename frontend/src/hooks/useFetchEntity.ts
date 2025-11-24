@@ -28,7 +28,7 @@ export function useFetchEntity<TData, TError = Error>(
     },
     {
       enabled: options?.enabled !== false && Boolean(entityId),
-      ...options
+      ...options,
     }
   );
 }
@@ -38,7 +38,10 @@ export function useFetchEntity<TData, TError = Error>(
  */
 export function useFetchEntities<TData, TError = Error>(
   entityType: string,
-  fetchFn: (params?: { offset?: number; limit?: number }) => Promise<{ data: TData[]; total: number }>,
+  fetchFn: (params?: {
+    offset?: number;
+    limit?: number;
+  }) => Promise<{ data: TData[]; total: number }>,
   pagination?: { offset: number; limit: number },
   options?: UseApiOptions<{ data: TData[]; total: number }, TError>
 ) {
@@ -48,4 +51,3 @@ export function useFetchEntities<TData, TError = Error>(
     options
   );
 }
-

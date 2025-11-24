@@ -16,16 +16,18 @@ export default function StudentAnnouncementsPage() {
   // Get student profile to get classId
   const { data: profile } = useQuery({
     queryKey: ['student', 'profile'],
-    queryFn: () => api.student.getProfile()
+    queryFn: () => api.student.getProfile(),
   });
 
   const classId = useMemo(() => {
     if (!profile) return undefined;
     // Profile has classId or className field
-    return (profile as { classId?: string; className?: string }).classId || 
-           (profile as { classId?: string; className?: string }).className;
+    return (
+      (profile as { classId?: string; className?: string }).classId ||
+      (profile as { classId?: string; className?: string }).className
+    );
   }, [profile]);
-  
+
   const { data: announcements, isLoading } = useStudentAnnouncements(classId);
 
   return (
@@ -38,9 +40,7 @@ export default function StudentAnnouncementsPage() {
         {announcements && (
           <div className="space-y-4">
             {announcements.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                No announcements available
-              </div>
+              <div className="text-center text-gray-500 py-8">No announcements available</div>
             ) : (
               announcements.map((announcement) => (
                 <div
@@ -55,7 +55,9 @@ export default function StudentAnnouncementsPage() {
                           {announcement.teacher_name && (
                             <>
                               <User className="h-4 w-4 text-gray-500" />
-                              <span className="text-sm text-gray-600">{announcement.teacher_name}</span>
+                              <span className="text-sm text-gray-600">
+                                {announcement.teacher_name}
+                              </span>
                             </>
                           )}
                         </div>
@@ -93,4 +95,3 @@ export default function StudentAnnouncementsPage() {
     </RouteMeta>
   );
 }
-

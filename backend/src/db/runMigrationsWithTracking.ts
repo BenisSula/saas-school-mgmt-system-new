@@ -1,7 +1,7 @@
 /**
  * Enhanced migration runner with tracking
  * Tracks which migrations have been executed to avoid re-running them
- * 
+ *
  * Usage: Replace runMigrations with runMigrationsWithTracking in migrate.ts
  */
 
@@ -32,10 +32,7 @@ async function ensureMigrationTable(pool: Pool): Promise<void> {
 /**
  * Check if a migration has already been executed
  */
-async function isMigrationExecuted(
-  pool: Pool,
-  migrationFile: string
-): Promise<boolean> {
+async function isMigrationExecuted(pool: Pool, migrationFile: string): Promise<boolean> {
   const result = await pool.query(
     'SELECT 1 FROM shared.schema_migrations WHERE migration_file = $1',
     [migrationFile]
@@ -84,17 +81,12 @@ export async function getExecutedMigrations(pool: Pool): Promise<string[]> {
  * Enhanced migration runner with tracking
  * Only runs migrations that haven't been executed yet
  */
-export async function runMigrationsWithTracking(
-  pool: Pool,
-  skipDoBlocks = false
-): Promise<void> {
+export async function runMigrationsWithTracking(pool: Pool, skipDoBlocks = false): Promise<void> {
   // Ensure tracking table exists
   await ensureMigrationTable(pool);
 
   const migrationsDir = path.resolve(__dirname, 'migrations');
-  const files = (await fs.readdir(migrationsDir))
-    .filter((file) => file.endsWith('.sql'))
-    .sort();
+  const files = (await fs.readdir(migrationsDir)).filter((file) => file.endsWith('.sql')).sort();
 
   let executedCount = 0;
   let skippedCount = 0;
@@ -153,4 +145,3 @@ export async function runMigrationsWithTracking(
   }
   console.log(`   📁 Total: ${files.length}\n`);
 }
-

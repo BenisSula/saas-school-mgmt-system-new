@@ -15,14 +15,14 @@ const statusColors: Record<InvestigationCase['status'], string> = {
   open: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
   investigating: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
   resolved: 'bg-green-500/10 text-green-600 dark:text-green-400',
-  closed: 'bg-gray-500/10 text-gray-600 dark:text-gray-400'
+  closed: 'bg-gray-500/10 text-gray-600 dark:text-gray-400',
 };
 
 const priorityColors: Record<InvestigationCase['priority'], string> = {
   low: 'bg-gray-500/10 text-gray-600 dark:text-gray-400',
   medium: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
   high: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
-  critical: 'bg-red-500/10 text-red-600 dark:text-red-400'
+  critical: 'bg-red-500/10 text-red-600 dark:text-red-400',
 };
 
 const caseTypeLabels: Record<InvestigationCase['caseType'], string> = {
@@ -30,10 +30,14 @@ const caseTypeLabels: Record<InvestigationCase['caseType'], string> = {
   security: 'Security',
   compliance: 'Compliance',
   abuse: 'Abuse',
-  other: 'Other'
+  other: 'Other',
 };
 
-export function InvestigationListTable({ cases, loading, onRowClick }: InvestigationListTableProps) {
+export function InvestigationListTable({
+  cases,
+  loading,
+  onRowClick,
+}: InvestigationListTableProps) {
   const navigate = useNavigate();
 
   const handleRowClick = (case_: InvestigationCase) => {
@@ -53,7 +57,7 @@ export function InvestigationListTable({ cases, loading, onRowClick }: Investiga
           <span className="font-mono text-sm font-medium text-[var(--brand-text-primary)]">
             {case_.caseNumber}
           </span>
-        )
+        ),
       },
       {
         key: 'title',
@@ -67,7 +71,7 @@ export function InvestigationListTable({ cases, loading, onRowClick }: Investiga
               </span>
             )}
           </div>
-        )
+        ),
       },
       {
         key: 'caseType',
@@ -76,7 +80,7 @@ export function InvestigationListTable({ cases, loading, onRowClick }: Investiga
           <Badge variant="outline" className="text-xs">
             {caseTypeLabels[case_.caseType]}
           </Badge>
-        )
+        ),
       },
       {
         key: 'priority',
@@ -85,7 +89,7 @@ export function InvestigationListTable({ cases, loading, onRowClick }: Investiga
           <Badge className={`text-xs ${priorityColors[case_.priority]}`}>
             {case_.priority.toUpperCase()}
           </Badge>
-        )
+        ),
       },
       {
         key: 'status',
@@ -94,7 +98,7 @@ export function InvestigationListTable({ cases, loading, onRowClick }: Investiga
           <Badge className={`text-xs ${statusColors[case_.status]}`}>
             {case_.status.charAt(0).toUpperCase() + case_.status.slice(1)}
           </Badge>
-        )
+        ),
       },
       {
         key: 'relatedUserId',
@@ -107,7 +111,7 @@ export function InvestigationListTable({ cases, loading, onRowClick }: Investiga
               <span className="text-[var(--brand-muted)]">—</span>
             )}
           </span>
-        )
+        ),
       },
       {
         key: 'assignedTo',
@@ -120,7 +124,7 @@ export function InvestigationListTable({ cases, loading, onRowClick }: Investiga
               <span className="text-[var(--brand-muted)]">Unassigned</span>
             )}
           </span>
-        )
+        ),
       },
       {
         key: 'openedAt',
@@ -129,7 +133,7 @@ export function InvestigationListTable({ cases, loading, onRowClick }: Investiga
           <span className="text-sm text-[var(--brand-text-secondary)]">
             {formatDate(case_.openedAt)}
           </span>
-        )
+        ),
       },
       {
         key: 'tags',
@@ -149,8 +153,8 @@ export function InvestigationListTable({ cases, loading, onRowClick }: Investiga
               <span className="text-xs text-[var(--brand-muted)]">+{case_.tags.length - 3}</span>
             )}
           </div>
-        )
-      }
+        ),
+      },
     ],
     []
   );
@@ -172,4 +176,3 @@ export function InvestigationListTable({ cases, loading, onRowClick }: Investiga
     />
   );
 }
-

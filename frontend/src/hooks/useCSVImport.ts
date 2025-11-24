@@ -23,7 +23,7 @@ export function useCSVImport(options: CSVImportOptions) {
       // Parse CSV file
       const text = await file.text();
       const lines = text.split('\n').filter((line) => line.trim());
-      
+
       if (lines.length < 2) {
         throw new Error('CSV file must have at least a header row and one data row');
       }
@@ -34,7 +34,7 @@ export function useCSVImport(options: CSVImportOptions) {
       // Validate headers
       const requiredHeaders = ['email', 'fullname', 'password'];
       const missingHeaders = requiredHeaders.filter((h) => !headers.includes(h));
-      
+
       if (missingHeaders.length > 0) {
         throw new Error(`Missing required columns: ${missingHeaders.join(', ')}`);
       }
@@ -55,7 +55,7 @@ export function useCSVImport(options: CSVImportOptions) {
         if (!rowData.email || !rowData.fullname || !rowData.password) {
           errors.push({
             row: index + 2, // +2 because index is 0-based and we skip header
-            message: 'Missing required fields (email, fullName, password)'
+            message: 'Missing required fields (email, fullName, password)',
           });
           return;
         }
@@ -63,7 +63,7 @@ export function useCSVImport(options: CSVImportOptions) {
         if (rowData.password.length < 8) {
           errors.push({
             row: index + 2,
-            message: 'Password must be at least 8 characters long'
+            message: 'Password must be at least 8 characters long',
           });
           return;
         }
@@ -75,7 +75,7 @@ export function useCSVImport(options: CSVImportOptions) {
         return {
           success: 0,
           failed: rows.length,
-          errors
+          errors,
         };
       }
 
@@ -86,10 +86,11 @@ export function useCSVImport(options: CSVImportOptions) {
 
       for (let i = 0; i < validRows.length; i++) {
         const rowData = validRows[i];
-        const rowNumber = rows.findIndex((r) => {
-          const values = r.split(',').map((v) => v.trim());
-          return values[headers.indexOf('email')] === rowData.email;
-        }) + 2;
+        const rowNumber =
+          rows.findIndex((r) => {
+            const values = r.split(',').map((v) => v.trim());
+            return values[headers.indexOf('email')] === rowData.email;
+          }) + 2;
 
         try {
           // Map row data to API payload
@@ -97,15 +98,17 @@ export function useCSVImport(options: CSVImportOptions) {
             email: rowData.email.toLowerCase(),
             password: rowData.password,
             fullName: rowData.fullname,
-            role: options.entityType === 'hods' ? 'teacher' : options.entityType
+            role: options.entityType === 'hods' ? 'teacher' : options.entityType,
           };
 
           // Add optional fields based on entity type
           if (options.entityType === 'teachers' || options.entityType === 'hods') {
             if (rowData.phone) payload.phone = rowData.phone;
             if (rowData.qualifications) payload.qualifications = rowData.qualifications;
-            if (rowData.yearsofexperience) payload.yearsOfExperience = parseInt(rowData.yearsofexperience, 10);
-            if (rowData.subjects) payload.subjects = rowData.subjects.split(';').map((s) => s.trim());
+            if (rowData.yearsofexperience)
+              payload.yearsOfExperience = parseInt(rowData.yearsofexperience, 10);
+            if (rowData.subjects)
+              payload.subjects = rowData.subjects.split(';').map((s) => s.trim());
           }
 
           if (options.entityType === 'students') {
@@ -113,7 +116,8 @@ export function useCSVImport(options: CSVImportOptions) {
             if (rowData.classid) payload.classId = rowData.classid;
             if (rowData.studentid) payload.studentId = rowData.studentid;
             if (rowData.parentguardianname) payload.parentGuardianName = rowData.parentguardianname;
-            if (rowData.parentguardiancontact) payload.parentGuardianContact = rowData.parentguardiancontact;
+            if (rowData.parentguardiancontact)
+              payload.parentGuardianContact = rowData.parentguardiancontact;
           }
 
           // Create user
@@ -135,7 +139,7 @@ export function useCSVImport(options: CSVImportOptions) {
           failedCount++;
           importErrors.push({
             row: rowNumber,
-            message: error instanceof Error ? error.message : 'Import failed'
+            message: error instanceof Error ? error.message : 'Import failed',
           });
         }
       }
@@ -143,13 +147,13 @@ export function useCSVImport(options: CSVImportOptions) {
       return {
         success: successCount,
         failed: failedCount,
-        errors: importErrors
+        errors: importErrors,
       };
     },
     onSuccess: (result) => {
       // Invalidate relevant queries
       const queriesToInvalidate = options.invalidateQueries || [];
-      
+
       // Default queries based on entity type
       if (!queriesToInvalidate.length) {
         switch (options.entityType) {
@@ -179,7 +183,6 @@ export function useCSVImport(options: CSVImportOptions) {
     onError: (error: Error) => {
       toast.error(error.message || 'CSV import failed');
       options.onError?.(error);
-    }
+    },
   });
 }
-

@@ -27,29 +27,29 @@ const LINK_PERMISSIONS: Record<string, LinkPermission> = {
   'admin-reports': { linkId: 'admin-reports', requiredPermissions: ['reports:view'] },
   'admin-settings': {
     linkId: 'admin-settings',
-    requiredPermissions: ['settings:branding', 'settings:terms']
+    requiredPermissions: ['settings:branding', 'settings:terms'],
   },
   'admin-student-profile': {
     linkId: 'admin-student-profile',
-    requiredPermissions: ['students:manage']
+    requiredPermissions: ['students:manage'],
   },
 
   // Teacher links
   'teacher-overview': { linkId: 'teacher-overview', requiredPermissions: ['dashboard:view'] },
   'teacher-classes': {
     linkId: 'teacher-classes',
-    requiredPermissions: ['students:view_own_class']
+    requiredPermissions: ['students:view_own_class'],
   },
   'teacher-students': {
     linkId: 'teacher-students',
-    requiredPermissions: ['students:view_own_class']
+    requiredPermissions: ['students:view_own_class'],
   },
   'teacher-attendance': { linkId: 'teacher-attendance', requiredPermissions: ['attendance:mark'] },
   'teacher-grades': { linkId: 'teacher-grades', requiredPermissions: ['grades:enter'] },
   'teacher-reports': { linkId: 'teacher-reports', requiredPermissions: ['reports:view'] },
   'teacher-messages': {
     linkId: 'teacher-messages',
-    requiredPermissions: ['messages:send', 'messages:receive']
+    requiredPermissions: ['messages:send', 'messages:receive'],
   },
   'teacher-profile': { linkId: 'teacher-profile', requiredPermissions: ['profile:view_self'] },
 
@@ -69,10 +69,19 @@ const LINK_PERMISSIONS: Record<string, LinkPermission> = {
   'super-settings': { linkId: 'super-settings', requiredPermissions: ['settings:branding'] },
 
   // HOD links
-  'hod-dashboard': { linkId: 'hod-dashboard', requiredPermissions: ['department-analytics', 'grades:manage'] },
-  'hod-teachers': { linkId: 'hod-teachers', requiredPermissions: ['department-analytics', 'grades:manage'] },
-  'hod-reports': { linkId: 'hod-reports', requiredPermissions: ['department-analytics', 'reports:view'] },
-  'hod-profile': { linkId: 'hod-profile', requiredPermissions: ['profile:view_self'] }
+  'hod-dashboard': {
+    linkId: 'hod-dashboard',
+    requiredPermissions: ['department-analytics', 'grades:manage'],
+  },
+  'hod-teachers': {
+    linkId: 'hod-teachers',
+    requiredPermissions: ['department-analytics', 'grades:manage'],
+  },
+  'hod-reports': {
+    linkId: 'hod-reports',
+    requiredPermissions: ['department-analytics', 'reports:view'],
+  },
+  'hod-profile': { linkId: 'hod-profile', requiredPermissions: ['profile:view_self'] },
 };
 
 /**

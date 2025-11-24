@@ -1,15 +1,41 @@
-FROM node:20-alpine
+# Multi-stage build for optimized production image
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json tsconfig.json vite.config.ts tailwind.config.cjs postcss.config.cjs vitest.setup.ts ./
-RUN npm install
+# Copy package files
+COPY package*.json ./
+COPY tsconfig*.json ./
+COPY vite.config.ts ./
+COPY tailwind.config.cjs ./
+COPY postcss.config.cjs ./
 
-COPY index.html ./index.html
+# Install dependencies
+RUN npm ci
+
+# Copy source code
+COPY index.html ./
 COPY src ./src
 COPY public ./public
 
-EXPOSE 5173
+# Build application
+RUN npm run build
 
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+# Production stage with nginx
+FROM nginx:alpine AS production
 
+# Copy built files from builder
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose port
+EXPOSE 80
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost/health || exit 1
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

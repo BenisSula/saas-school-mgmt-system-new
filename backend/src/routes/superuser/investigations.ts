@@ -11,7 +11,7 @@ import {
   addCaseEvidence,
   detectAnomalies,
   getUserActions,
-  exportCaseAuditTrail
+  exportCaseAuditTrail,
 } from '../../services/superuser/investigationService';
 import {
   createCaseSchema,
@@ -21,7 +21,7 @@ import {
   caseFiltersQuerySchema,
   anomalyDetectionQuerySchema,
   userActionsQuerySchema,
-  exportAuditTrailQuerySchema
+  exportAuditTrailQuerySchema,
 } from '../../validators/superuserInvestigationValidator';
 import { Role } from '../../config/permissions';
 
@@ -38,7 +38,7 @@ router.post('/cases', async (req, res, next) => {
   try {
     const pool = getPool();
     const bodyResult = createCaseSchema.safeParse(req.body);
-    
+
     if (!bodyResult.success) {
       return res.status(400).json({ message: bodyResult.error.message });
     }
@@ -64,16 +64,12 @@ router.get('/cases', async (req, res, next) => {
   try {
     const pool = getPool();
     const queryResult = caseFiltersQuerySchema.safeParse(req.query);
-    
+
     if (!queryResult.success) {
       return res.status(400).json({ message: queryResult.error.message });
     }
 
-    const result = await getInvestigationCases(
-      pool,
-      queryResult.data,
-      req.user!.role as Role
-    );
+    const result = await getInvestigationCases(pool, queryResult.data, req.user!.role as Role);
 
     res.json(result);
   } catch (error) {
@@ -90,11 +86,7 @@ router.get('/cases/:caseId', async (req, res, next) => {
     const pool = getPool();
     const { caseId } = req.params;
 
-    const result = await getInvestigationCase(
-      pool,
-      caseId,
-      req.user!.role as Role
-    );
+    const result = await getInvestigationCase(pool, caseId, req.user!.role as Role);
 
     res.json(result);
   } catch (error) {
@@ -111,7 +103,7 @@ router.patch('/cases/:caseId/status', async (req, res, next) => {
     const pool = getPool();
     const { caseId } = req.params;
     const bodyResult = updateCaseStatusSchema.safeParse(req.body);
-    
+
     if (!bodyResult.success) {
       return res.status(400).json({ message: bodyResult.error.message });
     }
@@ -141,7 +133,7 @@ router.post('/cases/:caseId/notes', async (req, res, next) => {
     const pool = getPool();
     const { caseId } = req.params;
     const bodyResult = addCaseNoteSchema.safeParse(req.body);
-    
+
     if (!bodyResult.success) {
       return res.status(400).json({ message: bodyResult.error.message });
     }
@@ -171,7 +163,7 @@ router.post('/cases/:caseId/evidence', async (req, res, next) => {
     const pool = getPool();
     const { caseId } = req.params;
     const bodyResult = addCaseEvidenceSchema.safeParse(req.body);
-    
+
     if (!bodyResult.success) {
       return res.status(400).json({ message: bodyResult.error.message });
     }
@@ -202,16 +194,12 @@ router.get('/anomalies', async (req, res, next) => {
   try {
     const pool = getPool();
     const queryResult = anomalyDetectionQuerySchema.safeParse(req.query);
-    
+
     if (!queryResult.success) {
       return res.status(400).json({ message: queryResult.error.message });
     }
 
-    const anomalies = await detectAnomalies(
-      pool,
-      queryResult.data,
-      req.user!.role as Role
-    );
+    const anomalies = await detectAnomalies(pool, queryResult.data, req.user!.role as Role);
 
     res.json({ anomalies });
   } catch (error) {
@@ -228,17 +216,12 @@ router.get('/users/:userId/actions', async (req, res, next) => {
     const pool = getPool();
     const { userId } = req.params;
     const queryResult = userActionsQuerySchema.safeParse(req.query);
-    
+
     if (!queryResult.success) {
       return res.status(400).json({ message: queryResult.error.message });
     }
 
-    const result = await getUserActions(
-      pool,
-      userId,
-      queryResult.data,
-      req.user!.role as Role
-    );
+    const result = await getUserActions(pool, userId, queryResult.data, req.user!.role as Role);
 
     res.json(result);
   } catch (error) {
@@ -255,7 +238,7 @@ router.get('/cases/:caseId/export', async (req, res, next) => {
     const pool = getPool();
     const { caseId } = req.params;
     const queryResult = exportAuditTrailQuerySchema.safeParse(req.query);
-    
+
     if (!queryResult.success) {
       return res.status(400).json({ message: queryResult.error.message });
     }
@@ -276,4 +259,3 @@ router.get('/cases/:caseId/export', async (req, res, next) => {
 });
 
 export default router;
-

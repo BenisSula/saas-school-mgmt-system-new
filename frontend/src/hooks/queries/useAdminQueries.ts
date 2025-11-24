@@ -9,7 +9,7 @@ export function useAdminOverview() {
       // Use the aggregated overview endpoint
       const overview = await api.admin.getOverview();
       const data = unwrapApiResponse(overview);
-      
+
       if (!data) {
         console.warn('[useAdminOverview] No data returned from overview endpoint');
         return {
@@ -17,10 +17,10 @@ export function useAdminOverview() {
           users: [],
           teachers: [],
           students: [],
-          classes: []
+          classes: [],
         };
       }
-      
+
       // Transform the aggregated data to match the expected format
       // Note: We use recent items for display, but totals contain accurate counts
       return {
@@ -34,7 +34,7 @@ export function useAdminOverview() {
         roleDistribution: data.roleDistribution,
         statusDistribution: data.statusDistribution,
         activeSessionsCount: data.activeSessionsCount,
-        failedLoginAttemptsCount: data.failedLoginAttemptsCount
+        failedLoginAttemptsCount: data.failedLoginAttemptsCount,
       };
     } catch (error) {
       console.error('[useAdminOverview] Error fetching overview:', error);
@@ -44,15 +44,15 @@ export function useAdminOverview() {
         api.listUsers().catch(() => []),
         api.listTeachers().catch(() => []),
         api.listStudents().catch(() => []),
-        api.listClasses().catch(() => [])
+        api.listClasses().catch(() => []),
       ]);
-      
+
       return {
         school: results[0].status === 'fulfilled' ? results[0].value : null,
         users: results[1].status === 'fulfilled' ? results[1].value : [],
         teachers: results[2].status === 'fulfilled' ? results[2].value : [],
         students: results[3].status === 'fulfilled' ? results[3].value : [],
-        classes: results[4].status === 'fulfilled' ? results[4].value : []
+        classes: results[4].status === 'fulfilled' ? results[4].value : [],
       };
     }
   });

@@ -5,5 +5,8 @@
 
 export { useHodDashboard, type HODDashboardData } from './useHodDashboard';
 export { useHodTeachers, type HODTeacher, type UseHodTeachersFilters } from './useHodTeachers';
-export { useHodDepartmentReport, type HODDepartmentReport, type UseHodDepartmentReportFilters } from './useHodDepartmentReport';
-
+export {
+  useHodDepartmentReport,
+  type HODDepartmentReport,
+  type UseHodDepartmentReportFilters,
+} from './useHodDepartmentReport';

@@ -16,7 +16,12 @@ interface ResourceUploadModalProps {
   onSuccess?: () => void;
 }
 
-export function ResourceUploadModal({ isOpen, onClose, classId, onSuccess }: ResourceUploadModalProps) {
+export function ResourceUploadModal({
+  isOpen,
+  onClose,
+  classId,
+  onSuccess,
+}: ResourceUploadModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -34,12 +39,12 @@ export function ResourceUploadModal({ isOpen, onClose, classId, onSuccess }: Res
     formData.append('file', file);
 
     await uploadMutation.mutateAsync(formData);
-    
+
     // Reset form
     setTitle('');
     setDescription('');
     setFile(null);
-    
+
     onSuccess?.();
     onClose();
   };
@@ -104,4 +109,3 @@ export function ResourceUploadModal({ isOpen, onClose, classId, onSuccess }: Res
     </Modal>
   );
 }
-

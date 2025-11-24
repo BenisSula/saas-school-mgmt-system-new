@@ -12,12 +12,12 @@ import {
   bulkUpsertGrades,
   createExam,
   createExamSession,
-  generateExamExport
+  generateExamExport,
 } from '../services/examService';
 import {
   generateAccessToken,
   generateRefreshToken,
-  storeRefreshToken
+  storeRefreshToken,
 } from '../services/tokenService';
 import { recordSharedAuditLog } from '../services/auditLogService';
 import { type Role } from '../config/permissions';
@@ -106,7 +106,7 @@ const SUPERUSER_PASSWORD = process.env.SEED_SUPERUSER_PASSWORD ?? 'SuperOwner#20
 const ADMIN_PASSWORDS = new Map<string, string>([
   ['fatou.jallow@newhorizon.edu.gm', 'NhsAdmin@2025'],
   ['lamin.sowe@stpeterslamin.edu.gm', 'StpAdmin@2025'],
-  ['musu.bah@daddyjobe.edu.gm', 'DjcAdmin@2025']
+  ['musu.bah@daddyjobe.edu.gm', 'DjcAdmin@2025'],
 ]);
 
 const TEACHER_PASSWORDS = new Map<string, string>([
@@ -136,7 +136,7 @@ const TEACHER_PASSWORDS = new Map<string, string>([
   ['alieu.sanyang@daddyjobe.edu.gm', 'TeachDJC06@2025'],
   ['jainaba.camara@daddyjobe.edu.gm', 'TeachDJC07@2025'],
   ['lamin.bah@daddyjobe.edu.gm', 'TeachDJC08@2025'],
-  ['omar.jallow@daddyjobe.edu.gm', 'TeachDJC09@2025']
+  ['omar.jallow@daddyjobe.edu.gm', 'TeachDJC09@2025'],
 ]);
 
 const ENDPOINT_TARGETS: Record<string, { average: number; max: number }> = {
@@ -144,7 +144,7 @@ const ENDPOINT_TARGETS: Record<string, { average: number; max: number }> = {
   attendance: { average: 600, max: 900 },
   results: { average: 700, max: 1000 },
   report: { average: 1000, max: 1500 },
-  notifications: { average: 400, max: 600 }
+  notifications: { average: 400, max: 600 },
 };
 
 function computeStats(samples: number[]): TimingStats {
@@ -243,7 +243,7 @@ async function simulateLogins(
           userId: user.id,
           tenantId: tenantId ?? 'shared',
           email: user.email,
-          role: user.role
+          role: user.role,
         };
         accessToken = generateAccessToken(tokenPayload);
         const refreshInfo = generateRefreshToken(tokenPayload);
@@ -261,7 +261,7 @@ async function simulateLogins(
         refreshToken,
         tenantId,
         schema,
-        role: user.role
+        role: user.role,
       };
       sessions.set(user.id, sessionRecord);
 
@@ -275,8 +275,8 @@ async function simulateLogins(
         details: {
           simulationPhase: 'phase6',
           ipAddress: '127.0.0.1',
-          durationMs: round(duration)
-        }
+          durationMs: round(duration),
+        },
       });
     } catch {
       failures += 1;
@@ -303,7 +303,7 @@ async function simulateLogins(
     byRole[role] = {
       count: roleMetrics.times.length,
       avgMs: avg,
-      failures: roleMetrics.failures
+      failures: roleMetrics.failures,
     };
   });
 
@@ -314,8 +314,8 @@ async function simulateLogins(
       successes,
       failures,
       averageLoginMs,
-      byRole
-    }
+      byRole,
+    },
   };
 }
 
@@ -404,8 +404,8 @@ async function measureAttendanceMark(
           metadata: {
             simulationPhase: 'phase6',
             className: assignment.class_name,
-            subjectName: assignment.subject_name
-          }
+            subjectName: assignment.subject_name,
+          },
         };
       });
       if (marks.length > 0) {
@@ -473,7 +473,7 @@ async function measureResultsEntry(
         const examRecord = (await createExam(client, tenant.schema_name, {
           name: `Phase6 Benchmark - ${assignment.class_name}`,
           description: 'Phase 6 simulated exam',
-          metadata: { simulationPhase: 'phase6' }
+          metadata: { simulationPhase: 'phase6' },
         })) as { id: string };
 
         await createExamSession(
@@ -484,7 +484,7 @@ async function measureResultsEntry(
             classId: assignment.class_id,
             subject: assignment.subject_name,
             scheduledAt: new Date().toISOString(),
-            invigilator: 'Simulation Bot'
+            invigilator: 'Simulation Bot',
           },
           teacherUser.id
         );
@@ -499,7 +499,7 @@ async function measureResultsEntry(
           subject: assignment.subject_name,
           score: 55 + Math.round(Math.random() * 40),
           remarks: `Phase6 simulated score #${index + 1}`,
-          classId: assignment.class_id
+          classId: assignment.class_id,
         }));
 
         const start = performance.now();
@@ -604,7 +604,7 @@ async function executeRbacChecks(
       expectedStatus: 403,
       actualStatus: response.status,
       passed: response.status === 403,
-      description: 'Student cannot access teacher class roster'
+      description: 'Student cannot access teacher class roster',
     });
   }
 
@@ -619,7 +619,7 @@ async function executeRbacChecks(
       expectedStatus: 403,
       actualStatus: response.status,
       passed: response.status === 403,
-      description: 'Teacher cannot view superuser school list'
+      description: 'Teacher cannot view superuser school list',
     });
   }
 
@@ -634,7 +634,7 @@ async function executeRbacChecks(
       expectedStatus: 403,
       actualStatus: response.status,
       passed: response.status === 403,
-      description: 'Admin cannot delete schools outside their scope'
+      description: 'Admin cannot delete schools outside their scope',
     });
   }
 
@@ -650,7 +650,7 @@ async function executeRbacChecks(
       expectedStatus: 200,
       actualStatus: response.status,
       passed: response.status === 200,
-      description: 'Superuser can list students for any tenant'
+      description: 'Superuser can list students for any tenant',
     });
   }
 
@@ -671,7 +671,7 @@ async function writeReports(
       `${result.method} ${result.endpoint}`,
       `expected=${result.expectedStatus}`,
       `actual=${result.actualStatus}`,
-      `message="${result.description}"`
+      `message="${result.description}"`,
     ].join(' ')
   );
   await fs.writeFile(RBAC_LOG_PATH, logLines.join('\n'), 'utf-8');
@@ -720,7 +720,7 @@ async function main(): Promise<void> {
         concurrency: 8,
         averageMs: round(dashboardStats.average),
         p95Ms: round(dashboardStats.p95),
-        maxThresholdMs: ENDPOINT_TARGETS.dashboard.max
+        maxThresholdMs: ENDPOINT_TARGETS.dashboard.max,
       });
 
       const firstRun = await measureHttpEndpoint(
@@ -759,7 +759,7 @@ async function main(): Promise<void> {
         concurrency: 5,
         averageMs: round(notificationStats.average),
         p95Ms: round(notificationStats.p95),
-        maxThresholdMs: ENDPOINT_TARGETS.notifications.max
+        maxThresholdMs: ENDPOINT_TARGETS.notifications.max,
       });
     }
 
@@ -772,7 +772,7 @@ async function main(): Promise<void> {
         averageMs: round(attendanceStats.average),
         p95Ms: round(attendanceStats.p95),
         maxThresholdMs: ENDPOINT_TARGETS.attendance.max,
-        notes: 'Measured inside transaction (rolled back)'
+        notes: 'Measured inside transaction (rolled back)',
       });
 
       const resultsStats = await measureResultsEntry(pool, sampleTenant, sampleTeacherUser);
@@ -783,7 +783,7 @@ async function main(): Promise<void> {
         averageMs: round(resultsStats.average),
         p95Ms: round(resultsStats.p95),
         maxThresholdMs: ENDPOINT_TARGETS.results.max,
-        notes: 'Measured inside transaction (rolled back)'
+        notes: 'Measured inside transaction (rolled back)',
       });
 
       const reportStats = await measureReportGeneration(pool, sampleTenant);
@@ -793,7 +793,7 @@ async function main(): Promise<void> {
         concurrency: 1,
         averageMs: round(reportStats.average),
         p95Ms: round(reportStats.p95),
-        maxThresholdMs: ENDPOINT_TARGETS.report.max
+        maxThresholdMs: ENDPOINT_TARGETS.report.max,
       });
     }
 
@@ -808,15 +808,15 @@ async function main(): Promise<void> {
         successful_logins: loginMetrics.successes,
         failed_logins: loginMetrics.failures,
         average_login_time_ms: loginMetrics.averageLoginMs,
-        report_generated_at: new Date().toISOString()
+        report_generated_at: new Date().toISOString(),
       },
       login_metrics: loginMetrics,
       endpoints: endpointMetrics,
       cache_metrics: cacheMetrics,
       rbac: {
         checks_passed: passedChecks,
-        violations: failedChecks
-      }
+        violations: failedChecks,
+      },
     };
 
     await writeReports(performanceSummary, rbacResults);

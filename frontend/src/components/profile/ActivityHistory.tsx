@@ -13,7 +13,7 @@ interface ActivityHistoryProps {
 
 export function ActivityHistory({
   activities,
-  emptyMessage = 'No activity history available'
+  emptyMessage = 'No activity history available',
 }: ActivityHistoryProps) {
   if (activities.length === 0) {
     return <p className="text-sm text-[var(--brand-muted)]">{emptyMessage}</p>;

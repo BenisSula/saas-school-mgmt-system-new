@@ -9,20 +9,20 @@ import {
   createBackupSchedule,
   getBackupSchedules,
   updateBackupSchedule,
-  deleteBackupSchedule
+  deleteBackupSchedule,
 } from '../../services/dataManagement/backupService';
 import {
   createExportJob,
   getExportJobs,
   createImportJob,
-  getImportJobs
+  getImportJobs,
 } from '../../services/dataManagement/exportImportService';
 import {
   createGdprErasureRequest,
   verifyGdprErasureRequest,
   processGdprErasure,
   getGdprErasureRequests,
-  cancelGdprErasureRequest
+  cancelGdprErasureRequest,
 } from '../../services/dataManagement/gdprService';
 import { z } from 'zod';
 
@@ -35,7 +35,7 @@ const createBackupSchema = z.object({
   backupType: z.enum(['full', 'incremental', 'schema_only', 'data_only']),
   storageProvider: z.enum(['local', 's3', 'azure', 'gcs']),
   storageLocation: z.string(),
-  metadata: z.record(z.string(), z.unknown()).optional()
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const createBackupScheduleSchema = z.object({
@@ -45,7 +45,7 @@ const createBackupScheduleSchema = z.object({
   scheduleCron: z.string(),
   retentionDays: z.number().int().positive().optional(),
   storageProvider: z.enum(['local', 's3', 'azure', 'gcs']),
-  storageConfig: z.record(z.string(), z.unknown()).optional()
+  storageConfig: z.record(z.string(), z.unknown()).optional(),
 });
 
 const createExportSchema = z.object({
@@ -53,7 +53,7 @@ const createExportSchema = z.object({
   exportType: z.enum(['full', 'partial', 'gdpr', 'custom']),
   format: z.enum(['json', 'csv', 'sql', 'excel']),
   tablesIncluded: z.array(z.string()).optional(),
-  filters: z.record(z.string(), z.unknown()).optional()
+  filters: z.record(z.string(), z.unknown()).optional(),
 });
 
 const createImportSchema = z.object({
@@ -62,7 +62,7 @@ const createImportSchema = z.object({
   format: z.enum(['json', 'csv', 'sql', 'excel']),
   fileUrl: z.string().url(),
   fileSizeBytes: z.number().int().optional(),
-  tablesTargeted: z.array(z.string()).optional()
+  tablesTargeted: z.array(z.string()).optional(),
 });
 
 const createGdprRequestSchema = z.object({
@@ -70,7 +70,7 @@ const createGdprRequestSchema = z.object({
   userId: z.string().uuid(),
   requestType: z.enum(['full_erasure', 'anonymize', 'export_only']),
   reason: z.string().optional(),
-  dataCategories: z.array(z.string()).optional()
+  dataCategories: z.array(z.string()).optional(),
 });
 
 // Backup Jobs
@@ -87,7 +87,7 @@ router.post('/backups', async (req, res, next) => {
       const backup = await createBackup(client, {
         ...parsed.data,
         tenantId: req.tenant?.id,
-        createdBy: req.user?.id
+        createdBy: req.user?.id,
       });
       res.status(201).json(backup);
     } finally {
@@ -108,7 +108,7 @@ router.get('/backups', async (req, res, next) => {
         status: req.query.status as string,
         backupType: req.query.backupType as string,
         limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
-        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined
+        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
     } finally {
@@ -133,7 +133,7 @@ router.post('/backup-schedules', async (req, res, next) => {
       const schedule = await createBackupSchedule(client, {
         ...parsed.data,
         tenantId: req.tenant?.id,
-        createdBy: req.user?.id
+        createdBy: req.user?.id,
       });
       res.status(201).json(schedule);
     } finally {
@@ -202,7 +202,7 @@ router.post('/exports', async (req, res, next) => {
     try {
       const job = await createExportJob(client, {
         ...parsed.data,
-        requestedBy: req.user?.id
+        requestedBy: req.user?.id,
       });
       res.status(201).json(job);
     } finally {
@@ -223,7 +223,7 @@ router.get('/exports', async (req, res, next) => {
         status: req.query.status as string,
         exportType: req.query.exportType as string,
         limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
-        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined
+        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
     } finally {
@@ -247,7 +247,7 @@ router.post('/imports', async (req, res, next) => {
     try {
       const job = await createImportJob(client, {
         ...parsed.data,
-        requestedBy: req.user?.id
+        requestedBy: req.user?.id,
       });
       res.status(201).json(job);
     } finally {
@@ -268,7 +268,7 @@ router.get('/imports', async (req, res, next) => {
         status: req.query.status as string,
         importType: req.query.importType as string,
         limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
-        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined
+        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
     } finally {
@@ -292,7 +292,7 @@ router.post('/gdpr/requests', async (req, res, next) => {
     try {
       const request = await createGdprErasureRequest(client, {
         ...parsed.data,
-        requestedBy: req.user?.id
+        requestedBy: req.user?.id,
       });
       res.status(201).json(request);
     } finally {
@@ -327,20 +327,24 @@ router.post('/gdpr/requests/:id/verify', async (req, res, next) => {
   }
 });
 
-router.post('/gdpr/requests/:id/process', requirePermission('tenants:manage'), async (req, res, next) => {
-  try {
-    const pool = getPool();
-    const client = await pool.connect();
+router.post(
+  '/gdpr/requests/:id/process',
+  requirePermission('tenants:manage'),
+  async (req, res, next) => {
     try {
-      const result = await processGdprErasure(client, req.params.id, req.user?.id || '');
-      res.json(result);
-    } finally {
-      client.release();
+      const pool = getPool();
+      const client = await pool.connect();
+      try {
+        const result = await processGdprErasure(client, req.params.id, req.user?.id || '');
+        res.json(result);
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      next(error);
     }
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 router.get('/gdpr/requests', async (req, res, next) => {
   try {
@@ -352,7 +356,7 @@ router.get('/gdpr/requests', async (req, res, next) => {
         userId: req.query.userId as string,
         status: req.query.status as string,
         limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
-        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined
+        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
     } finally {
@@ -379,4 +383,3 @@ router.post('/gdpr/requests/:id/cancel', async (req, res, next) => {
 });
 
 export default router;
-

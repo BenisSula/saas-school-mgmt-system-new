@@ -10,7 +10,6 @@ const router = Router();
 
 router.use(authenticate, tenantResolver(), ensureTenantContext());
 
-
 // POST /upload - Upload a file
 const uploadSchema = z.object({
   file: z.string(), // base64 encoded file
@@ -18,7 +17,7 @@ const uploadSchema = z.object({
   mimetype: z.string().min(1),
   description: z.string().optional(),
   entityType: z.enum(['user', 'student', 'teacher', 'hod']).optional(),
-  entityId: z.string().uuid().optional()
+  entityId: z.string().uuid().optional(),
 });
 
 router.post('/', fileUploadLimiter, async (req, res, next) => {
@@ -35,25 +34,32 @@ router.post('/', fileUploadLimiter, async (req, res, next) => {
     // Server-side validation
     const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     const ALLOWED_MIMETYPES = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-      'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'text/csv', 'text/plain'
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/csv',
+      'text/plain',
     ];
 
     const fileData = Buffer.from(parsed.data.file, 'base64');
-    
+
     // Validate file size
     if (fileData.length > MAX_FILE_SIZE) {
-      return res.status(400).json({ 
-        message: `File size (${(fileData.length / 1024 / 1024).toFixed(2)}MB) exceeds maximum allowed size (10MB)` 
+      return res.status(400).json({
+        message: `File size (${(fileData.length / 1024 / 1024).toFixed(2)}MB) exceeds maximum allowed size (10MB)`,
       });
     }
 
     // Validate MIME type
     if (!ALLOWED_MIMETYPES.includes(parsed.data.mimetype)) {
-      return res.status(400).json({ 
-        message: `File type ${parsed.data.mimetype} is not allowed. Allowed types: ${ALLOWED_MIMETYPES.join(', ')}` 
+      return res.status(400).json({
+        message: `File type ${parsed.data.mimetype} is not allowed. Allowed types: ${ALLOWED_MIMETYPES.join(', ')}`,
       });
     }
 
@@ -62,13 +68,13 @@ router.post('/', fileUploadLimiter, async (req, res, next) => {
         data: fileData,
         filename: parsed.data.filename,
         mimetype: parsed.data.mimetype,
-        size: fileData.length
+        size: fileData.length,
       },
       userId: req.user.id,
       tenantId: req.tenant.id,
       description: parsed.data.description,
       entityType: parsed.data.entityType,
-      entityId: parsed.data.entityId
+      entityId: parsed.data.entityId,
     });
 
     res.status(201).json(result);
@@ -122,4 +128,3 @@ router.delete('/:id', mutationRateLimiter, async (req, res, next) => {
 });
 
 export default router;
-

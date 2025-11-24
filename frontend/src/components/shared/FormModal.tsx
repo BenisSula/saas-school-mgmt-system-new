@@ -44,7 +44,7 @@ export function FormModal<TData = unknown, TVariables = unknown>({
   onSuccess,
   saveLabel = 'Save',
   cancelLabel = 'Cancel',
-  footer
+  footer,
 }: FormModalProps<TData, TVariables>) {
   const queryClient = useQueryClient();
 
@@ -101,14 +101,8 @@ export function FormModal<TData = unknown, TVariables = unknown>({
   );
 
   return (
-    <Modal
-      title={title}
-      isOpen={isOpen}
-      onClose={onClose}
-      footer={footer || defaultFooter}
-    >
+    <Modal title={title} isOpen={isOpen} onClose={onClose} footer={footer || defaultFooter}>
       {children}
     </Modal>
   );
 }
-

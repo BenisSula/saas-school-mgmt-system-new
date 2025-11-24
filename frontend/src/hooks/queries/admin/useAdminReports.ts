@@ -61,4 +61,3 @@ export function usePerformanceReport(filters?: PerformanceReportFilters) {
     staleTime: 60000, // 1 minute
   });
 }
-

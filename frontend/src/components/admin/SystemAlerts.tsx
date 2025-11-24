@@ -29,7 +29,7 @@ export function SystemAlerts({
   showTenantErrors = false,
   showSyncFailures = false,
   showTermWarnings = false,
-  className = ''
+  className = '',
 }: SystemAlertsProps) {
   const defaultAlerts: SystemAlert[] = [];
 
@@ -40,7 +40,7 @@ export function SystemAlerts({
       type: 'warning',
       title: 'Expired Passwords',
       message: 'Some users have expired passwords. Please remind them to update their passwords.',
-      icon: <Lock className="h-4 w-4" />
+      icon: <Lock className="h-4 w-4" />,
     });
   }
 
@@ -50,7 +50,7 @@ export function SystemAlerts({
       type: 'error',
       title: 'Unauthorized Login Attempts',
       message: 'Multiple failed login attempts detected. Review security logs.',
-      icon: <Shield className="h-4 w-4" />
+      icon: <Shield className="h-4 w-4" />,
     });
   }
 
@@ -60,7 +60,7 @@ export function SystemAlerts({
       type: 'error',
       title: 'Tenant Errors',
       message: 'Some tenant operations are failing. Check system logs.',
-      icon: <AlertCircle className="h-4 w-4" />
+      icon: <AlertCircle className="h-4 w-4" />,
     });
   }
 
@@ -70,7 +70,7 @@ export function SystemAlerts({
       type: 'warning',
       title: 'Sync Failures',
       message: 'Data synchronization issues detected. Some data may be out of sync.',
-      icon: <RefreshCw className="h-4 w-4" />
+      icon: <RefreshCw className="h-4 w-4" />,
     });
   }
 
@@ -80,7 +80,7 @@ export function SystemAlerts({
       type: 'info',
       title: 'Academic Term',
       message: 'Current academic term is ending soon. Prepare for next term setup.',
-      icon: <Calendar className="h-4 w-4" />
+      icon: <Calendar className="h-4 w-4" />,
     });
   }
 
@@ -114,4 +114,3 @@ export function SystemAlerts({
 }
 
 export default SystemAlerts;
-

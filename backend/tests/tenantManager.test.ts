@@ -8,7 +8,7 @@ import tenantResolver from '../src/middleware/tenantResolver';
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -31,7 +31,7 @@ describe('tenantManager', () => {
       {
         name: 'Alpha Academy',
         domain: 'alpha.local',
-        schemaName: 'tenant_alpha'
+        schemaName: 'tenant_alpha',
       },
       pool
     );
@@ -62,15 +62,15 @@ describe('tenantResolver middleware', () => {
         .mockResolvedValueOnce({ rows: [{ count: 1 }], rowCount: 1 })
         // Third call: SET search_path TO public during cleanup
         .mockResolvedValueOnce({ rows: [], rowCount: 0 }),
-      release: jest.fn()
+      release: jest.fn(),
     };
 
     const mockPool = {
       query: jest.fn().mockResolvedValue({
         rowCount: 1,
-        rows: [{ id: 'tenant-id', schema_name: 'tenant_alpha', name: 'Alpha Academy' }]
+        rows: [{ id: 'tenant-id', schema_name: 'tenant_alpha', name: 'Alpha Academy' }],
       }),
-      connect: jest.fn().mockResolvedValue(mockClient)
+      connect: jest.fn().mockResolvedValue(mockClient),
     };
 
     mockedGetPool.mockReturnValue(mockPool as unknown as Pool);
@@ -93,7 +93,7 @@ describe('tenantResolver middleware', () => {
     expect(response.body.tenant.schema).toBe('tenant_alpha');
 
     expect(mockPool.query).toHaveBeenCalledWith(expect.stringContaining('FROM shared.tenants'), [
-      'tenant_alpha'
+      'tenant_alpha',
     ]);
     expect(mockClient.query).toHaveBeenNthCalledWith(1, 'SET search_path TO tenant_alpha, public');
     expect(mockClient.query).toHaveBeenNthCalledWith(

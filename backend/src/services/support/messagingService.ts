@@ -68,7 +68,7 @@ export async function createMessage(
           input.messageType,
           input.priority || 'normal',
           JSON.stringify(input.attachments || []),
-          JSON.stringify(input.metadata || {})
+          JSON.stringify(input.metadata || {}),
         ]
       );
       messages.push(msgResult.rows[0]);
@@ -100,7 +100,7 @@ export async function createMessage(
       input.messageType,
       input.priority || 'normal',
       JSON.stringify(input.attachments || []),
-      JSON.stringify(input.metadata || {})
+      JSON.stringify(input.metadata || {}),
     ]
   );
 
@@ -124,7 +124,7 @@ export async function getUserMessages(
   }
 ): Promise<{ messages: unknown[]; total: number; unreadCount: number }> {
   const conditions: string[] = [
-    `(recipient_id = $1 OR (recipient_role IS NOT NULL AND recipient_role = (SELECT role FROM shared.users WHERE id = $1)))`
+    `(recipient_id = $1 OR (recipient_role IS NOT NULL AND recipient_role = (SELECT role FROM shared.users WHERE id = $1)))`,
   ];
   const values: unknown[] = [userId];
   let paramIndex = 2;
@@ -198,7 +198,7 @@ export async function getUserMessages(
   return {
     messages: messagesResult.rows,
     total,
-    unreadCount
+    unreadCount,
   };
 }
 
@@ -285,6 +285,6 @@ export async function getMessageThread(
 
   return {
     ...thread,
-    messages: messagesResult.rows
+    messages: messagesResult.rows,
   };
 }

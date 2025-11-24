@@ -23,7 +23,7 @@ export async function resolveUserId(
   if (!userId) {
     return null;
   }
-  
+
   try {
     const result = await pool.query(
       `
@@ -33,17 +33,17 @@ export async function resolveUserId(
       `,
       [userId]
     );
-    
+
     if (result.rows.length === 0) {
       return null;
     }
-    
+
     const row = result.rows[0];
     return {
       id: row.id,
       email: row.email,
       fullName: row.full_name || null,
-      role: row.role || null
+      role: row.role || null,
     };
   } catch (error) {
     console.error('[userSerializer] Error resolving user:', error);
@@ -60,11 +60,11 @@ export async function resolveUserIds(
   userIds: (string | null | undefined)[]
 ): Promise<Map<string, UserInfo>> {
   const validIds = userIds.filter((id): id is string => Boolean(id));
-  
+
   if (validIds.length === 0) {
     return new Map();
   }
-  
+
   try {
     const result = await pool.query(
       `
@@ -74,21 +74,20 @@ export async function resolveUserIds(
       `,
       [validIds]
     );
-    
+
     const userMap = new Map<string, UserInfo>();
     for (const row of result.rows) {
       userMap.set(row.id, {
         id: row.id,
         email: row.email,
         fullName: row.full_name || null,
-        role: row.role || null
+        role: row.role || null,
       });
     }
-    
+
     return userMap;
   } catch (error) {
     console.error('[userSerializer] Error resolving users:', error);
     return new Map();
   }
 }
-

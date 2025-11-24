@@ -56,11 +56,11 @@ export function PasswordChangeSection() {
     try {
       await authApi.changePassword({
         currentPassword,
-        newPassword
+        newPassword,
       });
 
       toast.success('Password changed successfully');
-      
+
       // Reset form
       setCurrentPassword('');
       setNewPassword('');
@@ -69,7 +69,7 @@ export function PasswordChangeSection() {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to change password';
       toast.error(errorMessage);
-      
+
       // Set field-specific errors if available
       if (error instanceof Error && error.message.includes('incorrect')) {
         setErrors({ currentPassword: 'Current password is incorrect' });
@@ -89,7 +89,10 @@ export function PasswordChangeSection() {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Current Password */}
         <div>
-          <label htmlFor="currentPassword" className="mb-2 block text-sm font-medium text-[var(--brand-text-primary)]">
+          <label
+            htmlFor="currentPassword"
+            className="mb-2 block text-sm font-medium text-[var(--brand-text-primary)]"
+          >
             Current Password
           </label>
           <div className="relative">
@@ -109,11 +112,7 @@ export function PasswordChangeSection() {
               className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--brand-muted)] hover:text-[var(--brand-text-primary)]"
               tabIndex={-1}
             >
-              {showCurrentPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
+              {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
           {errors.currentPassword && (
@@ -123,7 +122,10 @@ export function PasswordChangeSection() {
 
         {/* New Password */}
         <div>
-          <label htmlFor="newPassword" className="mb-2 block text-sm font-medium text-[var(--brand-text-primary)]">
+          <label
+            htmlFor="newPassword"
+            className="mb-2 block text-sm font-medium text-[var(--brand-text-primary)]"
+          >
             New Password
           </label>
           <div className="relative">
@@ -144,16 +146,10 @@ export function PasswordChangeSection() {
               className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--brand-muted)] hover:text-[var(--brand-text-primary)]"
               tabIndex={-1}
             >
-              {showNewPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
+              {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-          {errors.newPassword && (
-            <p className="mt-1 text-sm text-red-500">{errors.newPassword}</p>
-          )}
+          {errors.newPassword && <p className="mt-1 text-sm text-red-500">{errors.newPassword}</p>}
           <p className="mt-1 text-xs text-[var(--brand-muted)]">
             Must be at least 8 characters long
           </p>
@@ -161,7 +157,10 @@ export function PasswordChangeSection() {
 
         {/* Confirm Password */}
         <div>
-          <label htmlFor="confirmPassword" className="mb-2 block text-sm font-medium text-[var(--brand-text-primary)]">
+          <label
+            htmlFor="confirmPassword"
+            className="mb-2 block text-sm font-medium text-[var(--brand-text-primary)]"
+          >
             Confirm New Password
           </label>
           <div className="relative">
@@ -182,11 +181,7 @@ export function PasswordChangeSection() {
               className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--brand-muted)] hover:text-[var(--brand-text-primary)]"
               tabIndex={-1}
             >
-              {showConfirmPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
+              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
           {errors.confirmPassword && (
@@ -220,4 +215,3 @@ export function PasswordChangeSection() {
     </ProfileSection>
   );
 }
-

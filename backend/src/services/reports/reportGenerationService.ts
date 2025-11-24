@@ -64,7 +64,7 @@ export async function getReportDefinition(
     parameters: row.parameters || {},
     columns: row.columns || [],
     filters: row.filters || {},
-    rolePermissions: row.role_permissions || []
+    rolePermissions: row.role_permissions || [],
   };
 }
 
@@ -123,7 +123,7 @@ export async function executeReport(
       reportDefinition.tenantId || null,
       reportDefinition.id,
       userId || null,
-      JSON.stringify(parameters)
+      JSON.stringify(parameters),
     ]
   );
 
@@ -172,8 +172,8 @@ export async function executeReport(
           : dataResult.fields.map((field) => ({
               name: field.name,
               type: field.dataTypeID.toString(),
-              label: field.name
-            }))
+              label: field.name,
+            })),
     };
   } catch (error) {
     const executionTimeMs = Date.now() - startTime;
@@ -210,7 +210,7 @@ async function createReportSnapshot(
   // Calculate summary metrics
   const summaryMetrics: Record<string, unknown> = {
     rowCount: data.length,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 
   // If data has numeric columns, calculate aggregates
@@ -223,7 +223,7 @@ async function createReportSnapshot(
           sum: values.reduce((a, b) => a + b, 0),
           avg: values.reduce((a, b) => a + b, 0) / values.length,
           min: Math.min(...values),
-          max: Math.max(...values)
+          max: Math.max(...values),
         };
       }
     }
@@ -247,7 +247,7 @@ async function createReportSnapshot(
       executionId,
       today,
       JSON.stringify(data),
-      JSON.stringify(summaryMetrics)
+      JSON.stringify(summaryMetrics),
     ]
   );
 }
@@ -279,7 +279,7 @@ export async function getHistoricalTrend(
   return result.rows.map((row) => ({
     date: row.snapshot_date,
     metrics: row.summary_metrics || {},
-    data: row.data || []
+    data: row.data || [],
   }));
 }
 
@@ -303,14 +303,14 @@ export async function compareWithHistory(
     return {
       current: { rowCount: currentData.length },
       previous: { rowCount: 0 },
-      change: {}
+      change: {},
     };
   }
 
   const previousSnapshot = trend[trend.length - 1];
   const currentMetrics: Record<string, unknown> = {
     rowCount: currentData.length,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 
   // Calculate current metrics
@@ -323,7 +323,7 @@ export async function compareWithHistory(
           sum: values.reduce((a, b) => a + b, 0),
           avg: values.reduce((a, b) => a + b, 0) / values.length,
           min: Math.min(...values),
-          max: Math.max(...values)
+          max: Math.max(...values),
         };
       }
     }
@@ -354,6 +354,6 @@ export async function compareWithHistory(
   return {
     current: currentMetrics,
     previous: previousMetrics,
-    change
+    change,
   };
 }

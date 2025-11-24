@@ -46,7 +46,7 @@ export function SubscriptionCard() {
     trialing: 'text-blue-500',
     past_due: 'text-yellow-500',
     canceled: 'text-gray-500',
-    unpaid: 'text-red-500'
+    unpaid: 'text-red-500',
   };
 
   const statusIcons: Record<string, typeof CheckCircle2> = {
@@ -54,26 +54,27 @@ export function SubscriptionCard() {
     trialing: Calendar,
     past_due: AlertCircle,
     canceled: AlertCircle,
-    unpaid: AlertCircle
+    unpaid: AlertCircle,
   };
 
   const StatusIcon = statusIcons[subscription.status] || AlertCircle;
   const statusColor = statusColors[subscription.status] || 'text-gray-500';
 
-  const formatAmount = (cents?: number, currency = 'USD') => {
+  // Memoize formatter to avoid recreating on every render
+  const formatAmount = useCallback((cents?: number, currency = 'USD') => {
     if (!cents) return 'N/A';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency
+      currency,
     }).format(cents / 100);
-  };
+  }, []);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 

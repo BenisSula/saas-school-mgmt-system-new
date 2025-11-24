@@ -9,7 +9,7 @@ vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
-    useNavigate: () => mockNavigate
+    useNavigate: () => mockNavigate,
   };
 });
 
@@ -118,4 +118,3 @@ describe('QuickActionPanel', () => {
     expect(grid).toHaveClass('sm:grid-cols-2', 'lg:grid-cols-4');
   });
 });
-

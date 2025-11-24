@@ -9,7 +9,7 @@ export const dashboardQueryConfig = {
   retry: 1,
   staleTime: 60_000, // 60 seconds
   refetchOnWindowFocus: false,
-  placeholderData: keepPreviousData
+  placeholderData: keepPreviousData,
 } as const satisfies Partial<QueryOptions<unknown, Error, unknown, unknown>>;
 
 /**
@@ -27,6 +27,6 @@ export function createDashboardQueryOptions<TData>(
     queryKey,
     queryFn,
     enabled: !!tenantId,
-    ...dashboardQueryConfig
+    ...dashboardQueryConfig,
   };
 }

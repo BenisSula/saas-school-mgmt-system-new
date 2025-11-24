@@ -12,12 +12,12 @@ export function formatValidationErrors(error: z.ZodError): string {
     const err = error.issues[0];
     const field = err.path.join('.');
     const message = err.message;
-    
+
     // If message already contains the field name, return as is
     if (message.toLowerCase().includes(field.toLowerCase())) {
       return message;
     }
-    
+
     // Otherwise, format with field name
     const fieldLabel = formatFieldName(field);
     return `${fieldLabel}: ${message}`;
@@ -51,13 +51,16 @@ function formatFieldName(field: string): string {
     password: 'Password',
     username: 'Username',
     fullName: 'Full name',
-    phone: 'Phone'
+    phone: 'Phone',
   };
 
-  return fieldMap[field] || field
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/^./, (str) => str.toUpperCase())
-    .trim();
+  return (
+    fieldMap[field] ||
+    field
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, (str) => str.toUpperCase())
+      .trim()
+  );
 }
 
 /**
@@ -68,14 +71,13 @@ export function validateWithZod<T>(
   data: unknown
 ): { success: true; data: T } | { success: false; error: string } {
   const result = schema.safeParse(data);
-  
+
   if (result.success) {
     return { success: true, data: result.data };
   }
-  
+
   return {
     success: false,
-    error: formatValidationErrors(result.error)
+    error: formatValidationErrors(result.error),
   };
 }
-

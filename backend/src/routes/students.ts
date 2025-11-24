@@ -15,7 +15,7 @@ import { getClassResources } from '../services/classResourcesService';
 import { getClassAnnouncements } from '../services/teacherAnnouncementsService';
 import { getStudentAttendance, getAttendanceSummary } from '../services/attendanceService';
 import { createAuditLog } from '../services/audit/enhancedAuditService';
-import { listStudents } from '../services/studentService';
+import { listStudents } from '../services/students/studentService';
 import { createPaginatedResponse } from '../middleware/pagination';
 
 const router = Router();
@@ -76,7 +76,11 @@ router.get('/me/dashboard', requirePermission('dashboard:view'), async (req, res
     const { tenant, tenantClient, user } = context;
 
     // Get student's class
-    const studentResult = await tenantClient.query<{ id: string; class_id: string | null; class_uuid: string | null }>(
+    const studentResult = await tenantClient.query<{
+      id: string;
+      class_id: string | null;
+      class_uuid: string | null;
+    }>(
       `SELECT id, class_id, class_uuid FROM ${tenant.schema}.students WHERE id = $1 OR email = $2 LIMIT 1`,
       [user.id, user.email]
     );
@@ -104,9 +108,9 @@ router.get('/me/dashboard', requirePermission('dashboard:view'), async (req, res
         resourceId: undefined,
         details: {
           studentId: student.id,
-          classId
+          classId,
         },
-        severity: 'info'
+        severity: 'info',
       });
     } catch (auditError) {
       console.error('[students route] Failed to create audit log:', auditError);
@@ -134,7 +138,10 @@ router.get('/announcements', requirePermission('messages:receive'), async (req, 
     }
 
     // Verify student belongs to class
-    const studentCheck = await tenantClient.query<{ class_id: string | null; class_uuid: string | null }>(
+    const studentCheck = await tenantClient.query<{
+      class_id: string | null;
+      class_uuid: string | null;
+    }>(
       `SELECT class_id, class_uuid FROM ${tenant.schema}.students WHERE id = $1 OR email = $2 LIMIT 1`,
       [user.id, user.email]
     );
@@ -174,7 +181,11 @@ router.get('/resources', requirePermission('dashboard:view'), async (req, res, n
     }
 
     // Verify student belongs to class
-    const studentCheck = await tenantClient.query<{ id: string; class_id: string | null; class_uuid: string | null }>(
+    const studentCheck = await tenantClient.query<{
+      id: string;
+      class_id: string | null;
+      class_uuid: string | null;
+    }>(
       `SELECT id, class_id, class_uuid FROM ${tenant.schema}.students WHERE id = $1 OR email = $2 LIMIT 1`,
       [user.id, user.email]
     );
@@ -202,9 +213,9 @@ router.get('/resources', requirePermission('dashboard:view'), async (req, res, n
         resourceId: undefined,
         details: {
           studentId: student.id,
-          classId
+          classId,
         },
-        severity: 'info'
+        severity: 'info',
       });
     } catch (auditError) {
       console.error('[students route] Failed to create audit log:', auditError);

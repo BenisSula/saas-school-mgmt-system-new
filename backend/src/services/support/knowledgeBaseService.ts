@@ -71,7 +71,7 @@ export async function createKbCategory(
       input.name,
       slug,
       input.description || null,
-      input.displayOrder || 0
+      input.displayOrder || 0,
     ]
   );
 
@@ -81,10 +81,7 @@ export async function createKbCategory(
 /**
  * Get KB categories
  */
-export async function getKbCategories(
-  client: PoolClient,
-  tenantId?: string
-): Promise<unknown[]> {
+export async function getKbCategories(client: PoolClient, tenantId?: string): Promise<unknown[]> {
   const conditions: string[] = ['is_active = TRUE'];
   const values: unknown[] = [];
   let paramIndex = 1;
@@ -142,7 +139,7 @@ export async function createKbArticle(
       input.isPublished || false,
       input.isFeatured || false,
       input.authorId || null,
-      input.isPublished ? new Date() : null
+      input.isPublished ? new Date() : null,
     ]
   );
 
@@ -195,7 +192,9 @@ export async function getKbArticles(
   }
 
   if (filters.search) {
-    conditions.push(`(title ILIKE $${paramIndex++} OR content ILIKE $${paramIndex} OR summary ILIKE $${paramIndex})`);
+    conditions.push(
+      `(title ILIKE $${paramIndex++} OR content ILIKE $${paramIndex} OR summary ILIKE $${paramIndex})`
+    );
     values.push(`%${filters.search}%`);
     paramIndex++;
   }
@@ -231,7 +230,7 @@ export async function getKbArticles(
 
   return {
     articles: articlesResult.rows,
-    total
+    total,
   };
 }
 
@@ -272,10 +271,9 @@ export async function getKbArticleBySlug(
   const article = result.rows[0];
 
   // Increment view count
-  await client.query(
-    'UPDATE shared.kb_articles SET view_count = view_count + 1 WHERE id = $1',
-    [article.id]
-  );
+  await client.query('UPDATE shared.kb_articles SET view_count = view_count + 1 WHERE id = $1', [
+    article.id,
+  ]);
 
   return article;
 }
@@ -400,4 +398,3 @@ export async function submitArticleFeedback(
 
   return result.rows[0];
 }
-

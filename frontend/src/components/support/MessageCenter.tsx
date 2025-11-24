@@ -37,9 +37,7 @@ export const MessageCenter: React.FC = () => {
   const handleMarkRead = async (messageId: string) => {
     try {
       await api.support.markMessageRead(messageId);
-      setMessages(
-        messages.map((msg) => (msg.id === messageId ? { ...msg, is_read: true } : msg))
-      );
+      setMessages(messages.map((msg) => (msg.id === messageId ? { ...msg, is_read: true } : msg)));
       setUnreadCount(Math.max(0, unreadCount - 1));
     } catch (error) {
       console.error('Failed to mark message as read:', error);
@@ -124,4 +122,3 @@ export const MessageCenter: React.FC = () => {
     </div>
   );
 };
-

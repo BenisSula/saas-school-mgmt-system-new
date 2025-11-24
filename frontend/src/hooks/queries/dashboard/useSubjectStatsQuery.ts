@@ -31,26 +31,24 @@ export function subjectStatsQueryOptions(tenantId: string | null) {
       // For now, fetch all subjects and teachers to compute stats client-side
       const [subjects, teachers] = await Promise.all([
         api.admin.listSubjects(),
-        api.listTeachers()
+        api.listTeachers(),
       ]);
 
       const totalSubjects = subjects.length;
 
       // Count assigned subjects (subjects that appear in teacher assignments)
-      const assignedSubjectIds = new Set(
-        teachers.flatMap((t) => t.subjects || []).filter(Boolean)
-      );
+      const assignedSubjectIds = new Set(teachers.flatMap((t) => t.subjects || []).filter(Boolean));
       const assignedSubjects = assignedSubjectIds.size;
       const unassignedSubjects = totalSubjects - assignedSubjects;
 
       return {
         totalSubjects,
         assignedSubjects,
-        unassignedSubjects
+        unassignedSubjects,
       };
     },
     enabled: !!tenantId,
-    ...dashboardQueryConfig
+    ...dashboardQueryConfig,
   });
 }
 
@@ -67,8 +65,7 @@ export function useSubjectStatsQuery() {
     select: (data): SubjectStats => ({
       totalSubjects: data.totalSubjects,
       assignedSubjects: data.assignedSubjects,
-      unassignedSubjects: data.unassignedSubjects
-    })
+      unassignedSubjects: data.unassignedSubjects,
+    }),
   });
 }
-

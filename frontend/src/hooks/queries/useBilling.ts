@@ -14,7 +14,7 @@ export function useSubscription() {
   return useQuery({
     queryKey: ['billing', 'subscription'],
     queryFn: () => api.billing.getSubscription(),
-    staleTime: 5 * 60 * 1000 // 5 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -32,7 +32,7 @@ export function useCreateSubscription() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to create subscription');
-    }
+    },
   });
 }
 
@@ -50,7 +50,7 @@ export function useCancelSubscription() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to cancel subscription');
-    }
+    },
   });
 }
 
@@ -68,7 +68,7 @@ export function useUpdatePlan() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to update subscription plan');
-    }
+    },
   });
 }
 
@@ -79,7 +79,7 @@ export function useInvoices(params?: { status?: string; limit?: number; offset?:
   return useQuery({
     queryKey: ['billing', 'invoices', params],
     queryFn: () => api.billing.getInvoices(params),
-    staleTime: 2 * 60 * 1000 // 2 minutes
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 }
 
@@ -91,7 +91,7 @@ export function useInvoice(invoiceId: string) {
     queryKey: ['billing', 'invoices', invoiceId],
     queryFn: () => api.billing.getInvoice(invoiceId),
     enabled: !!invoiceId,
-    staleTime: 2 * 60 * 1000 // 2 minutes
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 }
 
@@ -107,6 +107,6 @@ export function usePayments(params?: {
   return useQuery({
     queryKey: ['billing', 'payments', params],
     queryFn: () => api.billing.getPayments(params),
-    staleTime: 2 * 60 * 1000 // 2 minutes
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 }

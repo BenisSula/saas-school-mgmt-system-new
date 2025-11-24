@@ -22,7 +22,7 @@ export interface TimelineStepperProps {
 
 const getStatusIcon = (status?: TimelineEvent['status'], customIcon?: React.ReactNode) => {
   if (customIcon) return customIcon;
-  
+
   switch (status) {
     case 'completed':
       return <CheckCircle2 className="h-5 w-5 text-green-500" />;
@@ -44,7 +44,7 @@ const formatTimestamp = (timestamp: string | Date): string => {
 export function TimelineStepper({
   events,
   orientation = 'vertical',
-  className = ''
+  className = '',
 }: TimelineStepperProps) {
   if (events.length === 0) {
     return null;
@@ -92,7 +92,7 @@ export function TimelineStepper({
               <div className="w-0.5 h-full min-h-[40px] bg-[var(--brand-border)] mt-2" />
             )}
           </div>
-          
+
           {/* Content */}
           <div className="flex-1 pb-4">
             <div className="text-sm font-medium text-[var(--brand-text-primary)]">
@@ -112,4 +112,3 @@ export function TimelineStepper({
     </div>
   );
 }
-

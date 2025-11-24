@@ -29,7 +29,7 @@ export function SessionManager({ userId }: SessionManagerProps) {
     queryFn: async () => {
       return await api.superuser.getSessions(userId);
     },
-    enabled: !!userId
+    enabled: !!userId,
   });
 
   const revokeSessionMutation = useMutation({
@@ -44,7 +44,7 @@ export function SessionManager({ userId }: SessionManagerProps) {
     },
     onError: (error: Error) => {
       toast.error(`Failed to revoke session: ${error.message}`);
-    }
+    },
   });
 
   const revokeAllMutation = useMutation({
@@ -58,7 +58,7 @@ export function SessionManager({ userId }: SessionManagerProps) {
     },
     onError: (error: Error) => {
       toast.error(`Failed to revoke sessions: ${error.message}`);
-    }
+    },
   });
 
   const sessions = data?.sessions || [];
@@ -75,7 +75,7 @@ export function SessionManager({ userId }: SessionManagerProps) {
           </span>
         </div>
       ),
-      sortable: true
+      sortable: true,
     },
     {
       key: 'ipAddress',
@@ -88,58 +88,59 @@ export function SessionManager({ userId }: SessionManagerProps) {
           </span>
         </div>
       ),
-      sortable: true
+      sortable: true,
     },
-      {
-        key: 'deviceInfo',
-        header: 'Device Info',
-        render: (session) => (
-          <DeviceInfoCell
-            deviceInfo={session.normalizedDeviceInfo || session.deviceInfo}
-            userAgent={session.userAgent}
-          />
-        )
-      },
-      {
-        key: 'userAgent',
-        header: 'User Agent',
-        render: (session) => (
-          <span className="text-[var(--brand-text-secondary)] text-sm truncate max-w-xs" title={session.userAgent || undefined}>
-            {formatUserAgent(session.userAgent)}
+    {
+      key: 'deviceInfo',
+      header: 'Device Info',
+      render: (session) => (
+        <DeviceInfoCell
+          deviceInfo={session.normalizedDeviceInfo || session.deviceInfo}
+          userAgent={session.userAgent}
+        />
+      ),
+    },
+    {
+      key: 'userAgent',
+      header: 'User Agent',
+      render: (session) => (
+        <span
+          className="text-[var(--brand-text-secondary)] text-sm truncate max-w-xs"
+          title={session.userAgent || undefined}
+        >
+          {formatUserAgent(session.userAgent)}
+        </span>
+      ),
+    },
+    {
+      key: 'expiresAt',
+      header: 'Expires',
+      render: (session) => (
+        <span className="text-[var(--brand-text-secondary)]">
+          {formatDateTime(session.expiresAt)}
+        </span>
+      ),
+      sortable: true,
+    },
+    {
+      key: 'updatedAt',
+      header: 'Updated',
+      render: (session) => (
+        <div className="flex items-center gap-1">
+          <Clock className="h-3 w-3 text-[var(--brand-muted)]" />
+          <span className="text-[var(--brand-text-secondary)] text-xs">
+            {formatDate(session.updatedAt)}
           </span>
-        )
-      },
-      {
-        key: 'expiresAt',
-        header: 'Expires',
-        render: (session) => (
-          <span className="text-[var(--brand-text-secondary)]">
-            {formatDateTime(session.expiresAt)}
-          </span>
-        ),
-        sortable: true
-      },
-      {
-        key: 'updatedAt',
-        header: 'Updated',
-        render: (session) => (
-          <div className="flex items-center gap-1">
-            <Clock className="h-3 w-3 text-[var(--brand-muted)]" />
-            <span className="text-[var(--brand-text-secondary)] text-xs">
-              {formatDate(session.updatedAt)}
-            </span>
-          </div>
-        ),
-        sortable: true
-      },
-      {
-        key: 'isActive',
-        header: 'Status',
-        render: (session) => (
-          <StatusBadge status={session.isActive ? 'active' : 'inactive'} />
-        ),
-        sortable: true
-      },
+        </div>
+      ),
+      sortable: true,
+    },
+    {
+      key: 'isActive',
+      header: 'Status',
+      render: (session) => <StatusBadge status={session.isActive ? 'active' : 'inactive'} />,
+      sortable: true,
+    },
     {
       key: 'actions',
       header: 'Actions',
@@ -156,8 +157,8 @@ export function SessionManager({ userId }: SessionManagerProps) {
         >
           Revoke
         </Button>
-      )
-    }
+      ),
+    },
   ];
 
   if (error) {
@@ -180,7 +181,8 @@ export function SessionManager({ userId }: SessionManagerProps) {
             Active Sessions
           </h3>
           <p className="mt-1 text-sm text-[var(--brand-text-secondary)]">
-            {activeSessions.length} active {activeSessions.length === 1 ? 'session' : 'sessions'} out of {sessions.length} total
+            {activeSessions.length} active {activeSessions.length === 1 ? 'session' : 'sessions'}{' '}
+            out of {sessions.length} total
           </p>
         </div>
         {activeSessions.length > 0 && (
@@ -313,16 +315,14 @@ export function SessionManager({ userId }: SessionManagerProps) {
                 Warning: This will log out the user from all devices
               </p>
               <p className="mt-1 text-sm text-[var(--brand-text-secondary)]">
-                All {activeSessions.length} active sessions will be revoked immediately. The user will need to log in again.
+                All {activeSessions.length} active sessions will be revoked immediately. The user
+                will need to log in again.
               </p>
             </div>
           </div>
-          <p className="text-[var(--brand-text-secondary)]">
-            Are you sure you want to proceed?
-          </p>
+          <p className="text-[var(--brand-text-secondary)]">Are you sure you want to proceed?</p>
         </div>
       </Modal>
     </div>
   );
 }
-

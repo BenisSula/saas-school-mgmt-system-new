@@ -90,4 +90,3 @@ export function InvestigationDetailPage() {
 }
 
 export default InvestigationDetailPage;
-

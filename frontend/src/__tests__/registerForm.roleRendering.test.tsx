@@ -6,15 +6,15 @@ import { RegisterForm } from '../components/auth/RegisterForm';
 // Mock AuthContext
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
-    register: vi.fn()
-  })
+    register: vi.fn(),
+  }),
 }));
 
 // Mock API for TenantSelector - use vi.hoisted to ensure mocks are available when vi.mock is hoisted
 const { mockListSchools, mockLookupTenant } = vi.hoisted(() => {
   return {
     mockListSchools: vi.fn(),
-    mockLookupTenant: vi.fn()
+    mockLookupTenant: vi.fn(),
   };
 });
 
@@ -25,8 +25,8 @@ vi.mock('../lib/api', async (importOriginal) => {
     api: {
       ...actual.api,
       listSchools: mockListSchools,
-      lookupTenant: mockLookupTenant
-    }
+      lookupTenant: mockLookupTenant,
+    },
   };
 });
 
@@ -36,7 +36,7 @@ describe('RegisterForm - Role-based Field Rendering', () => {
       schools: [],
       count: 0,
       total: 0,
-      type: 'recent' as const
+      type: 'recent' as const,
     });
     mockLookupTenant.mockResolvedValue(null);
   });

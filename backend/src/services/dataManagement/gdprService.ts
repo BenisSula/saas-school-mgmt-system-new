@@ -45,7 +45,7 @@ export async function createGdprErasureRequest(
       input.reason || null,
       input.dataCategories || [],
       verificationToken,
-      input.requestedBy || null
+      input.requestedBy || null,
     ]
   );
 
@@ -107,7 +107,7 @@ export async function processGdprErasure(
     tablesAffected: [],
     recordsDeleted: 0,
     recordsAnonymized: 0,
-    dataCategories: request.data_categories || []
+    dataCategories: request.data_categories || [],
   };
 
   // Process based on request type
@@ -121,7 +121,7 @@ export async function processGdprErasure(
       'attendance',
       'grades',
       'invoices',
-      'messages'
+      'messages',
     ];
 
     for (const table of tablesToProcess) {
@@ -141,10 +141,7 @@ export async function processGdprErasure(
     }
 
     // Delete from shared schema
-    await client.query(
-      'DELETE FROM shared.users WHERE id = $1',
-      [request.user_id]
-    );
+    await client.query('DELETE FROM shared.users WHERE id = $1', [request.user_id]);
     erasureReport.recordsDeleted += 1;
     erasureReport.tablesAffected.push('shared.users');
   } else if (request.request_type === 'anonymize') {
@@ -214,7 +211,7 @@ export async function processGdprErasure(
     erasure_report: erasureReport,
     status: 'completed',
     processed_at: new Date(),
-    processed_by: processedBy
+    processed_by: processedBy,
   };
 }
 
@@ -281,7 +278,7 @@ export async function getGdprErasureRequests(
 
   return {
     requests: requestsResult.rows,
-    total
+    total,
   };
 }
 
@@ -306,4 +303,3 @@ export async function cancelGdprErasureRequest(
     throw new Error('Request not found or cannot be cancelled');
   }
 }
-

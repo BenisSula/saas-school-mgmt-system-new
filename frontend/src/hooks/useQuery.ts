@@ -28,7 +28,7 @@ export const queryKeys = {
     todayAttendance: () => ['admin', 'stats', 'attendance', 'today'] as const,
     recentActivity: (limit?: number) => ['admin', 'activity', 'recent', limit] as const,
     loginAttempts: (days?: number) => ['admin', 'login-attempts', days] as const,
-    activeSessions: () => ['admin', 'sessions', 'active'] as const
+    activeSessions: () => ['admin', 'sessions', 'active'] as const,
   },
   // Superuser queries
   superuser: {
@@ -37,8 +37,8 @@ export const queryKeys = {
     users: () => ['superuser', 'users'] as const,
     tenantAnalytics: (tenantId?: string) => ['superuser', 'tenant-analytics', tenantId] as const,
     subscriptions: () => ['superuser', 'subscriptions'] as const,
-    usage: (tenantId?: string) => ['superuser', 'usage', tenantId] as const
-  }
+    usage: (tenantId?: string) => ['superuser', 'usage', tenantId] as const,
+  },
 } as const;
 
 // Generic query hook wrapper
@@ -51,7 +51,7 @@ export function useQuery<T>(
     queryKey,
     queryFn,
     enabled: options?.enabled !== false,
-    staleTime: options?.staleTime
+    staleTime: options?.staleTime,
   });
 }
 
@@ -82,6 +82,6 @@ export function useMutationWithInvalidation<TData, TVariables>(
     onError: (error: Error) => {
       toast.error(error.message || 'An error occurred');
       options?.onError?.(error);
-    }
+    },
   });
 }

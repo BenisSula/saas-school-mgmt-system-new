@@ -173,8 +173,8 @@ export async function updateSubscriptionTierConfig(
     entityId: result.rows[0].id,
     details: {
       tier,
-      changes: input
-    }
+      changes: input,
+    },
   });
 
   return result.rows[0];
@@ -188,7 +188,7 @@ export async function updateSubscriptionTierConfigs(
   actorId?: string | null
 ): Promise<SubscriptionTierConfig[]> {
   const results: SubscriptionTierConfig[] = [];
-  
+
   for (const { tier, config } of configs) {
     const updated = await updateSubscriptionTierConfig(tier, config, actorId);
     results.push(updated);
@@ -196,4 +196,3 @@ export async function updateSubscriptionTierConfigs(
 
   return results;
 }
-

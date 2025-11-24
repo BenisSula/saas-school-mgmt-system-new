@@ -27,7 +27,7 @@ const defaultFilters: UserFilters = {
   tenant: 'all',
   role: 'all',
   status: 'all',
-  search: ''
+  search: '',
 };
 
 export function SuperuserUsersPage() {
@@ -53,7 +53,7 @@ export function SuperuserUsersPage() {
     },
     enabled: !!selectedUser?.id && showEditModal,
     staleTime: 0, // Always fetch fresh data when modal opens
-    refetchOnMount: true
+    refetchOnMount: true,
   });
 
   // Get password history to check for temporary passwords
@@ -69,7 +69,7 @@ export function SuperuserUsersPage() {
         return null;
       }
     },
-    enabled: !!selectedUser?.id && showEditModal
+    enabled: !!selectedUser?.id && showEditModal,
   });
 
   const loadUsers = useCallback(async () => {
@@ -147,7 +147,7 @@ export function SuperuserUsersPage() {
     { label: 'Admin', value: 'admin' },
     { label: 'HOD', value: 'hod' },
     { label: 'Teacher', value: 'teacher' },
-    { label: 'Student', value: 'student' }
+    { label: 'Student', value: 'student' },
   ];
 
   const statusOptions: Array<{ label: string; value: FilterStatus }> = [
@@ -155,13 +155,13 @@ export function SuperuserUsersPage() {
     { label: 'Active', value: 'active' },
     { label: 'Pending', value: 'pending' },
     { label: 'Suspended', value: 'suspended' },
-    { label: 'Rejected', value: 'rejected' }
+    { label: 'Rejected', value: 'rejected' },
   ];
 
   const tenantOptions = useMemo(
     () => [
       { label: 'All tenants', value: 'all' },
-      ...uniqueTenants.map((t) => ({ label: t.name, value: t.id }))
+      ...uniqueTenants.map((t) => ({ label: t.name, value: t.id })),
     ],
     [uniqueTenants]
   );
@@ -220,7 +220,7 @@ export function SuperuserUsersPage() {
           <p className="text-xs text-[var(--brand-muted)]">{row.email}</p>
           {row.username && <p className="text-xs text-[var(--brand-muted)]">@{row.username}</p>}
         </div>
-      )
+      ),
     },
     {
       header: 'Role',
@@ -228,7 +228,7 @@ export function SuperuserUsersPage() {
         <span className="rounded-full bg-[var(--brand-primary)]/20 px-2 py-1 text-xs font-semibold text-[var(--brand-primary)] capitalize">
           {row.role}
         </span>
-      )
+      ),
     },
     {
       header: 'Tenant',
@@ -241,7 +241,7 @@ export function SuperuserUsersPage() {
             <p className="text-xs text-[var(--brand-muted)]">{row.registrationCode}</p>
           )}
         </div>
-      )
+      ),
     },
     {
       header: 'Status',
@@ -251,7 +251,7 @@ export function SuperuserUsersPage() {
           active: 'bg-emerald-500/20 text-emerald-200',
           pending: 'bg-amber-500/20 text-amber-200',
           suspended: 'bg-rose-500/20 text-rose-200',
-          rejected: 'bg-slate-500/20 text-slate-200'
+          rejected: 'bg-slate-500/20 text-slate-200',
         };
         return (
           <span
@@ -263,11 +263,11 @@ export function SuperuserUsersPage() {
             {!row.isVerified && ' (Unverified)'}
           </span>
         );
-      }
+      },
     },
     {
       header: 'Created',
-      render: (row) => formatDate(row.createdAt)
+      render: (row) => formatDate(row.createdAt),
     },
     {
       header: 'Actions',
@@ -290,8 +290,8 @@ export function SuperuserUsersPage() {
             </Button>
           ) : null}
         </div>
-      )
-    }
+      ),
+    },
   ];
 
   if (loading) {

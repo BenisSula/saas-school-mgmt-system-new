@@ -21,7 +21,7 @@ const { getHandler, putHandler } = createUpsertHandlers({
   upsertResource: upsertSchool,
   resourceName: 'School',
   auditAction: 'SCHOOL_SETTINGS_UPDATED',
-  schema: schoolSchema
+  schema: schoolSchema,
 });
 
 router.get('/', getHandler);

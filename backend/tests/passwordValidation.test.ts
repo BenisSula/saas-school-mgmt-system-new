@@ -1,5 +1,8 @@
 import { describe, it, expect } from '@jest/globals';
-import { validatePassword, getDefaultPasswordPolicy } from '../src/services/security/passwordPolicyService';
+import {
+  validatePassword,
+  getDefaultPasswordPolicy,
+} from '../src/services/security/passwordPolicyService';
 
 describe('Password Strength Validation', () => {
   const defaultPolicy = getDefaultPasswordPolicy();
@@ -56,4 +59,3 @@ describe('Password Strength Validation', () => {
     }
   });
 });
-

@@ -10,11 +10,7 @@ import { bulkUpsertGrades } from '../services/examService';
 
 const router = Router();
 
-router.use(
-  authenticate,
-  tenantResolver(),
-  ensureTenantContext()
-);
+router.use(authenticate, tenantResolver(), ensureTenantContext());
 
 // Middleware to extract classId from request body for teacher assignment verification
 const extractClassIdForVerification = (req: Request, res: Response, next: NextFunction) => {
@@ -55,7 +51,9 @@ router.post(
         return res.status(400).json({ message: 'Each entry must have a studentId' });
       }
       if (typeof entry.score !== 'number' || entry.score < 0 || entry.score > 100) {
-        return res.status(400).json({ message: 'Each entry must have a valid score between 0 and 100' });
+        return res
+          .status(400)
+          .json({ message: 'Each entry must have a valid score between 0 and 100' });
       }
     }
 

@@ -8,7 +8,7 @@ import {
   getUserMessages,
   markMessageAsRead,
   archiveMessage,
-  getMessageThread
+  getMessageThread,
 } from '../../services/support/messagingService';
 import { z } from 'zod';
 
@@ -25,13 +25,17 @@ const createMessageSchema = z.object({
   contentHtml: z.string().optional(),
   messageType: z.enum(['direct', 'broadcast', 'system']),
   priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
-  attachments: z.array(z.object({
-    fileName: z.string(),
-    fileUrl: z.string(),
-    fileSize: z.number(),
-    mimeType: z.string()
-  })).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional()
+  attachments: z
+    .array(
+      z.object({
+        fileName: z.string(),
+        fileUrl: z.string(),
+        fileSize: z.number(),
+        mimeType: z.string(),
+      })
+    )
+    .optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 // Get user messages
@@ -41,12 +45,18 @@ router.get('/', async (req, res, next) => {
     const client = await pool.connect();
     try {
       const result = await getUserMessages(client, req.user?.id || '', req.tenant?.id, {
-        isRead: req.query.isRead === 'true' ? true : req.query.isRead === 'false' ? false : undefined,
-        isArchived: req.query.isArchived === 'true' ? true : req.query.isArchived === 'false' ? false : undefined,
+        isRead:
+          req.query.isRead === 'true' ? true : req.query.isRead === 'false' ? false : undefined,
+        isArchived:
+          req.query.isArchived === 'true'
+            ? true
+            : req.query.isArchived === 'false'
+              ? false
+              : undefined,
         messageType: req.query.messageType as string,
         priority: req.query.priority as string,
         limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
-        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined
+        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
     } finally {
@@ -71,7 +81,7 @@ router.post('/', requirePermission('messages:send'), async (req, res, next) => {
       const message = await createMessage(client, {
         ...parsed.data,
         tenantId: req.tenant?.id,
-        senderId: req.user?.id || ''
+        senderId: req.user?.id || '',
       });
       res.status(201).json(message);
     } finally {
@@ -134,4 +144,3 @@ router.get('/threads/:id', async (req, res, next) => {
 });
 
 export default router;
-

@@ -87,7 +87,7 @@ export async function createSamlProvider(
       input.jitProvisioning || false,
       input.jitDefaultRole || 'teacher',
       JSON.stringify(input.attributeMapping || {}),
-      input.createdBy || null
+      input.createdBy || null,
     ]
   );
 
@@ -156,7 +156,7 @@ export async function processSamlResponse(
     email: 'user@example.com',
     firstName: 'John',
     lastName: 'Doe',
-    nameId: 'user@example.com'
+    nameId: 'user@example.com',
   };
 
   const email = attributes.email as string;
@@ -199,7 +199,7 @@ export async function processSamlResponse(
           attributes.nameId as string,
           userId,
           email,
-          JSON.stringify(attributes)
+          JSON.stringify(attributes),
         ]
       );
 
@@ -231,7 +231,7 @@ export async function processSamlResponse(
       providerId,
       sessionId,
       JSON.stringify(attributes),
-      expiresAt
+      expiresAt,
     ]
   );
 
@@ -239,7 +239,7 @@ export async function processSamlResponse(
     userId,
     email,
     attributes,
-    isNewUser
+    isNewUser,
   };
 }
 

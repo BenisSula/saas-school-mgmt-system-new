@@ -245,7 +245,12 @@ export async function generateAttendanceExcel(
 
   // Data rows
   attendanceData.forEach((row) => {
-    worksheet.addRow([row.student_name || 'N/A', row.admission_number || 'N/A', row.date, row.status.toUpperCase()]);
+    worksheet.addRow([
+      row.student_name || 'N/A',
+      row.admission_number || 'N/A',
+      row.date,
+      row.status.toUpperCase(),
+    ]);
   });
 
   // Auto-fit columns
@@ -448,7 +453,15 @@ export async function generateGradesExcel(
   const worksheet = workbook.addWorksheet('Grades Report');
 
   // Header row
-  worksheet.addRow(['Student Name', 'Admission Number', 'Subject', 'Score', 'Grade', 'Exam', 'Date']);
+  worksheet.addRow([
+    'Student Name',
+    'Admission Number',
+    'Subject',
+    'Score',
+    'Grade',
+    'Exam',
+    'Date',
+  ]);
   worksheet.getRow(1).font = { bold: true };
 
   // Data rows
@@ -460,7 +473,7 @@ export async function generateGradesExcel(
       row.score || 'N/A',
       row.grade || 'N/A',
       row.exam_name || 'N/A',
-      row.created_at ? new Date(row.created_at).toLocaleDateString() : 'N/A'
+      row.created_at ? new Date(row.created_at).toLocaleDateString() : 'N/A',
     ]);
   });
 

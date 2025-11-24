@@ -13,13 +13,25 @@ import { adminCreateUser } from '../../services/adminUserService';
 import { getPool } from '../../db/connection';
 import { createSuccessResponse, createErrorResponse } from '../../lib/responseHelpers';
 import { listTenantUsers } from '../../services/userService';
-import { verifyTenantAndUserContext, verifyTenantContext } from '../../services/shared/adminHelpers';
+import {
+  verifyTenantAndUserContext,
+  verifyTenantContext,
+} from '../../services/shared/adminHelpers';
 import { createAuditLog } from '../../services/audit/enhancedAuditService';
-import { createHODSchema, createTeacherSchema, createStudentSchema } from '../../validators/userRegistrationValidator';
+import {
+  createHODSchema,
+  createTeacherSchema,
+  createStudentSchema,
+} from '../../validators/userRegistrationValidator';
 
 const router = Router();
 
-router.use(authenticate, tenantResolver(), ensureTenantContext(), requirePermission('users:manage'));
+router.use(
+  authenticate,
+  tenantResolver(),
+  ensureTenantContext(),
+  requirePermission('users:manage')
+);
 
 // User registration schemas imported from validators
 
@@ -45,7 +57,7 @@ router.post('/hod/create', validateInput(createHODSchema, 'body'), async (req, r
       tenant.schema,
       {
         ...req.body,
-        role: 'hod'
+        role: 'hod',
       },
       user.id
     );
@@ -63,73 +75,81 @@ router.post('/hod/create', validateInput(createHODSchema, 'body'), async (req, r
  * POST /admin/users/teacher/create
  * Create a new teacher
  */
-router.post('/teacher/create', validateInput(createTeacherSchema, 'body'), async (req, res, next) => {
-  try {
-    const contextCheck = verifyTenantAndUserContext(req.tenant, req.tenantClient, req.user);
-    if (!contextCheck.isValid) {
-      return res.status(500).json(createErrorResponse(contextCheck.error!));
+router.post(
+  '/teacher/create',
+  validateInput(createTeacherSchema, 'body'),
+  async (req, res, next) => {
+    try {
+      const contextCheck = verifyTenantAndUserContext(req.tenant, req.tenantClient, req.user);
+      if (!contextCheck.isValid) {
+        return res.status(500).json(createErrorResponse(contextCheck.error!));
+      }
+
+      // TypeScript assertion: context check ensures these are defined
+      const tenant = req.tenant!;
+      const tenantClient = req.tenantClient!;
+      const user = req.user!;
+
+      const result = await adminCreateUser(
+        tenant.id,
+        tenantClient,
+        tenant.schema,
+        {
+          ...req.body,
+          role: 'teacher',
+        },
+        user.id
+      );
+
+      res.status(201).json(createSuccessResponse(result, 'Teacher created successfully'));
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('already in use')) {
+        return res.status(400).json(createErrorResponse(error.message));
+      }
+      next(error);
     }
-
-    // TypeScript assertion: context check ensures these are defined
-    const tenant = req.tenant!;
-    const tenantClient = req.tenantClient!;
-    const user = req.user!;
-
-    const result = await adminCreateUser(
-      tenant.id,
-      tenantClient,
-      tenant.schema,
-      {
-        ...req.body,
-        role: 'teacher'
-      },
-      user.id
-    );
-
-    res.status(201).json(createSuccessResponse(result, 'Teacher created successfully'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('already in use')) {
-      return res.status(400).json(createErrorResponse(error.message));
-    }
-    next(error);
   }
-});
+);
 
 /**
  * POST /admin/users/student/create
  * Create a new student
  */
-router.post('/student/create', validateInput(createStudentSchema, 'body'), async (req, res, next) => {
-  try {
-    const contextCheck = verifyTenantAndUserContext(req.tenant, req.tenantClient, req.user);
-    if (!contextCheck.isValid) {
-      return res.status(500).json(createErrorResponse(contextCheck.error!));
+router.post(
+  '/student/create',
+  validateInput(createStudentSchema, 'body'),
+  async (req, res, next) => {
+    try {
+      const contextCheck = verifyTenantAndUserContext(req.tenant, req.tenantClient, req.user);
+      if (!contextCheck.isValid) {
+        return res.status(500).json(createErrorResponse(contextCheck.error!));
+      }
+
+      // TypeScript assertion: context check ensures these are defined
+      const tenant = req.tenant!;
+      const tenantClient = req.tenantClient!;
+      const user = req.user!;
+
+      const result = await adminCreateUser(
+        tenant.id,
+        tenantClient,
+        tenant.schema,
+        {
+          ...req.body,
+          role: 'student',
+        },
+        user.id
+      );
+
+      res.status(201).json(createSuccessResponse(result, 'Student created successfully'));
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('already in use')) {
+        return res.status(400).json(createErrorResponse(error.message));
+      }
+      next(error);
     }
-
-    // TypeScript assertion: context check ensures these are defined
-    const tenant = req.tenant!;
-    const tenantClient = req.tenantClient!;
-    const user = req.user!;
-
-    const result = await adminCreateUser(
-      tenant.id,
-      tenantClient,
-      tenant.schema,
-      {
-        ...req.body,
-        role: 'student'
-      },
-      user.id
-    );
-
-    res.status(201).json(createSuccessResponse(result, 'Student created successfully'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('already in use')) {
-      return res.status(400).json(createErrorResponse(error.message));
-    }
-    next(error);
   }
-});
+);
 
 /**
  * GET /admin/users
@@ -206,7 +226,7 @@ router.patch('/:id/disable', async (req, res, next) => {
       resourceId: req.params.id,
       details: { targetUserId: req.params.id },
       severity: 'info',
-      tags: ['user', 'admin']
+      tags: ['user', 'admin'],
     });
 
     res.json(createSuccessResponse(null, 'User disabled successfully'));
@@ -262,7 +282,7 @@ router.patch('/:id/enable', async (req, res, next) => {
       resourceId: req.params.id,
       details: { targetUserId: req.params.id },
       severity: 'info',
-      tags: ['user', 'admin']
+      tags: ['user', 'admin'],
     });
 
     res.json(createSuccessResponse(null, 'User enabled successfully'));
@@ -274,4 +294,3 @@ router.patch('/:id/enable', async (req, res, next) => {
 });
 
 export default router;
-

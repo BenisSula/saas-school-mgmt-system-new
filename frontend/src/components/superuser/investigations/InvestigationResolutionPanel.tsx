@@ -12,7 +12,10 @@ export interface InvestigationResolutionPanelProps {
   onStatusUpdated?: () => void;
 }
 
-export function InvestigationResolutionPanel({ case_, onStatusUpdated }: InvestigationResolutionPanelProps) {
+export function InvestigationResolutionPanel({
+  case_,
+  onStatusUpdated,
+}: InvestigationResolutionPanelProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [status, setStatus] = useState<InvestigationCase['status']>(case_.status);
   const [resolution, setResolution] = useState(case_.resolution || '');
@@ -25,7 +28,7 @@ export function InvestigationResolutionPanel({ case_, onStatusUpdated }: Investi
         caseId: case_.id,
         status,
         resolution: resolution || undefined,
-        resolutionNotes: resolutionNotes || undefined
+        resolutionNotes: resolutionNotes || undefined,
       } as Parameters<typeof updateStatus.mutateAsync>[0]);
       setIsModalOpen(false);
       if (onStatusUpdated) {
@@ -78,14 +81,20 @@ export function InvestigationResolutionPanel({ case_, onStatusUpdated }: Investi
         <div className="mt-4 space-y-2">
           {case_.resolution && (
             <div>
-              <label className="text-sm font-medium text-[var(--brand-text-secondary)]">Resolution:</label>
+              <label className="text-sm font-medium text-[var(--brand-text-secondary)]">
+                Resolution:
+              </label>
               <p className="mt-1 text-sm text-[var(--brand-text-primary)]">{case_.resolution}</p>
             </div>
           )}
           {case_.resolutionNotes && (
             <div>
-              <label className="text-sm font-medium text-[var(--brand-text-secondary)]">Resolution Notes:</label>
-              <p className="mt-1 text-sm text-[var(--brand-text-primary)] whitespace-pre-wrap">{case_.resolutionNotes}</p>
+              <label className="text-sm font-medium text-[var(--brand-text-secondary)]">
+                Resolution Notes:
+              </label>
+              <p className="mt-1 text-sm text-[var(--brand-text-primary)] whitespace-pre-wrap">
+                {case_.resolutionNotes}
+              </p>
             </div>
           )}
         </div>
@@ -100,11 +109,7 @@ export function InvestigationResolutionPanel({ case_, onStatusUpdated }: Investi
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>
               Cancel
             </Button>
-            <Button
-              variant="solid"
-              onClick={handleSubmit}
-              disabled={updateStatus.isPending}
-            >
+            <Button variant="solid" onClick={handleSubmit} disabled={updateStatus.isPending}>
               {updateStatus.isPending ? 'Updating...' : 'Update Status'}
             </Button>
           </>
@@ -120,7 +125,7 @@ export function InvestigationResolutionPanel({ case_, onStatusUpdated }: Investi
                 { label: 'Open', value: 'open' },
                 { label: 'Investigating', value: 'investigating' },
                 { label: 'Resolved', value: 'resolved' },
-                { label: 'Closed', value: 'closed' }
+                { label: 'Closed', value: 'closed' },
               ]}
             />
           </div>
@@ -155,4 +160,3 @@ export function InvestigationResolutionPanel({ case_, onStatusUpdated }: Investi
     </div>
   );
 }
-

@@ -8,7 +8,7 @@ import {
   FileText,
   Shield,
   Settings,
-  LogIn
+  LogIn,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -41,7 +41,7 @@ export function QuickActionPanel({
   onViewAuditLogs,
   onManageRoles,
   onSessionManager,
-  className = ''
+  className = '',
 }: QuickActionPanelProps) {
   const navigate = useNavigate();
 
@@ -51,62 +51,66 @@ export function QuickActionPanel({
       label: 'Register New Teacher',
       icon: <UserPlus className="h-4 w-4" />,
       onClick: () => onRegisterTeacher?.() || navigate('/dashboard/admin/users'),
-      variant: 'solid'
+      variant: 'solid',
     },
     {
       id: 'register-student',
       label: 'Register New Student',
       icon: <GraduationCap className="h-4 w-4" />,
       onClick: () => onRegisterStudent?.() || navigate('/dashboard/admin/users'),
-      variant: 'solid'
+      variant: 'solid',
     },
     {
       id: 'create-class',
       label: 'Create Class',
       icon: <BookOpen className="h-4 w-4" />,
       onClick: () => onCreateClass?.() || navigate('/dashboard/admin/classes-subjects'),
-      variant: 'outline'
+      variant: 'outline',
     },
     {
       id: 'upload-csv',
       label: 'Upload CSV',
       icon: <Upload className="h-4 w-4" />,
       onClick: () => onUploadCSV?.() || navigate('/dashboard/admin/teachers'),
-      variant: 'outline'
+      variant: 'outline',
     },
     {
       id: 'generate-reports',
       label: 'Generate Reports',
       icon: <FileText className="h-4 w-4" />,
       onClick: () => onGenerateReports?.() || navigate('/dashboard/admin/reports'),
-      variant: 'outline'
+      variant: 'outline',
     },
     {
       id: 'view-audit-logs',
       label: 'View Audit Logs',
       icon: <Shield className="h-4 w-4" />,
       onClick: () => onViewAuditLogs?.() || navigate('/dashboard/admin'),
-      variant: 'outline'
+      variant: 'outline',
     },
     {
       id: 'manage-roles',
       label: 'Manage Roles',
       icon: <Settings className="h-4 w-4" />,
       onClick: () => onManageRoles?.() || navigate('/dashboard/admin/users'),
-      variant: 'outline'
+      variant: 'outline',
     },
     {
       id: 'session-manager',
       label: 'Session Manager',
       icon: <LogIn className="h-4 w-4" />,
       onClick: () => onSessionManager?.() || navigate('/dashboard/admin'),
-      variant: 'outline'
-    }
+      variant: 'outline',
+    },
   ];
 
   return (
-    <div className={`rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm ${className}`}>
-      <h3 className="mb-4 text-lg font-semibold text-[var(--brand-surface-contrast)]">Quick Actions</h3>
+    <div
+      className={`rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm ${className}`}
+    >
+      <h3 className="mb-4 text-lg font-semibold text-[var(--brand-surface-contrast)]">
+        Quick Actions
+      </h3>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {defaultActions.map((action) => (
           <Button
@@ -127,4 +131,3 @@ export function QuickActionPanel({
 }
 
 export default QuickActionPanel;
-

@@ -21,7 +21,7 @@ const eventIcons = {
   investigated: AlertCircle,
   resolved: CheckCircle2,
   closed: XCircle,
-  note: FileText
+  note: FileText,
 };
 
 const eventColors = {
@@ -29,7 +29,7 @@ const eventColors = {
   investigated: 'text-yellow-500',
   resolved: 'text-green-500',
   closed: 'text-gray-500',
-  note: 'text-purple-500'
+  note: 'text-purple-500',
 };
 
 export function InvestigationTimeline({ case_, notes = [] }: InvestigationTimelineProps) {
@@ -42,7 +42,7 @@ export function InvestigationTimeline({ case_, notes = [] }: InvestigationTimeli
         type: 'opened',
         timestamp: case_.openedAt,
         label: 'Case Opened',
-        user: case_.createdBy
+        user: case_.createdBy,
       });
     }
 
@@ -52,7 +52,7 @@ export function InvestigationTimeline({ case_, notes = [] }: InvestigationTimeli
         type: 'investigated',
         timestamp: case_.investigatedAt,
         label: 'Investigation Started',
-        user: case_.assignedTo || undefined
+        user: case_.assignedTo || undefined,
       });
     }
 
@@ -63,7 +63,7 @@ export function InvestigationTimeline({ case_, notes = [] }: InvestigationTimeli
         timestamp: case_.resolvedAt,
         label: 'Case Resolved',
         description: case_.resolution || undefined,
-        user: case_.resolvedBy || undefined
+        user: case_.resolvedBy || undefined,
       });
     }
 
@@ -72,7 +72,7 @@ export function InvestigationTimeline({ case_, notes = [] }: InvestigationTimeli
       events.push({
         type: 'closed',
         timestamp: case_.closedAt,
-        label: 'Case Closed'
+        label: 'Case Closed',
       });
     }
 
@@ -83,7 +83,7 @@ export function InvestigationTimeline({ case_, notes = [] }: InvestigationTimeli
         timestamp: note.createdAt,
         label: `${note.noteType.charAt(0).toUpperCase() + note.noteType.slice(1)} Note`,
         description: note.note,
-        user: note.createdBy
+        user: note.createdBy,
       });
     });
 
@@ -113,9 +113,14 @@ export function InvestigationTimeline({ case_, notes = [] }: InvestigationTimeli
             const colorClass = eventColors[event.type];
 
             return (
-              <div key={`${event.type}-${event.timestamp}-${index}`} className="relative flex items-start gap-4">
+              <div
+                key={`${event.type}-${event.timestamp}-${index}`}
+                className="relative flex items-start gap-4"
+              >
                 {/* Icon */}
-                <div className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand-surface)] ${colorClass} border-2 border-[var(--brand-border)]`}>
+                <div
+                  className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand-surface)] ${colorClass} border-2 border-[var(--brand-border)]`}
+                >
                   <Icon className="h-4 w-4" />
                 </div>
 
@@ -133,7 +138,9 @@ export function InvestigationTimeline({ case_, notes = [] }: InvestigationTimeli
                     </p>
                   )}
                   {event.description && (
-                    <p className="mt-2 text-sm text-[var(--brand-text-secondary)]">{event.description}</p>
+                    <p className="mt-2 text-sm text-[var(--brand-text-secondary)]">
+                      {event.description}
+                    </p>
                   )}
                 </div>
               </div>
@@ -144,4 +151,3 @@ export function InvestigationTimeline({ case_, notes = [] }: InvestigationTimeli
     </div>
   );
 }
-

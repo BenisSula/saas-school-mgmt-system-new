@@ -37,7 +37,7 @@ export function activeSessionsQueryOptions(tenantId: string | null) {
       // IMPORTANT: This MUST use the real active sessions, NOT the outdated estimate
       const result = await api.superuser.getAllActiveSessions({
         tenantId,
-        limit: 100 // Adjust limit as needed
+        limit: 100, // Adjust limit as needed
       });
 
       // Transform to match the required interface
@@ -52,16 +52,16 @@ export function activeSessionsQueryOptions(tenantId: string | null) {
           deviceInfo: session.deviceInfo || {},
           updatedAt: session.updatedAt,
           tenantId: session.tenantId,
-          userAgent: session.userAgent
+          userAgent: session.userAgent,
         }));
 
       return {
         sessions,
-        total: result.total
+        total: result.total,
       };
     },
     enabled: !!tenantId,
-    ...dashboardQueryConfig
+    ...dashboardQueryConfig,
   });
 }
 
@@ -78,8 +78,7 @@ export function useActiveSessionsQuery() {
     ...queryOptions,
     select: (data): ActiveSessionsResponse => ({
       sessions: data.sessions,
-      total: data.total
-    })
+      total: data.total,
+    }),
   });
 }
-

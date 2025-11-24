@@ -20,7 +20,7 @@ export function PasswordManagementModal({
   userEmail,
   isOpen,
   onClose,
-  mode
+  mode,
 }: PasswordManagementModalProps) {
   const queryClient = useQueryClient();
   const [newPassword, setNewPassword] = useState('');
@@ -41,7 +41,7 @@ export function PasswordManagementModal({
     },
     onError: (error: Error) => {
       toast.error(`Failed to reset password: ${error.message}`);
-    }
+    },
   });
 
   const changePasswordMutation = useMutation({
@@ -55,7 +55,7 @@ export function PasswordManagementModal({
     },
     onError: (error: Error) => {
       toast.error(`Failed to change password: ${error.message}`);
-    }
+    },
   });
 
   const handleClose = () => {
@@ -85,7 +85,7 @@ export function PasswordManagementModal({
       }
       changePasswordMutation.mutate({
         newPassword,
-        reason: reason || undefined
+        reason: reason || undefined,
       });
     }
   };
@@ -200,11 +200,7 @@ export function PasswordManagementModal({
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--brand-muted)] hover:text-[var(--brand-text-primary)]"
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                   <p className="text-xs text-[var(--brand-muted)]">
@@ -242,11 +238,10 @@ export function PasswordManagementModal({
               <div className="flex items-start gap-3 rounded-lg border border-[var(--brand-warning)]/30 bg-[var(--brand-warning)]/10 p-4">
                 <AlertCircle className="h-5 w-5 text-[var(--brand-warning)] mt-0.5" />
                 <div>
-                  <p className="font-semibold text-[var(--brand-text-primary)]">
-                    Reset Password
-                  </p>
+                  <p className="font-semibold text-[var(--brand-text-primary)]">Reset Password</p>
                   <p className="mt-1 text-sm text-[var(--brand-text-secondary)]">
-                    A temporary password will be generated. The user will need to change it on their next login.
+                    A temporary password will be generated. The user will need to change it on their
+                    next login.
                   </p>
                 </div>
               </div>
@@ -257,4 +252,3 @@ export function PasswordManagementModal({
     </Modal>
   );
 }
-

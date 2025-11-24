@@ -17,9 +17,9 @@ export interface AuditDetailsModalProps {
 
 export function AuditDetailsModal({ log, isOpen, onClose }: AuditDetailsModalProps) {
   if (!log) return null;
-  
+
   const details = log.details || {};
-  
+
   return (
     <Modal
       title="Audit Log Details"
@@ -43,7 +43,7 @@ export function AuditDetailsModal({ log, isOpen, onClose }: AuditDetailsModalPro
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-start gap-2">
             <FileText className="h-4 w-4 text-[var(--brand-muted)] mt-0.5" />
             <div>
@@ -53,7 +53,7 @@ export function AuditDetailsModal({ log, isOpen, onClose }: AuditDetailsModalPro
               </div>
             </div>
           </div>
-          
+
           {log.userEmail && (
             <div className="flex items-start gap-2">
               <User className="h-4 w-4 text-[var(--brand-muted)] mt-0.5" />
@@ -70,7 +70,7 @@ export function AuditDetailsModal({ log, isOpen, onClose }: AuditDetailsModalPro
               </div>
             </div>
           )}
-          
+
           {log.ipAddress && (
             <div className="flex items-start gap-2">
               <MapPin className="h-4 w-4 text-[var(--brand-muted)] mt-0.5" />
@@ -82,7 +82,7 @@ export function AuditDetailsModal({ log, isOpen, onClose }: AuditDetailsModalPro
               </div>
             </div>
           )}
-          
+
           {log.userAgent && (
             <div className="flex items-start gap-2">
               <Monitor className="h-4 w-4 text-[var(--brand-muted)] mt-0.5" />
@@ -94,7 +94,7 @@ export function AuditDetailsModal({ log, isOpen, onClose }: AuditDetailsModalPro
               </div>
             </div>
           )}
-          
+
           {log.requestId && (
             <div className="flex items-start gap-2">
               <Code className="h-4 w-4 text-[var(--brand-muted)] mt-0.5" />
@@ -107,11 +107,13 @@ export function AuditDetailsModal({ log, isOpen, onClose }: AuditDetailsModalPro
             </div>
           )}
         </div>
-        
+
         {/* Resource Info */}
         {(log.resourceType || log.resourceId) && (
           <div className="rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-secondary)] p-4">
-            <div className="text-xs font-medium text-[var(--brand-text-secondary)] mb-2">Resource</div>
+            <div className="text-xs font-medium text-[var(--brand-text-secondary)] mb-2">
+              Resource
+            </div>
             <div className="space-y-1">
               {log.resourceType && (
                 <div className="text-sm text-[var(--brand-text-primary)]">
@@ -126,7 +128,7 @@ export function AuditDetailsModal({ log, isOpen, onClose }: AuditDetailsModalPro
             </div>
           </div>
         )}
-        
+
         {/* Tags */}
         {log.tags && log.tags.length > 0 && (
           <div className="rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-secondary)] p-4">
@@ -137,11 +139,13 @@ export function AuditDetailsModal({ log, isOpen, onClose }: AuditDetailsModalPro
             <TagsCell tags={log.tags} maxDisplay={10} />
           </div>
         )}
-        
+
         {/* Details */}
         {Object.keys(details).length > 0 && (
           <div className="rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-secondary)] p-4">
-            <div className="text-xs font-medium text-[var(--brand-text-secondary)] mb-2">Details</div>
+            <div className="text-xs font-medium text-[var(--brand-text-secondary)] mb-2">
+              Details
+            </div>
             <pre className="text-xs text-[var(--brand-text-primary)] overflow-auto max-h-64 bg-[var(--brand-surface)] p-3 rounded border border-[var(--brand-border)]">
               {JSON.stringify(details, null, 2)}
             </pre>
@@ -151,4 +155,3 @@ export function AuditDetailsModal({ log, isOpen, onClose }: AuditDetailsModalPro
     </Modal>
   );
 }
-

@@ -2,7 +2,7 @@ import type { Role } from '../lib/api';
 import type {
   StudentRegistrationInput,
   TeacherRegistrationInput,
-  AdminRegistrationInput
+  AdminRegistrationInput,
 } from '../lib/validators/authSchema';
 
 // Extended registration payload that includes profile data

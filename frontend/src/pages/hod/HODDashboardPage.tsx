@@ -28,7 +28,7 @@ export default function HODDashboardPage() {
     return dashboardData.teachers.bySubject.map((item) => ({
       label: item.subject,
       value: item.count,
-      color: 'var(--brand-primary)'
+      color: 'var(--brand-primary)',
     }));
   }, [dashboardData]);
 
@@ -37,7 +37,7 @@ export default function HODDashboardPage() {
     if (!dashboardData?.classes.byLevel) return [];
     return dashboardData.classes.byLevel.map((item) => ({
       label: item.level,
-      value: item.count
+      value: item.count,
     }));
   }, [dashboardData]);
 
@@ -47,13 +47,13 @@ export default function HODDashboardPage() {
         key: 'name',
         header: 'Teacher Name',
         render: (row) => row.name,
-        sortable: true
+        sortable: true,
       },
       {
         key: 'email',
         header: 'Email',
         render: (row) => row.email || 'N/A',
-        sortable: true
+        sortable: true,
       },
       {
         key: 'subjects',
@@ -74,19 +74,19 @@ export default function HODDashboardPage() {
               </span>
             )}
           </div>
-        )
+        ),
       },
       {
         key: 'classes',
         header: 'Classes',
-        render: (row) => `${row.classes.length} classes`
+        render: (row) => `${row.classes.length} classes`,
       },
       {
         key: 'lastActive',
         header: 'Last Active',
         render: (row) => (row.lastActive ? new Date(row.lastActive).toLocaleDateString() : 'Never'),
-        sortable: true
-      }
+        sortable: true,
+      },
     ],
     []
   );

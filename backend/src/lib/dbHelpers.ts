@@ -10,9 +10,7 @@ import { getPool } from '../db/connection';
  * Execute a function with a database client, automatically handling connection and release.
  * This eliminates the repetitive pattern of pool.connect(), try/finally, client.release()
  */
-export async function withDbClient<T>(
-  operation: (client: PoolClient) => Promise<T>
-): Promise<T> {
+export async function withDbClient<T>(operation: (client: PoolClient) => Promise<T>): Promise<T> {
   const pool = getPool();
   const client = await pool.connect();
   try {
@@ -41,7 +39,7 @@ export async function tableExists(
   // Check cache first
   if (tableExistenceCache.has(cacheKey)) {
     const cachedTime = tableExistenceCacheTime.get(cacheKey);
-    if (cachedTime && (now - cachedTime) < TABLE_EXISTENCE_CACHE_TTL_MS) {
+    if (cachedTime && now - cachedTime < TABLE_EXISTENCE_CACHE_TTL_MS) {
       return tableExistenceCache.get(cacheKey)!;
     }
   }
@@ -109,4 +107,3 @@ export function clearTableExistenceCache(): void {
   tableExistenceCache.clear();
   tableExistenceCacheTime.clear();
 }
-

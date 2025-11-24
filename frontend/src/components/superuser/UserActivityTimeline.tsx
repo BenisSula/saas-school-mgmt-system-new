@@ -22,7 +22,7 @@ const ACTION_ICONS: Record<string, ReactNode> = {
   PASSWORD_CHANGE: <Key className="h-4 w-4" />,
   REPORT: <FileText className="h-4 w-4" />,
   SETTINGS: <Settings className="h-4 w-4" />,
-  DEFAULT: <Activity className="h-4 w-4" />
+  DEFAULT: <Activity className="h-4 w-4" />,
 };
 
 const ACTION_COLORS: Record<string, string> = {
@@ -38,7 +38,7 @@ const ACTION_COLORS: Record<string, string> = {
   REPORT: 'bg-[var(--brand-info)]/20 text-[var(--brand-info)] border-[var(--brand-info)]/30',
   SETTINGS:
     'bg-[var(--brand-primary)]/20 text-[var(--brand-primary)] border-[var(--brand-primary)]/30',
-  DEFAULT: 'bg-[var(--brand-muted)]/20 text-[var(--brand-muted)] border-[var(--brand-muted)]/30'
+  DEFAULT: 'bg-[var(--brand-muted)]/20 text-[var(--brand-muted)] border-[var(--brand-muted)]/30',
 };
 
 export function UserActivityTimeline({ userId, tenantId, limit = 50 }: UserActivityTimelineProps) {
@@ -51,14 +51,14 @@ export function UserActivityTimeline({ userId, tenantId, limit = 50 }: UserActiv
         limit?: number;
       } = {
         userId,
-        limit
+        limit,
       };
 
       if (tenantId !== undefined && tenantId !== null) filters.tenantId = tenantId;
 
       return await api.superuser.getPlatformAuditLogs(filters);
     },
-    enabled: !!userId
+    enabled: !!userId,
   });
 
   const groupedActivities = useMemo(() => {
@@ -89,7 +89,7 @@ export function UserActivityTimeline({ userId, tenantId, limit = 50 }: UserActiv
         return (
           new Date(bTime?.toString() || '').getTime() - new Date(aTime?.toString() || '').getTime()
         );
-      })
+      }),
     }));
   }, [data?.logs]);
 
@@ -176,7 +176,7 @@ export function UserActivityTimeline({ userId, tenantId, limit = 50 }: UserActiv
                   const time = timestamp
                     ? new Date(timestamp.toString()).toLocaleTimeString('en-US', {
                         hour: '2-digit',
-                        minute: '2-digit'
+                        minute: '2-digit',
                       })
                     : '—';
 

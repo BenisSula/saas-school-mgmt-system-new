@@ -11,11 +11,16 @@ export interface ActivityLogProps {
   showTitle?: boolean;
 }
 
-export function ActivityLog({ entityType, entityId, limit = 10, showTitle = true }: ActivityLogProps) {
+export function ActivityLog({
+  entityType,
+  entityId,
+  limit = 10,
+  showTitle = true,
+}: ActivityLogProps) {
   const filters: ActivityLogFilters = {
     ...(entityType && { entityType }),
     ...(entityId && { entityId }),
-    limit
+    limit,
   };
 
   const { data: logs = [], isLoading, error } = useActivityLogs(filters);
@@ -112,4 +117,3 @@ export function ActivityLog({ entityType, entityId, limit = 10, showTitle = true
 }
 
 export default ActivityLog;
-

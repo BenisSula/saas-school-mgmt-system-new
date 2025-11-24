@@ -12,20 +12,20 @@ import { extractUserAgent } from './superuserHelpers';
 import { Role } from '../config/permissions';
 
 export const resetPasswordParamsSchema = z.object({
-  userId: z.string().uuid()
+  userId: z.string().uuid(),
 });
 
 export const resetPasswordBodySchema = z.object({
-  reason: z.string().optional()
+  reason: z.string().optional(),
 });
 
 export const changePasswordParamsSchema = z.object({
-  userId: z.string().uuid()
+  userId: z.string().uuid(),
 });
 
 export const changePasswordBodySchema = z.object({
   newPassword: z.string().min(8, 'Password must be at least 8 characters'),
-  reason: z.string().optional()
+  reason: z.string().optional(),
 });
 
 /**
@@ -50,7 +50,7 @@ export function createPasswordResetHandler(options: {
 
       const pool = getPool();
       const paramsResult = resetPasswordParamsSchema.safeParse(req.params);
-      
+
       if (!paramsResult.success) {
         return res.status(400).json({ message: 'Invalid user ID' });
       }
@@ -78,7 +78,7 @@ export function createPasswordResetHandler(options: {
 
       res.json({
         message: 'Password reset successfully',
-        temporaryPassword: result.temporaryPassword
+        temporaryPassword: result.temporaryPassword,
       });
     } catch (error) {
       next(error);
@@ -109,7 +109,7 @@ export function createPasswordChangeHandler(options: {
 
       const pool = getPool();
       const paramsResult = changePasswordParamsSchema.safeParse(req.params);
-      
+
       if (!paramsResult.success) {
         return res.status(400).json({ message: 'Invalid user ID' });
       }
@@ -142,4 +142,3 @@ export function createPasswordChangeHandler(options: {
     }
   };
 }
-

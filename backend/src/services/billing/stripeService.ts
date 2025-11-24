@@ -17,11 +17,13 @@ let stripeInstance: Stripe | null = null;
 function getStripeClient(): Stripe {
   if (!stripeInstance) {
     if (!process.env.STRIPE_SECRET_KEY) {
-      throw new Error('STRIPE_SECRET_KEY environment variable is required. Please set it in your .env file.');
+      throw new Error(
+        'STRIPE_SECRET_KEY environment variable is required. Please set it in your .env file.'
+      );
     }
     stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2025-11-17.clover',
-      typescript: true
+      typescript: true,
     });
   }
   return stripeInstance;
@@ -56,7 +58,9 @@ export async function getOrCreateStripeCustomer(
       return existingCustomerId;
     } catch {
       // Customer doesn't exist in Stripe, create new one
-      console.warn(`[Stripe] Customer ${existingCustomerId} not found in Stripe, creating new customer`);
+      console.warn(
+        `[Stripe] Customer ${existingCustomerId} not found in Stripe, creating new customer`
+      );
     }
   }
 
@@ -65,13 +69,13 @@ export async function getOrCreateStripeCustomer(
     name: tenantName,
     email: tenantEmail,
     metadata: {
-      tenant_id: tenantId
-    }
+      tenant_id: tenantId,
+    },
   });
 
   // Store customer ID in tenant metadata
   await client.query(
-    'UPDATE shared.tenants SET metadata = COALESCE(metadata, \'{}\'::jsonb) || jsonb_build_object(\'stripe_customer_id\', $1) WHERE id = $2',
+    "UPDATE shared.tenants SET metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object('stripe_customer_id', $1) WHERE id = $2",
     [customer.id, tenantId]
   );
 
@@ -82,7 +86,7 @@ export async function getOrCreateStripeCustomer(
     resourceType: 'billing',
     resourceId: customer.id,
     details: { tenantId, customerId: customer.id },
-    severity: 'info'
+    severity: 'info',
   });
 
   return customer.id;
@@ -112,8 +116,8 @@ export async function createStripeSubscription(
     items: [{ price: priceId }],
     metadata: {
       tenant_id: tenantId,
-      ...options?.metadata
-    }
+      ...options?.metadata,
+    },
   };
 
   if (options?.trialDays) {
@@ -145,13 +149,17 @@ export async function createStripeSubscription(
       customerId,
       priceId,
       subscription.status,
-      new Date((subscription as unknown as { current_period_start: number }).current_period_start * 1000),
-      new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000),
+      new Date(
+        (subscription as unknown as { current_period_start: number }).current_period_start * 1000
+      ),
+      new Date(
+        (subscription as unknown as { current_period_end: number }).current_period_end * 1000
+      ),
       subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
       subscription.items.data[0]?.price.unit_amount || 0,
       subscription.currency.toUpperCase(),
       subscription.items.data[0]?.price.recurring?.interval || 'month',
-      JSON.stringify(subscription.metadata)
+      JSON.stringify(subscription.metadata),
     ]
   );
 
@@ -162,7 +170,7 @@ export async function createStripeSubscription(
     resourceType: 'subscription',
     resourceId: subscription.id,
     details: { tenantId, subscriptionId: subscription.id, priceId },
-    severity: 'info'
+    severity: 'info',
   });
 
   return subscription;
@@ -182,15 +190,17 @@ export async function updateStripeSubscription(
 
   // Update subscription with new price
   const updatedSubscription = await getStripeClient().subscriptions.update(subscriptionId, {
-    items: [{
-      id: subscription.items.data[0]?.id,
-      price: newPriceId
-    }],
+    items: [
+      {
+        id: subscription.items.data[0]?.id,
+        price: newPriceId,
+      },
+    ],
     proration_behavior: prorate ? 'create_prorations' : 'none',
     metadata: {
       ...subscription.metadata,
-      plan_changed_at: new Date().toISOString()
-    }
+      plan_changed_at: new Date().toISOString(),
+    },
   });
 
   // Update database
@@ -207,9 +217,14 @@ export async function updateStripeSubscription(
       newPriceId,
       updatedSubscription.items.data[0]?.price.unit_amount || 0,
       updatedSubscription.status,
-      new Date((updatedSubscription as unknown as { current_period_start: number }).current_period_start * 1000),
-      new Date((updatedSubscription as unknown as { current_period_end: number }).current_period_end * 1000),
-      subscriptionId
+      new Date(
+        (updatedSubscription as unknown as { current_period_start: number }).current_period_start *
+          1000
+      ),
+      new Date(
+        (updatedSubscription as unknown as { current_period_end: number }).current_period_end * 1000
+      ),
+      subscriptionId,
     ]
   );
 
@@ -221,7 +236,7 @@ export async function updateStripeSubscription(
     resourceType: 'subscription',
     resourceId: subscriptionId,
     details: { subscriptionId, newPriceId, prorate },
-    severity: 'info'
+    severity: 'info',
   });
 
   return updatedSubscription;
@@ -240,7 +255,7 @@ export async function cancelStripeSubscription(
   const canceledSubscription = cancelImmediately
     ? await getStripeClient().subscriptions.cancel(subscriptionId)
     : await getStripeClient().subscriptions.update(subscriptionId, {
-        cancel_at_period_end: true
+        cancel_at_period_end: true,
       });
 
   // Update database
@@ -255,7 +270,7 @@ export async function cancelStripeSubscription(
       canceledSubscription.status,
       cancelImmediately ? new Date() : null,
       !cancelImmediately,
-      subscriptionId
+      subscriptionId,
     ]
   );
 
@@ -267,7 +282,7 @@ export async function cancelStripeSubscription(
     resourceType: 'subscription',
     resourceId: subscriptionId,
     details: { subscriptionId, cancelImmediately },
-    severity: 'info'
+    severity: 'info',
   });
 
   return canceledSubscription;
@@ -307,14 +322,16 @@ export async function handleStripeInvoice(
       invoice.status,
       invoice.invoice_pdf || null,
       invoice.hosted_invoice_url || null,
-      JSON.stringify(invoice.metadata)
+      JSON.stringify(invoice.metadata),
     ]
   );
 
   // If paid, record payment
-  const paymentIntentId = (invoice as unknown as { payment_intent?: string | { id: string } }).payment_intent;
+  const paymentIntentId = (invoice as unknown as { payment_intent?: string | { id: string } })
+    .payment_intent;
   if (invoice.status === 'paid' && paymentIntentId) {
-    const paymentIntentIdStr = typeof paymentIntentId === 'string' ? paymentIntentId : paymentIntentId.id;
+    const paymentIntentIdStr =
+      typeof paymentIntentId === 'string' ? paymentIntentId : paymentIntentId.id;
     const paymentIntent = await getStripeClient().paymentIntents.retrieve(paymentIntentIdStr);
 
     await client.query(
@@ -326,13 +343,15 @@ export async function handleStripeInvoice(
       [
         tenantId,
         paymentIntent.id,
-        typeof paymentIntent.latest_charge === 'string' ? paymentIntent.latest_charge : paymentIntent.latest_charge?.id || null,
+        typeof paymentIntent.latest_charge === 'string'
+          ? paymentIntent.latest_charge
+          : paymentIntent.latest_charge?.id || null,
         paymentIntent.amount,
         paymentIntent.currency.toUpperCase(),
         paymentIntent.status === 'succeeded' ? 'succeeded' : 'pending',
         'stripe',
         paymentIntent.id,
-        JSON.stringify(paymentIntent.metadata)
+        JSON.stringify(paymentIntent.metadata),
       ]
     );
 
@@ -346,9 +365,9 @@ export async function handleStripeInvoice(
         invoiceId: invoice.id,
         paymentIntentId: paymentIntent.id,
         amount: paymentIntent.amount,
-        currency: paymentIntent.currency
+        currency: paymentIntent.currency,
       },
-      severity: 'info'
+      severity: 'info',
     });
   }
 
@@ -359,7 +378,7 @@ export async function handleStripeInvoice(
     resourceType: 'invoice',
     resourceId: invoice.id,
     details: { invoiceId: invoice.id, status: invoice.status },
-    severity: 'info'
+    severity: 'info',
   });
 }
 
@@ -375,9 +394,14 @@ export async function handleStripePaymentIntent(
     throw new Error('PaymentIntent missing tenant_id in metadata');
   }
 
-  const status = paymentIntent.status === 'succeeded' ? 'succeeded' : 
-                 paymentIntent.status === 'canceled' ? 'canceled' :
-                 paymentIntent.status === 'processing' ? 'processing' : 'failed';
+  const status =
+    paymentIntent.status === 'succeeded'
+      ? 'succeeded'
+      : paymentIntent.status === 'canceled'
+        ? 'canceled'
+        : paymentIntent.status === 'processing'
+          ? 'processing'
+          : 'failed';
 
   await client.query(
     `INSERT INTO shared.payments (
@@ -391,22 +415,28 @@ export async function handleStripePaymentIntent(
       updated_at = NOW()`,
     [
       tenantId,
-      paymentIntent.metadata?.user_id as string | undefined || null,
+      (paymentIntent.metadata?.user_id as string | undefined) || null,
       paymentIntent.id,
-      typeof paymentIntent.latest_charge === 'string' ? paymentIntent.latest_charge : paymentIntent.latest_charge?.id || null,
+      typeof paymentIntent.latest_charge === 'string'
+        ? paymentIntent.latest_charge
+        : paymentIntent.latest_charge?.id || null,
       paymentIntent.amount,
       paymentIntent.currency.toUpperCase(),
       status,
       'stripe',
       paymentIntent.id,
       paymentIntent.payment_method_types[0] || null,
-      JSON.stringify(paymentIntent.metadata)
+      JSON.stringify(paymentIntent.metadata),
     ]
   );
 
   // Audit log
-  const action = status === 'succeeded' ? 'PAYMENT_SUCCEEDED' : 
-                 status === 'failed' ? 'PAYMENT_FAILED' : 'PAYMENT_PROCESSING';
+  const action =
+    status === 'succeeded'
+      ? 'PAYMENT_SUCCEEDED'
+      : status === 'failed'
+        ? 'PAYMENT_FAILED'
+        : 'PAYMENT_PROCESSING';
 
   await createAuditLog(client, {
     tenantId,
@@ -417,9 +447,9 @@ export async function handleStripePaymentIntent(
       paymentIntentId: paymentIntent.id,
       amount: paymentIntent.amount,
       currency: paymentIntent.currency,
-      status
+      status,
     },
-    severity: status === 'succeeded' ? 'info' : 'warning'
+    severity: status === 'succeeded' ? 'info' : 'warning',
   });
 }
 
@@ -441,4 +471,3 @@ export async function getStripeCustomerId(
 
   return (result.rows[0].metadata?.stripe_customer_id as string) || null;
 }
-

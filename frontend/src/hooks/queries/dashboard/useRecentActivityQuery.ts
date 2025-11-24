@@ -37,7 +37,7 @@ export function recentActivityQueryOptions(tenantId: string | null, limit: numbe
       const logs = await api.getAuditLogs(undefined, {
         limit,
         // Add filters for recent activity (last 24 hours)
-        from: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        from: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       });
 
       // Transform to match the required interface with ALL fields identified as missing
@@ -50,15 +50,15 @@ export function recentActivityQueryOptions(tenantId: string | null, limit: numbe
         tags: log.tags || [],
         requestId: log.requestId || undefined,
         details: log.details || null,
-        createdAt: log.createdAt || log.timestamp
+        createdAt: log.createdAt || log.timestamp,
       }));
 
       return {
-        activities
+        activities,
       };
     },
     enabled: !!tenantId,
-    ...dashboardQueryConfig
+    ...dashboardQueryConfig,
   });
 }
 
@@ -83,8 +83,7 @@ export function useRecentActivityQuery(limit: number = 20) {
   return useQuery({
     ...queryOptions,
     select: (data): RecentActivityResponse => ({
-      activities: data.activities
-    })
+      activities: data.activities,
+    }),
   });
 }
-

@@ -55,7 +55,7 @@ async function executePgDump(
   try {
     const env = {
       ...process.env,
-      PGPASSWORD: dbConfig.password
+      PGPASSWORD: dbConfig.password,
     };
 
     let pgDumpArgs = '';
@@ -86,7 +86,7 @@ async function executePgDump(
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 }
@@ -116,7 +116,7 @@ export async function createBackup(client: PoolClient, input: CreateBackupInput)
       `${input.storageLocation}/${backupFilename}`,
       input.storageProvider,
       JSON.stringify(input.metadata || {}),
-      input.createdBy || null
+      input.createdBy || null,
     ]
   );
 
@@ -188,7 +188,7 @@ export async function getBackupJobs(
 
   return {
     jobs: jobsResult.rows,
-    total
+    total,
   };
 }
 
@@ -226,7 +226,7 @@ export async function createBackupSchedule(
       input.storageProvider,
       JSON.stringify(input.storageConfig || {}),
       nextRunAt,
-      input.createdBy || null
+      input.createdBy || null,
     ]
   );
 

@@ -16,11 +16,9 @@ export interface ClassDetailViewProps {
  */
 export function ClassDetailView({ classId }: ClassDetailViewProps) {
   // Fetch class details
-  const { data: classes = [] } = useQuery(
-    queryKeys.admin.classes(),
-    () => api.listClasses(),
-    { staleTime: 60000 }
-  );
+  const { data: classes = [] } = useQuery(queryKeys.admin.classes(), () => api.listClasses(), {
+    staleTime: 60000,
+  });
 
   const schoolClass = classes.find((c) => c.id === classId);
 
@@ -48,9 +46,7 @@ export function ClassDetailView({ classId }: ClassDetailViewProps) {
   );
 
   // Find class teacher (teacher assigned to this class)
-  const classTeacher = allTeachers.find((teacher) =>
-    teacher.assigned_classes.includes(classId)
-  );
+  const classTeacher = allTeachers.find((teacher) => teacher.assigned_classes.includes(classId));
 
   // Fetch teacher assignments for this class
   const { data: teacherAssignments = [] } = useQuery(
@@ -75,11 +71,11 @@ export function ClassDetailView({ classId }: ClassDetailViewProps) {
           <GraduationCap className="h-5 w-5 text-[var(--brand-primary)]" />
           <span className="text-lg font-semibold">{schoolClass.name}</span>
         </div>
-      )
+      ),
     },
     {
       label: 'Class ID',
-      value: schoolClass.id
+      value: schoolClass.id,
     },
     {
       label: 'Total Students',
@@ -89,7 +85,7 @@ export function ClassDetailView({ classId }: ClassDetailViewProps) {
           <span className="font-semibold">{classStudents.length}</span>
           <span className="text-[var(--brand-muted)]">students</span>
         </div>
-      )
+      ),
     },
     {
       label: 'Class Teacher',
@@ -101,7 +97,7 @@ export function ClassDetailView({ classId }: ClassDetailViewProps) {
         </div>
       ) : (
         'Not assigned'
-      )
+      ),
     },
     {
       label: 'Subjects',
@@ -122,34 +118,36 @@ export function ClassDetailView({ classId }: ClassDetailViewProps) {
           )}
         </div>
       ),
-      span: 2
+      span: 2,
     },
     {
       label: 'Teachers Assigned',
-      value: classTeacherAssignments.length > 0 ? (
-        <div className="space-y-2">
-          {classTeacherAssignments.map((assignment) => {
-            const teacher = allTeachers.find((t) => t.id === assignment.teacher_id);
-            return teacher ? (
-              <div
-                key={assignment.id}
-                className="flex items-center justify-between rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface)]/50 p-2"
-              >
-                <div>
-                  <p className="text-sm font-medium">{teacher.name}</p>
-                  <p className="text-xs text-[var(--brand-muted)]">
-                    {assignment.subject_name} {assignment.is_class_teacher ? '(Class Teacher)' : ''}
-                  </p>
+      value:
+        classTeacherAssignments.length > 0 ? (
+          <div className="space-y-2">
+            {classTeacherAssignments.map((assignment) => {
+              const teacher = allTeachers.find((t) => t.id === assignment.teacher_id);
+              return teacher ? (
+                <div
+                  key={assignment.id}
+                  className="flex items-center justify-between rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface)]/50 p-2"
+                >
+                  <div>
+                    <p className="text-sm font-medium">{teacher.name}</p>
+                    <p className="text-xs text-[var(--brand-muted)]">
+                      {assignment.subject_name}{' '}
+                      {assignment.is_class_teacher ? '(Class Teacher)' : ''}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ) : null;
-          })}
-        </div>
-      ) : (
-        <span className="text-[var(--brand-muted)]">No teachers assigned</span>
-      ),
-      span: 2
-    }
+              ) : null;
+            })}
+          </div>
+        ) : (
+          <span className="text-[var(--brand-muted)]">No teachers assigned</span>
+        ),
+      span: 2,
+    },
   ];
 
   return (
@@ -175,9 +173,7 @@ export function ClassDetailView({ classId }: ClassDetailViewProps) {
                           {student.first_name} {student.last_name}
                         </p>
                         <div className="mt-1 flex items-center gap-3 text-xs text-[var(--brand-muted)]">
-                          {student.admission_number && (
-                            <span>ID: {student.admission_number}</span>
-                          )}
+                          {student.admission_number && <span>ID: {student.admission_number}</span>}
                           {student.enrollment_status && (
                             <span
                               className={`rounded-full px-2 py-0.5 ${
@@ -195,8 +191,8 @@ export function ClassDetailView({ classId }: ClassDetailViewProps) {
                   ))}
                 </div>
               ),
-              span: 2
-            }
+              span: 2,
+            },
           ]}
         />
       )}
@@ -205,4 +201,3 @@ export function ClassDetailView({ classId }: ClassDetailViewProps) {
 }
 
 export default ClassDetailView;
-

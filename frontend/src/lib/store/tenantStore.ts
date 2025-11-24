@@ -11,5 +11,5 @@ interface TenantStore {
 
 export const useTenantStore = create<TenantStore>((set) => ({
   selectedTenantId: null,
-  setSelectedTenantId: (tenantId) => set({ selectedTenantId: tenantId })
+  setSelectedTenantId: (tenantId) => set({ selectedTenantId: tenantId }),
 }));

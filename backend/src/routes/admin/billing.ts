@@ -15,7 +15,7 @@ import { createSuccessResponse, createErrorResponse } from '../../lib/responseHe
 import {
   createStripeSubscription,
   updateStripeSubscription,
-  cancelStripeSubscription
+  cancelStripeSubscription,
 } from '../../services/billing/stripeService';
 import { getSubscriptionByTenantId } from '../../services/billing/subscriptionService';
 import { getInvoicesForTenant, getInvoiceById } from '../../services/billing/invoiceService';
@@ -56,56 +56,62 @@ router.get('/subscription', async (req, res, next) => {
  * POST /admin/billing/subscription/subscribe
  * Create subscription for tenant (admin only)
  */
-router.post('/subscription/subscribe', requirePermission('billing:manage'), async (req, res, next) => {
-  try {
-    const context = validateContextOrRespond(req, res);
-    if (!context) return;
-    const { tenant } = context;
-
-    const schema = z.object({
-      priceId: z.string().min(1, 'Stripe price ID is required'),
-      trialDays: z.number().int().min(0).max(365).optional()
-    });
-
-    const parsed = schema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json(createErrorResponse(parsed.error.message));
-    }
-
-    const pool = getPool();
-    const client = await pool.connect();
+router.post(
+  '/subscription/subscribe',
+  requirePermission('billing:manage'),
+  async (req, res, next) => {
     try {
-      // Get tenant name for customer creation
-      const tenantResult = await client.query<{ name: string }>(
-        'SELECT name FROM shared.tenants WHERE id = $1',
-        [tenant.id]
-      );
+      const context = validateContextOrRespond(req, res);
+      if (!context) return;
+      const { tenant } = context;
 
-      if (tenantResult.rows.length === 0) {
-        return res.status(404).json(createErrorResponse('Tenant not found'));
+      const schema = z.object({
+        priceId: z.string().min(1, 'Stripe price ID is required'),
+        trialDays: z.number().int().min(0).max(365).optional(),
+      });
+
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json(createErrorResponse(parsed.error.message));
       }
 
-      const subscription = await createStripeSubscription(
-        client,
-        tenant.id,
-        parsed.data.priceId,
-        {
-          trialDays: parsed.data.trialDays,
-          metadata: {
-            created_by: req.user?.id,
-            created_via: 'admin_portal'
-          }
-        }
-      );
+      const pool = getPool();
+      const client = await pool.connect();
+      try {
+        // Get tenant name for customer creation
+        const tenantResult = await client.query<{ name: string }>(
+          'SELECT name FROM shared.tenants WHERE id = $1',
+          [tenant.id]
+        );
 
-      res.status(201).json(createSuccessResponse(subscription, 'Subscription created successfully'));
-    } finally {
-      client.release();
+        if (tenantResult.rows.length === 0) {
+          return res.status(404).json(createErrorResponse('Tenant not found'));
+        }
+
+        const subscription = await createStripeSubscription(
+          client,
+          tenant.id,
+          parsed.data.priceId,
+          {
+            trialDays: parsed.data.trialDays,
+            metadata: {
+              created_by: req.user?.id,
+              created_via: 'admin_portal',
+            },
+          }
+        );
+
+        res
+          .status(201)
+          .json(createSuccessResponse(subscription, 'Subscription created successfully'));
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      next(error);
     }
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 /**
  * POST /admin/billing/subscription/cancel
@@ -118,7 +124,7 @@ router.post('/subscription/cancel', requirePermission('billing:manage'), async (
     const { tenant } = context;
 
     const schema = z.object({
-      cancelImmediately: z.boolean().optional().default(false)
+      cancelImmediately: z.boolean().optional().default(false),
     });
 
     const parsed = schema.safeParse(req.body);
@@ -134,7 +140,8 @@ router.post('/subscription/cancel', requirePermission('billing:manage'), async (
         return res.status(404).json(createErrorResponse('No subscription found'));
       }
 
-      const stripeSubscriptionId = (subscription as { stripe_subscription_id?: string }).stripe_subscription_id;
+      const stripeSubscriptionId = (subscription as { stripe_subscription_id?: string })
+        .stripe_subscription_id;
       if (!stripeSubscriptionId) {
         return res.status(400).json(createErrorResponse('Subscription is not linked to Stripe'));
       }
@@ -158,50 +165,55 @@ router.post('/subscription/cancel', requirePermission('billing:manage'), async (
  * POST /admin/billing/subscription/update-plan
  * Update subscription plan (with proration)
  */
-router.post('/subscription/update-plan', requirePermission('billing:manage'), async (req, res, next) => {
-  try {
-    const context = validateContextOrRespond(req, res);
-    if (!context) return;
-    const { tenant } = context;
-
-    const schema = z.object({
-      newPriceId: z.string().min(1, 'New Stripe price ID is required'),
-      prorate: z.boolean().optional().default(true)
-    });
-
-    const parsed = schema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json(createErrorResponse(parsed.error.message));
-    }
-
-    const pool = getPool();
-    const client = await pool.connect();
+router.post(
+  '/subscription/update-plan',
+  requirePermission('billing:manage'),
+  async (req, res, next) => {
     try {
-      const subscription = await getSubscriptionByTenantId(client, tenant.id);
-      if (!subscription) {
-        return res.status(404).json(createErrorResponse('No subscription found'));
+      const context = validateContextOrRespond(req, res);
+      if (!context) return;
+      const { tenant } = context;
+
+      const schema = z.object({
+        newPriceId: z.string().min(1, 'New Stripe price ID is required'),
+        prorate: z.boolean().optional().default(true),
+      });
+
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json(createErrorResponse(parsed.error.message));
       }
 
-      const stripeSubscriptionId = (subscription as { stripe_subscription_id?: string }).stripe_subscription_id;
-      if (!stripeSubscriptionId) {
-        return res.status(400).json(createErrorResponse('Subscription is not linked to Stripe'));
+      const pool = getPool();
+      const client = await pool.connect();
+      try {
+        const subscription = await getSubscriptionByTenantId(client, tenant.id);
+        if (!subscription) {
+          return res.status(404).json(createErrorResponse('No subscription found'));
+        }
+
+        const stripeSubscriptionId = (subscription as { stripe_subscription_id?: string })
+          .stripe_subscription_id;
+        if (!stripeSubscriptionId) {
+          return res.status(400).json(createErrorResponse('Subscription is not linked to Stripe'));
+        }
+
+        const updatedSubscription = await updateStripeSubscription(
+          client,
+          stripeSubscriptionId,
+          parsed.data.newPriceId,
+          parsed.data.prorate
+        );
+
+        res.json(createSuccessResponse(updatedSubscription, 'Subscription updated successfully'));
+      } finally {
+        client.release();
       }
-
-      const updatedSubscription = await updateStripeSubscription(
-        client,
-        stripeSubscriptionId,
-        parsed.data.newPriceId,
-        parsed.data.prorate
-      );
-
-      res.json(createSuccessResponse(updatedSubscription, 'Subscription updated successfully'));
-    } finally {
-      client.release();
+    } catch (error) {
+      next(error);
     }
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 /**
  * GET /admin/billing/invoices
@@ -219,7 +231,7 @@ router.get('/invoices', async (req, res, next) => {
       const result = await getInvoicesForTenant(client, tenant.id, {
         status: req.query.status as string,
         limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
-        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined
+        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(createSuccessResponse(result, 'Invoices retrieved successfully'));
     } finally {
@@ -279,7 +291,7 @@ router.get('/payments', async (req, res, next) => {
         invoiceId: req.query.invoiceId as string,
         status: req.query.status as string,
         limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
-        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined
+        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(createSuccessResponse(result, 'Payments retrieved successfully'));
     } finally {
@@ -291,4 +303,3 @@ router.get('/payments', async (req, res, next) => {
 });
 
 export default router;
-

@@ -26,15 +26,15 @@ jest.mock('../src/middleware/authenticate', () => ({
       role: 'superadmin',
       tenantId: 'tenant_alpha',
       email: 'super@test.com',
-      tokenId: 'token'
+      tokenId: 'token',
     };
     next();
-  }
+  },
 }));
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -51,7 +51,7 @@ describe('User management routes', () => {
     const tenant = await createTenant(
       {
         name: 'Alpha Academy',
-        schemaName: 'tenant_alpha'
+        schemaName: 'tenant_alpha',
       },
       pool
     );
@@ -89,8 +89,8 @@ describe('User management routes', () => {
         expect.objectContaining({
           id: targetUserId,
           email: 'teacher@test.com',
-          role: 'teacher'
-        })
+          role: 'teacher',
+        }),
       ])
     );
   });
@@ -104,7 +104,7 @@ describe('User management routes', () => {
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({
       id: targetUserId,
-      role: 'admin'
+      role: 'admin',
     });
 
     const listAfter = await request(app).get('/users').set(headers);

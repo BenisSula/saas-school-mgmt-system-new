@@ -34,7 +34,7 @@ export function AdminInvoicePage() {
       clear();
       const [invoicesData, studentsData] = await Promise.all([
         api.listInvoices({ status: statusFilter || undefined }),
-        api.listStudents()
+        api.listStudents(),
       ]);
       setInvoices(invoicesData);
       setStudents(studentsData);
@@ -77,8 +77,8 @@ export function AdminInvoicePage() {
         dueDate,
         items: validItems.map((item) => ({
           description: item.description.trim(),
-          amount: item.amount
-        }))
+          amount: item.amount,
+        })),
       };
 
       const created = await api.createInvoice(payload);
@@ -100,22 +100,22 @@ export function AdminInvoicePage() {
       {
         header: 'Student',
         key: 'student_name' as const,
-        render: (row: Invoice) => row.student_name || row.student_id || 'Unknown'
+        render: (row: Invoice) => row.student_name || row.student_id || 'Unknown',
       },
       {
         header: 'Admission Number',
         key: 'admission_number' as const,
-        render: (row: Invoice) => row.admission_number || 'N/A'
+        render: (row: Invoice) => row.admission_number || 'N/A',
       },
       {
         header: 'Total',
         key: 'total_amount' as const,
-        render: (row: Invoice) => `$${Number(row.total_amount).toFixed(2)}`
+        render: (row: Invoice) => `$${Number(row.total_amount).toFixed(2)}`,
       },
       {
         header: 'Paid',
         key: 'amount_paid' as const,
-        render: (row: Invoice) => `$${Number(row.amount_paid || 0).toFixed(2)}`
+        render: (row: Invoice) => `$${Number(row.amount_paid || 0).toFixed(2)}`,
       },
       {
         header: 'Status',
@@ -132,13 +132,13 @@ export function AdminInvoicePage() {
           >
             {row.status.toUpperCase()}
           </span>
-        )
+        ),
       },
       {
         header: 'Due Date',
         key: 'due_date' as const,
-        render: (row: Invoice) => (row.due_date ? formatDate(row.due_date) : 'N/A')
-      }
+        render: (row: Invoice) => (row.due_date ? formatDate(row.due_date) : 'N/A'),
+      },
     ],
     []
   );
@@ -184,7 +184,7 @@ export function AdminInvoicePage() {
               { label: 'Partial', value: 'partial' },
               { label: 'Paid', value: 'paid' },
               { label: 'Overdue', value: 'overdue' },
-              { label: 'Refunded', value: 'refunded' }
+              { label: 'Refunded', value: 'refunded' },
             ]}
           />
         </header>
@@ -218,7 +218,7 @@ export function AdminInvoicePage() {
             onChange={(event) => setStudentId(event.target.value)}
             options={students.map((student) => ({
               value: student.id,
-              label: `${student.first_name} ${student.last_name}${student.admission_number ? ` (${student.admission_number})` : ''}`
+              label: `${student.first_name} ${student.last_name}${student.admission_number ? ` (${student.admission_number})` : ''}`,
             }))}
           />
           <DatePicker

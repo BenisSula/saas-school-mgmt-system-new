@@ -43,7 +43,6 @@ export function useHodDashboard() {
     enabled: !!tenantId,
     staleTime: 60_000, // 1 minute
     retry: 1,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
   });
 }
-

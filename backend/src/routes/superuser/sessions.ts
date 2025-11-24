@@ -7,13 +7,13 @@ import {
   getActiveSessions,
   getPlatformActiveSessions,
   revokeAllUserSessions,
-  endSession
+  endSession,
 } from '../../services/superuser/sessionService';
 import {
   loginHistoryQuerySchema,
   revokeSessionParamsSchema,
   revokeAllSessionsParamsSchema,
-  revokeAllSessionsBodySchema
+  revokeAllSessionsBodySchema,
 } from '../../validators/superuserSessionValidator';
 import { Role } from '../../config/permissions';
 
@@ -29,7 +29,7 @@ router.use(authenticate, authorizeSuperUser);
 router.get('/sessions', async (req, res, next) => {
   try {
     const pool = getPool();
-    
+
     const filters: {
       userId?: string;
       tenantId?: string | null;
@@ -42,7 +42,10 @@ router.get('/sessions', async (req, res, next) => {
       filters.userId = req.query.userId;
     }
     if (req.query.tenantId !== undefined) {
-      filters.tenantId = req.query.tenantId === 'null' || req.query.tenantId === '' ? null : req.query.tenantId as string;
+      filters.tenantId =
+        req.query.tenantId === 'null' || req.query.tenantId === ''
+          ? null
+          : (req.query.tenantId as string);
     }
     if (req.query.limit) {
       filters.limit = parseInt(req.query.limit as string, 10);
@@ -51,11 +54,7 @@ router.get('/sessions', async (req, res, next) => {
       filters.offset = parseInt(req.query.offset as string, 10);
     }
 
-    const result = await getPlatformActiveSessions(
-      pool,
-      filters,
-      req.user!.role as Role
-    );
+    const result = await getPlatformActiveSessions(pool, filters, req.user!.role as Role);
 
     res.json(result);
   } catch (error) {
@@ -71,7 +70,7 @@ router.get('/users/:userId/login-history', async (req, res, next) => {
   try {
     const pool = getPool();
     const { userId } = req.params;
-    
+
     // Validate userId is UUID
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(userId)) {
@@ -91,15 +90,10 @@ router.get('/users/:userId/login-history', async (req, res, next) => {
       endDate: queryResult.data.endDate,
       isActive: queryResult.data.isActive,
       limit: queryResult.data.limit,
-      offset: queryResult.data.offset
+      offset: queryResult.data.offset,
     };
 
-    const result = await getLoginHistory(
-      pool,
-      filters,
-      req.user!.role as Role,
-      req.user!.id
-    );
+    const result = await getLoginHistory(pool, filters, req.user!.role as Role, req.user!.id);
 
     res.json(result);
   } catch (error) {
@@ -115,19 +109,14 @@ router.get('/users/:userId/sessions', async (req, res, next) => {
   try {
     const pool = getPool();
     const { userId } = req.params;
-    
+
     // Validate userId is UUID
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(userId)) {
       return res.status(400).json({ message: 'Invalid user ID' });
     }
 
-    const sessions = await getActiveSessions(
-      pool,
-      userId,
-      req.user!.role as Role,
-      req.user!.id
-    );
+    const sessions = await getActiveSessions(pool, userId, req.user!.role as Role, req.user!.id);
 
     res.json({ sessions });
   } catch (error) {
@@ -143,7 +132,7 @@ router.post('/users/:userId/sessions/:sessionId/revoke', async (req, res, next) 
   try {
     const pool = getPool();
     const paramsResult = revokeSessionParamsSchema.safeParse(req.params);
-    
+
     if (!paramsResult.success) {
       return res.status(400).json({ message: 'Invalid parameters' });
     }
@@ -166,7 +155,7 @@ router.post('/users/:userId/sessions/revoke-all', async (req, res, next) => {
   try {
     const pool = getPool();
     const paramsResult = revokeAllSessionsParamsSchema.safeParse(req.params);
-    
+
     if (!paramsResult.success) {
       return res.status(400).json({ message: 'Invalid user ID' });
     }
@@ -187,9 +176,9 @@ router.post('/users/:userId/sessions/revoke-all', async (req, res, next) => {
       exceptSessionId
     );
 
-    res.json({ 
+    res.json({
       message: 'Sessions revoked successfully',
-      revokedCount 
+      revokedCount,
     });
   } catch (error) {
     next(error);
@@ -197,4 +186,3 @@ router.post('/users/:userId/sessions/revoke-all', async (req, res, next) => {
 });
 
 export default router;
-

@@ -65,7 +65,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'messages:receive',
     'students:view_self',
     'profile:view_self',
-    'support:raise'
+    'support:raise',
   ],
   teacher: [
     'dashboard:view',
@@ -78,7 +78,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'messages:receive',
     'students:view_own_class',
     'reports:view',
-    'profile:view_self'
+    'profile:view_self',
   ],
   hod: [
     'dashboard:view',
@@ -90,7 +90,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'performance:charts',
     'messages:send',
     'users:manage',
-    'teachers:manage'
+    'teachers:manage',
   ],
   admin: [
     'dashboard:view',
@@ -122,7 +122,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'status:view',
     'status:manage',
     'billing:view',
-    'billing:manage'
+    'billing:manage',
   ],
   superadmin: [
     'dashboard:view',
@@ -163,21 +163,25 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'overrides:create',
     'overrides:revoke',
     'permission_overrides:manage',
-    'permission_overrides:view'
-  ]
+    'permission_overrides:view',
+  ],
 };
 
 /**
  * Checks if a role has a specific permission
  */
-export function hasPermission(role: Role, permission: Permission, additionalRoles?: string[]): boolean {
+export function hasPermission(
+  role: Role,
+  permission: Permission,
+  additionalRoles?: string[]
+): boolean {
   const permissions = rolePermissions[role] ?? [];
-  
+
   // If user has HOD additional role, also check HOD permissions
   if (additionalRoles?.includes('hod') && role === 'teacher') {
     const hodPermissions = rolePermissions['hod'] ?? [];
     return permissions.includes(permission) || hodPermissions.includes(permission);
   }
-  
+
   return permissions.includes(permission);
 }

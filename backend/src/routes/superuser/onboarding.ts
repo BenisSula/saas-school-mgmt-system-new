@@ -8,7 +8,7 @@ import {
   getOnboardingProgress,
   initializeOnboardingWizard,
   updateOnboardingWizard,
-  completeTenantOnboarding
+  completeTenantOnboarding,
 } from '../../services/onboarding/onboardingService';
 import { z } from 'zod';
 
@@ -21,7 +21,7 @@ const createInvitationSchema = z.object({
   email: z.string().email(),
   role: z.enum(['admin', 'teacher', 'student']),
   expiresInHours: z.number().int().min(1).max(168).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional()
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 // Create invitation
@@ -37,7 +37,7 @@ router.post('/invitations', async (req, res, next) => {
     try {
       const result = await createInvitation(client, {
         ...parsed.data,
-        invitedBy: req.user?.id || ''
+        invitedBy: req.user?.id || '',
       });
       res.status(201).json(result);
     } finally {
@@ -53,7 +53,7 @@ router.post('/invitations/:id/accept', async (req, res, next) => {
   try {
     const schema = z.object({
       token: z.string(),
-      password: z.string().min(8)
+      password: z.string().min(8),
     });
 
     const parsed = schema.safeParse(req.body);
@@ -118,7 +118,7 @@ router.patch('/wizard/:tenantId', async (req, res, next) => {
       currentStep: z.number().int().positive().optional(),
       completedSteps: z.array(z.number().int()).optional(),
       wizardData: z.record(z.string(), z.unknown()).optional(),
-      isCompleted: z.boolean().optional()
+      isCompleted: z.boolean().optional(),
     });
 
     const parsed = schema.safeParse(req.body);
@@ -146,7 +146,7 @@ router.post('/complete/:tenantId', async (req, res, next) => {
       name: z.string(),
       address: z.string().optional(),
       contactPhone: z.string().optional(),
-      contactEmail: z.string().email().optional()
+      contactEmail: z.string().email().optional(),
     });
 
     const parsed = schema.safeParse(req.body);
@@ -168,4 +168,3 @@ router.post('/complete/:tenantId', async (req, res, next) => {
 });
 
 export default router;
-

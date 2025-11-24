@@ -10,4 +10,3 @@ describe('GET /health', () => {
     expect(response.body).toHaveProperty('timestamp');
   });
 });
-

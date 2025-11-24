@@ -20,7 +20,7 @@ function buildAttendanceStats(report: TeacherClassReport): StatPair[] {
     { label: 'Present', value: String(report.attendance.present) },
     { label: 'Absent', value: String(report.attendance.absent) },
     { label: 'Late', value: String(report.attendance.late) },
-    { label: 'Attendance rate', value: `${report.attendance.percentage}%` }
+    { label: 'Attendance rate', value: `${report.attendance.percentage}%` },
   ];
 }
 
@@ -28,7 +28,7 @@ function buildFeeStats(report: TeacherClassReport): StatPair[] {
   return [
     { label: 'Billed', value: `$${report.fees.billed.toFixed(2)}` },
     { label: 'Paid', value: `$${report.fees.paid.toFixed(2)}` },
-    { label: 'Outstanding', value: `$${report.fees.outstanding.toFixed(2)}` }
+    { label: 'Outstanding', value: `$${report.fees.outstanding.toFixed(2)}` },
   ];
 }
 
@@ -84,7 +84,7 @@ export default function TeacherReportsPage() {
     await exportAttendanceMutation.mutateAsync({
       classId: selectedClassId,
       date: today,
-      format: exportFormat
+      format: exportFormat,
     });
   };
 
@@ -95,7 +95,7 @@ export default function TeacherReportsPage() {
     }
     await exportGradesMutation.mutateAsync({
       classId: selectedClassId,
-      format: exportFormat
+      format: exportFormat,
     });
   };
 
@@ -146,7 +146,7 @@ export default function TeacherReportsPage() {
             onChange={(event) => setSelectedClassId(event.target.value)}
             options={classes.map((clazz) => ({
               value: clazz.id,
-              label: clazz.name
+              label: clazz.name,
             }))}
           />
           <div className="flex items-end gap-2">
@@ -159,7 +159,7 @@ export default function TeacherReportsPage() {
               onChange={(e) => setExportFormat(e.target.value as 'pdf' | 'xlsx')}
               options={[
                 { value: 'pdf', label: 'PDF' },
-                { value: 'xlsx', label: 'Excel' }
+                { value: 'xlsx', label: 'Excel' },
               ]}
             />
             <Button

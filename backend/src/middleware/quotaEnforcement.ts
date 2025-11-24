@@ -1,6 +1,10 @@
 import type { Request, Response, NextFunction } from 'express';
 import { getPool } from '../db/connection';
-import { checkQuota, incrementQuotaUsage, type ResourceType } from '../services/quotas/quotaService';
+import {
+  checkQuota,
+  incrementQuotaUsage,
+  type ResourceType,
+} from '../services/quotas/quotaService';
 
 /**
  * Middleware to enforce quota limits
@@ -24,7 +28,7 @@ export function enforceQuota(resourceType: ResourceType, amount: number = 1) {
             message: 'Quota exceeded',
             resourceType,
             limit: quotaResult.remaining,
-            retryAfter: 'next reset period'
+            retryAfter: 'next reset period',
           });
         }
 
@@ -46,4 +50,3 @@ export function enforceQuota(resourceType: ResourceType, amount: number = 1) {
     }
   };
 }
-

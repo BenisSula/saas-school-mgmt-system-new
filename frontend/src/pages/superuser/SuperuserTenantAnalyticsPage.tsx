@@ -31,7 +31,7 @@ export default function SuperuserTenantAnalyticsPage() {
     return Array.from(statusCounts.entries()).map(([label, value]) => ({
       label,
       value,
-      color: 'var(--brand-primary)'
+      color: 'var(--brand-primary)',
     }));
   }, [schools]);
 
@@ -44,7 +44,7 @@ export default function SuperuserTenantAnalyticsPage() {
     });
     return Array.from(subCounts.entries()).map(([label, value]) => ({
       label: label.charAt(0).toUpperCase() + label.slice(1),
-      value
+      value,
     }));
   }, [schools]);
 
@@ -60,7 +60,7 @@ export default function SuperuserTenantAnalyticsPage() {
       const date = new Date(school.createdAt || '');
       return {
         label: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        value: cumulative
+        value: cumulative,
       };
     });
   }, [schools]);
@@ -72,7 +72,7 @@ export default function SuperuserTenantAnalyticsPage() {
         totalTenants: 1,
         activeTenants: analyticsData.userCount > 0 ? 1 : 0,
         totalUsers: analyticsData.userCount,
-        avgUsersPerTenant: analyticsData.userCount
+        avgUsersPerTenant: analyticsData.userCount,
       };
     }
 
@@ -86,7 +86,7 @@ export default function SuperuserTenantAnalyticsPage() {
       totalTenants,
       activeTenants,
       totalUsers,
-      avgUsersPerTenant: Math.round(avgUsersPerTenant * 10) / 10
+      avgUsersPerTenant: Math.round(avgUsersPerTenant * 10) / 10,
     };
   }, [schools, analyticsData]);
 
@@ -96,7 +96,7 @@ export default function SuperuserTenantAnalyticsPage() {
         key: 'name',
         header: 'School Name',
         render: (row) => row.name,
-        sortable: true
+        sortable: true,
       },
       {
         key: 'status',
@@ -111,23 +111,23 @@ export default function SuperuserTenantAnalyticsPage() {
           >
             {row.status || 'unknown'}
           </span>
-        )
+        ),
       },
       {
         key: 'userCount',
         header: 'Users',
-        render: (row) => row.userCount || 0
+        render: (row) => row.userCount || 0,
       },
       {
         key: 'subscriptionType',
         header: 'Subscription',
-        render: (row) => row.subscriptionType || 'trial'
+        render: (row) => row.subscriptionType || 'trial',
       },
       {
         key: 'createdAt',
         header: 'Created',
-        render: (row) => formatDate(row.createdAt)
-      }
+        render: (row) => formatDate(row.createdAt),
+      },
     ],
     []
   );
@@ -151,7 +151,7 @@ export default function SuperuserTenantAnalyticsPage() {
               onChange={(e) => setSelectedTenantId(e.target.value)}
               options={[
                 { label: 'All Tenants', value: 'all' },
-                ...schools.map((s) => ({ label: s.name, value: s.id }))
+                ...schools.map((s) => ({ label: s.name, value: s.id })),
               ]}
               disabled={schoolsLoading}
             />

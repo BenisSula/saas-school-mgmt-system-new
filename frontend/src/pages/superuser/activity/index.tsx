@@ -19,16 +19,20 @@ export default function SuperuserActivityPage() {
   );
 
   // Fetch active sessions for the session map - using real database data
-  const { data: sessionsData, isLoading: sessionsLoading, error: sessionsError } = useQuery({
+  const {
+    data: sessionsData,
+    isLoading: sessionsLoading,
+    error: sessionsError,
+  } = useQuery({
     queryKey: ['superuser', 'all-sessions', selectedTenantId],
     queryFn: async () => {
       return await api.superuser.getAllActiveSessions({
         tenantId: selectedTenantId,
-        limit: 100
+        limit: 100,
       });
     },
     refetchInterval: 30000, // Poll every 30 seconds
-    enabled: true
+    enabled: true,
   });
 
   const queryClient = useQueryClient();
@@ -37,7 +41,11 @@ export default function SuperuserActivityPage() {
   const { connected: wsConnected } = useWebSocket('/ws', {
     enabled: true,
     onMessage: (message) => {
-      if (message.type === 'audit_log' || message.type === 'activity' || message.type === 'session_update') {
+      if (
+        message.type === 'audit_log' ||
+        message.type === 'activity' ||
+        message.type === 'session_update'
+      ) {
         // Invalidate queries to refetch data
         queryClient.invalidateQueries({ queryKey: ['superuser', 'all-sessions'] });
         queryClient.invalidateQueries({ queryKey: ['superuser', 'audit-logs'] });
@@ -47,14 +55,14 @@ export default function SuperuserActivityPage() {
     },
     onError: () => {
       // WebSocket errors are handled gracefully - fallback to polling
-    }
+    },
   });
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: <Activity className="h-4 w-4" /> },
     { id: 'audit', label: 'Audit Logs', icon: <Activity className="h-4 w-4" /> },
     { id: 'attempts', label: 'Login Attempts', icon: <Activity className="h-4 w-4" /> },
-    { id: 'sessions', label: 'Sessions', icon: <Activity className="h-4 w-4" /> }
+    { id: 'sessions', label: 'Sessions', icon: <Activity className="h-4 w-4" /> },
   ];
 
   return (
@@ -63,9 +71,7 @@ export default function SuperuserActivityPage() {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-heading-2 text-[var(--brand-text-primary)]">
-              Activity Monitoring
-            </h1>
+            <h1 className="text-heading-2 text-[var(--brand-text-primary)]">Activity Monitoring</h1>
             <p className="mt-2 text-body-small text-[var(--brand-text-secondary)]">
               Real-time monitoring of platform activity, user sessions, and security events
             </p>
@@ -123,7 +129,7 @@ export default function SuperuserActivityPage() {
                 <PlatformAuditLogViewer
                   initialFilters={{
                     tenantId: selectedTenantId || undefined,
-                    severity: 'warning'
+                    severity: 'warning',
                   }}
                 />
               </Card>
@@ -145,14 +151,12 @@ export default function SuperuserActivityPage() {
           {activeTab === 'audit' && (
             <PlatformAuditLogViewer
               initialFilters={{
-                tenantId: selectedTenantId || undefined
+                tenantId: selectedTenantId || undefined,
               }}
             />
           )}
 
-          {activeTab === 'attempts' && (
-            <LoginAttemptsViewer tenantId={selectedTenantId} />
-          )}
+          {activeTab === 'attempts' && <LoginAttemptsViewer tenantId={selectedTenantId} />}
 
           {activeTab === 'sessions' && (
             <div className="space-y-6">
@@ -170,7 +174,8 @@ export default function SuperuserActivityPage() {
                 <>
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-[var(--brand-text-secondary)]">
-                      {sessionsData?.total || 0} active {sessionsData?.total === 1 ? 'session' : 'sessions'}
+                      {sessionsData?.total || 0} active{' '}
+                      {sessionsData?.total === 1 ? 'session' : 'sessions'}
                     </p>
                   </div>
                   <SessionMap sessions={sessionsData?.sessions || []} />
@@ -183,4 +188,3 @@ export default function SuperuserActivityPage() {
     </RouteMeta>
   );
 }
-

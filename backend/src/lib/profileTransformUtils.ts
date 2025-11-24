@@ -40,7 +40,7 @@ export function splitFullName(fullName: string): { firstName: string; lastName: 
 
   return {
     firstName: parts[0] || '',
-    lastName: parts.slice(1).join(' ') || ''
+    lastName: parts.slice(1).join(' ') || '',
   };
 }
 
@@ -62,10 +62,10 @@ export function transformToStudentInput(profileData: RegistrationProfileData): S
           {
             name: profileData.parentGuardianName,
             relationship: 'parent',
-            phone: profileData.parentGuardianContact || ''
-          }
+            phone: profileData.parentGuardianContact || '',
+          },
         ]
-      : undefined
+      : undefined,
   };
 }
 
@@ -81,6 +81,6 @@ export function transformToTeacherInput(
     name: profileData.fullName || '',
     email: userEmail,
     subjects: profileData.subjects || [],
-    assignedClasses: [] // Can be assigned later by admin
+    assignedClasses: [], // Can be assigned later by admin
   };
 }

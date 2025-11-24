@@ -4,7 +4,7 @@ import { isSuperuser } from '../../lib/superuserHelpers';
 import { Role } from '../../config/permissions';
 import {
   normalizeDeviceInfo,
-  type NormalizedDeviceInfo
+  type NormalizedDeviceInfo,
 } from '../../lib/serializers/deviceInfoSerializer';
 
 export interface CreateSessionInput {
@@ -178,7 +178,7 @@ export async function endSession(pool: Pool, sessionId: string): Promise<void> {
     if (!hasIsActive) {
       // If is_active doesn't exist, just set logout_at
       await pool.query(`UPDATE shared.user_sessions SET logout_at = NOW() WHERE id = $1`, [
-        sessionId
+        sessionId,
       ]);
       return;
     }
@@ -330,12 +330,12 @@ export async function getPlatformActiveSessions(
     'expires_at',
     'is_active',
     'created_at',
-    'updated_at'
+    'updated_at',
   ];
 
   const selectColumns = [
     ...baseColumns,
-    ...optionalColumns.filter((col) => availableColumns.includes(col))
+    ...optionalColumns.filter((col) => availableColumns.includes(col)),
   ].join(', ');
 
   const sessionsResult = await pool.query(
@@ -351,7 +351,7 @@ export async function getPlatformActiveSessions(
 
   return {
     sessions: sessionsResult.rows.map(mapRowToSession),
-    total
+    total,
   };
 }
 
@@ -477,7 +477,7 @@ export async function getLoginHistory(
 
   return {
     sessions: sessionsResult.rows.map(mapRowToSession),
-    total
+    total,
   };
 }
 
@@ -643,6 +643,6 @@ function mapRowToSession(row: {
     expiresAt: row.expires_at,
     isActive: row.is_active,
     createdAt: row.created_at,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
   };
 }

@@ -5,7 +5,10 @@
  */
 
 import { getPool, closePool } from '../db/connection';
-import { getOrCreateStripeCustomer, createStripeSubscription } from '../services/billing/stripeService';
+import {
+  getOrCreateStripeCustomer,
+  createStripeSubscription,
+} from '../services/billing/stripeService';
 import { listTenants } from '../services/shared/tenantQueries';
 
 async function testSubscriptionCreation(): Promise<void> {
@@ -62,10 +65,16 @@ async function testSubscriptionCreation(): Promise<void> {
 
       const adminUser = userResult.rows[0];
       const customerEmail = adminUser.email;
-      const customerName = `${adminUser.first_name || ''} ${adminUser.last_name || ''}`.trim() || tenant.name;
+      const customerName =
+        `${adminUser.first_name || ''} ${adminUser.last_name || ''}`.trim() || tenant.name;
 
       console.log(`\n👤 Creating Stripe customer...`);
-      const customerId = await getOrCreateStripeCustomer(client, tenant.id, customerName, customerEmail);
+      const customerId = await getOrCreateStripeCustomer(
+        client,
+        tenant.id,
+        customerName,
+        customerEmail
+      );
       console.log(`✅ Customer ID: ${customerId}`);
 
       console.log(`\n💳 Creating subscription...`);
@@ -101,7 +110,9 @@ async function testSubscriptionCreation(): Promise<void> {
       console.log(`   Status: ${dbSubscription.status}`);
       console.log(`   Plan ID: ${dbSubscription.plan_id}`);
       if (dbSubscription.current_period_end) {
-        console.log(`   Current Period End: ${new Date(dbSubscription.current_period_end).toLocaleString()}`);
+        console.log(
+          `   Current Period End: ${new Date(dbSubscription.current_period_end).toLocaleString()}`
+        );
       }
       if (dbSubscription.price_cents) {
         const amount = (dbSubscription.price_cents / 100).toFixed(2);
@@ -110,7 +121,9 @@ async function testSubscriptionCreation(): Promise<void> {
 
       if (dbSubscription.stripe_subscription_id) {
         console.log(`\n🔗 View in Stripe Dashboard:`);
-        console.log(`   https://dashboard.stripe.com/subscriptions/${dbSubscription.stripe_subscription_id}`);
+        console.log(
+          `   https://dashboard.stripe.com/subscriptions/${dbSubscription.stripe_subscription_id}`
+        );
       }
 
       console.log(`\n✅ Test completed successfully!`);
@@ -137,4 +150,3 @@ testSubscriptionCreation().catch((error) => {
   console.error('Unhandled error:', error);
   process.exit(1);
 });
-

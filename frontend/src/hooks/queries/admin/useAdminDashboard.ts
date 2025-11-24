@@ -25,4 +25,3 @@ export function useRefreshDashboard() {
     toast.success('Dashboard refreshed');
   };
 }
-

@@ -8,7 +8,7 @@ import {
   setTenantFeatureFlag,
   getAllFeatureFlags,
   getFeatureFlag,
-  isFeatureEnabled
+  isFeatureEnabled,
 } from '../../services/featureFlags/featureFlagService';
 import { z } from 'zod';
 
@@ -22,7 +22,7 @@ const createFeatureFlagSchema = z.object({
   description: z.string().optional(),
   isEnabledGlobally: z.boolean().optional(),
   rolloutPercentage: z.number().int().min(0).max(100).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional()
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const updateFeatureFlagSchema = z.object({
@@ -30,7 +30,7 @@ const updateFeatureFlagSchema = z.object({
   description: z.string().optional(),
   isEnabledGlobally: z.boolean().optional(),
   rolloutPercentage: z.number().int().min(0).max(100).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional()
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 // Create feature flag
@@ -131,7 +131,7 @@ router.patch('/:flagKey', async (req, res, next) => {
 router.post('/:flagKey/tenants/:tenantId', async (req, res, next) => {
   try {
     const schema = z.object({
-      enabled: z.boolean()
+      enabled: z.boolean(),
     });
 
     const parsed = schema.safeParse(req.body);
@@ -159,4 +159,3 @@ router.post('/:flagKey/tenants/:tenantId', async (req, res, next) => {
 });
 
 export default router;
-

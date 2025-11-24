@@ -43,10 +43,7 @@ export async function createClassChangeRequest(
   const studentResult = await client.query<{
     class_id: string | null;
     class_uuid: string | null;
-  }>(
-    `SELECT class_id, class_uuid FROM ${studentTable} WHERE id = $1`,
-    [studentId]
-  );
+  }>(`SELECT class_id, class_uuid FROM ${studentTable} WHERE id = $1`, [studentId]);
 
   if (studentResult.rows.length === 0) {
     throw new Error('Student not found');
@@ -69,7 +66,7 @@ export async function createClassChangeRequest(
 
   // Check for existing pending request (table may not exist if migration hasn't run)
   const requestsTable = getTableName(schema, 'class_change_requests');
-  
+
   try {
     const existingRequest = await client.query<{ id: string }>(
       `SELECT id FROM ${requestsTable} 
@@ -89,7 +86,11 @@ export async function createClassChangeRequest(
       }
       // Check if it's a "relation does not exist" error
       const errorMessage = error.message.toLowerCase();
-      if (!errorMessage.includes('does not exist') && !errorMessage.includes('relation') && !errorMessage.includes('table')) {
+      if (
+        !errorMessage.includes('does not exist') &&
+        !errorMessage.includes('relation') &&
+        !errorMessage.includes('table')
+      ) {
         // Some other error occurred, rethrow it
         throw error;
       }
@@ -121,7 +122,7 @@ export async function createClassChangeRequest(
         requestedClassId,
         requestedClassUuid,
         input.reason || null,
-        requestedBy || null
+        requestedBy || null,
       ]
     );
 
@@ -129,8 +130,14 @@ export async function createClassChangeRequest(
   } catch (error) {
     if (error instanceof Error) {
       const errorMessage = error.message.toLowerCase();
-      if (errorMessage.includes('does not exist') || errorMessage.includes('relation') || errorMessage.includes('table')) {
-        throw new Error('Class change requests table does not exist. Please run database migrations.');
+      if (
+        errorMessage.includes('does not exist') ||
+        errorMessage.includes('relation') ||
+        errorMessage.includes('table')
+      ) {
+        throw new Error(
+          'Class change requests table does not exist. Please run database migrations.'
+        );
       }
     }
     throw error;
@@ -146,7 +153,7 @@ export async function getStudentClassChangeRequests(
   studentId: string
 ): Promise<ClassChangeRequest[]> {
   const requestsTable = getTableName(schema, 'class_change_requests');
-  
+
   try {
     const result = await client.query<ClassChangeRequest>(
       `SELECT * FROM ${requestsTable} 
@@ -159,11 +166,14 @@ export async function getStudentClassChangeRequests(
     // If table doesn't exist, return empty array (migration may not have run)
     if (error instanceof Error) {
       const errorMessage = error.message.toLowerCase();
-      if (errorMessage.includes('does not exist') || errorMessage.includes('relation') || errorMessage.includes('table')) {
+      if (
+        errorMessage.includes('does not exist') ||
+        errorMessage.includes('relation') ||
+        errorMessage.includes('table')
+      ) {
         return [];
       }
     }
     throw error;
   }
 }
-

@@ -16,7 +16,7 @@ describe('AdminRoleManagementPage', () => {
   const fetchMock = vi.fn().mockResolvedValue({
     ok: true,
     status: 200,
-    json: async () => [] as MockUser[]
+    json: async () => [] as MockUser[],
   });
   const originalFetch = globalThis.fetch;
 
@@ -27,8 +27,8 @@ describe('AdminRoleManagementPage', () => {
         email: 'teacher@test.com',
         role: 'teacher',
         is_verified: true,
-        created_at: '2025-01-01T00:00:00.000Z'
-      }
+        created_at: '2025-01-01T00:00:00.000Z',
+      },
     ];
 
     fetchMock.mockImplementation((input: string | URL, init?: globalThis.RequestInit) => {
@@ -37,20 +37,20 @@ describe('AdminRoleManagementPage', () => {
         return Promise.resolve({
           ok: true,
           status: 200,
-          json: async () => users
+          json: async () => users,
         });
       }
       if (url.includes('/users/user-1/role') && init?.method === 'PATCH') {
         users = [
           {
             ...users[0],
-            role: 'admin'
-          }
+            role: 'admin',
+          },
         ];
         return Promise.resolve({
           ok: true,
           status: 200,
-          json: async () => users[0]
+          json: async () => users[0],
         });
       }
       throw new Error(`Unhandled fetch call: ${url}`);
@@ -67,8 +67,8 @@ describe('AdminRoleManagementPage', () => {
   it('lists users and updates role', async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
-        queries: { retry: false }
-      }
+        queries: { retry: false },
+      },
     });
 
     render(
@@ -86,7 +86,7 @@ describe('AdminRoleManagementPage', () => {
       expect(fetchMock).toHaveBeenCalledWith(
         expect.stringContaining('/users/user-1/role'),
         expect.objectContaining({
-          method: 'PATCH'
+          method: 'PATCH',
         })
       )
     );

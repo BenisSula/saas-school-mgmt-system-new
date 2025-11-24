@@ -22,10 +22,7 @@ export interface SendEmailInput {
 /**
  * Simple template variable replacement
  */
-function replaceTemplateVariables(
-  template: string,
-  variables: Record<string, unknown>
-): string {
+function replaceTemplateVariables(template: string, variables: Record<string, unknown>): string {
   let result = template;
   for (const [key, value] of Object.entries(variables)) {
     const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
@@ -62,7 +59,7 @@ export async function getEmailTemplate(
         subject: row.subject,
         bodyHtml: row.body_html,
         bodyText: row.body_text,
-        variables: row.variables || {}
+        variables: row.variables || {},
       };
     }
   }
@@ -89,7 +86,7 @@ export async function getEmailTemplate(
     subject: row.subject,
     bodyHtml: row.body_html,
     bodyText: row.body_text,
-    variables: row.variables || {}
+    variables: row.variables || {},
   };
 }
 
@@ -134,13 +131,13 @@ export async function queueEmail(
       bodyText,
       JSON.stringify(variables),
       input.priority || 5,
-      input.scheduledAt || new Date()
+      input.scheduledAt || new Date(),
     ]
   );
 
   return {
     id: result.rows[0].id,
-    queued: true
+    queued: true,
   };
 }
 
@@ -153,10 +150,9 @@ export async function sendEmail(
   queueId: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   // Get email from queue
-  const queueResult = await client.query(
-    'SELECT * FROM shared.email_queue WHERE id = $1',
-    [queueId]
-  );
+  const queueResult = await client.query('SELECT * FROM shared.email_queue WHERE id = $1', [
+    queueId,
+  ]);
 
   if (queueResult.rowCount === 0) {
     throw new Error('Email queue item not found');
@@ -207,7 +203,7 @@ export async function sendEmail(
         email.template_key,
         email.recipient_email,
         email.subject,
-        messageId
+        messageId,
       ]
     );
 
@@ -215,7 +211,7 @@ export async function sendEmail(
     console.log(`[email] Sent email to ${email.recipient_email}`, {
       templateKey: email.template_key,
       messageId,
-      subject: email.subject
+      subject: email.subject,
     });
 
     return { success: true, messageId };
@@ -247,13 +243,7 @@ export async function sendEmail(
           )
           VALUES ($1, $2, $3, $4, $5, 'failed')
         `,
-        [
-          queueId,
-          email.tenant_id,
-          email.template_key,
-          email.recipient_email,
-          email.subject
-        ]
+        [queueId, email.tenant_id, email.template_key, email.recipient_email, email.subject]
       );
     } else {
       // Retry later
@@ -308,7 +298,7 @@ export async function processEmailQueue(
   return {
     processed: queueResult.rowCount ?? 0,
     succeeded,
-    failed
+    failed,
   };
 }
 
@@ -356,10 +346,9 @@ export async function upsertEmailTemplate(
       template.bodyText || null,
       JSON.stringify(template.variables || {}),
       template.tenantId || null,
-      nextVersion
+      nextVersion,
     ]
   );
 
   return result.rows[0];
 }
-

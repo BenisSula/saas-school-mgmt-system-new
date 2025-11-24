@@ -15,7 +15,7 @@ const statusStyles: Record<string, string> = {
   partial: 'bg-blue-500/20 text-blue-200',
   paid: 'bg-emerald-500/20 text-emerald-200',
   overdue: 'bg-rose-500/20 text-rose-200',
-  refunded: 'bg-purple-500/20 text-purple-200'
+  refunded: 'bg-purple-500/20 text-purple-200',
 };
 
 export default function StudentFeesPage() {
@@ -84,16 +84,16 @@ export default function StudentFeesPage() {
       { header: 'Invoice', key: 'id' },
       {
         header: 'Amount',
-        render: (row) => `$${row.total_amount.toFixed(2)}`
+        render: (row) => `$${row.total_amount.toFixed(2)}`,
       },
       {
         header: 'Paid',
-        render: (row) => `$${row.amount_paid.toFixed(2)}`
+        render: (row) => `$${row.amount_paid.toFixed(2)}`,
       },
       {
         header: 'Due date',
         render: (row) =>
-          row.due_date ? new Date(row.due_date).toLocaleDateString() : 'Not specified'
+          row.due_date ? new Date(row.due_date).toLocaleDateString() : 'Not specified',
       },
       {
         header: 'Status',
@@ -105,7 +105,7 @@ export default function StudentFeesPage() {
           >
             {row.status.toUpperCase()}
           </span>
-        )
+        ),
       },
       {
         header: 'Actions',
@@ -113,8 +113,8 @@ export default function StudentFeesPage() {
           <Button variant="ghost" size="sm" onClick={() => downloadInvoice(row)}>
             Download receipt
           </Button>
-        )
-      }
+        ),
+      },
     ],
     []
   );
@@ -186,7 +186,7 @@ export default function StudentFeesPage() {
                   { label: 'Partial', value: 'partial' },
                   { label: 'Paid', value: 'paid' },
                   { label: 'Overdue', value: 'overdue' },
-                  { label: 'Refunded', value: 'refunded' }
+                  { label: 'Refunded', value: 'refunded' },
                 ]}
               />
               <Button
@@ -233,7 +233,7 @@ function downloadInvoice(invoice: Invoice) {
     ['Amount', invoice.total_amount.toFixed(2)],
     ['Amount paid', invoice.amount_paid.toFixed(2)],
     ['Due date', invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : ''],
-    ['Created at', invoice.created_at ? new Date(invoice.created_at).toLocaleString() : '']
+    ['Created at', invoice.created_at ? new Date(invoice.created_at).toLocaleString() : ''],
   ];
   const csv = rows
     .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
@@ -262,11 +262,11 @@ function exportStatement(invoices: Invoice[]) {
         invoice.total_amount.toFixed(2),
         invoice.amount_paid.toFixed(2),
         invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : '',
-        invoice.created_at ? new Date(invoice.created_at).toLocaleString() : ''
+        invoice.created_at ? new Date(invoice.created_at).toLocaleString() : '',
       ]
         .map((cell) => `"${cell.replace(/"/g, '""')}"`)
         .join(',')
-    )
+    ),
   ].join('\n');
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

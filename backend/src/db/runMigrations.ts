@@ -19,7 +19,11 @@ function fixPgMemInserts(sql: string): string {
   // Remove INSERT statements for password_policies with NULL tenant_id and ON CONFLICT
   // pg-mem doesn't handle ON CONFLICT with nullable columns well
   // This is safe because tests can insert their own test data if needed
-  if (sql.includes('password_policies') && sql.includes('tenant_id') && sql.includes('ON CONFLICT')) {
+  if (
+    sql.includes('password_policies') &&
+    sql.includes('tenant_id') &&
+    sql.includes('ON CONFLICT')
+  ) {
     // Replace the problematic INSERT with a comment
     sql = sql.replace(
       /INSERT INTO shared\.password_policies[^;]*ON CONFLICT[^;]*;/gi,

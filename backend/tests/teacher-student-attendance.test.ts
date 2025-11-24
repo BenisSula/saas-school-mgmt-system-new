@@ -8,7 +8,7 @@ import { signUp } from '../src/services/authService';
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -133,7 +133,7 @@ describe('Teacher → Student Attendance Flow Integration', () => {
     classId = crypto.randomUUID();
     await pool.query(`INSERT INTO tenant_attendance.classes (id, name) VALUES ($1, $2)`, [
       classId,
-      'Grade 10A'
+      'Grade 10A',
     ]);
 
     // Create teacher user via signup
@@ -145,7 +145,7 @@ describe('Teacher → Student Attendance Flow Integration', () => {
         email: teacherEmail,
         password: teacherPassword,
         role: 'teacher',
-        tenantId
+        tenantId,
       });
       teacherToken = teacherSignupResponse.accessToken;
       teacherUserId = teacherSignupResponse.user.id;
@@ -155,7 +155,7 @@ describe('Teacher → Student Attendance Flow Integration', () => {
     } catch (error) {
       const loginResponse = await request(app).post('/auth/login').send({
         email: teacherEmail,
-        password: teacherPassword
+        password: teacherPassword,
       });
       if (loginResponse.status === 200) {
         teacherToken = loginResponse.body.accessToken;
@@ -190,7 +190,7 @@ describe('Teacher → Student Attendance Flow Integration', () => {
         email: studentEmail,
         password: studentPassword,
         role: 'student',
-        tenantId
+        tenantId,
       });
       studentToken = studentSignupResponse.accessToken;
       studentUserId = studentSignupResponse.user.id;
@@ -200,7 +200,7 @@ describe('Teacher → Student Attendance Flow Integration', () => {
     } catch (error) {
       const loginResponse = await request(app).post('/auth/login').send({
         email: studentEmail,
-        password: studentPassword
+        password: studentPassword,
       });
       if (loginResponse.status === 200) {
         studentToken = loginResponse.body.accessToken;
@@ -236,9 +236,9 @@ describe('Teacher → Student Attendance Flow Integration', () => {
             classId: classId,
             status: 'present',
             markedBy: teacherUserId,
-            date: attendanceDate
-          }
-        ]
+            date: attendanceDate,
+          },
+        ],
       });
 
     // Should succeed (204) or fail with validation errors
@@ -329,16 +329,16 @@ describe('Teacher → Student Attendance Flow Integration', () => {
             classId: classId,
             status: 'present',
             markedBy: teacherUserId,
-            date: attendanceDate
+            date: attendanceDate,
           },
           {
             studentId: student2Id,
             classId: classId,
             status: 'late',
             markedBy: teacherUserId,
-            date: attendanceDate
-          }
-        ]
+            date: attendanceDate,
+          },
+        ],
       });
 
     // Should succeed or fail with validation
@@ -355,7 +355,7 @@ describe('Teacher → Student Attendance Flow Integration', () => {
     // Student 2 login
     const student2LoginResponse = await request(app).post('/auth/login').send({
       email: student2Email,
-      password: 'StudentPass123!'
+      password: 'StudentPass123!',
     });
 
     if (student2LoginResponse.status === 200) {

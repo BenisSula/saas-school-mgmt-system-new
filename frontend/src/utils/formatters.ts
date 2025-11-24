@@ -15,23 +15,27 @@ export interface NormalizedDeviceInfo {
 /**
  * Format device info for display
  */
-export function formatDeviceInfo(deviceInfo: NormalizedDeviceInfo | Record<string, unknown> | null | undefined): string {
+export function formatDeviceInfo(
+  deviceInfo: NormalizedDeviceInfo | Record<string, unknown> | null | undefined
+): string {
   if (!deviceInfo) return '—';
-  
+
   const normalized = deviceInfo as NormalizedDeviceInfo;
-  
+
   const parts: string[] = [];
   if (normalized.platform) parts.push(normalized.platform);
   if (normalized.os) parts.push(normalized.os);
   if (normalized.browser) parts.push(normalized.browser);
-  
+
   return parts.length > 0 ? parts.join(' • ') : '—';
 }
 
 /**
  * Format device platform for display
  */
-export function formatDevicePlatform(deviceInfo: NormalizedDeviceInfo | Record<string, unknown> | null | undefined): string {
+export function formatDevicePlatform(
+  deviceInfo: NormalizedDeviceInfo | Record<string, unknown> | null | undefined
+): string {
   if (!deviceInfo) return '—';
   const normalized = deviceInfo as NormalizedDeviceInfo;
   return normalized.platform || normalized.deviceType || '—';
@@ -40,7 +44,9 @@ export function formatDevicePlatform(deviceInfo: NormalizedDeviceInfo | Record<s
 /**
  * Format device OS for display
  */
-export function formatDeviceOS(deviceInfo: NormalizedDeviceInfo | Record<string, unknown> | null | undefined): string {
+export function formatDeviceOS(
+  deviceInfo: NormalizedDeviceInfo | Record<string, unknown> | null | undefined
+): string {
   if (!deviceInfo) return '—';
   const normalized = deviceInfo as NormalizedDeviceInfo;
   return normalized.os || '—';
@@ -49,7 +55,9 @@ export function formatDeviceOS(deviceInfo: NormalizedDeviceInfo | Record<string,
 /**
  * Format device browser for display
  */
-export function formatDeviceBrowser(deviceInfo: NormalizedDeviceInfo | Record<string, unknown> | null | undefined): string {
+export function formatDeviceBrowser(
+  deviceInfo: NormalizedDeviceInfo | Record<string, unknown> | null | undefined
+): string {
   if (!deviceInfo) return '—';
   const normalized = deviceInfo as NormalizedDeviceInfo;
   return normalized.browser || '—';
@@ -65,9 +73,12 @@ export { formatCurrency } from '../lib/utils/data';
 /**
  * Format date/time with relative time option
  */
-export function formatDate(date: string | Date | null | undefined, relative: boolean = false): string {
+export function formatDate(
+  date: string | Date | null | undefined,
+  relative: boolean = false
+): string {
   if (!date) return '—';
-  
+
   if (relative) {
     const now = new Date();
     const then = new Date(date);
@@ -75,13 +86,13 @@ export function formatDate(date: string | Date | null | undefined, relative: boo
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
-    
+
     if (diffMins < 1) return 'Just now';
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
   }
-  
+
   const dateStr = typeof date === 'string' ? date : date.toISOString();
   return formatDateTime(dateStr);
 }
@@ -94,7 +105,10 @@ export { formatDateTime } from '../lib/utils/date';
 /**
  * Format user agent string (truncate if too long)
  */
-export function formatUserAgent(userAgent: string | null | undefined, maxLength: number = 50): string {
+export function formatUserAgent(
+  userAgent: string | null | undefined,
+  maxLength: number = 50
+): string {
   if (!userAgent) return '—';
   if (userAgent.length <= maxLength) return userAgent;
   return `${userAgent.slice(0, maxLength)}...`;
@@ -112,7 +126,9 @@ export function formatMetadataReason(metadata: Record<string, unknown> | null | 
 /**
  * Format metadata notification status
  */
-export function formatNotificationStatus(metadata: Record<string, unknown> | null | undefined): string {
+export function formatNotificationStatus(
+  metadata: Record<string, unknown> | null | undefined
+): string {
   if (!metadata) return '—';
   const sent = metadata.notificationSent || metadata.notification_sent || metadata.emailSent;
   if (sent === true || sent === 'true') return 'Sent';
@@ -150,4 +166,3 @@ export function formatTags(tags: string[] | null | undefined): string {
   if (!tags || tags.length === 0) return '—';
   return tags.join(', ');
 }
-

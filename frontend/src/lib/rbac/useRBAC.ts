@@ -9,7 +9,7 @@ import {
   hasAnyPermission,
   hasAllPermissions,
   canAccessResource,
-  canAccessWithPermission
+  canAccessWithPermission,
 } from './permissions';
 import { hasPermission as baseHasPermission } from '../../config/permissions';
 
@@ -149,6 +149,6 @@ export function useRBAC(_options?: UseRBACOptions): UseRBACReturn {
     isAdmin,
     isTeacher,
     isHOD,
-    isStudent
+    isStudent,
   };
 }

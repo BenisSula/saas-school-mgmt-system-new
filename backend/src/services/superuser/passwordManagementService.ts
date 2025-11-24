@@ -158,7 +158,7 @@ export async function adminResetPassword(
         adminUserId,
         ipAddress || null,
         userAgent || null,
-        JSON.stringify({ reason: reason || null, temporaryPassword: true })
+        JSON.stringify({ reason: reason || null, temporaryPassword: true }),
       ]
     );
   } catch (historyError: unknown) {
@@ -177,7 +177,7 @@ export async function adminResetPassword(
 
   // Get user email for notification
   const userEmailResult = await pool.query(`SELECT email FROM shared.users WHERE id = $1`, [
-    userId
+    userId,
   ]);
   const userEmail = userEmailResult.rows[0]?.email;
 
@@ -193,12 +193,12 @@ export async function adminResetPassword(
       details: {
         targetUserId: userId,
         targetUserEmail: userEmail,
-        reason: reason || undefined
+        reason: reason || undefined,
       },
       ipAddress: ipAddress || undefined,
       userAgent: userAgent || undefined,
       severity: 'critical',
-      tags: ['password_reset', 'security']
+      tags: ['password_reset', 'security'],
     });
 
     // Send email notification to affected user
@@ -212,9 +212,9 @@ export async function adminResetPassword(
             temporaryPassword: cleanPassword,
             reason: reason || 'Administrative password reset',
             resetBy: adminUserId,
-            resetAt: new Date().toISOString()
+            resetAt: new Date().toISOString(),
           },
-          priority: 1 // High priority
+          priority: 1, // High priority
         });
       } catch (emailError) {
         // Log email error but don't fail the password reset
@@ -327,7 +327,7 @@ export async function adminForceChangePassword(
         adminUserId,
         ipAddress || null,
         userAgent || null,
-        JSON.stringify({ reason: reason || undefined })
+        JSON.stringify({ reason: reason || undefined }),
       ]
     );
   } catch (historyError: unknown) {
@@ -346,7 +346,7 @@ export async function adminForceChangePassword(
 
   // Get user email for notification
   const userEmailResult = await pool.query(`SELECT email FROM shared.users WHERE id = $1`, [
-    userId
+    userId,
   ]);
   const userEmail = userEmailResult.rows[0]?.email;
 
@@ -362,12 +362,12 @@ export async function adminForceChangePassword(
       details: {
         targetUserId: userId,
         targetUserEmail: userEmail,
-        reason: reason || null
+        reason: reason || null,
       },
       ipAddress: ipAddress || undefined,
       userAgent: userAgent || undefined,
       severity: 'critical',
-      tags: ['password_change', 'security']
+      tags: ['password_change', 'security'],
     });
 
     // Send email notification to affected user
@@ -380,9 +380,9 @@ export async function adminForceChangePassword(
           variables: {
             reason: reason || 'Administrative password change',
             changedBy: adminUserId,
-            changedAt: new Date().toISOString()
+            changedAt: new Date().toISOString(),
           },
-          priority: 1 // High priority
+          priority: 1, // High priority
         });
       } catch (emailError) {
         // Log email error but don't fail the password change
@@ -490,7 +490,7 @@ export async function getPasswordHistory(
 
     return {
       history: historyResult.rows.map(mapRowToHistory),
-      total
+      total,
     };
   } catch (historyError: unknown) {
     const errorMessage =
@@ -536,6 +536,6 @@ function mapRowToHistory(row: {
     userAgent: row.user_agent,
     deviceInfo,
     changedAt: row.changed_at,
-    metadata: (row.metadata as Record<string, unknown>) || {}
+    metadata: (row.metadata as Record<string, unknown>) || {},
   };
 }

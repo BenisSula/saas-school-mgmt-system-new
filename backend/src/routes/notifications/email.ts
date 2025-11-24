@@ -6,7 +6,7 @@ import {
   queueEmail,
   processEmailQueue,
   upsertEmailTemplate,
-  getEmailTemplate
+  getEmailTemplate,
 } from '../../services/email/emailService';
 import { z } from 'zod';
 
@@ -22,7 +22,7 @@ const sendEmailSchema = z.object({
   recipientName: z.string().optional(),
   variables: z.record(z.string(), z.unknown()).optional(),
   priority: z.number().int().min(1).max(10).optional(),
-  scheduledAt: z.string().datetime().optional()
+  scheduledAt: z.string().datetime().optional(),
 });
 
 // Queue email for sending
@@ -38,7 +38,7 @@ router.post('/send', requirePermission('notifications:send'), async (req, res, n
     try {
       const result = await queueEmail(client, {
         ...parsed.data,
-        scheduledAt: parsed.data.scheduledAt ? new Date(parsed.data.scheduledAt) : undefined
+        scheduledAt: parsed.data.scheduledAt ? new Date(parsed.data.scheduledAt) : undefined,
       });
       res.json(result);
     } finally {
@@ -96,7 +96,7 @@ router.post('/templates', requirePermission('tenants:manage'), async (req, res, 
       bodyHtml: z.string(),
       bodyText: z.string().optional(),
       variables: z.record(z.string(), z.unknown()).optional(),
-      tenantId: z.string().uuid().optional()
+      tenantId: z.string().uuid().optional(),
     });
 
     const parsed = schema.safeParse(req.body);
@@ -118,4 +118,3 @@ router.post('/templates', requirePermission('tenants:manage'), async (req, res, 
 });
 
 export default router;
-

@@ -1,7 +1,7 @@
 /**
  * SuperUser Maintenance Service
  * Handles platform maintenance operations: migrations, cache clearing, schema health checks
- * 
+ *
  * Security: All operations are logged to audit_logs
  * DRY: Reuses existing migration and tenant management utilities
  */
@@ -59,7 +59,7 @@ export async function runTenantMigrationsForMaintenance(
       resourceId: tenantId || undefined,
       details: { tenantId: tenantId || 'all' },
       severity: 'info',
-      tags: ['maintenance', 'migration']
+      tags: ['maintenance', 'migration'],
     });
 
     if (tenantId) {
@@ -78,7 +78,7 @@ export async function runTenantMigrationsForMaintenance(
     } else {
       // Run migrations for all tenants
       const tenants = await listTenants();
-      
+
       for (const tenant of tenants) {
         try {
           await executeTenantMigrations(pool, tenant.schema_name);
@@ -95,7 +95,7 @@ export async function runTenantMigrationsForMaintenance(
       success: errors.length === 0,
       migrationsRun,
       errors,
-      duration
+      duration,
     };
   } catch (error) {
     const errorMsg = getErrorMessage(error);
@@ -108,14 +108,14 @@ export async function runTenantMigrationsForMaintenance(
       resourceId: tenantId || undefined,
       details: { error: errorMsg },
       severity: 'error',
-      tags: ['maintenance', 'migration', 'error']
+      tags: ['maintenance', 'migration', 'error'],
     });
 
     return {
       success: false,
       migrationsRun,
       errors,
-      duration: Date.now() - startTime
+      duration: Date.now() - startTime,
     };
   } finally {
     client.release();
@@ -146,7 +146,7 @@ export async function clearTenantCache(
       resourceId: tenantId,
       details: { tenantId },
       severity: 'info',
-      tags: ['maintenance', 'cache']
+      tags: ['maintenance', 'cache'],
     });
 
     // TODO: Integrate with actual cache system (Redis, Memcached, etc.)
@@ -171,7 +171,7 @@ export async function clearTenantCache(
     return {
       success: true,
       clearedKeys: clearedKeys.length,
-      errors: []
+      errors: [],
     };
   } catch (error) {
     const errorMsg = getErrorMessage(error);
@@ -184,13 +184,13 @@ export async function clearTenantCache(
       resourceId: tenantId,
       details: { error: errorMsg },
       severity: 'error',
-      tags: ['maintenance', 'cache', 'error']
+      tags: ['maintenance', 'cache', 'error'],
     });
 
     return {
       success: false,
       clearedKeys: clearedKeys.length,
-      errors
+      errors,
     };
   } finally {
     client.release();
@@ -219,7 +219,7 @@ export async function checkSchemaHealth(
       resourceId: tenantId || undefined,
       details: { tenantId: tenantId || 'all' },
       severity: 'info',
-      tags: ['maintenance', 'schema', 'health']
+      tags: ['maintenance', 'schema', 'health'],
     });
 
     const tenants = tenantId
@@ -257,10 +257,12 @@ export async function checkSchemaHealth(
           // Check for migration history (if you track this)
           // This is a placeholder - adjust based on your migration tracking
           try {
-            const migrationResult = await pool.query(
-              `SELECT name FROM ${tenant.schema_name}.schema_migrations ORDER BY run_at DESC LIMIT 1`
-            ).catch(() => null);
-            
+            const migrationResult = await pool
+              .query(
+                `SELECT name FROM ${tenant.schema_name}.schema_migrations ORDER BY run_at DESC LIMIT 1`
+              )
+              .catch(() => null);
+
             if (migrationResult?.rows[0]) {
               lastMigration = migrationResult.rows[0].name;
             }
@@ -292,14 +294,14 @@ export async function checkSchemaHealth(
         status,
         issues,
         tableCount,
-        lastMigration
+        lastMigration,
       });
     }
 
     return results;
   } catch (error) {
     const errorMsg = getErrorMessage(error);
-    
+
     await createAuditLog(client, {
       userId: actorId || undefined,
       action: 'maintenance:check_schema_health:error',
@@ -307,7 +309,7 @@ export async function checkSchemaHealth(
       resourceId: tenantId || undefined,
       details: { error: errorMsg },
       severity: 'error',
-      tags: ['maintenance', 'schema', 'health', 'error']
+      tags: ['maintenance', 'schema', 'health', 'error'],
     });
 
     throw error;
@@ -315,4 +317,3 @@ export async function checkSchemaHealth(
     client.release();
   }
 }
-

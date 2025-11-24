@@ -8,4 +8,3 @@ export function useTenant(): string | null {
   const { user } = useAuth();
   return user?.tenantId ?? null;
 }
-

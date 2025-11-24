@@ -40,7 +40,7 @@ export function loginAttemptsQueryOptions(tenantId: string | null, days: number 
         tenantId,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
-        limit: 100 // Adjust limit as needed
+        limit: 100, // Adjust limit as needed
       });
 
       // Transform to match the required interface
@@ -50,16 +50,16 @@ export function loginAttemptsQueryOptions(tenantId: string | null, days: number 
         ipAddress: attempt.ipAddress,
         success: attempt.success,
         failureReason: attempt.failureReason,
-        attemptedAt: attempt.attemptedAt
+        attemptedAt: attempt.attemptedAt,
       }));
 
       return {
         attempts,
-        total: result.total
+        total: result.total,
       };
     },
     enabled: !!tenantId,
-    ...dashboardQueryConfig
+    ...dashboardQueryConfig,
   });
 }
 
@@ -77,8 +77,7 @@ export function useLoginAttemptsQuery(days: number = 1) {
     ...queryOptions,
     select: (data): LoginAttemptsResponse => ({
       attempts: data.attempts,
-      total: data.total
-    })
+      total: data.total,
+    }),
   });
 }
-

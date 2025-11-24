@@ -10,8 +10,8 @@ vi.mock('../lib/api', () => ({
   authApi: {
     login: vi.fn(),
     register: vi.fn(),
-    refresh: vi.fn()
-  }
+    refresh: vi.fn(),
+  },
 }));
 
 describe('AuthResponse Status Field', () => {
@@ -30,8 +30,8 @@ describe('AuthResponse Status Field', () => {
         role: 'teacher' as const,
         tenantId: 'tenant-1',
         isVerified: true,
-        status: 'active' as const
-      }
+        status: 'active' as const,
+      },
     };
 
     vi.mocked(apiModule.authApi.login).mockResolvedValue(mockAuthResponse);
@@ -68,8 +68,8 @@ describe('AuthResponse Status Field', () => {
         role: 'student' as const,
         tenantId: 'tenant-1',
         isVerified: false,
-        status: 'pending' as const
-      }
+        status: 'pending' as const,
+      },
     };
 
     vi.mocked(apiModule.authApi.register).mockResolvedValue(mockAuthResponse);
@@ -106,8 +106,8 @@ describe('AuthResponse Status Field', () => {
         role: 'admin' as const,
         tenantId: 'tenant-1',
         isVerified: true,
-        status: 'active' as const
-      }
+        status: 'active' as const,
+      },
     };
 
     vi.mocked(apiModule.authApi.refresh).mockResolvedValue(mockAuthResponse);

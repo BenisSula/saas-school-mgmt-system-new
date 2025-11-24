@@ -12,15 +12,23 @@ import { Users } from 'lucide-react';
 export default function TeacherStudentsPage() {
   const [selectedClassId, setSelectedClassId] = useState<string>('');
 
-  const { data: classes, isLoading: loadingClasses, error: classesError } = useQuery<TeacherClassInfo[]>({
+  const {
+    data: classes,
+    isLoading: loadingClasses,
+    error: classesError,
+  } = useQuery<TeacherClassInfo[]>({
     queryKey: ['teacher-classes'],
-    queryFn: () => api.teachers.getMyClasses()
+    queryFn: () => api.teachers.getMyClasses(),
   });
 
-  const { data: studentsData, isLoading: loadingStudents, error: studentsError } = useQuery({
+  const {
+    data: studentsData,
+    isLoading: loadingStudents,
+    error: studentsError,
+  } = useQuery({
     queryKey: ['teacher-students', selectedClassId],
     queryFn: () => api.teachers.getMyStudents({ classId: selectedClassId || undefined }),
-    enabled: !!classes && classes.length > 0
+    enabled: !!classes && classes.length > 0,
   });
 
   const students = studentsData ? extractPaginatedData(studentsData) : [];
@@ -37,20 +45,20 @@ export default function TeacherStudentsPage() {
       key: 'name',
       header: 'Name',
       render: (row) => `${row.first_name} ${row.last_name}`,
-      sortable: true
+      sortable: true,
     },
     {
       key: 'admission_number',
       header: 'Admission Number',
       render: (row) => row.admission_number || 'N/A',
-      sortable: true
+      sortable: true,
     },
     {
       key: 'class_id',
       header: 'Class',
       render: (row) => row.class_id || 'N/A',
-      sortable: true
-    }
+      sortable: true,
+    },
   ];
 
   if (loadingClasses || loadingStudents) {
@@ -72,7 +80,10 @@ export default function TeacherStudentsPage() {
         </div>
 
         {error && (
-          <StatusBanner status="error" message={error instanceof Error ? error.message : 'Failed to load students'} />
+          <StatusBanner
+            status="error"
+            message={error instanceof Error ? error.message : 'Failed to load students'}
+          />
         )}
 
         {classes && classes.length > 0 && (
@@ -81,7 +92,10 @@ export default function TeacherStudentsPage() {
             <Select
               value={selectedClassId}
               onChange={(e) => setSelectedClassId(e.target.value)}
-              options={classes.map((c) => ({ value: c.id, label: `${c.name} (${c.studentCount} students)` }))}
+              options={classes.map((c) => ({
+                value: c.id,
+                label: `${c.name} (${c.studentCount} students)`,
+              }))}
             />
           </div>
         )}
@@ -89,16 +103,16 @@ export default function TeacherStudentsPage() {
         {students.length === 0 && !error && (
           <StatusBanner
             status="info"
-            message={selectedClassId ? 'No students found in the selected class.' : 'You are not assigned to any classes yet.'}
+            message={
+              selectedClassId
+                ? 'No students found in the selected class.'
+                : 'You are not assigned to any classes yet.'
+            }
           />
         )}
 
-        {students.length > 0 && (
-          <DataTable columns={columns} data={students} />
-        )}
+        {students.length > 0 && <DataTable columns={columns} data={students} />}
       </div>
     </RouteMeta>
   );
 }
-
-

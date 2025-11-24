@@ -23,15 +23,15 @@ jest.mock('../src/middleware/authenticate', () => ({
       role: 'admin',
       tenantId: 'tenant_alpha',
       email: 'admin@test.com',
-      tokenId: 'token'
+      tokenId: 'token',
     };
     next();
-  }
+  },
 }));
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -49,7 +49,7 @@ describe('Examination routes', () => {
     await createTenant(
       {
         name: 'Alpha Academy',
-        schemaName: 'tenant_alpha'
+        schemaName: 'tenant_alpha',
       },
       pool
     );
@@ -68,7 +68,7 @@ describe('Examination routes', () => {
     const examResponse = await request(app).post('/exams').set(headers).send({
       name: 'Term 1 Assessment',
       description: 'Mid-term exam',
-      examDate: '2025-02-15'
+      examDate: '2025-02-15',
     });
 
     expect(examResponse.status).toBe(201);
@@ -79,7 +79,7 @@ describe('Examination routes', () => {
       classId: 'Grade-10',
       subject: 'Mathematics',
       scheduledAt: '2025-02-16T09:00:00.000Z',
-      invigilator: 'Prof. Turing'
+      invigilator: 'Prof. Turing',
     });
 
     expect(sessionResponse.status).toBe(201);
@@ -98,15 +98,15 @@ describe('Examination routes', () => {
             subject: 'Mathematics',
             score: 88,
             remarks: 'Strong work',
-            classId: 'Grade-10'
+            classId: 'Grade-10',
           },
           {
             studentId,
             subject: 'Science',
             score: 92,
-            classId: 'Grade-10'
-          }
-        ]
+            classId: 'Grade-10',
+          },
+        ],
       });
 
     if (gradeResponse.status !== 200) {

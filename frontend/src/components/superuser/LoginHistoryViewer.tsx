@@ -33,7 +33,7 @@ export function LoginHistoryViewer({ userId, tenantId }: LoginHistoryViewerProps
         endDate?: string;
         isActive?: boolean;
       } = {};
-      
+
       if (tenantId !== undefined) filters.tenantId = tenantId;
       if (startDate) filters.startDate = new Date(startDate).toISOString();
       if (endDate) filters.endDate = new Date(endDate).toISOString();
@@ -41,7 +41,7 @@ export function LoginHistoryViewer({ userId, tenantId }: LoginHistoryViewerProps
 
       return await api.superuser.getLoginHistory(userId, filters);
     },
-    enabled: !!userId
+    enabled: !!userId,
   });
 
   const filteredSessions = useMemo(() => {
@@ -74,7 +74,7 @@ export function LoginHistoryViewer({ userId, tenantId }: LoginHistoryViewerProps
             </span>
           </div>
         ),
-        sortable: true
+        sortable: true,
       },
       {
         key: 'ipAddress',
@@ -87,7 +87,7 @@ export function LoginHistoryViewer({ userId, tenantId }: LoginHistoryViewerProps
             </span>
           </div>
         ),
-        sortable: true
+        sortable: true,
       },
       {
         key: 'deviceInfo',
@@ -97,16 +97,19 @@ export function LoginHistoryViewer({ userId, tenantId }: LoginHistoryViewerProps
             deviceInfo={session.normalizedDeviceInfo || session.deviceInfo}
             userAgent={session.userAgent}
           />
-        )
+        ),
       },
       {
         key: 'userAgent',
         header: 'User Agent',
         render: (session) => (
-          <span className="text-[var(--brand-text-secondary)] text-sm truncate max-w-xs" title={session.userAgent || undefined}>
+          <span
+            className="text-[var(--brand-text-secondary)] text-sm truncate max-w-xs"
+            title={session.userAgent || undefined}
+          >
             {formatUserAgent(session.userAgent)}
           </span>
-        )
+        ),
       },
       {
         key: 'logoutAt',
@@ -116,7 +119,7 @@ export function LoginHistoryViewer({ userId, tenantId }: LoginHistoryViewerProps
             {session.logoutAt ? formatDateTime(session.logoutAt) : 'Active'}
           </span>
         ),
-        sortable: true
+        sortable: true,
       },
       {
         key: 'updatedAt',
@@ -129,16 +132,14 @@ export function LoginHistoryViewer({ userId, tenantId }: LoginHistoryViewerProps
             </span>
           </div>
         ),
-        sortable: true
+        sortable: true,
       },
       {
         key: 'isActive',
         header: 'Status',
-        render: (session) => (
-          <StatusBadge status={session.isActive ? 'active' : 'inactive'} />
-        ),
-        sortable: true
-      }
+        render: (session) => <StatusBadge status={session.isActive ? 'active' : 'inactive'} />,
+        sortable: true,
+      },
     ],
     []
   );
@@ -208,9 +209,9 @@ export function LoginHistoryViewer({ userId, tenantId }: LoginHistoryViewerProps
                 options: [
                   { label: 'All', value: 'all' },
                   { label: 'Active', value: 'active' },
-                  { label: 'Ended', value: 'inactive' }
-                ]
-              }
+                  { label: 'Ended', value: 'inactive' },
+                ],
+              },
             ]}
             onClearFilters={handleClearFilters}
           />
@@ -228,4 +229,3 @@ export function LoginHistoryViewer({ userId, tenantId }: LoginHistoryViewerProps
     </div>
   );
 }
-

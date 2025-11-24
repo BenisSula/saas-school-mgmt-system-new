@@ -9,7 +9,7 @@ import {
   useSubjectStats,
   useTodayAttendance,
   useLoginAttempts,
-  useActiveSessions
+  useActiveSessions,
 } from '../hooks/queries/useDashboardStats';
 import { api } from '../lib/api';
 
@@ -20,13 +20,13 @@ vi.mock('../lib/api', () => ({
     listStudents: vi.fn(),
     listClasses: vi.fn(),
     admin: {
-      listSubjects: vi.fn()
+      listSubjects: vi.fn(),
     },
     getAttendanceAggregate: vi.fn(),
     configuration: {
-      listClasses: vi.fn()
-    }
-  }
+      listClasses: vi.fn(),
+    },
+  },
 }));
 
 describe('useDashboardStats hooks', () => {
@@ -35,8 +35,8 @@ describe('useDashboardStats hooks', () => {
   beforeEach(() => {
     queryClient = new QueryClient({
       defaultOptions: {
-        queries: { retry: false }
-      }
+        queries: { retry: false },
+      },
     });
     vi.clearAllMocks();
   });
@@ -50,7 +50,7 @@ describe('useDashboardStats hooks', () => {
       const mockTeachers = [
         { id: '1', status: 'active', assigned_classes: ['class-1'] },
         { id: '2', status: 'active', assigned_classes: ['class-2'] },
-        { id: '3', status: 'inactive', assigned_classes: [] }
+        { id: '3', status: 'inactive', assigned_classes: [] },
       ];
 
       vi.mocked(api.listTeachers).mockResolvedValue(mockTeachers as never);
@@ -97,7 +97,7 @@ describe('useDashboardStats hooks', () => {
       const mockStudents = [
         { id: '1', enrollment_status: 'active', class_id: 'class-1', gender: 'male' },
         { id: '2', enrollment_status: 'active', class_id: 'class-1', gender: 'female' },
-        { id: '3', enrollment_status: 'active', class_id: 'class-2', gender: 'male' }
+        { id: '3', enrollment_status: 'active', class_id: 'class-2', gender: 'male' },
       ];
 
       vi.mocked(api.listStudents).mockResolvedValue(mockStudents as never);
@@ -123,15 +123,13 @@ describe('useDashboardStats hooks', () => {
       const mockClasses = [
         { id: 'class-1', name: 'Class 1' },
         { id: 'class-2', name: 'Class 2' },
-        { id: 'class-3', name: 'Class 3' }
+        { id: 'class-3', name: 'Class 3' },
       ];
       const mockStudents = [
         { id: '1', class_id: 'class-1' },
-        { id: '2', class_id: 'class-2' }
+        { id: '2', class_id: 'class-2' },
       ];
-      const mockTeachers = [
-        { id: '1', assigned_classes: ['class-1'] }
-      ];
+      const mockTeachers = [{ id: '1', assigned_classes: ['class-1'] }];
 
       vi.mocked(api.listClasses).mockResolvedValue(mockClasses as never);
       vi.mocked(api.listStudents).mockResolvedValue(mockStudents as never);
@@ -139,9 +137,14 @@ describe('useDashboardStats hooks', () => {
 
       const { result } = renderHook(() => useClassStats(), { wrapper });
 
-      await waitFor(() => {
-        expect(result.current.data || result.current.isSuccess || result.current.isLoading === false).toBeTruthy();
-      }, { timeout: 3000 });
+      await waitFor(
+        () => {
+          expect(
+            result.current.data || result.current.isSuccess || result.current.isLoading === false
+          ).toBeTruthy();
+        },
+        { timeout: 3000 }
+      );
 
       if (result.current.data) {
         expect(result.current.data).toHaveProperty('total');
@@ -157,11 +160,11 @@ describe('useDashboardStats hooks', () => {
     it('fetches and returns subject stats', async () => {
       const mockSubjects = [
         { id: 'subj-1', name: 'Math' },
-        { id: 'subj-2', name: 'Science' }
+        { id: 'subj-2', name: 'Science' },
       ];
       const mockTeachers = [
         { id: '1', subjects: ['subj-1'] },
-        { id: '2', subjects: ['subj-1', 'subj-2'] }
+        { id: '2', subjects: ['subj-1', 'subj-2'] },
       ];
 
       vi.mocked(api.admin.listSubjects).mockResolvedValue(mockSubjects as never);
@@ -187,7 +190,7 @@ describe('useDashboardStats hooks', () => {
       vi.mocked(api.getAttendanceAggregate).mockResolvedValue([
         { status: 'present', count: 40 },
         { status: 'absent', count: 5 },
-        { status: 'late', count: 3 }
+        { status: 'late', count: 3 },
       ]);
 
       const { result } = renderHook(() => useTodayAttendance(), { wrapper });
@@ -239,4 +242,3 @@ describe('useDashboardStats hooks', () => {
     });
   });
 });
-

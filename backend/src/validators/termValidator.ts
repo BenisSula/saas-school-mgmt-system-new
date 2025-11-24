@@ -6,7 +6,7 @@ export const academicTermSchema = z
     name: z.string().trim().min(1, 'Name is required'),
     startsOn: z.string().date('Invalid start date'),
     endsOn: z.string().date('Invalid end date'),
-    metadata: z.record(z.string(), z.unknown()).optional()
+    metadata: z.record(z.string(), z.unknown()).optional(),
   })
   .superRefine((value, ctx) => {
     const startsOn = new Date(value.startsOn);
@@ -15,21 +15,21 @@ export const academicTermSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['startsOn'],
-        message: 'Invalid start date'
+        message: 'Invalid start date',
       });
     }
     if (Number.isNaN(endsOn.getTime())) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['endsOn'],
-        message: 'Invalid end date'
+        message: 'Invalid end date',
       });
     }
     if (!Number.isNaN(startsOn.getTime()) && !Number.isNaN(endsOn.getTime()) && startsOn > endsOn) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['endsOn'],
-        message: 'End date must be after the start date'
+        message: 'End date must be after the start date',
       });
     }
   });
@@ -39,7 +39,7 @@ export const classSchema = z
     id: z.string().uuid('Invalid class identifier').optional(),
     name: z.string().trim().min(1, 'Class name required'),
     description: z.string().trim().max(255, 'Description too long').optional(),
-    metadata: z.record(z.string(), z.unknown()).optional()
+    metadata: z.record(z.string(), z.unknown()).optional(),
   })
   .superRefine((value, ctx) => {
     if (value.description === undefined) {
@@ -49,7 +49,7 @@ export const classSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['description'],
-        message: 'Description cannot be empty'
+        message: 'Description cannot be empty',
       });
     }
   });

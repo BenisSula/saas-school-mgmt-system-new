@@ -95,10 +95,11 @@ export function useProfileData<T>(options: UseProfileDataOptions) {
                 filename: u.filename,
                 fileSize: u.fileSize,
                 mimeType: u.mimeType,
-                uploadedAt: typeof u.uploadedAt === 'string' ? u.uploadedAt : u.uploadedAt.toISOString(),
+                uploadedAt:
+                  typeof u.uploadedAt === 'string' ? u.uploadedAt : u.uploadedAt.toISOString(),
                 uploadedBy: u.uploadedBy,
                 description: null,
-                downloadUrl: u.fileUrl
+                downloadUrl: u.fileUrl,
               }))
             );
           }
@@ -142,6 +143,6 @@ export function useProfileData<T>(options: UseProfileDataOptions) {
     activities,
     auditLogs,
     uploads,
-    setUploads
+    setUploads,
   };
 }

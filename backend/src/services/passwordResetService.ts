@@ -1,6 +1,9 @@
 import { Pool } from 'pg';
 import { Role } from '../config/permissions';
-import { adminResetPassword, adminForceChangePassword } from './superuser/passwordManagementService';
+import {
+  adminResetPassword,
+  adminForceChangePassword,
+} from './superuser/passwordManagementService';
 
 /**
  * Check if a role can reset password for another role
@@ -68,10 +71,9 @@ export async function resetUserPassword(
 
   // For admin, check if they can reset this user
   // Admin can only reset users in their tenant
-  const requesterResult = await pool.query(
-    `SELECT tenant_id FROM shared.users WHERE id = $1`,
-    [requesterUserId]
-  );
+  const requesterResult = await pool.query(`SELECT tenant_id FROM shared.users WHERE id = $1`, [
+    requesterUserId,
+  ]);
 
   if (requesterResult.rows.length === 0) {
     throw new Error('Requester not found');
@@ -133,10 +135,9 @@ export async function changeUserPassword(
 
   // For admin, check if they can change this user (must be in same tenant)
   if (requesterRole === 'admin') {
-    const requesterResult = await pool.query(
-      `SELECT tenant_id FROM shared.users WHERE id = $1`,
-      [requesterUserId]
-    );
+    const requesterResult = await pool.query(`SELECT tenant_id FROM shared.users WHERE id = $1`, [
+      requesterUserId,
+    ]);
 
     if (requesterResult.rows.length === 0) {
       throw new Error('Requester not found');
@@ -164,4 +165,3 @@ export async function changeUserPassword(
     requesterRole === 'admin' // Skip superuser check for admin
   );
 }
-

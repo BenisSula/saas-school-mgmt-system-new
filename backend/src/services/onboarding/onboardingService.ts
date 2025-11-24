@@ -59,7 +59,7 @@ export async function createInvitation(
       tokenHash,
       input.invitedBy,
       expiresAt,
-      JSON.stringify(input.metadata || {})
+      JSON.stringify(input.metadata || {}),
     ]
   );
 
@@ -77,8 +77,8 @@ export async function createInvitation(
     variables: {
       invitationUrl,
       role: input.role,
-      expiresInHours
-    }
+      expiresInHours,
+    },
   });
 
   // Record audit log
@@ -90,14 +90,14 @@ export async function createInvitation(
     details: {
       invitationId,
       email: input.email,
-      role: input.role
-    }
+      role: input.role,
+    },
   });
 
   return {
     id: invitationId,
     token,
-    invitationUrl
+    invitationUrl,
   };
 }
 
@@ -137,12 +137,12 @@ export async function acceptInvitation(
       role: invitation.role,
       tenantId: invitation.tenant_id,
       isVerified: true,
-      status: 'active'
+      status: 'active',
     });
 
     // Mark invitation as accepted
     await client.query('UPDATE shared.tenant_invitations SET accepted_at = NOW() WHERE id = $1', [
-      invitationId
+      invitationId,
     ]);
 
     // Update onboarding progress
@@ -155,15 +155,15 @@ export async function acceptInvitation(
       recipientEmail: invitation.email,
       variables: {
         name: invitation.email.split('@')[0],
-        role: invitation.role
-      }
+        role: invitation.role,
+      },
     });
 
     await client.query('COMMIT');
 
     return {
       userId: user.id,
-      tenantId: invitation.tenant_id
+      tenantId: invitation.tenant_id,
     };
   } catch (error) {
     await client.query('ROLLBACK');
@@ -227,7 +227,7 @@ export async function updateOnboardingProgress(
       status === 'in_progress' || status === 'completed' ? now : null,
       status === 'completed' ? now : null,
       errorMessage || null,
-      ...values
+      ...values,
     ]
   );
 }
@@ -254,7 +254,7 @@ export async function getOnboardingProgress(
     progressPercentage: row.progress_percentage,
     startedAt: row.started_at,
     completedAt: row.completed_at,
-    errorMessage: row.error_message
+    errorMessage: row.error_message,
   }));
 
   // Calculate overall progress
@@ -374,7 +374,7 @@ export async function completeTenantOnboarding(
   try {
     // Get tenant
     const tenantResult = await client.query('SELECT * FROM shared.tenants WHERE id = $1', [
-      tenantId
+      tenantId,
     ]);
 
     if (tenantResult.rowCount === 0) {
@@ -401,7 +401,7 @@ export async function completeTenantOnboarding(
     // Mark onboarding as completed
     await updateOnboardingWizard(client, tenantId, {
       isCompleted: true,
-      currentStep: 999 // Final step
+      currentStep: 999, // Final step
     });
 
     await updateOnboardingProgress(client, tenantId, 'completed', 'completed');

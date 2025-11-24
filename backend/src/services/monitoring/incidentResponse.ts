@@ -6,10 +6,7 @@
 import { getPool } from '../../db/connection';
 import { logger } from './loggingService';
 import { errorTracker } from './errorTracking';
-import {
-  createIncident,
-  addIncidentUpdate
-} from '../support/statusPageService';
+import { createIncident, addIncidentUpdate } from '../support/statusPageService';
 
 export interface IncidentAlert {
   alertname: string;
@@ -34,7 +31,7 @@ export async function processAlert(alert: IncidentAlert): Promise<void> {
     if (alert.severity !== 'critical') {
       logger.info('Alert processed (non-critical, no incident created)', {
         alertname: alert.alertname,
-        severity: alert.severity
+        severity: alert.severity,
       });
       return;
     }
@@ -55,7 +52,7 @@ export async function processAlert(alert: IncidentAlert): Promise<void> {
     if ((existingIncident.rowCount ?? 0) > 0) {
       logger.info('Incident already exists for alert', {
         alertname: alert.alertname,
-        incidentId: existingIncident.rows[0].id
+        incidentId: existingIncident.rows[0].id,
       });
       return;
     }
@@ -66,31 +63,27 @@ export async function processAlert(alert: IncidentAlert): Promise<void> {
       description: `${alert.description}\n\nAlert: ${alert.alertname}\nLabels: ${JSON.stringify(alert.labels)}`,
       status: 'investigating',
       severity: alert.severity === 'critical' ? 'critical' : 'major',
-      affectedServices: [alert.component]
+      affectedServices: [alert.component],
     });
 
     logger.info('Incident created from alert', {
       alertname: alert.alertname,
-      incidentId: (incident as { id: string }).id
+      incidentId: (incident as { id: string }).id,
     });
 
     // Track in error tracking system
-    errorTracker.captureMessage(
-      `Incident created: ${alert.summary}`,
-      'error',
-      {
-        incidentId: (incident as { id: string }).id,
-        alertname: alert.alertname,
-        severity: alert.severity,
-        component: alert.component
-      }
-    );
+    errorTracker.captureMessage(`Incident created: ${alert.summary}`, 'error', {
+      incidentId: (incident as { id: string }).id,
+      alertname: alert.alertname,
+      severity: alert.severity,
+      component: alert.component,
+    });
 
     // Send notification (integrate with notification service)
     // await sendIncidentNotification(incident);
   } catch (error) {
     logger.error('Failed to process alert', error as Error, {
-      alertname: alert.alertname
+      alertname: alert.alertname,
     });
     throw error;
   } finally {
@@ -113,7 +106,7 @@ export async function handleAlertmanagerWebhook(payload: {
       }
     } catch (error) {
       logger.error('Failed to handle alert', error as Error, {
-        alertname: alert.alertname
+        alertname: alert.alertname,
       });
     }
   }
@@ -143,12 +136,12 @@ async function resolveIncidentFromAlert(alert: IncidentAlert): Promise<void> {
       await addIncidentUpdate(client, {
         incidentId,
         status: 'resolved',
-        message: `Alert resolved: ${alert.summary}`
+        message: `Alert resolved: ${alert.summary}`,
       });
 
       logger.info('Incident resolved from alert', {
         alertname: alert.alertname,
-        incidentId
+        incidentId,
       });
     }
   } catch (error) {
@@ -157,4 +150,3 @@ async function resolveIncidentFromAlert(alert: IncidentAlert): Promise<void> {
     client.release();
   }
 }
-

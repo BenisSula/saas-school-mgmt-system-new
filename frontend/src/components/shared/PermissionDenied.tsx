@@ -32,4 +32,3 @@ export function PermissionDenied({ permission, message }: PermissionDeniedProps)
     </Card>
   );
 }
-

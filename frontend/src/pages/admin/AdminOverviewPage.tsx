@@ -7,7 +7,7 @@ import {
   useSubjectStats,
   useTodayAttendance,
   useLoginAttempts,
-  useActiveSessions
+  useActiveSessions,
 } from '../../hooks/queries/useDashboardStats';
 import { StatCard } from '../../components/charts/StatCard';
 import { BarChart, type BarChartData } from '../../components/charts/BarChart';
@@ -26,7 +26,7 @@ import {
   LogIn,
   UserCheck,
   RefreshCw,
-  TrendingUp
+  TrendingUp,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../hooks/useQuery';
@@ -42,13 +42,13 @@ export default function AdminOverviewPage() {
   // Main overview data
   const { data, isLoading: overviewLoading, error: overviewError } = useAdminOverview();
   // Provide safe defaults to prevent rendering errors
-  const { 
-    school = null, 
-    users = [], 
-    teachers = [], 
+  const {
+    school = null,
+    users = [],
+    teachers = [],
     students = [],
     classes = [],
-    totals = undefined
+    totals = undefined,
   } = data || {};
 
   // Dashboard statistics hooks
@@ -66,7 +66,7 @@ export default function AdminOverviewPage() {
   fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
   const { data: attendanceData } = useAttendance({
     from: fourteenDaysAgo.toISOString().split('T')[0],
-    to: new Date().toISOString().split('T')[0]
+    to: new Date().toISOString().split('T')[0],
   });
 
   const isLoading =
@@ -144,7 +144,7 @@ export default function AdminOverviewPage() {
     return Object.entries(weeklyCounts).map(([label, value]) => ({
       label,
       value,
-      color: 'var(--brand-primary)'
+      color: 'var(--brand-primary)',
     }));
   }, [teachers]);
 
@@ -158,7 +158,7 @@ export default function AdminOverviewPage() {
         date.setDate(date.getDate() - i);
         data.push({
           label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          value: 0
+          value: 0,
         });
       }
       return data;
@@ -184,10 +184,11 @@ export default function AdminOverviewPage() {
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
       const dayData = dailyData[dateStr] || { present: 0, total: 0 };
-      const percentage = dayData.total > 0 ? Math.round((dayData.present / dayData.total) * 100) : 0;
+      const percentage =
+        dayData.total > 0 ? Math.round((dayData.present / dayData.total) * 100) : 0;
       data.push({
         label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        value: percentage
+        value: percentage,
       });
     }
     return data;
@@ -199,7 +200,7 @@ export default function AdminOverviewPage() {
     return [
       { label: 'Male', value: studentStats.byGender.male },
       { label: 'Female', value: studentStats.byGender.female },
-      { label: 'Other', value: studentStats.byGender.other }
+      { label: 'Other', value: studentStats.byGender.other },
     ].filter((item) => item.value > 0);
   }, [studentStats]);
 
@@ -210,7 +211,7 @@ export default function AdminOverviewPage() {
     return Object.entries(studentStats.byClass)
       .map(([classId, count]) => ({
         label: classMap.get(classId) || classId || 'Unassigned',
-        value: count
+        value: count,
       }))
       .filter((item) => item.value > 0)
       .slice(0, 10); // Top 10 classes
@@ -239,9 +240,9 @@ export default function AdminOverviewPage() {
     // Only show error if we have no data at all
     return (
       <RouteMeta title="Admin Dashboard">
-        <StatusBanner 
-          status="error" 
-          message={`Failed to load dashboard data: ${(error as Error).message}. Some data may be incomplete.`} 
+        <StatusBanner
+          status="error"
+          message={`Failed to load dashboard data: ${(error as Error).message}. Some data may be incomplete.`}
         />
       </RouteMeta>
     );

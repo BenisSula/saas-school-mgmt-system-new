@@ -8,9 +8,7 @@ import path from 'path';
 
 async function fixMigrationIndexes(): Promise<void> {
   const migrationsDir = path.resolve(__dirname, '../db/migrations');
-  const files = (await fs.readdir(migrationsDir))
-    .filter((file) => file.endsWith('.sql'))
-    .sort();
+  const files = (await fs.readdir(migrationsDir)).filter((file) => file.endsWith('.sql')).sort();
 
   console.log(`Found ${files.length} migration files\n`);
 
@@ -41,4 +39,3 @@ fixMigrationIndexes().catch((error) => {
   console.error('Error:', error);
   process.exit(1);
 });
-

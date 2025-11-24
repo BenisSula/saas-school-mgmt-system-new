@@ -16,11 +16,13 @@ export interface TeacherDetailViewProps {
  * Displays all teacher information using APIs
  */
 export function TeacherDetailView({ teacherId }: TeacherDetailViewProps) {
-  const { data: teacher, isLoading, error } = useQuery(
-    queryKeys.admin.teachers(),
-    () => api.getTeacher(teacherId),
-    { enabled: !!teacherId }
-  );
+  const {
+    data: teacher,
+    isLoading,
+    error,
+  } = useQuery(queryKeys.admin.teachers(), () => api.getTeacher(teacherId), {
+    enabled: !!teacherId,
+  });
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -42,7 +44,7 @@ export function TeacherDetailView({ teacherId }: TeacherDetailViewProps) {
   const fields: DetailField[] = [
     {
       label: 'Full Name',
-      value: teacher.name
+      value: teacher.name,
     },
     {
       label: 'Email',
@@ -56,17 +58,17 @@ export function TeacherDetailView({ teacherId }: TeacherDetailViewProps) {
             {teacher.email}
           </a>
         </div>
-      )
+      ),
     },
     {
       label: 'Teacher ID',
-      value: teacher.id
+      value: teacher.id,
     },
     {
       label: 'Account Created',
       value: teacher.created_at
         ? new Date(teacher.created_at).toLocaleDateString()
-        : 'Not available'
+        : 'Not available',
     },
     {
       label: 'Subjects Taught',
@@ -87,7 +89,7 @@ export function TeacherDetailView({ teacherId }: TeacherDetailViewProps) {
           )}
         </div>
       ),
-      span: 2
+      span: 2,
     },
     {
       label: 'Assigned Classes',
@@ -108,14 +110,14 @@ export function TeacherDetailView({ teacherId }: TeacherDetailViewProps) {
           )}
         </div>
       ),
-      span: 2
+      span: 2,
     },
     {
       label: 'Last Updated',
       value: teacher.updated_at
         ? new Date(teacher.updated_at).toLocaleDateString()
-        : 'Not available'
-    }
+        : 'Not available',
+    },
   ];
 
   return (
@@ -126,4 +128,3 @@ export function TeacherDetailView({ teacherId }: TeacherDetailViewProps) {
 }
 
 export default TeacherDetailView;
-

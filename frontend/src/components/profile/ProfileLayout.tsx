@@ -33,7 +33,7 @@ export function ProfileLayout({
   headerActions,
   sections,
   onEdit,
-  showEditButton = false
+  showEditButton = false,
 }: ProfileLayoutProps) {
   if (loading) {
     return (

@@ -23,29 +23,28 @@ export default function TeacherDashboardPage() {
         title: 'Classes',
         value: overview.summary.totalClasses,
         description: 'Active teaching groups',
-        icon: <BookOpen className="h-5 w-5" />
+        icon: <BookOpen className="h-5 w-5" />,
       },
       {
         title: 'Subjects',
         value: overview.summary.totalSubjects,
         description: 'Current assignments',
-        icon: <GraduationCap className="h-5 w-5" />
+        icon: <GraduationCap className="h-5 w-5" />,
       },
       {
         title: 'Class teacher roles',
         value: overview.summary.classTeacherRoles,
         description: 'Homeroom responsibilities',
-        icon: <Users className="h-5 w-5" />
+        icon: <Users className="h-5 w-5" />,
       },
       {
         title: 'Drop requests',
         value: overview.summary.pendingDropRequests,
         description: 'Assignments awaiting admin review',
-        icon: <AlertCircle className="h-5 w-5" />
-      }
+        icon: <AlertCircle className="h-5 w-5" />,
+      },
     ];
   }, [overview]);
-
 
   // Class distribution chart
   const classDistribution: BarChartData[] = useMemo(() => {
@@ -58,7 +57,7 @@ export default function TeacherDashboardPage() {
     return Array.from(classCounts.entries()).map(([label, value]) => ({
       label,
       value,
-      color: 'var(--brand-primary)'
+      color: 'var(--brand-primary)',
     }));
   }, [overview]);
 
@@ -72,7 +71,7 @@ export default function TeacherDashboardPage() {
     });
     return Array.from(subjectCounts.entries()).map(([label, value]) => ({
       label,
-      value
+      value,
     }));
   }, [overview]);
 
@@ -83,7 +82,7 @@ export default function TeacherDashboardPage() {
     const subjectTeacherCount = overview.assignments.length - classTeacherCount;
     return [
       { label: 'Class Teacher', value: classTeacherCount },
-      { label: 'Subject Teacher', value: subjectTeacherCount }
+      { label: 'Subject Teacher', value: subjectTeacherCount },
     ];
   }, [overview]);
 
@@ -93,13 +92,13 @@ export default function TeacherDashboardPage() {
         key: 'subjectName',
         header: 'Subject',
         render: (row) => row.subjectName,
-        sortable: true
+        sortable: true,
       },
       {
         key: 'className',
         header: 'Class',
         render: (row) => row.className,
-        sortable: true
+        sortable: true,
       },
       {
         key: 'role',
@@ -113,7 +112,7 @@ export default function TeacherDashboardPage() {
             <span className="text-xs uppercase tracking-wide text-[var(--brand-muted)]">
               Subject teacher
             </span>
-          )
+          ),
       },
       {
         key: 'status',
@@ -125,8 +124,8 @@ export default function TeacherDashboardPage() {
             </span>
           ) : (
             <span className="text-xs text-[var(--brand-muted)]">Active</span>
-          )
-      }
+          ),
+      },
     ],
     []
   );
@@ -259,4 +258,3 @@ export default function TeacherDashboardPage() {
     </RouteMeta>
   );
 }
-

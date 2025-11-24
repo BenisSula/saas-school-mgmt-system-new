@@ -39,7 +39,7 @@ export function DashboardLayout({ children, user, onLogout, storageKey }: Dashbo
     toggleMobile,
     closeMobile,
     toggleCollapsed,
-    shouldShowOverlay
+    shouldShowOverlay,
   } = useSidebar({ storageKey: storageKey ?? user?.id });
 
   const content = children;
@@ -110,7 +110,7 @@ function DashboardLayoutContent({
   toggleCollapsed,
   shouldShowOverlay,
   navigate,
-  location
+  location,
 }: DashboardLayoutContentProps) {
   const mainRef = useRef<HTMLElement | null>(null);
   const { titleId } = useDashboardRouteMeta();

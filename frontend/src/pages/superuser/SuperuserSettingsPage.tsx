@@ -34,23 +34,23 @@ const defaultSettings: PlatformSettings = {
   globalBranding: {
     platformName: 'Sumano',
     defaultLogoUrl: null,
-    defaultPrimaryColor: '#3b82f6'
+    defaultPrimaryColor: '#3b82f6',
   },
   authentication: {
     requireEmailVerification: true,
     allowSelfRegistration: true,
-    sessionTimeoutMinutes: 60
+    sessionTimeoutMinutes: 60,
   },
   features: {
     enableAuditLogging: true,
     enableNotifications: true,
-    enableHighContrastMode: true
+    enableHighContrastMode: true,
   },
   integrations: {
     paymentProcessor: 'stripe',
     emailProvider: 'sendgrid',
-    smsProvider: null
-  }
+    smsProvider: null,
+  },
 };
 
 export function SuperuserSettingsPage() {
@@ -117,7 +117,7 @@ export function SuperuserSettingsPage() {
               onChange={(e) =>
                 setSettings((s) => ({
                   ...s,
-                  globalBranding: { ...s.globalBranding, platformName: e.target.value }
+                  globalBranding: { ...s.globalBranding, platformName: e.target.value },
                 }))
               }
             />
@@ -128,7 +128,7 @@ export function SuperuserSettingsPage() {
               onChange={(e) =>
                 setSettings((s) => ({
                   ...s,
-                  globalBranding: { ...s.globalBranding, defaultLogoUrl: e.target.value || null }
+                  globalBranding: { ...s.globalBranding, defaultLogoUrl: e.target.value || null },
                 }))
               }
             />
@@ -139,7 +139,7 @@ export function SuperuserSettingsPage() {
               onChange={(e) =>
                 setSettings((s) => ({
                   ...s,
-                  globalBranding: { ...s.globalBranding, defaultPrimaryColor: e.target.value }
+                  globalBranding: { ...s.globalBranding, defaultPrimaryColor: e.target.value },
                 }))
               }
             />
@@ -170,13 +170,13 @@ export function SuperuserSettingsPage() {
                     ...s,
                     authentication: {
                       ...s.authentication,
-                      requireEmailVerification: e.target.value === 'true'
-                    }
+                      requireEmailVerification: e.target.value === 'true',
+                    },
                   }))
                 }
                 options={[
                   { label: 'Enabled', value: 'true' },
-                  { label: 'Disabled', value: 'false' }
+                  { label: 'Disabled', value: 'false' },
                 ]}
               />
             </div>
@@ -196,13 +196,13 @@ export function SuperuserSettingsPage() {
                     ...s,
                     authentication: {
                       ...s.authentication,
-                      allowSelfRegistration: e.target.value === 'true'
-                    }
+                      allowSelfRegistration: e.target.value === 'true',
+                    },
                   }))
                 }
                 options={[
                   { label: 'Enabled', value: 'true' },
-                  { label: 'Disabled', value: 'false' }
+                  { label: 'Disabled', value: 'false' },
                 ]}
               />
             </div>
@@ -215,8 +215,8 @@ export function SuperuserSettingsPage() {
                   ...s,
                   authentication: {
                     ...s.authentication,
-                    sessionTimeoutMinutes: Number(e.target.value)
-                  }
+                    sessionTimeoutMinutes: Number(e.target.value),
+                  },
                 }))
               }
             />
@@ -245,12 +245,12 @@ export function SuperuserSettingsPage() {
                 onChange={(e) =>
                   setSettings((s) => ({
                     ...s,
-                    features: { ...s.features, enableAuditLogging: e.target.value === 'true' }
+                    features: { ...s.features, enableAuditLogging: e.target.value === 'true' },
                   }))
                 }
                 options={[
                   { label: 'Enabled', value: 'true' },
-                  { label: 'Disabled', value: 'false' }
+                  { label: 'Disabled', value: 'false' },
                 ]}
               />
             </div>
@@ -268,12 +268,12 @@ export function SuperuserSettingsPage() {
                 onChange={(e) =>
                   setSettings((s) => ({
                     ...s,
-                    features: { ...s.features, enableNotifications: e.target.value === 'true' }
+                    features: { ...s.features, enableNotifications: e.target.value === 'true' },
                   }))
                 }
                 options={[
                   { label: 'Enabled', value: 'true' },
-                  { label: 'Disabled', value: 'false' }
+                  { label: 'Disabled', value: 'false' },
                 ]}
               />
             </div>
@@ -291,12 +291,12 @@ export function SuperuserSettingsPage() {
                 onChange={(e) =>
                   setSettings((s) => ({
                     ...s,
-                    features: { ...s.features, enableHighContrastMode: e.target.value === 'true' }
+                    features: { ...s.features, enableHighContrastMode: e.target.value === 'true' },
                   }))
                 }
                 options={[
                   { label: 'Enabled', value: 'true' },
-                  { label: 'Disabled', value: 'false' }
+                  { label: 'Disabled', value: 'false' },
                 ]}
               />
             </div>
@@ -317,13 +317,13 @@ export function SuperuserSettingsPage() {
               onChange={(e) =>
                 setSettings((s) => ({
                   ...s,
-                  integrations: { ...s.integrations, paymentProcessor: e.target.value }
+                  integrations: { ...s.integrations, paymentProcessor: e.target.value },
                 }))
               }
               options={[
                 { label: 'Stripe', value: 'stripe' },
                 { label: 'PayPal', value: 'paypal' },
-                { label: 'Razorpay', value: 'razorpay' }
+                { label: 'Razorpay', value: 'razorpay' },
               ]}
             />
             <Select
@@ -332,13 +332,13 @@ export function SuperuserSettingsPage() {
               onChange={(e) =>
                 setSettings((s) => ({
                   ...s,
-                  integrations: { ...s.integrations, emailProvider: e.target.value }
+                  integrations: { ...s.integrations, emailProvider: e.target.value },
                 }))
               }
               options={[
                 { label: 'SendGrid', value: 'sendgrid' },
                 { label: 'AWS SES', value: 'ses' },
-                { label: 'Mailgun', value: 'mailgun' }
+                { label: 'Mailgun', value: 'mailgun' },
               ]}
             />
             <Select
@@ -347,13 +347,13 @@ export function SuperuserSettingsPage() {
               onChange={(e) =>
                 setSettings((s) => ({
                   ...s,
-                  integrations: { ...s.integrations, smsProvider: e.target.value || null }
+                  integrations: { ...s.integrations, smsProvider: e.target.value || null },
                 }))
               }
               options={[
                 { label: 'None', value: '' },
                 { label: 'Twilio', value: 'twilio' },
-                { label: 'AWS SNS', value: 'sns' }
+                { label: 'AWS SNS', value: 'sns' },
               ]}
             />
           </div>

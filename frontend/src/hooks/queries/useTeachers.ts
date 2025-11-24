@@ -19,17 +19,14 @@ export interface UseTeachersFilters {
  * Hook to fetch teachers with optional filters
  */
 export function useTeachers(filters?: UseTeachersFilters) {
-  const queryKey = useMemo(
-    () => [...queryKeys.admin.teachers(), filters] as const,
-    [filters]
-  );
+  const queryKey = useMemo(() => [...queryKeys.admin.teachers(), filters] as const, [filters]);
 
   return useQuery({
     queryKey,
     queryFn: async () => {
       // Backend doesn't support filters yet, so we filter client-side
       const teachers = await api.listTeachers();
-      
+
       if (!filters) return teachers;
 
       return teachers.filter((teacher) => {
@@ -66,7 +63,12 @@ export function useCreateTeacher() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { name: string; email: string; subjects?: string[]; assignedClasses?: string[] }) => {
+    mutationFn: async (data: {
+      name: string;
+      email: string;
+      subjects?: string[];
+      assignedClasses?: string[];
+    }) => {
       toast.loading('Creating teacher...', { id: 'create-teacher' });
       try {
         const response = await api.createTeacher(data);
@@ -95,7 +97,13 @@ export function useUpdateTeacher() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Parameters<typeof api.updateTeacher>[1] }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Parameters<typeof api.updateTeacher>[1];
+    }) => {
       toast.loading('Updating teacher...', { id: `update-teacher-${id}` });
       try {
         const response = await api.updateTeacher(id, data);
@@ -156,4 +164,3 @@ export function useTeacherClasses() {
     staleTime: 30000, // 30 seconds
   });
 }
-

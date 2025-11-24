@@ -9,15 +9,15 @@ export const brandingSchema = z.object({
     .object({
       fontFamily: z.string().optional(),
       headingWeight: z.string().optional(),
-      bodyWeight: z.string().optional()
+      bodyWeight: z.string().optional(),
     })
     .optional(),
   navigation: z
     .object({
       style: z.enum(['top', 'side']).optional(),
-      showLogo: z.boolean().optional()
+      showLogo: z.boolean().optional(),
     })
-    .optional()
+    .optional(),
 });
 
 export type BrandingInput = z.infer<typeof brandingSchema>;

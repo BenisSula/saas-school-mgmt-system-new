@@ -1,7 +1,7 @@
 /**
  * Shared Tenant Query Utilities
  * Centralized tenant query functions to avoid duplication across services
- * 
+ *
  * DRY: All tenant queries should use these utilities instead of duplicating SQL
  */
 
@@ -57,4 +57,3 @@ export async function getTenantSchemaName(tenantId: string): Promise<string | nu
   const tenant = await getTenantById(tenantId);
   return tenant?.schema_name || null;
 }
-

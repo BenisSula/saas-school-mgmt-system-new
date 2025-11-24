@@ -15,7 +15,11 @@ interface TeacherClassCardProps {
   onMarkAttendance?: () => void;
 }
 
-export function TeacherClassCard({ classInfo, onViewStudents, onMarkAttendance }: TeacherClassCardProps) {
+export function TeacherClassCard({
+  classInfo,
+  onViewStudents,
+  onMarkAttendance,
+}: TeacherClassCardProps) {
   return (
     <Card className="p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-3">
@@ -26,26 +30,16 @@ export function TeacherClassCard({ classInfo, onViewStudents, onMarkAttendance }
           </p>
         </div>
       </div>
-      
+
       <div className="flex gap-2 mt-4">
         {onViewStudents && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onViewStudents}
-            className="flex-1"
-          >
+          <Button variant="outline" size="sm" onClick={onViewStudents} className="flex-1">
             <Users className="h-4 w-4 mr-1" />
             Students
           </Button>
         )}
         {onMarkAttendance && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onMarkAttendance}
-            className="flex-1"
-          >
+          <Button variant="outline" size="sm" onClick={onMarkAttendance} className="flex-1">
             <ClipboardList className="h-4 w-4 mr-1" />
             Attendance
           </Button>
@@ -60,4 +54,3 @@ export function TeacherClassCard({ classInfo, onViewStudents, onMarkAttendance }
     </Card>
   );
 }
-

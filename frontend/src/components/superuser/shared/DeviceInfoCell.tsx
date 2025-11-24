@@ -3,7 +3,11 @@
  */
 
 import { Monitor } from 'lucide-react';
-import { formatDeviceInfo, formatDevicePlatform, type NormalizedDeviceInfo } from '../../../utils/formatters';
+import {
+  formatDeviceInfo,
+  formatDevicePlatform,
+  type NormalizedDeviceInfo,
+} from '../../../utils/formatters';
 
 export interface DeviceInfoCellProps {
   deviceInfo?: NormalizedDeviceInfo | Record<string, unknown> | null;
@@ -13,7 +17,7 @@ export interface DeviceInfoCellProps {
 
 export function DeviceInfoCell({ deviceInfo, userAgent, showFull = false }: DeviceInfoCellProps) {
   const normalized = deviceInfo as NormalizedDeviceInfo | undefined;
-  
+
   if (showFull && normalized) {
     return (
       <div className="flex flex-col gap-1">
@@ -31,16 +35,18 @@ export function DeviceInfoCell({ deviceInfo, userAgent, showFull = false }: Devi
       </div>
     );
   }
-  
+
   const displayText = formatDeviceInfo(normalized) || userAgent || '—';
-  
+
   return (
     <div className="flex items-center gap-2">
       <Monitor className="h-4 w-4 text-[var(--brand-muted)] flex-shrink-0" />
-      <span className="text-[var(--brand-text-secondary)] text-sm truncate max-w-xs" title={userAgent || displayText}>
+      <span
+        className="text-[var(--brand-text-secondary)] text-sm truncate max-w-xs"
+        title={userAgent || displayText}
+      >
         {displayText}
       </span>
     </div>
   );
 }
-

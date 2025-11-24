@@ -38,7 +38,7 @@ export async function findTenantByRegistrationCode(
       id: row.id,
       name: row.name,
       domain: row.domain,
-      registrationCode: row.registration_code
+      registrationCode: row.registration_code,
     };
   }
 
@@ -77,7 +77,7 @@ export async function findTenantByName(
     id: row.id,
     name: row.name,
     domain: row.domain,
-    registrationCode: row.registration_code
+    registrationCode: row.registration_code,
   }));
 }
 
@@ -110,7 +110,7 @@ export async function findTenantByDomain(domain: string): Promise<TenantLookupRe
       id: row.id,
       name: row.name,
       domain: row.domain,
-      registrationCode: row.registration_code
+      registrationCode: row.registration_code,
     };
   }
 
@@ -168,9 +168,9 @@ export async function listActiveTenants(
       id: row.id,
       name: row.name,
       domain: row.domain,
-      registrationCode: row.registration_code
+      registrationCode: row.registration_code,
     })),
-    total
+    total,
   };
 }
 
@@ -202,7 +202,7 @@ export async function getRecentSchools(limit: number = 20): Promise<TenantLookup
     id: row.id,
     name: row.name,
     domain: row.domain,
-    registrationCode: row.registration_code
+    registrationCode: row.registration_code,
   }));
 }
 

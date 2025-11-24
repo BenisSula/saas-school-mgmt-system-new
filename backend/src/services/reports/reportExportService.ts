@@ -177,7 +177,7 @@ export async function generateExport(
     case 'pdf':
       await exportToPdf(data, execution.columns || [], title || execution.report_name, {
         generatedAt: execution.started_at,
-        rowCount: execution.row_count
+        rowCount: execution.row_count,
       });
       fileExtension = 'pdf';
       break;
@@ -258,8 +258,8 @@ export async function sendReportViaEmail(
         rowCount: execution.row_count || 0,
         generatedAt: new Date(execution.started_at).toLocaleString(),
         downloadUrl: url,
-        format: format.toUpperCase()
-      }
+        format: format.toUpperCase(),
+      },
     });
   }
 }

@@ -9,12 +9,12 @@ export interface EditButtonProps {
   disabled?: boolean;
 }
 
-export function EditButton({ 
-  onClick, 
-  label = 'Edit', 
+export function EditButton({
+  onClick,
+  label = 'Edit',
   size = 'sm',
   variant = 'ghost',
-  disabled = false
+  disabled = false,
 }: EditButtonProps) {
   return (
     <Button
@@ -29,4 +29,3 @@ export function EditButton({
     </Button>
   );
 }
-

@@ -58,15 +58,15 @@ export function useLoginForm(options: UseLoginFormOptions = {}) {
   const form = useAuthForm<LoginFormValues>({
     initialValues: {
       email: initialValues.email || '',
-      password: initialValues.password || ''
+      password: initialValues.password || '',
     },
     onSubmit: handleSubmit,
     onSuccess: options.onSuccess,
-    validate
+    validate,
   });
 
   return {
     ...form,
-    trimmedEmail
+    trimmedEmail,
   };
 }

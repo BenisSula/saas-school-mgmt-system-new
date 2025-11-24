@@ -33,14 +33,14 @@ export async function createOrUpdateTerm(
       input.name,
       new Date(input.startsOn),
       new Date(input.endsOn),
-      JSON.stringify(input.metadata ?? {})
+      JSON.stringify(input.metadata ?? {}),
     ]
   );
 
   console.info('[audit] term_saved', {
     tenantSchema: schema,
     termId: result.rows[0].id,
-    name: input.name
+    name: input.name,
   });
 
   return result.rows[0];
@@ -89,7 +89,7 @@ export async function createOrUpdateClass(client: PoolClient, schema: string, in
   console.info('[audit] class_saved', {
     tenantSchema: schema,
     classId: result.rows[0].id,
-    name: input.name
+    name: input.name,
   });
 
   return result.rows[0];
@@ -98,7 +98,7 @@ export async function createOrUpdateClass(client: PoolClient, schema: string, in
 export async function deleteClass(client: PoolClient, schema: string, id: string) {
   assertValidSchemaName(schema);
   const result = await client.query(`DELETE FROM ${schema}.classes WHERE id = $1 RETURNING id`, [
-    id
+    id,
   ]);
   if (result.rowCount === 0) {
     const error = new Error('Class not found') as Error & { status?: number };

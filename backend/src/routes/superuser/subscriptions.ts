@@ -8,11 +8,11 @@ import {
   suspendSubscription,
   cancelSubscription,
   listSubscriptions,
-  getSubscriptionHistory
+  getSubscriptionHistory,
 } from '../../services/superuser/subscriptionService';
 import {
   getSubscriptionTierConfigs,
-  updateSubscriptionTierConfigs
+  updateSubscriptionTierConfigs,
 } from '../../services/superuser/subscriptionTierService';
 
 const router = Router();
@@ -22,20 +22,50 @@ const createSubscriptionSchema = z.object({
   tier: z.enum(['free', 'trial', 'paid']),
   status: z.enum(['active', 'suspended', 'cancelled', 'expired']).optional(),
   billingPeriod: z.enum(['monthly', 'yearly', 'quarterly', 'annually']).optional(),
-  currentPeriodStart: z.string().refine((val) => val === undefined || !isNaN(Date.parse(val)), { message: 'Invalid datetime format' }).optional(),
-  currentPeriodEnd: z.string().refine((val) => val === undefined || !isNaN(Date.parse(val)), { message: 'Invalid datetime format' }).optional(),
-  trialEndDate: z.string().refine((val) => val === undefined || !isNaN(Date.parse(val)), { message: 'Invalid datetime format' }).optional(),
-  customLimits: z.record(z.string(), z.unknown()).optional()
+  currentPeriodStart: z
+    .string()
+    .refine((val) => val === undefined || !isNaN(Date.parse(val)), {
+      message: 'Invalid datetime format',
+    })
+    .optional(),
+  currentPeriodEnd: z
+    .string()
+    .refine((val) => val === undefined || !isNaN(Date.parse(val)), {
+      message: 'Invalid datetime format',
+    })
+    .optional(),
+  trialEndDate: z
+    .string()
+    .refine((val) => val === undefined || !isNaN(Date.parse(val)), {
+      message: 'Invalid datetime format',
+    })
+    .optional(),
+  customLimits: z.record(z.string(), z.unknown()).optional(),
 });
 
 const updateSubscriptionSchema = z.object({
   tier: z.enum(['free', 'trial', 'paid']).optional(),
   status: z.enum(['active', 'suspended', 'cancelled', 'expired']).optional(),
   billingPeriod: z.enum(['monthly', 'yearly', 'quarterly', 'annually']).optional(),
-  currentPeriodStart: z.string().refine((val) => val === undefined || !isNaN(Date.parse(val)), { message: 'Invalid datetime format' }).optional(),
-  currentPeriodEnd: z.string().refine((val) => val === undefined || !isNaN(Date.parse(val)), { message: 'Invalid datetime format' }).optional(),
-  trialEndDate: z.string().refine((val) => val === undefined || !isNaN(Date.parse(val)), { message: 'Invalid datetime format' }).optional(),
-  customLimits: z.record(z.string(), z.unknown()).optional()
+  currentPeriodStart: z
+    .string()
+    .refine((val) => val === undefined || !isNaN(Date.parse(val)), {
+      message: 'Invalid datetime format',
+    })
+    .optional(),
+  currentPeriodEnd: z
+    .string()
+    .refine((val) => val === undefined || !isNaN(Date.parse(val)), {
+      message: 'Invalid datetime format',
+    })
+    .optional(),
+  trialEndDate: z
+    .string()
+    .refine((val) => val === undefined || !isNaN(Date.parse(val)), {
+      message: 'Invalid datetime format',
+    })
+    .optional(),
+  customLimits: z.record(z.string(), z.unknown()).optional(),
 });
 
 // Create subscription
@@ -54,7 +84,7 @@ router.post('/', async (req, res, next) => {
       currentPeriodEnd: parsed.data.currentPeriodEnd
         ? new Date(parsed.data.currentPeriodEnd)
         : undefined,
-      trialEndDate: parsed.data.trialEndDate ? new Date(parsed.data.trialEndDate) : undefined
+      trialEndDate: parsed.data.trialEndDate ? new Date(parsed.data.trialEndDate) : undefined,
     };
 
     const subscription = await createSubscription(input, req.user?.id ?? null);
@@ -132,7 +162,7 @@ router.patch('/:id', async (req, res, next) => {
       currentPeriodEnd: parsed.data.currentPeriodEnd
         ? new Date(parsed.data.currentPeriodEnd)
         : undefined,
-      trialEndDate: parsed.data.trialEndDate ? new Date(parsed.data.trialEndDate) : undefined
+      trialEndDate: parsed.data.trialEndDate ? new Date(parsed.data.trialEndDate) : undefined,
     };
 
     const subscription = await updateSubscription(req.params.id, input, req.user?.id ?? null);
@@ -193,24 +223,26 @@ router.get('/tiers/config', async (req, res, next) => {
 
 // Update subscription tier configurations (bulk)
 const updateTierConfigsSchema = z.object({
-  configs: z.array(
-    z.object({
-      tier: z.enum(['free', 'trial', 'paid']),
-      config: z.object({
-        name: z.string().optional(),
-        description: z.string().optional(),
-        monthlyPrice: z.number().optional(),
-        yearlyPrice: z.number().optional(),
-        maxUsers: z.number().nullable().optional(),
-        maxStudents: z.number().nullable().optional(),
-        maxTeachers: z.number().nullable().optional(),
-        maxStorageGb: z.number().nullable().optional(),
-        features: z.record(z.string(), z.unknown()).optional(),
-        limits: z.record(z.string(), z.unknown()).optional(),
-        isActive: z.boolean().optional()
+  configs: z
+    .array(
+      z.object({
+        tier: z.enum(['free', 'trial', 'paid']),
+        config: z.object({
+          name: z.string().optional(),
+          description: z.string().optional(),
+          monthlyPrice: z.number().optional(),
+          yearlyPrice: z.number().optional(),
+          maxUsers: z.number().nullable().optional(),
+          maxStudents: z.number().nullable().optional(),
+          maxTeachers: z.number().nullable().optional(),
+          maxStorageGb: z.number().nullable().optional(),
+          features: z.record(z.string(), z.unknown()).optional(),
+          limits: z.record(z.string(), z.unknown()).optional(),
+          isActive: z.boolean().optional(),
+        }),
       })
-    })
-  ).min(1, 'At least one tier configuration is required')
+    )
+    .min(1, 'At least one tier configuration is required'),
 });
 
 router.put('/tiers/config', async (req, res, next) => {
@@ -228,4 +260,3 @@ router.put('/tiers/config', async (req, res, next) => {
 });
 
 export default router;
-

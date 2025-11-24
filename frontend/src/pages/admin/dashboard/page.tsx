@@ -10,8 +10,19 @@ import { StatCard } from '../../../components/charts/StatCard';
 import { BarChart, type BarChartData } from '../../../components/charts/BarChart';
 import { LineChart, type LineChartDataPoint } from '../../../components/charts/LineChart';
 import { Button } from '../../../components/ui/Button';
-import { Users, GraduationCap, Building2, BookOpen, Activity, LogIn, RefreshCw } from 'lucide-react';
-import { useAdminDashboard, useRefreshDashboard } from '../../../hooks/queries/admin/useAdminDashboard';
+import {
+  Users,
+  GraduationCap,
+  Building2,
+  BookOpen,
+  Activity,
+  LogIn,
+  RefreshCw,
+} from 'lucide-react';
+import {
+  useAdminDashboard,
+  useRefreshDashboard,
+} from '../../../hooks/queries/admin/useAdminDashboard';
 
 export default function AdminDashboardPage() {
   const { data, isLoading, error } = useAdminDashboard();
@@ -40,16 +51,16 @@ export default function AdminDashboardPage() {
     departments: 0,
     classes: 0,
     students: 0,
-    activity: { last7Days: 0, loginsLast7Days: 0 }
+    activity: { last7Days: 0, loginsLast7Days: 0 },
   };
 
   // Prepare chart data
   const loginActivityData: BarChartData[] = [
-    { label: 'Last 7 Days', value: stats.activity.loginsLast7Days, color: 'var(--brand-primary)' }
+    { label: 'Last 7 Days', value: stats.activity.loginsLast7Days, color: 'var(--brand-primary)' },
   ];
 
   const activityTrendData: LineChartDataPoint[] = [
-    { label: 'Today', value: stats.activity.last7Days }
+    { label: 'Today', value: stats.activity.last7Days },
   ];
 
   return (
@@ -116,11 +127,7 @@ export default function AdminDashboardPage() {
         {/* Charts Section */}
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
-            <BarChart
-              data={loginActivityData}
-              title="Login Activity"
-              height={250}
-            />
+            <BarChart data={loginActivityData} title="Login Activity" height={250} />
           </div>
           <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
             <LineChart
@@ -135,4 +142,3 @@ export default function AdminDashboardPage() {
     </RouteMeta>
   );
 }
-

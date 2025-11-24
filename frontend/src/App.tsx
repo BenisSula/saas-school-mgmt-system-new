@@ -84,7 +84,7 @@ const NotAuthorizedPage = lazy(() => import('./pages/NotAuthorizedPage'));
 function App() {
   const { user, logout, isAuthenticated, mustChangePassword, clearMustChangePassword } = useAuth();
   const navigate = useNavigate();
-  
+
   // Get additional roles for user
   const additionalRoles = useMemo(() => {
     if (!user?.additional_roles) return [];
@@ -129,463 +129,167 @@ function App() {
         fallback={
           <div
             className="flex min-h-screen items-center justify-center bg-slate-950 text-sm text-slate-300"
-          role="status"
-        >
-          Loading application…
-        </div>
-      }
-    >
-      <Routes>
-        <Route path="/" element={<LandingShell />}>
-          <Route index element={<HomePage />} />
-          <Route path="auth">
-            <Route index element={<AuthUnifiedPage />} />
-            <Route path="login" element={<Navigate to="/auth?mode=login" replace />} />
-            <Route path="register" element={<Navigate to="/auth?mode=register" replace />} />
+            role="status"
+          >
+            Loading application…
+          </div>
+        }
+      >
+        <Routes>
+          <Route path="/" element={<LandingShell />}>
+            <Route index element={<HomePage />} />
+            <Route path="auth">
+              <Route index element={<AuthUnifiedPage />} />
+              <Route path="login" element={<Navigate to="/auth?mode=login" replace />} />
+              <Route path="register" element={<Navigate to="/auth?mode=register" replace />} />
+            </Route>
           </Route>
-        </Route>
-        <Route path="/test-login" element={<TestLoginPage />} />
-        <Route path="/not-authorized" element={<NotAuthorizedPage />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute
-              fallback={<Navigate to="/" replace />}
-              loadingFallback={
-                <div className="flex min-h-screen items-center justify-center text-sm text-[var(--brand-muted)]">
-                  Checking session…
-                </div>
-              }
-            >
-              <AdminShell user={user ?? null} onLogout={logout}>
-                <Outlet />
-              </AdminShell>
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />} />
+          <Route path="/test-login" element={<TestLoginPage />} />
+          <Route path="/not-authorized" element={<NotAuthorizedPage />} />
           <Route
-            path="overview"
+            path="/dashboard"
             element={
               <ProtectedRoute
-                allowedRoles={['admin', 'superadmin']}
-                allowedPermissions={['dashboard:view']}
-                fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
+                fallback={<Navigate to="/" replace />}
+                loadingFallback={
+                  <div className="flex min-h-screen items-center justify-center text-sm text-[var(--brand-muted)]">
+                    Checking session…
+                  </div>
+                }
               >
-                <RouteMeta title="Executive dashboard">
-                  <AdminOverviewPage />
-                </RouteMeta>
+                <AdminShell user={user ?? null} onLogout={logout}>
+                  <Outlet />
+                </AdminShell>
               </ProtectedRoute>
             }
-          />
-          {/* Redirect old /dashboard/dashboard route to /dashboard/overview */}
-          <Route
-            path="dashboard"
-            element={<Navigate to="/dashboard/overview" replace />}
-          />
-          <Route
-            path="users"
-            element={
-              <ProtectedRoute
-                allowedRoles={['admin', 'superadmin']}
-                fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-              >
-                <RouteMeta title="User management">
-                  <AdminRoleManagementPage />
-                </RouteMeta>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="departments"
-            element={
-              <ProtectedRoute
-                allowedRoles={['admin', 'superadmin']}
-                fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-              >
-                <RouteMeta title="Departments">
-                  <AdminDepartmentsPage />
-                </RouteMeta>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="classes-management"
-            element={
-              <ProtectedRoute
-                allowedRoles={['admin', 'superadmin']}
-                fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-              >
-                <RouteMeta title="Classes Management">
-                  <AdminClassesPage />
-                </RouteMeta>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="users-management"
-            element={
-              <ProtectedRoute
-                allowedRoles={['admin', 'superadmin']}
-                fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-              >
-                <RouteMeta title="Users Management">
-                  <AdminUsersPage />
-                </RouteMeta>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="reports-admin"
-            element={
-              <ProtectedRoute
-                allowedRoles={['admin', 'superadmin']}
-                fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-              >
-                <RouteMeta title="Reports">
-                  <AdminReportsPageNew />
-                </RouteMeta>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="announcements"
-            element={
-              <ProtectedRoute
-                allowedRoles={['admin', 'superadmin']}
-                fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-              >
-                <RouteMeta title="Announcements">
-                  <AdminAnnouncementsPage />
-                </RouteMeta>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="billing"
-            element={
-              <ProtectedRoute
-                allowedRoles={['admin', 'superadmin']}
-                allowedPermissions={['billing:view']}
-                fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-              >
-                <RouteMeta title="Billing">
-                  <AdminBillingPage />
-                </RouteMeta>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="classes"
-            element={
-              <ProtectedRoute
-                allowedRoles={['admin', 'superadmin']}
-                fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-              >
-                <AdminClassesSubjectsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="attendance"
-            element={
-              <ProtectedRoute
-                allowedRoles={['admin', 'superadmin']}
-                fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-              >
-                <AdminAttendancePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="teachers"
-            element={
-              <ProtectedRoute
-                allowedRoles={['admin', 'superadmin']}
-                fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-              >
-                <RouteMeta title="Teachers management">
-                  <TeachersManagementPage />
-                </RouteMeta>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="students"
-            element={
-              <ProtectedRoute
-                allowedRoles={['admin', 'superadmin']}
-                fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-              >
-                <RouteMeta title="Students management">
-                  <StudentsManagementPage />
-                </RouteMeta>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="hods"
-            element={
-              <ProtectedRoute
-                allowedRoles={['admin', 'superadmin']}
-                fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-              >
-                <RouteMeta title="HODs management">
-                  <HODsManagementPage />
-                </RouteMeta>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="class-assignment"
-            element={
-              <ProtectedRoute
-                allowedRoles={['admin', 'superadmin']}
-                fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-              >
-                <AdminClassAssignmentPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="department-analytics"
-            element={
-              <ProtectedRoute
-                allowedRoles={['admin', 'superadmin']}
-                fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-              >
-                <AdminDepartmentAnalyticsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="reports"
-            element={
-              <ProtectedRoute
-                allowedRoles={['admin', 'superadmin']}
-                fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-              >
-                <RouteMeta title="Reports & exports">
-                  <AdminReportsPageLegacy />
-                </RouteMeta>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="fees"
-            element={
-              <ProtectedRoute
-                allowedRoles={['admin', 'superadmin']}
-                fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-              >
-                <RouteMeta title="Fees">
-                  <StudentFeesPage />
-                </RouteMeta>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="examinations"
-            element={
-              <ProtectedRoute
-                allowedRoles={['admin', 'superadmin']}
-                fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-              >
-                <RouteMeta title="Examinations">
-                  <AdminExamConfigPage />
-                </RouteMeta>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="settings"
-            element={
-              <ProtectedRoute
-                allowedRoles={['admin', 'superadmin']}
-                fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-              >
-                <RouteMeta title="School settings">
-                  <AdminConfigurationPage />
-                </RouteMeta>
-              </ProtectedRoute>
-            }
-          />
-          <Route path="superuser">
+          >
             <Route
-              path="dashboard"
+              index
               element={
-                <ProtectedRoute
-                  allowedRoles={['superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <SuperuserDashboardPage />
-                </ProtectedRoute>
+                <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
               }
             />
             <Route
               path="overview"
               element={
                 <ProtectedRoute
-                  allowedRoles={['superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
+                  allowedRoles={['admin', 'superadmin']}
+                  allowedPermissions={['dashboard:view']}
+                  fallback={
+                    <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                  }
                 >
-                  <SuperuserOverviewPage />
+                  <RouteMeta title="Executive dashboard">
+                    <AdminOverviewPage />
+                  </RouteMeta>
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="schools"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <SuperuserManageSchoolsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="subscriptions"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <SuperuserSubscriptionsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="tenant-analytics"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <SuperuserTenantAnalyticsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="usage"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <SuperuserUsageMonitoringPage />
-                </ProtectedRoute>
-              }
-            />
+            {/* Redirect old /dashboard/dashboard route to /dashboard/overview */}
+            <Route path="dashboard" element={<Navigate to="/dashboard/overview" replace />} />
             <Route
               path="users"
               element={
                 <ProtectedRoute
-                  allowedRoles={['superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
+                  allowedRoles={['admin', 'superadmin']}
+                  fallback={
+                    <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                  }
                 >
-                  <SuperuserUsersPage />
+                  <RouteMeta title="User management">
+                    <AdminRoleManagementPage />
+                  </RouteMeta>
                 </ProtectedRoute>
               }
             />
             <Route
-              path="reports"
+              path="departments"
               element={
                 <ProtectedRoute
-                  allowedRoles={['superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
+                  allowedRoles={['admin', 'superadmin']}
+                  fallback={
+                    <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                  }
                 >
-                  <SuperuserReportsPage />
+                  <RouteMeta title="Departments">
+                    <AdminDepartmentsPage />
+                  </RouteMeta>
                 </ProtectedRoute>
               }
             />
             <Route
-              path="investigations"
+              path="classes-management"
               element={
                 <ProtectedRoute
-                  allowedRoles={['superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
+                  allowedRoles={['admin', 'superadmin']}
+                  fallback={
+                    <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                  }
                 >
-                  <InvestigationListPage />
+                  <RouteMeta title="Classes Management">
+                    <AdminClassesPage />
+                  </RouteMeta>
                 </ProtectedRoute>
               }
             />
             <Route
-              path="investigations/create"
+              path="users-management"
               element={
                 <ProtectedRoute
-                  allowedRoles={['superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
+                  allowedRoles={['admin', 'superadmin']}
+                  fallback={
+                    <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                  }
                 >
-                  <InvestigationCreatePage />
+                  <RouteMeta title="Users Management">
+                    <AdminUsersPage />
+                  </RouteMeta>
                 </ProtectedRoute>
               }
             />
             <Route
-              path="investigations/:caseId"
+              path="reports-admin"
               element={
                 <ProtectedRoute
-                  allowedRoles={['superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
+                  allowedRoles={['admin', 'superadmin']}
+                  fallback={
+                    <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                  }
                 >
-                  <InvestigationDetailPage />
+                  <RouteMeta title="Reports">
+                    <AdminReportsPageNew />
+                  </RouteMeta>
                 </ProtectedRoute>
               }
             />
             <Route
-              path="settings"
+              path="announcements"
               element={
                 <ProtectedRoute
-                  allowedRoles={['superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
+                  allowedRoles={['admin', 'superadmin']}
+                  fallback={
+                    <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                  }
                 >
-                  <SuperuserSettingsPage />
+                  <RouteMeta title="Announcements">
+                    <AdminAnnouncementsPage />
+                  </RouteMeta>
                 </ProtectedRoute>
               }
             />
             <Route
-              path="activity"
+              path="billing"
               element={
                 <ProtectedRoute
-                  allowedRoles={['superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
+                  allowedRoles={['admin', 'superadmin']}
+                  allowedPermissions={['billing:view']}
+                  fallback={
+                    <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                  }
                 >
-                  <SuperuserActivityPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="maintenance"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <SuperuserMaintenancePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="users/:userId/activity"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <UserActivityPage />
-                </ProtectedRoute>
-              }
-            />
-          </Route>
-          <Route path="teacher">
-            <Route
-              path="dashboard"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['teacher', 'admin', 'superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <TeacherDashboardPage />
+                  <RouteMeta title="Billing">
+                    <AdminBillingPage />
+                  </RouteMeta>
                 </ProtectedRoute>
               }
             />
@@ -593,10 +297,12 @@ function App() {
               path="classes"
               element={
                 <ProtectedRoute
-                  allowedRoles={['teacher', 'admin', 'superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
+                  allowedRoles={['admin', 'superadmin']}
+                  fallback={
+                    <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                  }
                 >
-                  <TeacherClassesPage />
+                  <AdminClassesSubjectsPage />
                 </ProtectedRoute>
               }
             />
@@ -604,26 +310,26 @@ function App() {
               path="attendance"
               element={
                 <ProtectedRoute
-                  allowedRoles={['teacher', 'admin', 'superadmin']}
-                  allowedPermissions={['attendance:mark']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
+                  allowedRoles={['admin', 'superadmin']}
+                  fallback={
+                    <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                  }
                 >
-                  <RouteMeta title="Mark Attendance">
-                    <TeacherAttendancePage />
-                  </RouteMeta>
+                  <AdminAttendancePage />
                 </ProtectedRoute>
               }
             />
             <Route
-              path="grades"
+              path="teachers"
               element={
                 <ProtectedRoute
-                  allowedRoles={['teacher', 'admin', 'superadmin']}
-                  allowedPermissions={['grades:enter']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
+                  allowedRoles={['admin', 'superadmin']}
+                  fallback={
+                    <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                  }
                 >
-                  <RouteMeta title="Enter Grades">
-                    <TeacherGradeEntryPage />
+                  <RouteMeta title="Teachers management">
+                    <TeachersManagementPage />
                   </RouteMeta>
                 </ProtectedRoute>
               }
@@ -632,13 +338,55 @@ function App() {
               path="students"
               element={
                 <ProtectedRoute
-                  allowedRoles={['teacher', 'admin', 'superadmin']}
-                  allowedPermissions={['students:view_own_class']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
+                  allowedRoles={['admin', 'superadmin']}
+                  fallback={
+                    <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                  }
                 >
-                  <RouteMeta title="My Students">
-                    <TeacherStudentsPage />
+                  <RouteMeta title="Students management">
+                    <StudentsManagementPage />
                   </RouteMeta>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="hods"
+              element={
+                <ProtectedRoute
+                  allowedRoles={['admin', 'superadmin']}
+                  fallback={
+                    <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                  }
+                >
+                  <RouteMeta title="HODs management">
+                    <HODsManagementPage />
+                  </RouteMeta>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="class-assignment"
+              element={
+                <ProtectedRoute
+                  allowedRoles={['admin', 'superadmin']}
+                  fallback={
+                    <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                  }
+                >
+                  <AdminClassAssignmentPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="department-analytics"
+              element={
+                <ProtectedRoute
+                  allowedRoles={['admin', 'superadmin']}
+                  fallback={
+                    <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                  }
+                >
+                  <AdminDepartmentAnalyticsPage />
                 </ProtectedRoute>
               }
             />
@@ -646,93 +394,14 @@ function App() {
               path="reports"
               element={
                 <ProtectedRoute
-                  allowedRoles={['teacher', 'admin', 'superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
+                  allowedRoles={['admin', 'superadmin']}
+                  fallback={
+                    <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                  }
                 >
-                  <TeacherReportsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="messages"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['teacher', 'admin', 'superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <TeacherMessagesPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="profile"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['teacher', 'admin', 'superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <TeacherProfilePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="resources"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['teacher', 'admin', 'superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <RouteMeta title="Class Resources">
-                    <TeacherClassResourcesPage />
+                  <RouteMeta title="Reports & exports">
+                    <AdminReportsPageLegacy />
                   </RouteMeta>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="announcements"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['teacher', 'admin', 'superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <RouteMeta title="Announcements">
-                    <TeacherAnnouncementsPage />
-                  </RouteMeta>
-                </ProtectedRoute>
-              }
-            />
-          </Route>
-          <Route path="student">
-            <Route
-              path="overview"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['student', 'admin', 'superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <StudentDashboardPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="attendance"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['student', 'admin', 'superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <StudentAttendancePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="results"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['student', 'admin', 'superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <StudentResultsPage />
                 </ProtectedRoute>
               }
             />
@@ -740,126 +409,573 @@ function App() {
               path="fees"
               element={
                 <ProtectedRoute
-                  allowedRoles={['student', 'admin', 'superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
+                  allowedRoles={['admin', 'superadmin']}
+                  fallback={
+                    <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                  }
                 >
-                  <StudentFeesPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="resources"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['student', 'admin', 'superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <RouteMeta title="Class Resources">
-                    <StudentResourcesPage />
+                  <RouteMeta title="Fees">
+                    <StudentFeesPage />
                   </RouteMeta>
                 </ProtectedRoute>
               }
             />
             <Route
-              path="announcements"
+              path="examinations"
               element={
                 <ProtectedRoute
-                  allowedRoles={['student', 'admin', 'superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
+                  allowedRoles={['admin', 'superadmin']}
+                  fallback={
+                    <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                  }
                 >
-                  <RouteMeta title="Announcements">
-                    <StudentAnnouncementsPage />
+                  <RouteMeta title="Examinations">
+                    <AdminExamConfigPage />
                   </RouteMeta>
                 </ProtectedRoute>
               }
             />
             <Route
-              path="messages"
+              path="settings"
               element={
                 <ProtectedRoute
-                  allowedRoles={['student', 'admin', 'superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
+                  allowedRoles={['admin', 'superadmin']}
+                  fallback={
+                    <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                  }
                 >
-                  <StudentMessagesPage />
+                  <RouteMeta title="School settings">
+                    <AdminConfigurationPage />
+                  </RouteMeta>
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="profile"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['student', 'admin', 'superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <StudentProfilePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="reports"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['student', 'admin', 'superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <StudentReportsPage />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="superuser">
+              <Route
+                path="dashboard"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <SuperuserDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="overview"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <SuperuserOverviewPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="schools"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <SuperuserManageSchoolsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="subscriptions"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <SuperuserSubscriptionsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="tenant-analytics"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <SuperuserTenantAnalyticsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="usage"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <SuperuserUsageMonitoringPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="users"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <SuperuserUsersPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="reports"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <SuperuserReportsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="investigations"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <InvestigationListPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="investigations/create"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <InvestigationCreatePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="investigations/:caseId"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <InvestigationDetailPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="settings"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <SuperuserSettingsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="activity"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <SuperuserActivityPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="maintenance"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <SuperuserMaintenancePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="users/:userId/activity"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <UserActivityPage />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
+            <Route path="teacher">
+              <Route
+                path="dashboard"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['teacher', 'admin', 'superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <TeacherDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="classes"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['teacher', 'admin', 'superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <TeacherClassesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="attendance"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['teacher', 'admin', 'superadmin']}
+                    allowedPermissions={['attendance:mark']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <RouteMeta title="Mark Attendance">
+                      <TeacherAttendancePage />
+                    </RouteMeta>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="grades"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['teacher', 'admin', 'superadmin']}
+                    allowedPermissions={['grades:enter']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <RouteMeta title="Enter Grades">
+                      <TeacherGradeEntryPage />
+                    </RouteMeta>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="students"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['teacher', 'admin', 'superadmin']}
+                    allowedPermissions={['students:view_own_class']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <RouteMeta title="My Students">
+                      <TeacherStudentsPage />
+                    </RouteMeta>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="reports"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['teacher', 'admin', 'superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <TeacherReportsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="messages"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['teacher', 'admin', 'superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <TeacherMessagesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="profile"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['teacher', 'admin', 'superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <TeacherProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="resources"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['teacher', 'admin', 'superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <RouteMeta title="Class Resources">
+                      <TeacherClassResourcesPage />
+                    </RouteMeta>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="announcements"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['teacher', 'admin', 'superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <RouteMeta title="Announcements">
+                      <TeacherAnnouncementsPage />
+                    </RouteMeta>
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
+            <Route path="student">
+              <Route
+                path="overview"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['student', 'admin', 'superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <StudentDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="attendance"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['student', 'admin', 'superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <StudentAttendancePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="results"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['student', 'admin', 'superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <StudentResultsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="fees"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['student', 'admin', 'superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <StudentFeesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="resources"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['student', 'admin', 'superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <RouteMeta title="Class Resources">
+                      <StudentResourcesPage />
+                    </RouteMeta>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="announcements"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['student', 'admin', 'superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <RouteMeta title="Announcements">
+                      <StudentAnnouncementsPage />
+                    </RouteMeta>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="messages"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['student', 'admin', 'superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <StudentMessagesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="profile"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['student', 'admin', 'superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <StudentProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="reports"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['student', 'admin', 'superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <StudentReportsPage />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
+            <Route path="hod">
+              <Route
+                path="dashboard"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['teacher', 'admin', 'superadmin']}
+                    allowedPermissions={['department-analytics', 'grades:manage']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <HODDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="teachers"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['teacher', 'admin', 'superadmin']}
+                    allowedPermissions={['department-analytics', 'grades:manage']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <TeachersUnderHodPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="reports"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['teacher', 'admin', 'superadmin']}
+                    allowedPermissions={['department-analytics', 'reports:view']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <DepartmentReportsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="profile"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['teacher', 'admin', 'superadmin']}
+                    fallback={
+                      <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
+                    }
+                  >
+                    <HODProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
           </Route>
-          <Route path="hod">
-            <Route
-              path="dashboard"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['teacher', 'admin', 'superadmin']}
-                  allowedPermissions={['department-analytics', 'grades:manage']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <HODDashboardPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="teachers"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['teacher', 'admin', 'superadmin']}
-                  allowedPermissions={['department-analytics', 'grades:manage']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <TeachersUnderHodPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="reports"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['teacher', 'admin', 'superadmin']}
-                  allowedPermissions={['department-analytics', 'reports:view']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <DepartmentReportsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="profile"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['teacher', 'admin', 'superadmin']}
-                  fallback={<Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />}
-                >
-                  <HODProfilePage />
-                </ProtectedRoute>
-              }
-            />
-          </Route>
-        </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Suspense>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </>
   );
 }

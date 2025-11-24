@@ -87,7 +87,8 @@ export async function getStudentDashboard(
   const isInClass =
     student.class_id === classId ||
     student.class_uuid === classId ||
-    (typeof classId === 'string' && (student.class_id === classId || student.class_uuid === classId));
+    (typeof classId === 'string' &&
+      (student.class_id === classId || student.class_uuid === classId));
 
   if (!isInClass) {
     throw new Error('Student does not belong to this class');
@@ -98,7 +99,7 @@ export async function getStudentDashboard(
   const attendanceHistory = await getStudentAttendance(client, schema, studentId);
   const recentAttendance = attendanceHistory.slice(0, 10).map((record) => ({
     date: record.attendance_date,
-    status: record.status
+    status: record.status,
   }));
 
   // Get recent grades
@@ -123,7 +124,7 @@ export async function getStudentDashboard(
     score: row.score,
     grade: row.grade || null,
     exam: row.exam_name || null,
-    date: row.created_at
+    date: row.created_at,
   }));
 
   // Calculate grade summary
@@ -132,7 +133,8 @@ export async function getStudentDashboard(
     [studentId]
   );
   const allScores = allGradesResult.rows.map((r) => r.score);
-  const average = allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0;
+  const average =
+    allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0;
   const uniqueSubjects = new Set(allGradesResult.rows.map((r) => r.subject_id).filter(Boolean));
 
   // Get class schedule (placeholder - would need schedule table)
@@ -150,14 +152,14 @@ export async function getStudentDashboard(
   return {
     attendance: {
       summary: attendanceSummary,
-      recent: recentAttendance
+      recent: recentAttendance,
     },
     grades: {
       recent: recentGrades,
       summary: {
         average: Math.round(average * 100) / 100,
-        totalSubjects: uniqueSubjects.size
-      }
+        totalSubjects: uniqueSubjects.size,
+      },
     },
     classSchedule,
     resources: resources.map((r) => ({
@@ -166,15 +168,14 @@ export async function getStudentDashboard(
       description: r.description,
       file_url: r.file_url,
       file_type: r.file_type,
-      created_at: r.created_at
+      created_at: r.created_at,
     })),
     announcements: announcements.map((a) => ({
       id: a.id,
       message: a.message,
       teacher_name: a.teacher_name || null,
-      created_at: a.created_at
+      created_at: a.created_at,
     })),
-    upcomingTasks
+    upcomingTasks,
   };
 }
-

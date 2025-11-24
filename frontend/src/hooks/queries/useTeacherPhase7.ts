@@ -18,7 +18,7 @@ export function useTeacherAttendance(params?: {
   return useQuery({
     queryKey: ['teacher', 'attendance', params],
     queryFn: () => api.teachers.getAttendance(params),
-    enabled: !!params?.classId || !!params?.date || !!params?.from
+    enabled: !!params?.classId || !!params?.date || !!params?.from,
   });
 }
 
@@ -26,19 +26,21 @@ export function useMarkAttendance() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (records: Array<{
-      studentId: string;
-      classId: string;
-      status: 'present' | 'absent' | 'late';
-      date: string;
-    }>) => api.teachers.markAttendance(records),
+    mutationFn: (
+      records: Array<{
+        studentId: string;
+        classId: string;
+        status: 'present' | 'absent' | 'late';
+        date: string;
+      }>
+    ) => api.teachers.markAttendance(records),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teacher', 'attendance'] });
       toast.success('Attendance marked successfully');
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to mark attendance');
-    }
+    },
   });
 }
 
@@ -46,19 +48,21 @@ export function useBulkMarkAttendance() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (records: Array<{
-      studentId: string;
-      classId: string;
-      status: 'present' | 'absent' | 'late';
-      date: string;
-    }>) => api.teachers.bulkMarkAttendance(records),
+    mutationFn: (
+      records: Array<{
+        studentId: string;
+        classId: string;
+        status: 'present' | 'absent' | 'late';
+        date: string;
+      }>
+    ) => api.teachers.bulkMarkAttendance(records),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teacher', 'attendance'] });
       toast.success('Attendance marked successfully');
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to mark attendance');
-    }
+    },
   });
 }
 
@@ -73,7 +77,7 @@ export function useTeacherGrades(params?: {
   return useQuery({
     queryKey: ['teacher', 'grades', params],
     queryFn: () => api.teachers.getGrades(params),
-    enabled: !!params?.classId
+    enabled: !!params?.classId,
   });
 }
 
@@ -81,22 +85,24 @@ export function useSubmitGrades() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (grades: Array<{
-      studentId: string;
-      classId: string;
-      subjectId?: string;
-      examId?: string;
-      score: number;
-      remarks?: string;
-      term?: string;
-    }>) => api.teachers.submitGrades(grades),
+    mutationFn: (
+      grades: Array<{
+        studentId: string;
+        classId: string;
+        subjectId?: string;
+        examId?: string;
+        score: number;
+        remarks?: string;
+        term?: string;
+      }>
+    ) => api.teachers.submitGrades(grades),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teacher', 'grades'] });
       toast.success('Grades submitted successfully');
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to submit grades');
-    }
+    },
   });
 }
 
@@ -104,7 +110,10 @@ export function useUpdateGrade() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ gradeId, updates }: {
+    mutationFn: ({
+      gradeId,
+      updates,
+    }: {
       gradeId: string;
       updates: { score?: number; remarks?: string };
     }) => api.teachers.updateGrade(gradeId, updates),
@@ -114,7 +123,7 @@ export function useUpdateGrade() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to update grade');
-    }
+    },
   });
 }
 
@@ -124,7 +133,7 @@ export function useClassResources(classId: string | undefined) {
   return useQuery({
     queryKey: ['teacher', 'resources', classId],
     queryFn: () => api.teachers.getResources(classId!),
-    enabled: !!classId
+    enabled: !!classId,
   });
 }
 
@@ -139,7 +148,7 @@ export function useUploadResource() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to upload resource');
-    }
+    },
   });
 }
 
@@ -154,7 +163,7 @@ export function useDeleteResource() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to delete resource');
-    }
+    },
   });
 }
 
@@ -176,7 +185,7 @@ export function usePostAnnouncement() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to post announcement');
-    }
+    },
   });
 }
 
@@ -206,7 +215,7 @@ export function useExportAttendance() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to export attendance');
-    }
+    },
   });
 }
 
@@ -234,7 +243,6 @@ export function useExportGrades() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to export grades');
-    }
+    },
   });
 }
-

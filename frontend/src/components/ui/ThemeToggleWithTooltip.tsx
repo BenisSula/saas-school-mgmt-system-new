@@ -14,7 +14,7 @@ export interface ThemeToggleWithTooltipProps {
 
 export function ThemeToggleWithTooltip({
   className = '',
-  showLabel = false
+  showLabel = false,
 }: ThemeToggleWithTooltipProps) {
   const { theme, effectiveTheme, setLightTheme, setDarkTheme, setSystemTheme } = useTheme();
   const [showTooltip, setShowTooltip] = useState(false);

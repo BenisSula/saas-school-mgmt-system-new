@@ -10,20 +10,20 @@ jest.mock('stripe', () => {
   return jest.fn().mockImplementation(() => ({
     customers: {
       create: jest.fn(),
-      retrieve: jest.fn()
+      retrieve: jest.fn(),
     },
     subscriptions: {
       create: jest.fn(),
       retrieve: jest.fn(),
       update: jest.fn(),
-      cancel: jest.fn()
+      cancel: jest.fn(),
     },
     paymentIntents: {
-      retrieve: jest.fn()
+      retrieve: jest.fn(),
     },
     webhooks: {
-      constructEvent: jest.fn()
-    }
+      constructEvent: jest.fn(),
+    },
   }));
 });
 
@@ -68,4 +68,3 @@ describe('Stripe Service', () => {
     });
   });
 });
-

@@ -20,32 +20,32 @@ const quickActions: QuickAction[] = [
     label: 'Mark Attendance',
     path: '/dashboard/teacher/attendance',
     icon: <ClipboardList className="h-4 w-4" />,
-    variant: 'default'
+    variant: 'default',
   },
   {
     label: 'Enter Grades',
     path: '/dashboard/teacher/grades',
     icon: <BookOpen className="h-4 w-4" />,
-    variant: 'default'
+    variant: 'default',
   },
   {
     label: 'View Students',
     path: '/dashboard/teacher/students',
     icon: <Users className="h-4 w-4" />,
-    variant: 'outline'
+    variant: 'outline',
   },
   {
     label: 'Class Resources',
     path: '/dashboard/teacher/resources',
     icon: <FileText className="h-4 w-4" />,
-    variant: 'outline'
+    variant: 'outline',
   },
   {
     label: 'Announcements',
     path: '/dashboard/teacher/announcements',
     icon: <MessageSquare className="h-4 w-4" />,
-    variant: 'outline'
-  }
+    variant: 'outline',
+  },
 ];
 
 export function TeacherQuickActions() {

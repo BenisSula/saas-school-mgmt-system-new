@@ -24,17 +24,26 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({ reportId, parameters
       try {
         const customResult = await api.reports.executeCustomReport(reportId);
         setData(customResult.data || []);
-        setColumns((customResult.columns || []).map(col => ({ name: col.name, label: col.label || col.name })));
+        setColumns(
+          (customResult.columns || []).map((col) => ({
+            name: col.name,
+            label: col.label || col.name,
+          }))
+        );
         setExecutionId(customResult.executionId || reportId);
       } catch (customErr) {
         // If custom report fails, try as report definition
         try {
           const result = await api.reports.executeReport(reportId, parameters);
           setData(result.data || []);
-          setColumns((result.columns || []).map(col => ({ name: col.name, label: col.label || col.name })));
+          setColumns(
+            (result.columns || []).map((col) => ({ name: col.name, label: col.label || col.name }))
+          );
           setExecutionId(result.executionId);
         } catch {
-          throw new Error(`Report not found: ${customErr instanceof Error ? customErr.message : 'Unknown error'}`);
+          throw new Error(
+            `Report not found: ${customErr instanceof Error ? customErr.message : 'Unknown error'}`
+          );
         }
       }
     } catch (err) {
@@ -109,7 +118,10 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({ reportId, parameters
           <thead>
             <tr className="bg-[var(--brand-surface-secondary)]">
               {columns.map((col, index) => (
-                <th key={index} className="border border-[var(--brand-border)] px-4 py-2 text-left text-[var(--brand-text-primary)] font-semibold">
+                <th
+                  key={index}
+                  className="border border-[var(--brand-border)] px-4 py-2 text-left text-[var(--brand-text-primary)] font-semibold"
+                >
                   {col.label || col.name}
                 </th>
               ))}
@@ -118,15 +130,24 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({ reportId, parameters
           <tbody>
             {data.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="border border-[var(--brand-border)] px-4 py-8 text-center text-[var(--brand-text-secondary)]">
+                <td
+                  colSpan={columns.length}
+                  className="border border-[var(--brand-border)] px-4 py-8 text-center text-[var(--brand-text-secondary)]"
+                >
                   No data available
                 </td>
               </tr>
             ) : (
               data.map((row, rowIndex) => (
-                <tr key={rowIndex} className="hover:bg-[var(--brand-surface-secondary)] transition-colors">
+                <tr
+                  key={rowIndex}
+                  className="hover:bg-[var(--brand-surface-secondary)] transition-colors"
+                >
                   {columns.map((col, colIndex) => (
-                    <td key={colIndex} className="border border-[var(--brand-border)] px-4 py-2 text-[var(--brand-text-primary)]">
+                    <td
+                      key={colIndex}
+                      className="border border-[var(--brand-border)] px-4 py-2 text-[var(--brand-text-primary)]"
+                    >
                       {String((row as Record<string, unknown>)[col.name] || '')}
                     </td>
                   ))}
@@ -143,4 +164,3 @@ export const ReportViewer: React.FC<ReportViewerProps> = ({ reportId, parameters
     </div>
   );
 };
-

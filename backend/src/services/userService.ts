@@ -27,7 +27,7 @@ export async function listTenantUsers(
 
   // Build WHERE clause using query utils
   const filterConditions: Record<string, unknown> = {
-    'u.tenant_id': tenantId
+    'u.tenant_id': tenantId,
   };
 
   if (filters?.status) {
@@ -71,8 +71,10 @@ export async function listTenantUsers(
   const tableExists = tableCheck.rows[0]?.exists ?? false;
 
   const userIds = usersResult.rows.map((row) => row.id);
-  let rolesResult: { rows: Array<{ user_id: string; role: string; granted_at: Date; granted_by?: string }> } = {
-    rows: []
+  let rolesResult: {
+    rows: Array<{ user_id: string; role: string; granted_at: Date; granted_by?: string }>;
+  } = {
+    rows: [],
   };
 
   if (userIds.length > 0 && tableExists) {
@@ -99,7 +101,7 @@ export async function listTenantUsers(
     rolesByUserId.get(roleRow.user_id)!.push({
       role: roleRow.role,
       granted_at: roleRow.granted_at?.toISOString(),
-      granted_by: roleRow.granted_by ?? undefined
+      granted_by: roleRow.granted_by ?? undefined,
     });
   }
 
@@ -112,7 +114,7 @@ export async function listTenantUsers(
     status: row.status,
     created_at: row.created_at,
     additional_roles: rolesByUserId.get(row.id) || [],
-    pending_profile_data: row.pending_profile_data as Record<string, unknown> | null | undefined
+    pending_profile_data: row.pending_profile_data as Record<string, unknown> | null | undefined,
   }));
 }
 
@@ -143,7 +145,9 @@ export async function assignAdditionalRole(
       );
     } else {
       // Fallback: log warning for legacy support
-      console.warn('[userService] additional_roles table does not exist, falling back to legacy role update');
+      console.warn(
+        '[userService] additional_roles table does not exist, falling back to legacy role update'
+      );
     }
   });
 }
@@ -226,7 +230,7 @@ export async function bulkRemoveHODRoles(
       actorId,
       totalRequested: userIds.length,
       removed,
-      failed
+      failed,
     });
 
     return { removed, failed };
@@ -253,7 +257,9 @@ export async function updateHODDepartment(
     // Check if metadata column exists
     const hasMetadataColumn = await columnExists(client, 'shared', 'additional_roles', 'metadata');
     if (!hasMetadataColumn) {
-      throw new Error('metadata column does not exist in additional_roles table. Please run migration to add it.');
+      throw new Error(
+        'metadata column does not exist in additional_roles table. Please run migration to add it.'
+      );
     }
 
     // Check if user has HOD role
@@ -290,7 +296,11 @@ export async function updateHODDepartment(
 export async function getUserWithAdditionalRoles(
   userId: string,
   tenantId: string
-): Promise<TenantUser & { additional_roles?: Array<{ role: string; granted_at: string; granted_by?: string }> }> {
+): Promise<
+  TenantUser & {
+    additional_roles?: Array<{ role: string; granted_at: string; granted_by?: string }>;
+  }
+> {
   return withDbClient(async (client) => {
     // Get user
     const userResult = await client.query(
@@ -327,7 +337,7 @@ export async function getUserWithAdditionalRoles(
       additionalRoles = rolesResult.rows.map((row) => ({
         role: row.role,
         granted_at: row.granted_at.toISOString(),
-        granted_by: row.granted_by ?? undefined
+        granted_by: row.granted_by ?? undefined,
       }));
     }
 
@@ -338,7 +348,7 @@ export async function getUserWithAdditionalRoles(
       is_verified: user.is_verified,
       status: user.status,
       created_at: user.created_at,
-      additional_roles: additionalRoles
+      additional_roles: additionalRoles,
     };
   });
 }
@@ -408,7 +418,7 @@ export async function updateTenantUserRole(
       tenantId,
       userId,
       newRole: role,
-      actorId
+      actorId,
     });
 
     return {
@@ -420,8 +430,8 @@ export async function updateTenantUserRole(
       created_at: user.created_at,
       additional_roles: rolesResult.rows.map((row) => ({
         role: row.role_name,
-        metadata: row.metadata || {}
-      }))
+        metadata: row.metadata || {},
+      })),
     };
   });
 }
@@ -479,7 +489,7 @@ export async function createUser(pool: Pool, input: CreateUserInput): Promise<Cr
     'role',
     'tenant_id',
     'is_verified',
-    'status'
+    'status',
   ];
   const values: unknown[] = [
     userId,
@@ -488,7 +498,7 @@ export async function createUser(pool: Pool, input: CreateUserInput): Promise<Cr
     input.role,
     input.tenantId,
     isVerified,
-    userStatus
+    userStatus,
   ];
 
   // Add optional extended fields if provided
@@ -593,7 +603,7 @@ export async function updateUserStatus(
       tenantId,
       userId,
       newStatus: status,
-      actorId
+      actorId,
     });
 
     // Process profile data based on status change
@@ -609,8 +619,8 @@ export async function updateUserStatus(
       created_at: user.created_at,
       additional_roles: rolesResult.rows.map((row) => ({
         role: row.role_name,
-        metadata: row.metadata || {}
-      }))
+        metadata: row.metadata || {},
+      })),
     };
   });
 }

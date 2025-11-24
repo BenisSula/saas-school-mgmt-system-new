@@ -9,12 +9,12 @@ export interface AssignButtonProps {
   disabled?: boolean;
 }
 
-export function AssignButton({ 
-  onClick, 
-  label = 'Assign', 
+export function AssignButton({
+  onClick,
+  label = 'Assign',
   size = 'sm',
   variant = 'ghost',
-  disabled = false
+  disabled = false,
 }: AssignButtonProps) {
   return (
     <Button
@@ -29,4 +29,3 @@ export function AssignButton({
     </Button>
   );
 }
-

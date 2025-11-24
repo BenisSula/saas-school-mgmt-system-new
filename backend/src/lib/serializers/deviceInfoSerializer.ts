@@ -23,7 +23,7 @@ export function normalizeDeviceInfo(
   // If deviceInfo already exists and has structure, use it
   if (deviceInfo && typeof deviceInfo === 'object') {
     const normalized: NormalizedDeviceInfo = {};
-    
+
     if (deviceInfo.platform && typeof deviceInfo.platform === 'string') {
       normalized.platform = deviceInfo.platform;
     }
@@ -36,18 +36,18 @@ export function normalizeDeviceInfo(
     if (deviceInfo.deviceType && typeof deviceInfo.deviceType === 'string') {
       normalized.deviceType = deviceInfo.deviceType as NormalizedDeviceInfo['deviceType'];
     }
-    
+
     // If we got meaningful data, return it
     if (Object.keys(normalized).length > 0) {
       return normalized;
     }
   }
-  
+
   // Fallback to parsing userAgent
   if (userAgent) {
     return parseUserAgent(userAgent);
   }
-  
+
   return {};
 }
 
@@ -56,9 +56,9 @@ export function normalizeDeviceInfo(
  */
 function parseUserAgent(userAgent: string): NormalizedDeviceInfo {
   const info: NormalizedDeviceInfo = {
-    raw: userAgent
+    raw: userAgent,
   };
-  
+
   // Device type detection
   if (/mobile|android|iphone|ipad/i.test(userAgent)) {
     info.deviceType = 'mobile';
@@ -67,7 +67,7 @@ function parseUserAgent(userAgent: string): NormalizedDeviceInfo {
   } else {
     info.deviceType = 'desktop';
   }
-  
+
   // Browser detection
   if (/chrome/i.test(userAgent) && !/edge/i.test(userAgent)) {
     info.browser = 'Chrome';
@@ -80,7 +80,7 @@ function parseUserAgent(userAgent: string): NormalizedDeviceInfo {
   } else if (/opera|opr/i.test(userAgent)) {
     info.browser = 'Opera';
   }
-  
+
   // OS detection
   if (/windows/i.test(userAgent)) {
     info.os = 'Windows';
@@ -114,7 +114,7 @@ function parseUserAgent(userAgent: string): NormalizedDeviceInfo {
       info.os = `iOS ${iosVersion[1].replace('_', '.')}`;
     }
   }
-  
+
   // Platform detection (general category)
   if (/mobile|android|iphone/i.test(userAgent)) {
     info.platform = 'Mobile';
@@ -123,7 +123,6 @@ function parseUserAgent(userAgent: string): NormalizedDeviceInfo {
   } else {
     info.platform = 'Desktop';
   }
-  
+
   return info;
 }
-

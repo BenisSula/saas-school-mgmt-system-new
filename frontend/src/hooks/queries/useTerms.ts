@@ -55,7 +55,13 @@ export function useUpdateTerm() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { name: string; startsOn: string; endsOn: string } }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { name: string; startsOn: string; endsOn: string };
+    }) => {
       toast.loading('Updating term...', { id: `update-term-${id}` });
       try {
         const response = await api.updateTerm(id, data);
@@ -104,4 +110,3 @@ export function useDeleteTerm() {
     },
   });
 }
-

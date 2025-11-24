@@ -88,7 +88,7 @@ async function verifyAllSchools() {
     const expectedAdmins = [
       'fatou.jallow@newhorizon.edu.gm',
       'lamin.sowe@stpeterslamin.edu.gm',
-      'musu.bah@daddyjobe.edu.gm'
+      'musu.bah@daddyjobe.edu.gm',
     ];
 
     console.log('\n[verify] Verifying expected admin accounts:\n');

@@ -1,7 +1,7 @@
 /**
  * Shared Error Handling Utilities
  * Centralized error message extraction to avoid duplication
- * 
+ *
  * DRY: All error handling should use these utilities
  */
 
@@ -30,4 +30,3 @@ export function getErrorMessageWithFallback(error: unknown, fallback: string): s
   const message = getErrorMessage(error);
   return message || fallback;
 }
-

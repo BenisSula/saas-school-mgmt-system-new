@@ -49,17 +49,17 @@ export function classStatsQueryOptions(tenantId: string | null) {
 
       const classesByLevel = Array.from(levelMap.entries()).map(([level, count]) => ({
         level,
-        count
+        count,
       }));
 
       return {
         totalClasses,
         activeClasses,
-        classesByLevel
+        classesByLevel,
       };
     },
     enabled: !!tenantId,
-    ...dashboardQueryConfig
+    ...dashboardQueryConfig,
   });
 }
 
@@ -76,8 +76,7 @@ export function useClassStatsQuery() {
     select: (data): ClassStats => ({
       totalClasses: data.totalClasses,
       activeClasses: data.activeClasses,
-      classesByLevel: data.classesByLevel
-    })
+      classesByLevel: data.classesByLevel,
+    }),
   });
 }
-

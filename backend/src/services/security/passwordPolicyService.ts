@@ -15,16 +15,16 @@ export interface PasswordPolicy {
 
 /**
  * CONSOLIDATED: This is the canonical file for password validation.
- * 
+ *
  * CANONICAL REASON: Policy-based approach is more flexible and supports tenant-specific policies
- * 
+ *
  * DUPLICATE TO REMOVE:
  * - backend/src/middleware/validation.ts:26-53 (validatePasswordStrength function)
- * 
+ *
  * INTERFACE DIFFERENCE:
  * - passwordPolicyService.ts: Uses 'isValid: boolean' (canonical)
  * - validation.ts: Uses 'valid: boolean' (needs alignment - see Phase A5)
- * 
+ *
  * STATUS: ✅ COMPLETE - Canonical file ready
  */
 export interface PasswordValidationResult {
@@ -45,7 +45,7 @@ export function getDefaultPasswordPolicy(): PasswordPolicy {
     maxAgeDays: 90,
     preventReuseCount: 5,
     lockoutAttempts: 5,
-    lockoutDurationMinutes: 30
+    lockoutDurationMinutes: 30,
   };
 }
 
@@ -77,7 +77,7 @@ export async function getPasswordPolicy(
       maxAgeDays: 90,
       preventReuseCount: 5,
       lockoutAttempts: 5,
-      lockoutDurationMinutes: 30
+      lockoutDurationMinutes: 30,
     };
   }
 
@@ -91,7 +91,7 @@ export async function getPasswordPolicy(
     maxAgeDays: policy.max_age_days,
     preventReuseCount: policy.prevent_reuse_count,
     lockoutAttempts: policy.lockout_attempts,
-    lockoutDurationMinutes: policy.lockout_duration_minutes
+    lockoutDurationMinutes: policy.lockout_duration_minutes,
   };
 }
 
@@ -126,7 +126,7 @@ export function validatePassword(
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -221,7 +221,7 @@ export async function isAccountLocked(
 
   return {
     locked: true,
-    lockedUntil: result.rows[0].locked_until
+    lockedUntil: result.rows[0].locked_until,
   };
 }
 
@@ -388,7 +388,7 @@ export async function updatePasswordPolicy(
       policy.preventReuseCount ?? 5,
       policy.lockoutAttempts ?? 5,
       policy.lockoutDurationMinutes ?? 30,
-      ...values
+      ...values,
     ]
   );
 

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Mail, Shield, BookOpen, Users, Building2 } from 'lucide-react';
 import { DetailCard, type DetailField } from './DetailCard';
 import { api, type TeacherProfile } from '../../lib/api';
@@ -21,11 +22,11 @@ export interface HODDetailViewProps {
  * Displays all HOD information using APIs
  */
 export function HODDetailView({ hodId }: HODDetailViewProps) {
-  const { data: hod, isLoading, error } = useQuery(
-    ['hod', hodId],
-    () => api.getTeacher(hodId),
-    { enabled: !!hodId }
-  );
+  const {
+    data: hod,
+    isLoading,
+    error,
+  } = useQuery(['hod', hodId], () => api.getTeacher(hodId), { enabled: !!hodId });
 
   // Fetch all teachers to count those under HOD oversight
   const { data: allTeachers = [] } = useQuery(
@@ -52,31 +53,30 @@ export function HODDetailView({ hodId }: HODDetailViewProps) {
   }
 
   // Calculate teachers under oversight (teachers with same subjects/department)
-  const hodRecord = hod as HODRecord;
-  const teachersUnderOversight = allTeachers.filter((teacher) => {
-    if (teacher.id === hod.id) return false;
-    // Teachers with overlapping subjects are under HOD oversight
-    return teacher.subjects.some((subject) => hod.subjects.includes(subject));
-  });
+  // Memoized to avoid recalculating on every render
+  const teachersUnderOversight = useMemo(() => {
+    return allTeachers.filter((teacher) => {
+      if (teacher.id === hod.id) return false;
+      // Teachers with overlapping subjects are under HOD oversight
+      return teacher.subjects.some((subject) => hod.subjects.includes(subject));
+    });
+  }, [allTeachers, hod.id, hod.subjects]);
 
   const fields: DetailField[] = [
     {
       label: 'Full Name',
-      value: hod.name
+      value: hod.name,
     },
     {
       label: 'Email',
       value: (
         <div className="flex items-center gap-2">
           <Mail className="h-4 w-4 text-[var(--brand-muted)]" />
-          <a
-            href={`mailto:${hod.email}`}
-            className="text-[var(--brand-primary)] hover:underline"
-          >
+          <a href={`mailto:${hod.email}`} className="text-[var(--brand-primary)] hover:underline">
             {hod.email}
           </a>
         </div>
-      )
+      ),
     },
     {
       label: 'Department',
@@ -89,11 +89,11 @@ export function HODDetailView({ hodId }: HODDetailViewProps) {
         </div>
       ) : (
         'Not assigned'
-      )
+      ),
     },
     {
       label: 'HOD ID',
-      value: hod.id
+      value: hod.id,
     },
     {
       label: 'Subjects',
@@ -114,7 +114,7 @@ export function HODDetailView({ hodId }: HODDetailViewProps) {
           )}
         </div>
       ),
-      span: 2
+      span: 2,
     },
     {
       label: 'Assigned Classes',
@@ -135,7 +135,7 @@ export function HODDetailView({ hodId }: HODDetailViewProps) {
           )}
         </div>
       ),
-      span: 2
+      span: 2,
     },
     {
       label: 'Teachers Under Oversight',
@@ -145,26 +145,22 @@ export function HODDetailView({ hodId }: HODDetailViewProps) {
           <span className="font-semibold">{teachersUnderOversight.length}</span>
           <span className="text-[var(--brand-muted)]">teachers</span>
         </div>
-      )
+      ),
     },
     {
       label: 'Account Created',
-      value: hod.created_at
-        ? new Date(hod.created_at).toLocaleDateString()
-        : 'Not available'
+      value: hod.created_at ? new Date(hod.created_at).toLocaleDateString() : 'Not available',
     },
     {
       label: 'Last Updated',
-      value: hod.updated_at
-        ? new Date(hod.updated_at).toLocaleDateString()
-        : 'Not available'
-    }
+      value: hod.updated_at ? new Date(hod.updated_at).toLocaleDateString() : 'Not available',
+    },
   ];
 
   return (
     <div className="space-y-4">
       <DetailCard title="Head of Department Information" fields={fields} />
-      
+
       {/* Teachers Under Oversight Section */}
       {teachersUnderOversight.length > 0 && (
         <DetailCard
@@ -180,7 +176,9 @@ export function HODDetailView({ hodId }: HODDetailViewProps) {
                       className="flex items-center justify-between rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface)]/50 p-3"
                     >
                       <div>
-                        <p className="font-medium text-[var(--brand-surface-contrast)]">{teacher.name}</p>
+                        <p className="font-medium text-[var(--brand-surface-contrast)]">
+                          {teacher.name}
+                        </p>
                         <p className="text-xs text-[var(--brand-muted)]">{teacher.email}</p>
                       </div>
                       <div className="flex flex-wrap gap-1">
@@ -202,8 +200,8 @@ export function HODDetailView({ hodId }: HODDetailViewProps) {
                   )}
                 </div>
               ),
-              span: 2
-            }
+              span: 2,
+            },
           ]}
         />
       )}
@@ -212,4 +210,3 @@ export function HODDetailView({ hodId }: HODDetailViewProps) {
 }
 
 export default HODDetailView;
-

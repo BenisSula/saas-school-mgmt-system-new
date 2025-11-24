@@ -37,7 +37,7 @@ interface TeacherFilters {
 const defaultFilters: TeacherFilters = {
   search: '',
   classId: 'all',
-  subjectId: 'all'
+  subjectId: 'all',
 };
 
 export function TeachersManagementPage() {
@@ -56,11 +56,11 @@ export function TeachersManagementPage() {
   const [selectedSubject, setSelectedSubject] = useState<string>('');
   const [isClassTeacher, setIsClassTeacher] = useState<boolean>(false);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
-  
+
   // CSV Import
   const csvImportMutation = useCSVImport({
     entityType: 'teachers',
-    invalidateQueries: [[...queryKeys.admin.teachers()]] as unknown as unknown[][]
+    invalidateQueries: [[...queryKeys.admin.teachers()]] as unknown as unknown[][],
   });
 
   // Debounce search filter to prevent excessive API calls
@@ -76,7 +76,11 @@ export function TeachersManagementPage() {
   }, [debouncedSearch]);
 
   // Fetch data using React Query hooks
-  const { data: teachers = [], isLoading: teachersLoading, error: teachersError } = useTeachers(apiFilters);
+  const {
+    data: teachers = [],
+    isLoading: teachersLoading,
+    error: teachersError,
+  } = useTeachers(apiFilters);
   const { data: classes = [], isLoading: classesLoading } = useClasses();
   const { data: subjects = [], isLoading: subjectsLoading } = useQuery(
     queryKeys.admin.subjects(),
@@ -99,8 +103,8 @@ export function TeachersManagementPage() {
       type: 'select',
       options: [
         { label: 'All classes', value: 'all' },
-        ...classes.map((c) => ({ label: c.name, value: c.id }))
-      ]
+        ...classes.map((c) => ({ label: c.name, value: c.id })),
+      ],
     },
     {
       key: 'subjectId',
@@ -108,9 +112,9 @@ export function TeachersManagementPage() {
       type: 'select',
       options: [
         { label: 'All subjects', value: 'all' },
-        ...subjects.map((s) => ({ label: s.name, value: s.id }))
-      ]
-    }
+        ...subjects.map((s) => ({ label: s.name, value: s.id })),
+      ],
+    },
   ];
 
   const filteredTeachers = useMemo(() => {
@@ -159,7 +163,9 @@ export function TeachersManagementPage() {
     setShowAssignmentModal(true);
   };
 
-  const getAssignmentMutationVariables = (): { id: string; data: { assignedClasses: string[]; subjects: string[] } } | undefined => {
+  const getAssignmentMutationVariables = ():
+    | { id: string; data: { assignedClasses: string[]; subjects: string[] } }
+    | undefined => {
     if (!selectedTeacher || !selectedClass || !selectedSubject) {
       return undefined;
     }
@@ -177,8 +183,8 @@ export function TeachersManagementPage() {
       id: selectedTeacher.id,
       data: {
         assignedClasses: updatedClasses,
-        subjects: updatedSubjects
-      }
+        subjects: updatedSubjects,
+      },
     };
   };
 
@@ -186,13 +192,13 @@ export function TeachersManagementPage() {
     if (!selectedTeacher || !selectedClass || !selectedSubject) {
       return;
     }
-    
+
     try {
       // Assign teacher to class/subject via admin API
       await api.admin.assignTeacher(selectedTeacher.id, {
         classId: selectedClass,
         subjectId: selectedSubject,
-        isClassTeacher
+        isClassTeacher,
       });
     } catch {
       // Error already handled by mutation
@@ -209,10 +215,10 @@ export function TeachersManagementPage() {
     }
 
     // Delete teachers one by one (can be optimized to bulk delete if backend supports it)
-    const deletePromises = Array.from(selectedRows).map((id) => 
+    const deletePromises = Array.from(selectedRows).map((id) =>
       deleteTeacherMutation.mutateAsync(id)
     );
-    
+
     try {
       await Promise.all(deletePromises);
       setSelectedRows(new Set());
@@ -227,24 +233,29 @@ export function TeachersManagementPage() {
       Name: t.name,
       Email: t.email,
       Subjects: t.subjects.join('; '),
-      Classes: t.assigned_classes.join('; ')
+      Classes: t.assigned_classes.join('; '),
     }));
 
-    const handlers = createExportHandlers(exportData, 'teachers', ['Name', 'Email', 'Subjects', 'Classes']);
+    const handlers = createExportHandlers(exportData, 'teachers', [
+      'Name',
+      'Email',
+      'Subjects',
+      'Classes',
+    ]);
 
     // For PDF/Excel, use backend endpoint with filters
     const exportPayload = {
       type: 'teachers' as const,
       title: 'Teachers Export',
       filters: {
-        search: filters.search || undefined
-      }
+        search: filters.search || undefined,
+      },
     };
 
     return {
       ...handlers,
       exportPDF: () => handlers.exportPDF('/reports/export', exportPayload),
-      exportExcel: () => handlers.exportExcel('/reports/export', exportPayload)
+      exportExcel: () => handlers.exportExcel('/reports/export', exportPayload),
     };
   }, [filteredTeachers, filters]);
 
@@ -293,7 +304,7 @@ export function TeachersManagementPage() {
           aria-label={`Select ${row.name}`}
         />
       ),
-      align: 'center'
+      align: 'center',
     },
     {
       header: 'Name',
@@ -302,7 +313,7 @@ export function TeachersManagementPage() {
           <p className="font-semibold text-[var(--brand-surface-contrast)]">{row.name}</p>
           <p className="text-xs text-[var(--brand-muted)]">{row.email}</p>
         </div>
-      )
+      ),
     },
     {
       header: 'Subjects',
@@ -321,7 +332,7 @@ export function TeachersManagementPage() {
             <span className="text-xs text-[var(--brand-muted)]">No subjects</span>
           )}
         </div>
-      )
+      ),
     },
     {
       header: 'Classes',
@@ -340,7 +351,7 @@ export function TeachersManagementPage() {
             <span className="text-xs text-[var(--brand-muted)]">No classes</span>
           )}
         </div>
-      )
+      ),
     },
     {
       header: 'Actions',
@@ -356,12 +367,10 @@ export function TeachersManagementPage() {
             Details
           </Button>
           <ViewButton onClick={() => handleViewProfile(row)} />
-          <AssignButton 
-            onClick={() => handleAssignClass(row)}
-          />
+          <AssignButton onClick={() => handleAssignClass(row)} />
         </ActionButtonGroup>
-      )
-    }
+      ),
+    },
   ];
 
   if (loading) {
@@ -393,7 +402,11 @@ export function TeachersManagementPage() {
               <Upload className="h-4 w-4" />
               Import CSV
             </Button>
-            <Button variant="outline" onClick={() => setShowActivityLog(!showActivityLog)} className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowActivityLog(!showActivityLog)}
+              className="gap-2"
+            >
               Activity Log
             </Button>
             <ExportButtons
@@ -421,13 +434,13 @@ export function TeachersManagementPage() {
             filters={{
               search: filters.search,
               classId: filters.classId,
-              subjectId: filters.subjectId
+              subjectId: filters.subjectId,
             }}
             onFiltersChange={(newFilters) => {
               setFilters({
                 search: newFilters.search || '',
                 classId: newFilters.classId || 'all',
-                subjectId: newFilters.subjectId || 'all'
+                subjectId: newFilters.subjectId || 'all',
               });
             }}
             onReset={() => setFilters(defaultFilters)}
@@ -448,10 +461,7 @@ export function TeachersManagementPage() {
         )}
 
         {filteredTeachers.length === 0 && teachers.length === 0 ? (
-          <EmptyState
-            type="teachers"
-            onAction={() => setShowCreateModal(true)}
-          />
+          <EmptyState type="teachers" onAction={() => setShowCreateModal(true)} />
         ) : filteredTeachers.length === 0 ? (
           <EmptyState
             type="generic"
@@ -562,7 +572,7 @@ export function TeachersManagementPage() {
             messages={{
               pending: 'Assigning class/subject...',
               success: 'Assignment saved successfully',
-              error: 'Failed to save assignment'
+              error: 'Failed to save assignment',
             }}
             saveLabel="Assign"
             onSuccess={handleAssignmentSuccess}
@@ -575,7 +585,7 @@ export function TeachersManagementPage() {
                 onChange={(e) => setSelectedClass(e.target.value)}
                 options={[
                   { label: 'Select a class', value: '' },
-                  ...classes.map((c) => ({ label: c.name, value: c.id }))
+                  ...classes.map((c) => ({ label: c.name, value: c.id })),
                 ]}
               />
               <Select
@@ -585,7 +595,7 @@ export function TeachersManagementPage() {
                 onChange={(e) => setSelectedSubject(e.target.value)}
                 options={[
                   { label: 'Select a subject', value: '' },
-                  ...subjects.map((s) => ({ label: s.name, value: s.id }))
+                  ...subjects.map((s) => ({ label: s.name, value: s.id })),
                 ]}
               />
               <div className="flex items-center gap-2">
@@ -627,7 +637,15 @@ export function TeachersManagementPage() {
               return result;
             }}
             entityType="teachers"
-            acceptedColumns={['email', 'fullName', 'password', 'phone', 'qualifications', 'yearsOfExperience', 'subjects']}
+            acceptedColumns={[
+              'email',
+              'fullName',
+              'password',
+              'phone',
+              'qualifications',
+              'yearsOfExperience',
+              'subjects',
+            ]}
           />
         )}
 

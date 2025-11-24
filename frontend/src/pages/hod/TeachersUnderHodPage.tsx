@@ -20,9 +20,13 @@ export default function TeachersUnderHodPage() {
   const [subjectFilter, setSubjectFilter] = useState<string>('');
   const queryClient = useQueryClient();
 
-  const { data: teachers, isLoading, error } = useHodTeachers({
+  const {
+    data: teachers,
+    isLoading,
+    error,
+  } = useHodTeachers({
     search: search || undefined,
-    subject: subjectFilter || undefined
+    subject: subjectFilter || undefined,
   });
 
   const refreshTeachers = () => {
@@ -39,67 +43,70 @@ export default function TeachersUnderHodPage() {
     return Array.from(subjects).sort();
   }, [teachers]);
 
-  const columns: DataTableColumn<HODTeacher>[] = useMemo(() => [
-    {
-      key: 'name',
-      header: 'Teacher Name',
-      render: (row) => (
-        <div className="font-medium text-[var(--brand-surface-contrast)]">{row.name}</div>
-      ),
-      sortable: true
-    },
-    {
-      key: 'email',
-      header: 'Email',
-      render: (row) => (
-        <div className="flex items-center gap-2 text-sm text-[var(--brand-muted)]">
-          <Mail className="h-4 w-4" />
-          {row.email || 'N/A'}
-        </div>
-      ),
-      sortable: true
-    },
-    {
-      key: 'subjects',
-      header: 'Subjects',
-      render: (row) => (
-        <div className="flex flex-wrap gap-1">
-          {row.subjects.map((subject) => (
-            <span
-              key={subject}
-              className="rounded-full border border-[var(--brand-border)] bg-black/15 px-2 py-1 text-xs text-[var(--brand-surface-contrast)]"
-            >
-              {subject}
-            </span>
-          ))}
-          {row.subjects.length === 0 && (
-            <span className="text-xs text-[var(--brand-muted)]">No subjects assigned</span>
-          )}
-        </div>
-      )
-    },
-    {
-      key: 'classes',
-      header: 'Classes',
-      render: (row) => (
-        <div className="flex items-center gap-2 text-sm">
-          <BookOpen className="h-4 w-4 text-[var(--brand-muted)]" />
-          <span>{row.classes.length} classes</span>
-        </div>
-      )
-    },
-    {
-      key: 'lastActive',
-      header: 'Last Active',
-      render: (row) => (
-        <div className="flex items-center gap-2 text-sm text-[var(--brand-muted)]">
-          <Calendar className="h-4 w-4" />
-          {row.lastActive ? new Date(row.lastActive).toLocaleDateString() : 'Never'}
-        </div>
-      ),
-      sortable: true
-    }
-  ], []);
+  const columns: DataTableColumn<HODTeacher>[] = useMemo(
+    () => [
+      {
+        key: 'name',
+        header: 'Teacher Name',
+        render: (row) => (
+          <div className="font-medium text-[var(--brand-surface-contrast)]">{row.name}</div>
+        ),
+        sortable: true,
+      },
+      {
+        key: 'email',
+        header: 'Email',
+        render: (row) => (
+          <div className="flex items-center gap-2 text-sm text-[var(--brand-muted)]">
+            <Mail className="h-4 w-4" />
+            {row.email || 'N/A'}
+          </div>
+        ),
+        sortable: true,
+      },
+      {
+        key: 'subjects',
+        header: 'Subjects',
+        render: (row) => (
+          <div className="flex flex-wrap gap-1">
+            {row.subjects.map((subject) => (
+              <span
+                key={subject}
+                className="rounded-full border border-[var(--brand-border)] bg-black/15 px-2 py-1 text-xs text-[var(--brand-surface-contrast)]"
+              >
+                {subject}
+              </span>
+            ))}
+            {row.subjects.length === 0 && (
+              <span className="text-xs text-[var(--brand-muted)]">No subjects assigned</span>
+            )}
+          </div>
+        ),
+      },
+      {
+        key: 'classes',
+        header: 'Classes',
+        render: (row) => (
+          <div className="flex items-center gap-2 text-sm">
+            <BookOpen className="h-4 w-4 text-[var(--brand-muted)]" />
+            <span>{row.classes.length} classes</span>
+          </div>
+        ),
+      },
+      {
+        key: 'lastActive',
+        header: 'Last Active',
+        render: (row) => (
+          <div className="flex items-center gap-2 text-sm text-[var(--brand-muted)]">
+            <Calendar className="h-4 w-4" />
+            {row.lastActive ? new Date(row.lastActive).toLocaleDateString() : 'Never'}
+          </div>
+        ),
+        sortable: true,
+      },
+    ],
+    []
+  );
 
   if (isLoading) {
     return (
@@ -174,4 +181,3 @@ export default function TeachersUnderHodPage() {
     </RouteMeta>
   );
 }
-

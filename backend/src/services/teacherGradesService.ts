@@ -69,7 +69,7 @@ export async function submitTeacherGrades(
         grade.studentId,
         grade.classId,
         ...(grade.examId ? [grade.examId] : []),
-        ...(grade.subjectId ? [grade.subjectId] : [])
+        ...(grade.subjectId ? [grade.subjectId] : []),
       ].filter(Boolean)
     );
 
@@ -104,7 +104,7 @@ export async function submitTeacherGrades(
           grade.score,
           grade.remarks || null,
           grade.term || null,
-          actorId
+          actorId,
         ]
       );
       gradeId = insertResult.rows[0].id;
@@ -113,7 +113,7 @@ export async function submitTeacherGrades(
     results.push({
       id: gradeId,
       studentId: grade.studentId,
-      score: grade.score
+      score: grade.score,
     });
   }
 
@@ -129,9 +129,9 @@ export async function submitTeacherGrades(
         teacherId,
         classId: grades[0]?.classId,
         subjectId: grades[0]?.subjectId,
-        gradeCount: grades.length
+        gradeCount: grades.length,
       },
-      severity: 'info'
+      severity: 'info',
     });
   } catch (auditError) {
     console.error('[teacherGradesService] Failed to create audit log:', auditError);
@@ -296,9 +296,9 @@ export async function updateTeacherGrade(
       details: {
         teacherId,
         classId: grade.class_id,
-        updates
+        updates,
       },
-      severity: 'info'
+      severity: 'info',
     });
   } catch (auditError) {
     console.error('[teacherGradesService] Failed to create audit log:', auditError);
@@ -311,7 +311,6 @@ export async function updateTeacherGrade(
   return {
     id: result.rows[0].id,
     studentId: result.rows[0].student_id,
-    score: result.rows[0].score
+    score: result.rows[0].score,
   };
 }
-

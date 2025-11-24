@@ -25,7 +25,7 @@ export function CSVImportModal({
   onImport,
   entityType,
   templateUrl,
-  acceptedColumns
+  acceptedColumns,
 }: CSVImportModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -75,7 +75,7 @@ export function CSVImportModal({
       setResult({
         success: 0,
         failed: 1,
-        errors: [{ row: 0, message }]
+        errors: [{ row: 0, message }],
       });
     } finally {
       setIsUploading(false);
@@ -100,7 +100,7 @@ export function CSVImportModal({
         teachers: 'email,fullName,password,phone,qualifications,yearsOfExperience,subjects\n',
         students:
           'email,fullName,password,dateOfBirth,classId,studentId,parentGuardianName,parentGuardianContact\n',
-        hods: 'email,fullName,password,phone,qualifications,subjects,department\n'
+        hods: 'email,fullName,password,phone,qualifications,subjects,department\n',
       };
 
       const csvContent = templates[entityType];
@@ -169,11 +169,7 @@ export function CSVImportModal({
                 </div>
               )}
             </label>
-            <Button
-              variant="outline"
-              onClick={handleDownloadTemplate}
-              className="shrink-0"
-            >
+            <Button variant="outline" onClick={handleDownloadTemplate} className="shrink-0">
               Download Template
             </Button>
           </div>
@@ -225,4 +221,3 @@ export function CSVImportModal({
 }
 
 export default CSVImportModal;
-

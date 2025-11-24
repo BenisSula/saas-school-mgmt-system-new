@@ -25,7 +25,9 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
   const [dataSources, setDataSources] = useState<string[]>([]);
   const [selectedColumns, setSelectedColumns] = useState<Column[]>([]);
   const [filters, setFilters] = useState<Filter[]>([]);
-  const [visualizationType, setVisualizationType] = useState<'table' | 'bar' | 'line' | 'pie' | 'area'>('table');
+  const [visualizationType, setVisualizationType] = useState<
+    'table' | 'bar' | 'line' | 'pie' | 'area'
+  >('table');
   const [isShared, setIsShared] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,14 +40,11 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
     'grades',
     'exams',
     'fee_invoices',
-    'payments'
+    'payments',
   ];
 
   const handleAddColumn = () => {
-    setSelectedColumns([
-      ...selectedColumns,
-      { table: dataSources[0] || '', column: '' }
-    ]);
+    setSelectedColumns([...selectedColumns, { table: dataSources[0] || '', column: '' }]);
   };
 
   const handleRemoveColumn = (index: number) => {
@@ -53,10 +52,7 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
   };
 
   const handleAddFilter = () => {
-    setFilters([
-      ...filters,
-      { column: '', operator: '=', value: '' }
-    ]);
+    setFilters([...filters, { column: '', operator: '=', value: '' }]);
   };
 
   const handleRemoveFilter = (index: number) => {
@@ -70,7 +66,7 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
     }
 
     // Validate columns
-    const invalidColumns = selectedColumns.filter(col => !col.table || !col.column);
+    const invalidColumns = selectedColumns.filter((col) => !col.table || !col.column);
     if (invalidColumns.length > 0) {
       setError('All columns must have both table and column name selected');
       return;
@@ -81,14 +77,12 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
 
     try {
       // Auto-determine groupBy: if aggregations are used, group by non-aggregated columns
-      const hasAggregations = selectedColumns.some(col => col.aggregate);
+      const hasAggregations = selectedColumns.some((col) => col.aggregate);
       let groupBy: string[] = [];
-      
+
       if (hasAggregations) {
         // Group by non-aggregated columns
-        groupBy = selectedColumns
-          .filter(col => !col.aggregate)
-          .map(col => col.column);
+        groupBy = selectedColumns.filter((col) => !col.aggregate).map((col) => col.column);
       }
 
       const report = await api.reports.createCustomReport({
@@ -99,7 +93,7 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
         filters,
         groupBy,
         visualizationType,
-        isShared
+        isShared,
       });
 
       onSave?.(report.id);
@@ -112,7 +106,9 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
 
   return (
     <div className="report-builder p-6 bg-[var(--brand-surface)] rounded-lg shadow-md border border-[var(--brand-border)]">
-      <h2 className="text-2xl font-bold mb-4 text-[var(--brand-text-primary)]">Custom Report Builder</h2>
+      <h2 className="text-2xl font-bold mb-4 text-[var(--brand-text-primary)]">
+        Custom Report Builder
+      </h2>
 
       {error && (
         <div className="mb-4 p-3 bg-[var(--brand-error)]/10 text-[var(--brand-error)] border border-[var(--brand-error)]/20 rounded">
@@ -122,7 +118,9 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">Report Name *</label>
+          <label className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">
+            Report Name *
+          </label>
           <input
             type="text"
             value={name}
@@ -133,7 +131,9 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">Description</label>
+          <label className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">
+            Description
+          </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -144,10 +144,15 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">Data Sources *</label>
+          <label className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">
+            Data Sources *
+          </label>
           <div className="flex flex-wrap gap-2">
             {availableTables.map((table) => (
-              <label key={table} className="flex items-center text-[var(--brand-text-primary)] cursor-pointer">
+              <label
+                key={table}
+                className="flex items-center text-[var(--brand-text-primary)] cursor-pointer"
+              >
                 <input
                   type="checkbox"
                   checked={dataSources.includes(table)}
@@ -155,7 +160,7 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
                     if (e.target.checked) {
                       setDataSources([...dataSources, table]);
                     } else {
-                      setDataSources(dataSources.filter(t => t !== table));
+                      setDataSources(dataSources.filter((t) => t !== table));
                     }
                   }}
                   className="mr-2 accent-[var(--brand-primary)]"
@@ -167,7 +172,9 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">Columns *</label>
+          <label className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">
+            Columns *
+          </label>
           {selectedColumns.map((col, index) => (
             <div key={index} className="flex gap-2 mb-2">
               <select
@@ -181,8 +188,10 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
                 className="px-3 py-2 border border-[var(--brand-border)] rounded bg-[var(--brand-surface-secondary)] text-[var(--brand-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent"
               >
                 <option value="">Select table</option>
-                {dataSources.map(table => (
-                  <option key={table} value={table}>{table}</option>
+                {dataSources.map((table) => (
+                  <option key={table} value={table}>
+                    {table}
+                  </option>
                 ))}
               </select>
               <input
@@ -230,7 +239,9 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">Filters</label>
+          <label className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">
+            Filters
+          </label>
           {filters.map((filter, index) => (
             <div key={index} className="flex gap-2 mb-2">
               <input
@@ -292,7 +303,9 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">Visualization Type</label>
+          <label className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">
+            Visualization Type
+          </label>
           <select
             value={visualizationType}
             onChange={(e) => setVisualizationType(e.target.value as typeof visualizationType)}
@@ -340,4 +353,3 @@ export const ReportBuilder: React.FC<ReportBuilderProps> = ({ onSave, onCancel }
     </div>
   );
 };
-

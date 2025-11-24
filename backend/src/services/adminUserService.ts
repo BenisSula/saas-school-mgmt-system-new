@@ -39,7 +39,7 @@ export interface AdminCreateUserResult {
  * Admin creates a new user with profile data
  * Creates both the user account (in shared.users) and the profile record (student/teacher)
  * User is created as 'active' immediately (no approval needed)
- * 
+ *
  * This function uses the unified registration service with admin-specific options:
  * - immediateActivation: true (user is active immediately)
  * - createProfileImmediately: true (profile record created immediately)
@@ -54,7 +54,8 @@ export async function adminCreateUser(
   try {
     // Convert admin input to unified registration input
     // For HOD, we create as teacher first, then assign HOD role
-    const actualRole: 'student' | 'teacher' | 'admin' = input.role === 'hod' ? 'teacher' : input.role;
+    const actualRole: 'student' | 'teacher' | 'admin' =
+      input.role === 'hod' ? 'teacher' : input.role;
     const registrationInput: UserRegistrationInput = {
       email: input.email,
       password: input.password,
@@ -74,21 +75,15 @@ export async function adminCreateUser(
       qualifications: input.qualifications,
       yearsOfExperience: input.yearsOfExperience,
       subjects: input.subjects,
-      teacherId: input.teacherId
+      teacherId: input.teacherId,
     };
 
     // Use unified registration service with admin options
-    const result = await registerUser(
-      tenantId,
-      tenantClient,
-      schemaName,
-      registrationInput,
-      {
-        immediateActivation: true, // Admin-created users are immediately active
-        createProfileImmediately: true, // Create profile record immediately
-        actorId // For audit logging
-      }
-    );
+    const result = await registerUser(tenantId, tenantClient, schemaName, registrationInput, {
+      immediateActivation: true, // Admin-created users are immediately active
+      createProfileImmediately: true, // Create profile record immediately
+      actorId, // For audit logging
+    });
 
     if (!result.profileId) {
       throw new Error('Failed to create profile record');
@@ -97,7 +92,7 @@ export async function adminCreateUser(
     // If creating HOD, assign HOD role and department
     if (input.role === 'hod') {
       const pool = getPool();
-      
+
       // Assign HOD role
       await pool.query(
         `INSERT INTO shared.user_roles (user_id, role_name, assigned_by)
@@ -108,35 +103,35 @@ export async function adminCreateUser(
 
       // Assign department if provided
       if (input.departmentId) {
-        await pool.query(
-          `UPDATE shared.users SET department_id = $1 WHERE id = $2`,
-          [input.departmentId, result.userId]
-        );
+        await pool.query(`UPDATE shared.users SET department_id = $1 WHERE id = $2`, [
+          input.departmentId,
+          result.userId,
+        ]);
       }
     }
 
     // Create audit log for teacher/HOD creation
     if (input.role === 'teacher' || input.role === 'hod') {
       try {
-        await createAuditLog(
-          tenantClient,
-          {
-            tenantId: tenantId,
-            userId: actorId,
-            action: input.role === 'hod' ? 'HOD_CREATED' : 'TEACHER_CREATED',
-            resourceType: input.role === 'hod' ? 'hod' : 'teacher',
-            resourceId: result.userId,
-            details: {
-              email: result.email,
-              profileId: result.profileId,
-              assignedClasses: input.subjects || [],
-              departmentId: input.departmentId || null
-            },
-            severity: 'info'
-          }
-        );
+        await createAuditLog(tenantClient, {
+          tenantId: tenantId,
+          userId: actorId,
+          action: input.role === 'hod' ? 'HOD_CREATED' : 'TEACHER_CREATED',
+          resourceType: input.role === 'hod' ? 'hod' : 'teacher',
+          resourceId: result.userId,
+          details: {
+            email: result.email,
+            profileId: result.profileId,
+            assignedClasses: input.subjects || [],
+            departmentId: input.departmentId || null,
+          },
+          severity: 'info',
+        });
       } catch (auditError) {
-        console.error('[adminUserService] Failed to create audit log for teacher creation:', auditError);
+        console.error(
+          '[adminUserService] Failed to create audit log for teacher creation:',
+          auditError
+        );
       }
     }
 
@@ -145,11 +140,10 @@ export async function adminCreateUser(
       profileId: result.profileId,
       email: result.email,
       role: result.role,
-      status: 'active'
+      status: 'active',
     };
   } catch (error) {
     console.error('[adminUserService] Error creating user:', error);
     throw error;
   }
 }
-

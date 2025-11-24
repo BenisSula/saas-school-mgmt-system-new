@@ -5,7 +5,11 @@
 
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import type { PoolClient } from 'pg';
-import { getHodOverview, listTeachersUnderHOD, getDepartmentReport } from '../../src/services/hodService';
+import {
+  getHodOverview,
+  listTeachersUnderHOD,
+  getDepartmentReport,
+} from '../../src/services/hodService';
 import { getUserWithAdditionalRoles } from '../../src/lib/roleUtils';
 
 // Mock dependencies
@@ -22,7 +26,7 @@ describe('HOD Service', () => {
 
   beforeEach(() => {
     mockClient = {
-      query: jest.fn()
+      query: jest.fn(),
     };
   });
 
@@ -39,7 +43,7 @@ describe('HOD Service', () => {
       (getUserWithAdditionalRoles as jest.Mock).mockResolvedValue({
         id: hodUserId,
         role: 'teacher',
-        additional_roles: [] // No HOD role
+        additional_roles: [], // No HOD role
       });
 
       await expect(
@@ -74,4 +78,3 @@ describe('HOD Service', () => {
     // Add more test cases
   });
 });
-

@@ -21,7 +21,7 @@ export function InvestigationCreatePage() {
     relatedUserId: '',
     relatedTenantId: '',
     assignedTo: '',
-    tags: ''
+    tags: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,7 +33,7 @@ export function InvestigationCreatePage() {
         .map((tag) => tag.trim())
         .filter((tag) => tag.length > 0);
 
-      const case_ = await createCase.mutateAsync({
+      const case_ = (await createCase.mutateAsync({
         title: formData.title,
         description: formData.description || undefined,
         priority: formData.priority,
@@ -41,8 +41,8 @@ export function InvestigationCreatePage() {
         relatedUserId: formData.relatedUserId || undefined,
         relatedTenantId: formData.relatedTenantId || null,
         assignedTo: formData.assignedTo || undefined,
-        tags: tags.length > 0 ? tags : undefined
-      }) as InvestigationCase;
+        tags: tags.length > 0 ? tags : undefined,
+      })) as InvestigationCase;
 
       navigate(`/dashboard/superuser/investigations/${case_.id}`);
     } catch {
@@ -60,7 +60,9 @@ export function InvestigationCreatePage() {
             Back
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-[var(--brand-text-primary)]">Create Investigation Case</h1>
+            <h1 className="text-2xl font-bold text-[var(--brand-text-primary)]">
+              Create Investigation Case
+            </h1>
             <p className="mt-1 text-sm text-[var(--brand-text-secondary)]">
               Create a new investigation case to track security incidents or anomalies
             </p>
@@ -105,7 +107,7 @@ export function InvestigationCreatePage() {
                   { label: 'Security', value: 'security' },
                   { label: 'Compliance', value: 'compliance' },
                   { label: 'Abuse', value: 'abuse' },
-                  { label: 'Other', value: 'other' }
+                  { label: 'Other', value: 'other' },
                 ]}
               />
             </div>
@@ -122,7 +124,7 @@ export function InvestigationCreatePage() {
                   { label: 'Low', value: 'low' },
                   { label: 'Medium', value: 'medium' },
                   { label: 'High', value: 'high' },
-                  { label: 'Critical', value: 'critical' }
+                  { label: 'Critical', value: 'critical' },
                 ]}
               />
             </div>
@@ -183,4 +185,3 @@ export function InvestigationCreatePage() {
 }
 
 export default InvestigationCreatePage;
-

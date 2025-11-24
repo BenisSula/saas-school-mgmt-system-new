@@ -25,7 +25,7 @@ export const AUDIT_ENTITY_TYPES = [
   'SETTINGS',
   'OVERRIDE',
   'PERMISSION_OVERRIDE',
-  'SUBSCRIPTION'
+  'SUBSCRIPTION',
 ] as const;
 
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];
@@ -85,7 +85,7 @@ export async function recordAuditLog(
         entry.entityId ?? null,
         entry.actorRole ?? null,
         entry.target ?? null,
-        JSON.stringify(entry.details ?? {})
+        JSON.stringify(entry.details ?? {}),
       ]
     );
   } catch (error) {
@@ -94,7 +94,7 @@ export async function recordAuditLog(
         err: error,
         auditAction: entry.action,
         auditEntity: entry.entityType,
-        auditEntityId: entry.entityId
+        auditEntityId: entry.entityId,
       },
       'Failed to record audit log'
     );
@@ -133,7 +133,7 @@ export async function recordSharedAuditLog(entry: AuditLogEntry): Promise<void> 
       entry.entityId ?? null,
       entry.actorRole ?? null,
       entry.target ?? null,
-      JSON.stringify(entry.details ?? {})
+      JSON.stringify(entry.details ?? {}),
     ]
   );
 }
@@ -219,7 +219,7 @@ export async function logUnauthorizedAttempt(
       path: payload.path,
       method: payload.method ?? null,
       reason: payload.reason ?? null,
-      ...(payload.details ?? {})
-    }
+      ...(payload.details ?? {}),
+    },
   });
 }

@@ -14,6 +14,8 @@ export async function listStudents(
     enrollmentStatus?: string;
     classId?: string;
     search?: string;
+    limit?: number;
+    offset?: number;
   }
 ) {
   const tableName = getTableName(schema, table);
@@ -49,6 +51,18 @@ export async function listStudents(
   }
 
   query += ` ORDER BY last_name, first_name`;
+
+  // Add pagination support
+  if (filters?.limit) {
+    query += ` LIMIT $${paramIndex}`;
+    params.push(filters.limit);
+    paramIndex++;
+  }
+
+  if (filters?.offset) {
+    query += ` OFFSET $${paramIndex}`;
+    params.push(filters.offset);
+  }
 
   const result = await client.query(query, params);
   return result.rows;
@@ -86,7 +100,7 @@ export async function createStudent(
       classIdName,
       classUuid,
       payload.admissionNumber ?? null,
-      serializeJsonField(payload.parentContacts ?? [])
+      serializeJsonField(payload.parentContacts ?? []),
     ]
   );
 
@@ -104,9 +118,9 @@ export async function createStudent(
         details: {
           studentEmail: (payload as { email?: string }).email,
           classId: classIdName,
-          classUuid: classUuid
+          classUuid: classUuid,
         },
-        severity: 'info'
+        severity: 'info',
       });
     } catch (auditError) {
       console.error(
@@ -150,7 +164,7 @@ export async function updateStudent(
     class_id: classIdName,
     class_uuid: classUuid,
     admission_number: payload.admissionNumber ?? existing.admission_number,
-    parent_contacts: serializeJsonField(payload.parentContacts ?? existing.parent_contacts)
+    parent_contacts: serializeJsonField(payload.parentContacts ?? existing.parent_contacts),
   };
 
   const tableName = getTableName(schema, table);
@@ -176,7 +190,7 @@ export async function updateStudent(
       next.class_uuid,
       next.admission_number,
       next.parent_contacts,
-      id
+      id,
     ]
   );
 
@@ -220,7 +234,7 @@ export async function moveStudentToClass(
   return {
     previousClassId: existing.class_id as string | null,
     previousClassUuid: existing.class_uuid as string | null,
-    student: result.rows[0]
+    student: result.rows[0],
   };
 }
 
@@ -259,6 +273,6 @@ export async function getStudentClassRoster(client: PoolClient, schema: string, 
     first_name: row.first_name,
     last_name: row.last_name,
     admission_number: row.admission_number,
-    class_id: row.class_id
+    class_id: row.class_id,
   }));
 }

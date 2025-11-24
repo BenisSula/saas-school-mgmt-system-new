@@ -14,12 +14,22 @@ import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
 import { Input } from '../../components/ui/Input';
 import { useHodDepartmentReport } from '../../hooks/queries/hod';
-import { Users, GraduationCap, BookOpen, TrendingUp, Activity, Download, RefreshCw } from 'lucide-react';
+import {
+  Users,
+  GraduationCap,
+  BookOpen,
+  TrendingUp,
+  Activity,
+  Download,
+  RefreshCw,
+} from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { createExportHandlers } from '../../hooks/useExport';
 
 export default function DepartmentReportsPage() {
-  const [filters, setFilters] = useState<{ term?: string; classId?: string; subjectId?: string }>({});
+  const [filters, setFilters] = useState<{ term?: string; classId?: string; subjectId?: string }>(
+    {}
+  );
   const queryClient = useQueryClient();
 
   const { data: report, isLoading, error } = useHodDepartmentReport(filters);
@@ -37,8 +47,8 @@ export default function DepartmentReportsPage() {
       {
         label: 'Average Score',
         value: report.performance.avgScore,
-        color: 'var(--brand-primary)'
-      }
+        color: 'var(--brand-primary)',
+      },
     ];
   }, [report]);
 
@@ -47,7 +57,7 @@ export default function DepartmentReportsPage() {
     if (!report) return [];
     return [
       { label: 'Last 7 Days', value: report.activity.last7Days },
-      { label: 'Last 30 Days', value: report.activity.last30Days }
+      { label: 'Last 30 Days', value: report.activity.last30Days },
     ];
   }, [report]);
 
@@ -89,7 +99,9 @@ export default function DepartmentReportsPage() {
           </div>
           <div className="flex gap-2">
             <Button
-              onClick={() => exportHandlers.exportToCSV(report, `department-report-${Date.now()}.csv`)}
+              onClick={() =>
+                exportHandlers.exportToCSV(report, `department-report-${Date.now()}.csv`)
+              }
               leftIcon={<Download className="h-4 w-4" />}
               variant="outline"
             >
@@ -203,4 +215,3 @@ export default function DepartmentReportsPage() {
     </RouteMeta>
   );
 }
-

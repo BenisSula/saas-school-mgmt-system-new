@@ -26,7 +26,7 @@ export function useTenantAnalytics(tenantId?: string) {
         return {
           totalTenants: schools.length,
           activeTenants: schools.filter((s) => s.status === 'active').length,
-          totalUsers: schools.reduce((sum, s) => sum + (s.userCount || 0), 0)
+          totalUsers: schools.reduce((sum, s) => sum + (s.userCount || 0), 0),
         };
       }
       return await api.superuser.getTenantAnalytics(tenantId);
@@ -46,7 +46,7 @@ export function useSubscriptions() {
       status: school.status,
       billingEmail: school.billingEmail,
       createdAt: school.createdAt,
-      userCount: school.userCount
+      userCount: school.userCount,
     }));
   });
 }
@@ -54,6 +54,6 @@ export function useSubscriptions() {
 // Usage Monitoring
 export function useUsage(tenantId?: string) {
   return useQuery(queryKeys.superuser.usage(tenantId), () => api.superuser.getUsage(tenantId), {
-    enabled: true
+    enabled: true,
   });
 }

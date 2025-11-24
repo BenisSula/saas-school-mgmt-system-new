@@ -5,20 +5,56 @@ import { listEntities, getEntityById, deleteEntityById } from '../lib/crudHelper
 
 const table = 'teachers';
 
-export async function listTeachers(client: PoolClient, schema: string) {
-  return listEntities(client, schema, table);
+export async function listTeachers(
+  client: PoolClient,
+  schema: string,
+  options?: {
+    limit?: number;
+    offset?: number;
+    search?: string;
+  }
+) {
+  const params: unknown[] = [];
+  const conditions: string[] = [];
+  let paramIndex = 1;
+
+  if (options?.search) {
+    conditions.push(`(LOWER(name) LIKE $${paramIndex} OR LOWER(email) LIKE $${paramIndex})`);
+    params.push(`%${options.search.toLowerCase()}%`);
+    paramIndex++;
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const orderBy = 'ORDER BY created_at DESC';
+
+  let query = `SELECT * FROM ${getTableName(schema, table)} ${whereClause} ${orderBy}`;
+
+  if (options?.limit) {
+    query += ` LIMIT $${paramIndex}`;
+    params.push(options.limit);
+    paramIndex++;
+  }
+
+  if (options?.offset) {
+    query += ` OFFSET $${paramIndex}`;
+    params.push(options.offset);
+  }
+
+  const result = await client.query(query, params);
+  return result.rows;
 }
 
-export async function getTeacher<T extends Record<string, unknown> = Record<string, unknown>>(client: PoolClient, schema: string, id: string): Promise<T | null> {
+export async function getTeacher<T extends Record<string, unknown> = Record<string, unknown>>(
+  client: PoolClient,
+  schema: string,
+  id: string
+): Promise<T | null> {
   return getEntityById<T>(client, schema, table, id);
 }
 
 export async function getTeacherByEmail(client: PoolClient, schema: string, email: string) {
   const tableName = getTableName(schema, table);
-  const result = await client.query(
-    `SELECT * FROM ${tableName} WHERE email = $1 LIMIT 1`,
-    [email]
-  );
+  const result = await client.query(`SELECT * FROM ${tableName} WHERE email = $1 LIMIT 1`, [email]);
   return (result.rowCount ?? 0) > 0 ? result.rows[0] : null;
 }
 
@@ -34,7 +70,7 @@ export async function createTeacher(client: PoolClient, schema: string, payload:
       payload.name,
       payload.email,
       serializeJsonField(payload.subjects ?? []),
-      serializeJsonField(payload.assignedClasses ?? [])
+      serializeJsonField(payload.assignedClasses ?? []),
     ]
   );
 
@@ -62,7 +98,7 @@ export async function updateTeacher(
     name: payload.name ?? existing.name,
     email: payload.email ?? existing.email,
     subjects: serializeJsonField(payload.subjects ?? existing.subjects),
-    assigned_classes: serializeJsonField(payload.assignedClasses ?? existing.assigned_classes)
+    assigned_classes: serializeJsonField(payload.assignedClasses ?? existing.assigned_classes),
   };
 
   const result = await client.query(

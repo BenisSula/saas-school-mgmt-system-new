@@ -38,9 +38,7 @@ export function teacherStatsQueryOptions(tenantId: string | null) {
       const teachers = await api.listTeachers();
 
       const totalTeachers = teachers.length;
-      const activeTeachers = teachers.filter(
-        (t) => t.status === 'active' || !t.status
-      ).length;
+      const activeTeachers = teachers.filter((t) => t.status === 'active' || !t.status).length;
 
       // Group by department (assuming teachers have a department field)
       const departmentMap = new Map<string, number>();
@@ -49,19 +47,21 @@ export function teacherStatsQueryOptions(tenantId: string | null) {
         departmentMap.set(dept, (departmentMap.get(dept) || 0) + 1);
       });
 
-      const teachersByDepartment = Array.from(departmentMap.entries()).map(([department, count]) => ({
-        department,
-        count
-      }));
+      const teachersByDepartment = Array.from(departmentMap.entries()).map(
+        ([department, count]) => ({
+          department,
+          count,
+        })
+      );
 
       return {
         totalTeachers,
         activeTeachers,
-        teachersByDepartment
+        teachersByDepartment,
       };
     },
     enabled: !!tenantId,
-    ...dashboardQueryConfig
+    ...dashboardQueryConfig,
   });
 }
 
@@ -78,8 +78,7 @@ export function useTeacherStatsQuery() {
     select: (data): TeacherStats => ({
       totalTeachers: data.totalTeachers,
       activeTeachers: data.activeTeachers,
-      teachersByDepartment: data.teachersByDepartment
-    })
+      teachersByDepartment: data.teachersByDepartment,
+    }),
   });
 }
-

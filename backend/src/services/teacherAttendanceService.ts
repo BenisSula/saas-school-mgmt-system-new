@@ -30,12 +30,7 @@ export async function markTeacherAttendance(
 
   // Verify teacher is assigned to the class
   if (records.length > 0 && records[0].classId) {
-    const isAssigned = await checkTeacherAssignment(
-      client,
-      schema,
-      teacherId,
-      records[0].classId
-    );
+    const isAssigned = await checkTeacherAssignment(client, schema, teacherId, records[0].classId);
     if (!isAssigned) {
       throw new Error('Teacher is not assigned to this class');
     }
@@ -56,9 +51,9 @@ export async function markTeacherAttendance(
         teacherId,
         classId: records[0]?.classId,
         date: records[0]?.date,
-        studentCount: records.length
+        studentCount: records.length,
       },
-      severity: 'info'
+      severity: 'info',
     });
   } catch (auditError) {
     console.error('[teacherAttendanceService] Failed to create audit log:', auditError);
@@ -176,13 +171,12 @@ export async function bulkMarkTeacherAttendance(
         recordCount: records.length,
         dateRange: {
           from: records[0]?.date,
-          to: records[records.length - 1]?.date
-        }
+          to: records[records.length - 1]?.date,
+        },
       },
-      severity: 'info'
+      severity: 'info',
     });
   } catch (auditError) {
     console.error('[teacherAttendanceService] Failed to create audit log:', auditError);
   }
 }
-

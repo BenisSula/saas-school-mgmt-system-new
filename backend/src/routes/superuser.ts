@@ -9,17 +9,17 @@ import {
   getUsageMonitoring,
   listSchools,
   softDeleteSchool,
-  updateSchool
+  updateSchool,
 } from '../services/superuserService';
 import {
   createAdminSchema,
   createSchoolSchema,
   updateSchoolSchema,
-  sendAdminNotificationSchema
+  sendAdminNotificationSchema,
 } from '../validators/superuserValidator';
 import {
   listAllPlatformUsers,
-  sendNotificationToAdmins
+  sendNotificationToAdmins,
 } from '../services/platformMonitoringService';
 import billingRouter from './superuser/billing';
 import onboardingRouter from './superuser/onboarding';
@@ -66,9 +66,9 @@ router.post('/schools', async (req, res, next) => {
     const parsed = createSchoolSchema.safeParse(req.body);
     if (!parsed.success) {
       const { formatValidationErrors } = await import('../lib/validationHelpers');
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: formatValidationErrors(parsed.error),
-        errors: parsed.error.issues
+        errors: parsed.error.issues,
       });
     }
     const school = await createSchool(parsed.data, req.user?.id ?? null);
@@ -83,9 +83,9 @@ router.patch('/schools/:id', async (req, res, next) => {
     const parsed = updateSchoolSchema.safeParse(req.body);
     if (!parsed.success) {
       const { formatValidationErrors } = await import('../lib/validationHelpers');
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: formatValidationErrors(parsed.error),
-        errors: parsed.error.issues
+        errors: parsed.error.issues,
       });
     }
     const updated = await updateSchool(req.params.id, parsed.data, req.user?.id ?? null);
@@ -112,9 +112,9 @@ router.post('/schools/:id/admins', async (req, res, next) => {
     const parsed = createAdminSchema.safeParse(req.body);
     if (!parsed.success) {
       const { formatValidationErrors } = await import('../lib/validationHelpers');
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: formatValidationErrors(parsed.error),
-        errors: parsed.error.issues
+        errors: parsed.error.issues,
       });
     }
     const admin = await createAdminForSchool(req.params.id, parsed.data, req.user?.id ?? null);
@@ -141,7 +141,7 @@ router.post('/notifications', async (req, res, next) => {
     }
     const result = await sendNotificationToAdmins({
       ...parsed.data,
-      actorId: req.user?.id ?? null
+      actorId: req.user?.id ?? null,
     });
     res.status(201).json(result);
   } catch (error) {
@@ -260,28 +260,32 @@ router.use('/maintenance', maintenanceRouter);
 // PUT /superuser/subscription-tiers - Alias for subscription tier config update
 router.put('/subscription-tiers', async (req, res, next) => {
   try {
-    const { updateSubscriptionTierConfigs } = await import('../services/superuser/subscriptionTierService');
+    const { updateSubscriptionTierConfigs } = await import(
+      '../services/superuser/subscriptionTierService'
+    );
     const { z } = await import('zod');
-    
+
     const updateTierConfigsSchema = z.object({
-      configs: z.array(
-        z.object({
-          tier: z.enum(['free', 'trial', 'paid']),
-          config: z.object({
-            name: z.string().optional(),
-            description: z.string().optional(),
-            monthlyPrice: z.number().optional(),
-            yearlyPrice: z.number().optional(),
-            maxUsers: z.number().nullable().optional(),
-            maxStudents: z.number().nullable().optional(),
-            maxTeachers: z.number().nullable().optional(),
-            maxStorageGb: z.number().nullable().optional(),
-            features: z.record(z.string(), z.unknown()).optional(),
-            limits: z.record(z.string(), z.unknown()).optional(),
-            isActive: z.boolean().optional()
+      configs: z
+        .array(
+          z.object({
+            tier: z.enum(['free', 'trial', 'paid']),
+            config: z.object({
+              name: z.string().optional(),
+              description: z.string().optional(),
+              monthlyPrice: z.number().optional(),
+              yearlyPrice: z.number().optional(),
+              maxUsers: z.number().nullable().optional(),
+              maxStudents: z.number().nullable().optional(),
+              maxTeachers: z.number().nullable().optional(),
+              maxStorageGb: z.number().nullable().optional(),
+              features: z.record(z.string(), z.unknown()).optional(),
+              limits: z.record(z.string(), z.unknown()).optional(),
+              isActive: z.boolean().optional(),
+            }),
           })
-        })
-      ).min(1, 'At least one tier configuration is required')
+        )
+        .min(1, 'At least one tier configuration is required'),
     });
 
     const parsed = updateTierConfigsSchema.safeParse(req.body);

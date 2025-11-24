@@ -7,7 +7,7 @@ export const subscriptionStatusSchema = z.enum([
   'canceled',
   'past_due',
   'trialing',
-  'unpaid'
+  'unpaid',
 ]);
 export const billingCycleSchema = z.enum(['monthly', 'yearly']);
 
@@ -101,7 +101,7 @@ export async function createSubscription(
         trialStart,
         trialEnd,
         input.providerSubscriptionId || null,
-        JSON.stringify(input.metadata || {})
+        JSON.stringify(input.metadata || {}),
       ]
     );
 
@@ -120,7 +120,7 @@ export async function createSubscription(
 
     return {
       id: subscriptionId,
-      subscription: subscriptionResult.rows[0]
+      subscription: subscriptionResult.rows[0],
     };
   } catch (error) {
     await client.query('ROLLBACK');
@@ -177,7 +177,7 @@ export async function updateSubscription(
   try {
     // Get old value for history
     const oldResult = await client.query('SELECT * FROM shared.subscriptions WHERE id = $1', [
-      subscriptionId
+      subscriptionId,
     ]);
     if (oldResult.rowCount === 0) {
       throw new Error('Subscription not found');
@@ -210,7 +210,7 @@ export async function updateSubscription(
         newValue.tenant_id,
         JSON.stringify(oldValue),
         JSON.stringify(newValue),
-        actorId || null
+        actorId || null,
       ]
     );
 
@@ -250,7 +250,7 @@ export async function getSubscriptionById(
   subscriptionId: string
 ): Promise<unknown | null> {
   const result = await client.query('SELECT * FROM shared.subscriptions WHERE id = $1', [
-    subscriptionId
+    subscriptionId,
   ]);
 
   return result.rows[0] || null;
@@ -317,7 +317,7 @@ export async function renewSubscription(
         subscriptionId,
         subscription.tenant_id,
         JSON.stringify(updateResult.rows[0]),
-        actorId || null
+        actorId || null,
       ]
     );
 
@@ -393,7 +393,7 @@ export async function cancelSubscription(
         subscription.tenant_id,
         JSON.stringify(subscription),
         JSON.stringify(updateResult.rows[0]),
-        actorId || null
+        actorId || null,
       ]
     );
 

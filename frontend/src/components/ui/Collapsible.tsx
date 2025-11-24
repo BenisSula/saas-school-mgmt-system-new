@@ -19,4 +19,3 @@ export function Collapsible({ isOpen, onToggle, trigger, children }: Collapsible
 }
 
 export default Collapsible;
-

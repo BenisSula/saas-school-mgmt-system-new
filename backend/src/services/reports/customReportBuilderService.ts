@@ -221,7 +221,7 @@ export async function createCustomReport(
       input.visualizationType || 'table',
       input.rolePermissions || [],
       input.isShared || false,
-      input.createdBy || null
+      input.createdBy || null,
     ]
   );
 
@@ -242,7 +242,7 @@ export async function executeCustomReport(
 }> {
   // Get custom report
   const reportResult = await client.query('SELECT * FROM shared.custom_reports WHERE id = $1', [
-    customReportId
+    customReportId,
   ]);
 
   if (reportResult.rowCount === 0) {
@@ -260,7 +260,7 @@ export async function executeCustomReport(
     selectedColumns: report.selected_columns,
     filters: report.filters || [],
     groupBy: report.group_by,
-    orderBy: report.order_by || []
+    orderBy: report.order_by || [],
   };
 
   const query = buildCustomReportQuery(tenantSchema, config);
@@ -277,13 +277,13 @@ export async function executeCustomReport(
     name: col.alias || `${col.table}_${col.column}`,
     label:
       col.alias ||
-      `${col.table}_${col.column}`.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
+      `${col.table}_${col.column}`.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
   }));
 
   return {
     data: result.rows,
     columns,
-    rowCount: result.rowCount || 0
+    rowCount: result.rowCount || 0,
   };
 }
 

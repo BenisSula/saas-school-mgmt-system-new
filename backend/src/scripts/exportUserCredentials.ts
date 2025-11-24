@@ -54,7 +54,7 @@ const PASSWORD_MAP = new Map<string, string>([
   ['alieu.sanyang@daddyjobe.edu.gm', 'TeachDJC06@2025'],
   ['jainaba.camara@daddyjobe.edu.gm', 'TeachDJC07@2025'],
   ['lamin.bah@daddyjobe.edu.gm', 'TeachDJC08@2025'],
-  ['omar.jallow@daddyjobe.edu.gm', 'TeachDJC09@2025']
+  ['omar.jallow@daddyjobe.edu.gm', 'TeachDJC09@2025'],
 ]);
 
 async function exportCredentials() {
@@ -247,7 +247,3 @@ main().catch((error) => {
   console.error('[export] Unexpected failure', error);
   process.exit(1);
 });
-
-
-
-

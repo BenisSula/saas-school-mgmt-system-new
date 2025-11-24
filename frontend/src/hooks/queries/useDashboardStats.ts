@@ -21,7 +21,7 @@ import {
   useTodayAttendanceQuery,
   useActiveSessionsQuery,
   useLoginAttemptsQuery,
-  useRecentActivityQuery
+  useRecentActivityQuery,
 } from './dashboard';
 
 // Legacy interfaces for backward compatibility
@@ -101,7 +101,7 @@ export function useTeacherStats() {
         active: data.activeTeachers,
         assigned: data.teachersByDepartment.reduce((sum, dept) => sum + dept.count, 0), // Approximate
         unassigned:
-          data.totalTeachers - data.teachersByDepartment.reduce((sum, dept) => sum + dept.count, 0)
+          data.totalTeachers - data.teachersByDepartment.reduce((sum, dept) => sum + dept.count, 0),
       }
     : undefined;
 
@@ -130,8 +130,8 @@ export function useStudentStats() {
         byGender: {
           male: data.maleCount,
           female: data.femaleCount,
-          other: data.totalStudents - data.maleCount - data.femaleCount
-        }
+          other: data.totalStudents - data.maleCount - data.femaleCount,
+        },
       }
     : undefined;
 
@@ -150,7 +150,7 @@ export function useClassStats() {
     ? {
         total: data.totalClasses,
         withStudents: data.classesByLevel.reduce((sum, level) => sum + level.count, 0), // Approximate
-        withTeachers: data.activeClasses // Approximate
+        withTeachers: data.activeClasses, // Approximate
       }
     : undefined;
 
@@ -169,7 +169,7 @@ export function useSubjectStats() {
     ? {
         total: data.totalSubjects,
         assigned: data.assignedSubjects,
-        unassigned: data.unassignedSubjects
+        unassigned: data.unassignedSubjects,
       }
     : undefined;
 
@@ -190,7 +190,7 @@ export function useTodayAttendance() {
         absent: data.absentCount,
         late: 0, // Not available in new format
         total: data.presentCount + data.absentCount,
-        percentage: data.attendanceRate
+        percentage: data.attendanceRate,
       }
     : undefined;
 
@@ -212,7 +212,7 @@ export function useActiveSessions() {
     ipAddress: session.ipAddress || undefined,
     userAgent: session.userAgent || undefined,
     lastActivity: session.updatedAt,
-    deviceType: (session.deviceInfo as { deviceType?: string })?.deviceType || undefined
+    deviceType: (session.deviceInfo as { deviceType?: string })?.deviceType || undefined,
   }));
 
   return { data: transformed, ...rest };
@@ -232,7 +232,7 @@ export function useLoginAttempts(days = 1) {
     success: attempt.success,
     ipAddress: attempt.ipAddress || undefined,
     userAgent: attempt.userAgent || undefined,
-    timestamp: attempt.attemptedAt
+    timestamp: attempt.attemptedAt,
   }));
 
   return { data: transformed, ...rest };
@@ -255,7 +255,7 @@ export function useRecentActivity(limit = 20) {
       typeof activity.createdAt === 'string'
         ? activity.createdAt
         : activity.createdAt?.toString() || '',
-    severity: undefined // Not available in new format
+    severity: undefined, // Not available in new format
   }));
 
   return { data: transformed, ...rest };

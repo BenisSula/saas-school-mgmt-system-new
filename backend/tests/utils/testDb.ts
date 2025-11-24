@@ -7,14 +7,14 @@ import { runTenantMigrations } from '../../src/db/tenantManager';
 export async function createTestPool(): Promise<{ pool: Pool }> {
   const db = newDb({
     autoCreateForeignKeyIndices: true,
-    noAstCoverageCheck: true
+    noAstCoverageCheck: true,
   });
 
   db.registerExtension('uuid-ossp', (schema) => {
     schema.registerFunction({
       name: 'uuid_generate_v4',
       returns: DataType.uuid,
-      implementation: () => crypto.randomUUID()
+      implementation: () => crypto.randomUUID(),
     });
   });
 

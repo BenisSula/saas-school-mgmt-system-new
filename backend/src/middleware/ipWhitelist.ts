@@ -29,7 +29,7 @@ export async function enforceIpWhitelist(
       if (!allowed) {
         res.status(403).json({
           message: 'IP address not whitelisted',
-          ipAddress
+          ipAddress,
         });
         return;
       }
@@ -42,4 +42,3 @@ export async function enforceIpWhitelist(
     next(error);
   }
 }
-

@@ -21,7 +21,7 @@ export interface ButtonProps
 const SIZE_CLASSES: Record<ButtonSize, string> = {
   sm: 'px-3 py-1.5 text-sm',
   md: 'px-4 py-2 text-sm',
-  lg: 'px-5 py-3 text-base'
+  lg: 'px-5 py-3 text-base',
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -50,7 +50,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       outline:
         'border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-[rgba(29,78,216,0.08)] focus-visible:outline-[var(--brand-primary)] disabled:opacity-50',
       ghost:
-        'border border-transparent text-[var(--brand-primary)] bg-transparent hover:bg-[rgba(29,78,216,0.08)] focus-visible:outline-[var(--brand-primary)] disabled:opacity-50'
+        'border border-transparent text-[var(--brand-primary)] bg-transparent hover:bg-[rgba(29,78,216,0.08)] focus-visible:outline-[var(--brand-primary)] disabled:opacity-50',
     };
 
     // Animation-related props are already excluded from ButtonProps via Omit
@@ -72,7 +72,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       'aria-disabled': isDisabled,
       whileHover: !isDisabled ? buttonPress.hover : undefined,
       whileTap: !isDisabled ? buttonPress.tap : undefined,
-      transition: { duration: 0.15 }
+      transition: { duration: 0.15 },
     } as React.ComponentPropsWithoutRef<typeof motion.button>;
 
     return (

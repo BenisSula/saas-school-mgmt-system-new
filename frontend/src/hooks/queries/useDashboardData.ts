@@ -9,7 +9,7 @@ export function usePlatformActiveSessions() {
     queryKey: ['superuser', 'dashboard', 'active-sessions'],
     queryFn: () => api.superuser.getAllActiveSessions({ limit: 1000 }),
     staleTime: 30000, // 30 seconds
-    refetchInterval: 60000 // Refetch every minute
+    refetchInterval: 60000, // Refetch every minute
   });
 }
 
@@ -25,12 +25,12 @@ export function useFailedLoginAttempts() {
       const result = await api.superuser.getLoginAttempts({
         success: false,
         startDate: oneDayAgo,
-        limit: 1000
+        limit: 1000,
       });
       return result.total;
     },
     staleTime: 60000, // 1 minute
-    refetchInterval: 120000 // Refetch every 2 minutes
+    refetchInterval: 120000, // Refetch every 2 minutes
   });
 }
 
@@ -47,12 +47,12 @@ export function useRecentCriticalAuditLogs() {
         severity: 'critical',
         startDate: oneHourAgo,
         tags: ['security', 'authentication'],
-        limit: 50
+        limit: 50,
       });
       return result.logs;
     },
     staleTime: 30000, // 30 seconds
-    refetchInterval: 60000 // Refetch every minute
+    refetchInterval: 60000, // Refetch every minute
   });
 }
 
@@ -68,10 +68,10 @@ export function useTenantBreakdown() {
         id: school.id,
         name: school.name,
         userCount: school.userCount || 0,
-        status: school.status
+        status: school.status,
       }));
     },
-    staleTime: 120000 // 2 minutes
+    staleTime: 120000, // 2 minutes
   });
 }
 
@@ -87,7 +87,7 @@ export function useDeviceBreakdown() {
         mobile: 0,
         tablet: 0,
         desktop: 0,
-        unknown: 0
+        unknown: 0,
       };
 
       sessions.sessions.forEach((session) => {
@@ -106,7 +106,7 @@ export function useDeviceBreakdown() {
       return deviceCounts;
     },
     staleTime: 30000,
-    refetchInterval: 60000
+    refetchInterval: 60000,
   });
 }
 
@@ -118,11 +118,11 @@ export function useSessionDistribution() {
     queryKey: ['superuser', 'dashboard', 'session-distribution'],
     queryFn: async () => {
       const sessions = await api.superuser.getAllActiveSessions({ limit: 1000 });
-      
+
       // Group sessions by hour of login
       const hourlyCounts: Record<string, number> = {};
       const now = new Date();
-      
+
       // Initialize last 24 hours
       for (let i = 23; i >= 0; i--) {
         const hour = new Date(now.getTime() - i * 60 * 60 * 1000);
@@ -134,7 +134,7 @@ export function useSessionDistribution() {
       sessions.sessions.forEach((session) => {
         const loginDate = new Date(session.loginAt);
         const hoursDiff = Math.floor((now.getTime() - loginDate.getTime()) / (60 * 60 * 1000));
-        
+
         if (hoursDiff >= 0 && hoursDiff < 24) {
           const hour = new Date(loginDate);
           hour.setMinutes(0, 0, 0);
@@ -155,7 +155,6 @@ export function useSessionDistribution() {
       return sortedEntries.map(([label, value]) => ({ label, value }));
     },
     staleTime: 30000,
-    refetchInterval: 60000
+    refetchInterval: 60000,
   });
 }
-

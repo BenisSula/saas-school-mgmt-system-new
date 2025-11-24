@@ -8,7 +8,12 @@ import type { PoolClient } from 'pg';
 export interface UserWithRoles {
   id: string;
   role: string;
-  additional_roles?: Array<{ role: string; granted_at: string; granted_by?: string; metadata?: Record<string, unknown> }>;
+  additional_roles?: Array<{
+    role: string;
+    granted_at: string;
+    granted_by?: string;
+    metadata?: Record<string, unknown>;
+  }>;
 }
 
 /**
@@ -17,7 +22,10 @@ export interface UserWithRoles {
  * @param roleName - Role name to check (e.g., 'hod')
  * @returns true if user has the additional role
  */
-export function hasAdditionalRole(user: UserWithRoles | null | undefined, roleName: string): boolean {
+export function hasAdditionalRole(
+  user: UserWithRoles | null | undefined,
+  roleName: string
+): boolean {
   if (!user) return false;
   if (!user.additional_roles || !Array.isArray(user.additional_roles)) return false;
   return user.additional_roles.some((ar) => ar.role === roleName);
@@ -54,10 +62,10 @@ export function getAllUserRoles(user: UserWithRoles | null | undefined): string[
 export function getHODDepartmentId(user: UserWithRoles | null | undefined): string | null {
   if (!isHOD(user)) return null;
   if (!user?.additional_roles) return null;
-  
+
   const hodRole = user.additional_roles.find((ar) => ar.role === 'hod');
   if (!hodRole?.metadata) return null;
-  
+
   return (hodRole.metadata as { departmentId?: string })?.departmentId || null;
 }
 
@@ -77,10 +85,7 @@ export async function getUserWithAdditionalRoles(
   const userResult = await client.query<{
     id: string;
     role: string;
-  }>(
-    `SELECT id, role FROM shared.users WHERE id = $1 AND tenant_id = $2`,
-    [userId, tenantId]
-  );
+  }>(`SELECT id, role FROM shared.users WHERE id = $1 AND tenant_id = $2`, [userId, tenantId]);
 
   if (userResult.rows.length === 0) {
     return null;
@@ -108,8 +113,7 @@ export async function getUserWithAdditionalRoles(
       role: row.role,
       granted_at: row.granted_at.toISOString(),
       granted_by: row.granted_by || undefined,
-      metadata: row.metadata || undefined
-    }))
+      metadata: row.metadata || undefined,
+    })),
   };
 }
-

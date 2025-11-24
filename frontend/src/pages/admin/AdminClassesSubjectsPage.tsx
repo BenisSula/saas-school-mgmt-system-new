@@ -20,7 +20,7 @@ import {
   type Subject,
   type SubjectPayload,
   type AdminTeacherAssignment,
-  type TeacherProfile
+  type TeacherProfile,
 } from '../../lib/api';
 import { Eye } from 'lucide-react';
 
@@ -52,13 +52,13 @@ export default function AdminClassesSubjectsPage() {
     name: '',
     code: '',
     description: '',
-    id: null
+    id: null,
   });
   const [teacherForm, setTeacherForm] = useState<TeacherAssignmentForm>({
     teacherId: '',
     classId: '',
     subjectId: '',
-    isClassTeacher: false
+    isClassTeacher: false,
   });
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
   const [studentSubjects, setStudentSubjects] = useState<string[]>([]);
@@ -76,14 +76,14 @@ export default function AdminClassesSubjectsPage() {
         api.admin.listSubjects(),
         api.listTeachers(),
         api.listStudents(),
-        api.admin.listTeacherAssignments()
+        api.admin.listTeacherAssignments(),
       ]);
       setClasses(classList);
       setSubjects(subjectList);
       setTeachers(
         teacherList.map((teacher: TeacherProfile) => ({
           ...teacher,
-          subjects: Array.isArray(teacher.subjects) ? teacher.subjects : []
+          subjects: Array.isArray(teacher.subjects) ? teacher.subjects : [],
         }))
       );
       setStudents(studentList);
@@ -100,7 +100,7 @@ export default function AdminClassesSubjectsPage() {
           ...state,
           teacherId: state.teacherId || teacherList[0].id,
           classId: state.classId || (classList[0]?.id ?? ''),
-          subjectId: state.subjectId || (subjectList[0]?.id ?? '')
+          subjectId: state.subjectId || (subjectList[0]?.id ?? ''),
         }));
       }
     } catch (err) {
@@ -164,7 +164,7 @@ export default function AdminClassesSubjectsPage() {
       const payload: SubjectPayload = {
         name: subjectForm.name.trim(),
         code: subjectForm.code.trim() || undefined,
-        description: subjectForm.description.trim() || undefined
+        description: subjectForm.description.trim() || undefined,
       };
       let subject: Subject;
       if (subjectForm.id) {
@@ -215,7 +215,7 @@ export default function AdminClassesSubjectsPage() {
     () => [
       { header: 'Name', key: 'name' },
       { header: 'Code', key: 'code' },
-      { header: 'Description', key: 'description' }
+      { header: 'Description', key: 'description' },
     ],
     []
   );
@@ -227,7 +227,7 @@ export default function AdminClassesSubjectsPage() {
       await api.admin.assignTeacher(teacherForm.teacherId, {
         classId: teacherForm.classId,
         subjectId: teacherForm.subjectId,
-        isClassTeacher: teacherForm.isClassTeacher
+        isClassTeacher: teacherForm.isClassTeacher,
       });
       toast.success('Teacher assignment saved.');
       const updated = await api.admin.listTeacherAssignments();
@@ -328,18 +328,24 @@ export default function AdminClassesSubjectsPage() {
                 label="Name"
                 required
                 value={subjectForm.name}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => handleSubjectFormChange({ name: event.target.value })}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  handleSubjectFormChange({ name: event.target.value })
+                }
               />
               <Input
                 label="Code"
                 value={subjectForm.code}
                 placeholder="e.g. MATH"
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => handleSubjectFormChange({ code: event.target.value })}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  handleSubjectFormChange({ code: event.target.value })
+                }
               />
               <Input
                 label="Description"
                 value={subjectForm.description}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => handleSubjectFormChange({ description: event.target.value })}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  handleSubjectFormChange({ description: event.target.value })
+                }
               />
             </div>
             <Button type="submit">{subjectForm.id ? 'Update subject' : 'Add subject'}</Button>
@@ -360,7 +366,7 @@ export default function AdminClassesSubjectsPage() {
                         id: subject.id,
                         name: subject.name,
                         code: subject.code ?? '',
-                        description: subject.description ?? ''
+                        description: subject.description ?? '',
                       })
                     }
                   >
@@ -410,10 +416,12 @@ export default function AdminClassesSubjectsPage() {
             <Select
               label="Class"
               value={selectedClassId}
-              onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setSelectedClassId(event.target.value)}
+              onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+                setSelectedClassId(event.target.value)
+              }
               options={classes.map((clazz) => ({
                 value: clazz.id,
-                label: clazz.name
+                label: clazz.name,
               }))}
             />
             <div className="grid flex-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
@@ -477,7 +485,7 @@ export default function AdminClassesSubjectsPage() {
               }
               options={teachers.map((teacher: TeacherProfile) => ({
                 value: teacher.id,
-                label: teacher.name
+                label: teacher.name,
               }))}
             />
             <Select
@@ -488,7 +496,7 @@ export default function AdminClassesSubjectsPage() {
               }
               options={classes.map((clazz: SchoolClass) => ({
                 value: clazz.id,
-                label: clazz.name
+                label: clazz.name,
               }))}
             />
             <Select
@@ -499,7 +507,7 @@ export default function AdminClassesSubjectsPage() {
               }
               options={subjects.map((subject) => ({
                 value: subject.id,
-                label: subject.name
+                label: subject.name,
               }))}
             />
             <label className="flex items-center gap-2 text-sm text-[var(--brand-surface-contrast)]">
@@ -568,20 +576,24 @@ export default function AdminClassesSubjectsPage() {
             <Select
               label="Student"
               value={selectedStudentId}
-              onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setSelectedStudentId(event.target.value)}
+              onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+                setSelectedStudentId(event.target.value)
+              }
               options={students.map((student: StudentRecord) => ({
                 value: student.id,
-                label: `${student.first_name} ${student.last_name}`
+                label: `${student.first_name} ${student.last_name}`,
               }))}
             />
             <div className="grid gap-3 md:grid-cols-2">
               <Select
                 label="Promote / transfer to class"
                 value={promotionClassId}
-                onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setPromotionClassId(event.target.value)}
+                onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+                  setPromotionClassId(event.target.value)
+                }
                 options={classes.map((clazz: SchoolClass) => ({
                   value: clazz.id,
-                  label: clazz.name
+                  label: clazz.name,
                 }))}
               />
               <Button

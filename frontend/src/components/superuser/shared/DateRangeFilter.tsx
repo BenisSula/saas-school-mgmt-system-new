@@ -18,13 +18,13 @@ export function DateRangeFilter({
   onEndDateChange,
   quickRange,
   onQuickRangeChange,
-  className = ''
+  className = '',
 }: DateRangeFilterProps) {
   const handleQuickRangeChange = (value: string) => {
     if (!onQuickRangeChange) return;
     const range = value as '7' | '30' | '90' | 'all';
     onQuickRangeChange(range);
-    
+
     if (range === 'all') {
       onStartDateChange('');
       onEndDateChange('');
@@ -49,7 +49,7 @@ export function DateRangeFilter({
             { label: 'Last 7 days', value: '7' },
             { label: 'Last 30 days', value: '30' },
             { label: 'Last 90 days', value: '90' },
-            { label: 'All time', value: 'all' }
+            { label: 'All time', value: 'all' },
           ]}
         />
       )}
@@ -68,4 +68,3 @@ export function DateRangeFilter({
     </div>
   );
 }
-

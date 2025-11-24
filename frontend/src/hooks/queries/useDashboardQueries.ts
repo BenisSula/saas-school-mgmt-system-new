@@ -68,7 +68,7 @@ export function useStudentDashboard() {
       profileQuery.error ||
       latestExamQuery.error ||
       resultQuery.error ||
-      rosterQuery.error
+      rosterQuery.error,
   };
 }
 
@@ -96,7 +96,7 @@ export function useTeacherDashboard() {
     overview: overviewQuery.data,
     classes: classesQuery.data || [],
     loading: overviewQuery.isLoading || classesQuery.isLoading,
-    error: overviewQuery.error || classesQuery.error
+    error: overviewQuery.error || classesQuery.error,
   };
 }
 
@@ -115,9 +115,11 @@ export function useHODDashboard() {
       const isUserHOD = currentUser && isHOD(currentUser);
       const department =
         (isUserHOD && hasAdditionalRole(currentUser, 'hod')
-          ? (currentUser.additional_roles?.find((r) => r.role === 'hod')?.metadata as {
-              department?: string;
-            })?.department
+          ? (
+              currentUser.additional_roles?.find((r) => r.role === 'hod')?.metadata as {
+                department?: string;
+              }
+            )?.department
           : undefined) ||
         teacherProfile.subjects[0] ||
         'General';
@@ -137,7 +139,7 @@ export function useHODDashboard() {
         teachers: departmentTeachers,
         totalTeachers: departmentTeachers.length,
         totalStudents: students.length, // Approximate - can be enhanced
-        classes: classes.length
+        classes: classes.length,
       };
     },
     { enabled: !!user?.id }
@@ -146,6 +148,6 @@ export function useHODDashboard() {
   return {
     department: departmentQuery.data,
     loading: departmentQuery.isLoading,
-    error: departmentQuery.error
+    error: departmentQuery.error,
   };
 }

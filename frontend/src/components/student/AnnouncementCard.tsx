@@ -19,7 +19,7 @@ export function AnnouncementCard({
   message,
   teacherName,
   createdAt,
-  attachments
+  attachments,
 }: AnnouncementCardProps) {
   return (
     <Card className="p-6 hover:shadow-md transition-shadow">
@@ -37,9 +37,7 @@ export function AnnouncementCard({
                 </>
               )}
             </div>
-            <span className="text-xs text-gray-500">
-              {formatDate(createdAt)}
-            </span>
+            <span className="text-xs text-gray-500">{formatDate(createdAt)}</span>
           </div>
           <p className="text-gray-800 whitespace-pre-wrap mb-3">{message}</p>
           {attachments && attachments.length > 0 && (
@@ -65,4 +63,3 @@ export function AnnouncementCard({
     </Card>
   );
 }
-

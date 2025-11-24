@@ -44,7 +44,7 @@ export async function createTenantRecord(
       schemaName,
       subscriptionType ?? 'trial',
       status ?? 'active',
-      billingEmail ?? null
+      billingEmail ?? null,
     ]
   );
 
@@ -82,7 +82,7 @@ export async function runTenantMigrations(pool: Pool, schemaName: string): Promi
     for (const file of files) {
       const sql = await fs.promises.readFile(path.join(migrationsDir, file), 'utf-8');
       const renderedSql = sql.replace(/{{schema}}/g, schemaName);
-      
+
       // Split SQL statements properly, handling:
       // - Comments (-- style)
       // - String literals (single quotes)
@@ -93,19 +93,19 @@ export async function runTenantMigrations(pool: Pool, schemaName: string): Promi
       let inString = false;
       let inComment = false;
       let parenDepth = 0;
-      
+
       for (let i = 0; i < renderedSql.length; i++) {
         const char = renderedSql[i];
         const nextChar = renderedSql[i + 1] || '';
         const prevChar = renderedSql[i - 1] || '';
-        
+
         // Handle comments
         if (!inString && char === '-' && nextChar === '-') {
           inComment = true;
           currentStatement += char;
           continue;
         }
-        
+
         if (inComment) {
           currentStatement += char;
           if (char === '\n' || char === '\r') {
@@ -113,32 +113,32 @@ export async function runTenantMigrations(pool: Pool, schemaName: string): Promi
           }
           continue;
         }
-        
+
         // Handle string literals
         if (char === "'" && prevChar !== '\\') {
           inString = !inString;
           currentStatement += char;
           continue;
         }
-        
+
         if (inString) {
           currentStatement += char;
           continue;
         }
-        
+
         // Track parentheses depth
         if (char === '(') {
           parenDepth++;
           currentStatement += char;
           continue;
         }
-        
+
         if (char === ')') {
           parenDepth--;
           currentStatement += char;
           continue;
         }
-        
+
         // Only split on semicolon if we're not in a string, comment, or nested parentheses
         if (char === ';' && parenDepth === 0 && !inString && !inComment) {
           currentStatement += char;
@@ -151,10 +151,10 @@ export async function runTenantMigrations(pool: Pool, schemaName: string): Promi
           currentStatement = '';
           continue;
         }
-        
+
         currentStatement += char;
       }
-      
+
       // Add any remaining statement (shouldn't happen with proper SQL, but handle it)
       if (currentStatement.trim()) {
         const trimmed = currentStatement.trim();
@@ -171,10 +171,16 @@ export async function runTenantMigrations(pool: Pool, schemaName: string): Promi
             await client.query(statement);
           } catch (error) {
             const errorMsg = error instanceof Error ? error.message : String(error);
-            console.error(`[Migration Error] Failed to execute statement ${idx + 1}/${statements.length} in file ${file}:`);
-            console.error(`[Migration Error] Statement: ${statement.substring(0, 200)}${statement.length > 200 ? '...' : ''}`);
+            console.error(
+              `[Migration Error] Failed to execute statement ${idx + 1}/${statements.length} in file ${file}:`
+            );
+            console.error(
+              `[Migration Error] Statement: ${statement.substring(0, 200)}${statement.length > 200 ? '...' : ''}`
+            );
             console.error(`[Migration Error] Error: ${errorMsg}`);
-            throw new Error(`Migration failed in ${file} at statement ${idx + 1}: ${errorMsg}\nStatement: ${statement.substring(0, 100)}...`);
+            throw new Error(
+              `Migration failed in ${file} at statement ${idx + 1}: ${errorMsg}\nStatement: ${statement.substring(0, 100)}...`
+            );
           }
         }
       }

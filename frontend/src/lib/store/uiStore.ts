@@ -38,13 +38,13 @@ export const useUIStore = create<UIStore>()(
       toggleMobileSidebar: () => set((state) => ({ mobileSidebarOpen: !state.mobileSidebarOpen })),
 
       isLoading: false,
-      setLoading: (loading) => set({ isLoading: loading })
+      setLoading: (loading) => set({ isLoading: loading }),
     }),
     {
       name: 'ui-storage',
       partialize: (state) => ({
-        sidebarCollapsed: state.sidebarCollapsed
-      })
+        sidebarCollapsed: state.sidebarCollapsed,
+      }),
     }
   )
 );

@@ -8,11 +8,11 @@ export interface ViewButtonProps {
   variant?: 'solid' | 'outline' | 'ghost';
 }
 
-export function ViewButton({ 
-  onClick, 
-  label = 'View', 
+export function ViewButton({
+  onClick,
+  label = 'View',
   size = 'sm',
-  variant = 'outline'
+  variant = 'outline',
 }: ViewButtonProps) {
   return (
     <Button
@@ -26,4 +26,3 @@ export function ViewButton({
     </Button>
   );
 }
-

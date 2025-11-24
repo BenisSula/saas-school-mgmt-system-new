@@ -21,7 +21,7 @@ export default function HODProfilePage() {
       const [profileData, usersData, teachersData] = await Promise.allSettled([
         api.teacher.getProfile(),
         api.listUsers(),
-        api.listTeachers()
+        api.listTeachers(),
       ]);
 
       if (profileData.status === 'fulfilled') {
@@ -52,7 +52,7 @@ export default function HODProfilePage() {
             return {
               ...teacherProfile,
               department,
-              teachersUnderOversight
+              teachersUnderOversight,
             } as HODProfileData;
           }
         }
@@ -68,7 +68,7 @@ export default function HODProfilePage() {
   const { profile, loading, error, activities, auditLogs, uploads, setUploads } =
     useProfileData<HODProfileData>({
       profileLoader,
-      enabled: true
+      enabled: true,
     });
 
   const { uploadFile: handleFileUpload, deleteFile: handleFileDelete } = useFileUpload({
@@ -76,7 +76,7 @@ export default function HODProfilePage() {
     entityId: profile?.id,
     onUploadSuccess: (upload) => {
       setUploads((prev) => [upload, ...prev]);
-    }
+    },
   });
 
   const sections: ProfileSection[] = useMemo(
@@ -109,7 +109,7 @@ export default function HODProfilePage() {
               </div>
             )}
           </Section>
-        )
+        ),
       },
       {
         id: 'department',
@@ -125,7 +125,7 @@ export default function HODProfilePage() {
               </div>
             )}
           </Section>
-        )
+        ),
       },
       {
         id: 'subjects',
@@ -149,7 +149,7 @@ export default function HODProfilePage() {
               </div>
             )}
           </Section>
-        )
+        ),
       },
       {
         id: 'classes',
@@ -188,7 +188,7 @@ export default function HODProfilePage() {
               </div>
             )}
           </Section>
-        )
+        ),
       },
       {
         id: 'teacher-oversight',
@@ -229,7 +229,7 @@ export default function HODProfilePage() {
               </div>
             )}
           </Section>
-        )
+        ),
       },
       {
         id: 'department-analytics',
@@ -242,13 +242,13 @@ export default function HODProfilePage() {
           >
             {null}
           </Section>
-        )
+        ),
       },
       {
         id: 'activity-history',
         title: 'Activity history',
         description: 'Recent actions and events',
-        content: <ActivityHistory activities={activities} />
+        content: <ActivityHistory activities={activities} />,
       },
       {
         id: 'uploads',
@@ -267,7 +267,7 @@ export default function HODProfilePage() {
               setUploads((prev) => prev.filter((u) => u.id !== uploadId));
             }}
           />
-        )
+        ),
       },
       {
         id: 'audit-logs',
@@ -280,8 +280,8 @@ export default function HODProfilePage() {
               window.location.reload();
             }}
           />
-        )
-      }
+        ),
+      },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [profile, activities, auditLogs, uploads, setUploads]

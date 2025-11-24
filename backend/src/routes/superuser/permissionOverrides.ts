@@ -4,7 +4,7 @@ import {
   grantPermissionOverride,
   revokePermissionOverride,
   getPermissionOverridesForUser,
-  listPermissionOverrides
+  listPermissionOverrides,
 } from '../../services/superuser/permissionOverrideService';
 import { Permission } from '../../config/permissions';
 
@@ -14,13 +14,16 @@ const grantPermissionOverrideSchema = z.object({
   userId: z.string().uuid(),
   permission: z.string() as z.ZodType<Permission>,
   reason: z.string().optional(),
-  expiresAt: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid datetime format' }).optional()
+  expiresAt: z
+    .string()
+    .refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid datetime format' })
+    .optional(),
 });
 
 const revokePermissionOverrideSchema = z.object({
   userId: z.string().uuid(),
   permission: z.string() as z.ZodType<Permission>,
-  reason: z.string().optional()
+  reason: z.string().optional(),
 });
 
 // Grant permission override
@@ -37,7 +40,7 @@ router.post('/grant', async (req, res, next) => {
 
     const input = {
       ...parsed.data,
-      expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : undefined
+      expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : undefined,
     };
 
     const override = await grantPermissionOverride(input, req.user.id);
@@ -103,4 +106,3 @@ router.get('/user/:userId', async (req, res, next) => {
 });
 
 export default router;
-

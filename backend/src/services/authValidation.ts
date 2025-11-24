@@ -4,9 +4,12 @@ import {
   validateRole,
   sanitizeTenantName,
   ValidationError,
-  ALLOWED_ROLES
+  ALLOWED_ROLES,
 } from '../middleware/validation';
-import { validatePassword, getDefaultPasswordPolicy } from '../services/security/passwordPolicyService';
+import {
+  validatePassword,
+  getDefaultPasswordPolicy,
+} from '../services/security/passwordPolicyService';
 
 export interface SignUpInputRaw {
   email: string;
@@ -76,10 +79,7 @@ export function validateSignupInput(input: SignUpInputRaw): SignUpInputNormalize
   }
 
   if (!validateRole(input.role)) {
-    throw new ValidationError(
-      `Invalid role. Allowed roles: ${ALLOWED_ROLES.join(', ')}`,
-      'role'
-    );
+    throw new ValidationError(`Invalid role. Allowed roles: ${ALLOWED_ROLES.join(', ')}`, 'role');
   }
 
   const role = input.role as Role;
@@ -128,23 +128,20 @@ export function validateSignupInput(input: SignUpInputRaw): SignUpInputNormalize
     role,
     tenantId: input.tenantId,
     tenantName: sanitizedTenantName,
-    profile: input.profile
+    profile: input.profile,
   };
 }
 
 /**
  * Normalizes signup payload for consistent processing
  */
-export function normalizeSignupPayload(
-  input: SignUpInputNormalized
-): SignUpInputNormalized {
+export function normalizeSignupPayload(input: SignUpInputNormalized): SignUpInputNormalized {
   return {
     email: input.email.toLowerCase().trim(),
     password: input.password, // Keep as-is (will be hashed later)
     role: input.role,
     tenantId: input.tenantId?.trim(),
     tenantName: input.tenantName?.trim(),
-    profile: input.profile
+    profile: input.profile,
   };
 }
-

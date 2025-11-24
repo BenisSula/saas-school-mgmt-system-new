@@ -2,7 +2,10 @@ import { Router } from 'express';
 import authenticate from '../../middleware/authenticate';
 import { requirePermission } from '../../middleware/rbac';
 import { resetUserPassword, changeUserPassword } from '../../services/passwordResetService';
-import { createPasswordResetHandler, createPasswordChangeHandler } from '../../lib/passwordRouteHelpers';
+import {
+  createPasswordResetHandler,
+  createPasswordChangeHandler,
+} from '../../lib/passwordRouteHelpers';
 
 const router = Router();
 
@@ -14,18 +17,23 @@ router.use(authenticate, requirePermission('users:manage'));
  * Admin-initiated password reset (generates temporary password)
  * Admin can reset passwords for teachers, hods, and students in their tenant
  */
-router.post('/users/:userId/reset-password', createPasswordResetHandler({
-  resetPassword: resetUserPassword
-}));
+router.post(
+  '/users/:userId/reset-password',
+  createPasswordResetHandler({
+    resetPassword: resetUserPassword,
+  })
+);
 
 /**
  * POST /admin/users/:userId/change-password
  * Admin-initiated password change (sets new password directly)
  * Admin can change passwords for teachers, hods, and students in their tenant
  */
-router.post('/users/:userId/change-password', createPasswordChangeHandler({
-  changePassword: changeUserPassword
-}));
+router.post(
+  '/users/:userId/change-password',
+  createPasswordChangeHandler({
+    changePassword: changeUserPassword,
+  })
+);
 
 export default router;
-

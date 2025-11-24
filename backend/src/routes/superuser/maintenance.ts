@@ -1,7 +1,7 @@
 /**
  * SuperUser Maintenance Routes
  * Handles platform maintenance operations: migrations, cache clearing, schema health
- * 
+ *
  * Security: All routes require superuser authentication
  * DRY: Reuses existing services and middleware
  */
@@ -16,7 +16,7 @@ import {
   checkSchemaHealth,
   type MigrationResult,
   type CacheClearResult,
-  type SchemaHealthCheck
+  type SchemaHealthCheck,
 } from '../../services/superuser/maintenanceService';
 
 const router = Router();
@@ -25,15 +25,15 @@ const router = Router();
 router.use(authenticate, requireSuperuser());
 
 const runMigrationsSchema = z.object({
-  tenantId: z.string().uuid().nullable().optional()
+  tenantId: z.string().uuid().nullable().optional(),
 });
 
 const clearCacheSchema = z.object({
-  tenantId: z.string().uuid()
+  tenantId: z.string().uuid(),
 });
 
 const schemaHealthSchema = z.object({
-  tenantId: z.string().uuid().nullable().optional()
+  tenantId: z.string().uuid().nullable().optional(),
 });
 
 /**
@@ -46,7 +46,7 @@ router.post('/run-migrations', async (req, res, next) => {
     if (!parsed.success) {
       return res.status(400).json({
         message: 'Invalid request body',
-        errors: parsed.error.issues
+        errors: parsed.error.issues,
       });
     }
 
@@ -59,13 +59,14 @@ router.post('/run-migrations', async (req, res, next) => {
       res.json({
         success: true,
         message: `Successfully ran migrations for ${result.migrationsRun} tenant(s)`,
-        data: result
+        data: result,
       });
     } else {
-      res.status(207).json({ // 207 Multi-Status for partial success
+      res.status(207).json({
+        // 207 Multi-Status for partial success
         success: false,
         message: `Migrations completed with errors for ${result.migrationsRun} tenant(s)`,
-        data: result
+        data: result,
       });
     }
   } catch (error) {
@@ -81,11 +82,11 @@ router.post('/clear-cache/:schoolId', async (req, res, next) => {
   try {
     const { schoolId } = req.params;
     const parsed = clearCacheSchema.safeParse({ tenantId: schoolId });
-    
+
     if (!parsed.success) {
       return res.status(400).json({
         message: 'Invalid school ID',
-        errors: parsed.error.issues
+        errors: parsed.error.issues,
       });
     }
 
@@ -98,13 +99,13 @@ router.post('/clear-cache/:schoolId', async (req, res, next) => {
       res.json({
         success: true,
         message: `Successfully cleared ${result.clearedKeys} cache key(s)`,
-        data: result
+        data: result,
       });
     } else {
       res.status(500).json({
         success: false,
         message: 'Failed to clear cache',
-        data: result
+        data: result,
       });
     }
   } catch (error) {
@@ -120,13 +121,13 @@ router.get('/schema-health', async (req, res, next) => {
   try {
     const tenantId = req.query.tenantId as string | undefined;
     const parsed = schemaHealthSchema.safeParse({
-      tenantId: tenantId || null
+      tenantId: tenantId || null,
     });
 
     if (!parsed.success) {
       return res.status(400).json({
         message: 'Invalid query parameters',
-        errors: parsed.error.issues
+        errors: parsed.error.issues,
       });
     }
 
@@ -142,8 +143,8 @@ router.get('/schema-health', async (req, res, next) => {
         total: results.length,
         healthy: results.filter((r) => r.status === 'healthy').length,
         degraded: results.filter((r) => r.status === 'degraded').length,
-        unhealthy: results.filter((r) => r.status === 'unhealthy').length
-      }
+        unhealthy: results.filter((r) => r.status === 'unhealthy').length,
+      },
     });
   } catch (error) {
     next(error);
@@ -151,4 +152,3 @@ router.get('/schema-health', async (req, res, next) => {
 });
 
 export default router;
-

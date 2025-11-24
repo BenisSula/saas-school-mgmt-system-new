@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Faster compilation for development
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
+    // Skip type checking in dev mode (ts-node-dev handles this)
+    "skipLibCheck": true,
+    // Allow faster transpilation
+    "isolatedModules": true,
+    "verbatimModuleSyntax": false
+  },
+  "ts-node": {
+    // Faster ts-node execution
+    "transpileOnly": true,
+    "files": true,
+    "compilerOptions": {
+      "module": "commonjs"
+    }
+  }
+}
+

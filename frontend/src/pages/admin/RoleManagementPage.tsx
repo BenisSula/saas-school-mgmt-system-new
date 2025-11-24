@@ -32,7 +32,7 @@ function AdminRoleManagementPage() {
       clear();
       const [allResult, pendingResult] = await Promise.allSettled([
         api.listUsers(),
-        api.listPendingUsers()
+        api.listPendingUsers(),
       ]);
 
       if (allResult.status === 'fulfilled') {
@@ -77,13 +77,13 @@ function AdminRoleManagementPage() {
           `${user.email} approved. Profile record created. You can now edit and assign classes.`
         );
         toast.success(`${user.email} approved. Profile record created.`, {
-          description: 'You can now edit the profile to assign classes or make corrections.'
+          description: 'You can now edit the profile to assign classes or make corrections.',
         });
         setPendingUsers((current) => current.filter((candidate) => candidate.id !== user.id));
         setUsers((current) => {
           const normalised = {
             ...updated,
-            status: updated.status ?? 'active'
+            status: updated.status ?? 'active',
           };
           const exists = current.some((candidate) => candidate.id === user.id);
           if (exists) {
@@ -123,7 +123,7 @@ function AdminRoleManagementPage() {
             candidate.id === user.id
               ? {
                   ...candidate,
-                  status: updated.status ?? 'rejected'
+                  status: updated.status ?? 'rejected',
                 }
               : candidate
           )
@@ -152,7 +152,7 @@ function AdminRoleManagementPage() {
       { header: 'Status', key: 'status' as const },
       { header: 'Verified', key: 'is_verified' as const },
       { header: 'Created', key: 'created_at' as const },
-      { header: 'Actions', key: 'actions' as const }
+      { header: 'Actions', key: 'actions' as const },
     ],
     []
   );
@@ -193,7 +193,7 @@ function AdminRoleManagementPage() {
           }
         }}
       />
-    )
+    ),
   }));
 
   return (
@@ -212,179 +212,183 @@ function AdminRoleManagementPage() {
             <Button variant="outline" onClick={() => setShowRegisterModal(true)}>
               Register New User
             </Button>
-            <Button onClick={loadUsers} loading={loading} leftIcon={<RefreshCw className="h-4 w-4" />}>
+            <Button
+              onClick={loadUsers}
+              loading={loading}
+              leftIcon={<RefreshCw className="h-4 w-4" />}
+            >
               Refresh
             </Button>
           </div>
         </header>
 
-      <section className="space-y-4 rounded-2xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
-        <header className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-[var(--brand-surface-contrast)]">
-              Pending user approvals
-            </h2>
-            <div className="space-y-2">
-              <p className="text-sm text-[var(--brand-muted)]">
-                Review and approve user registrations. Users have filled in their profile details
-                during registration. You can approve to create their profile records, then make any
-                necessary adjustments (class assignments, corrections) afterward.
-              </p>
-              <p className="text-xs text-[var(--brand-muted)] italic">
-                💡 Tip: After approval, you can edit student/teacher profiles to assign classes,
-                correct information, or make other adjustments as needed.
-              </p>
+        <section className="space-y-4 rounded-2xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
+          <header className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-[var(--brand-surface-contrast)]">
+                Pending user approvals
+              </h2>
+              <div className="space-y-2">
+                <p className="text-sm text-[var(--brand-muted)]">
+                  Review and approve user registrations. Users have filled in their profile details
+                  during registration. You can approve to create their profile records, then make
+                  any necessary adjustments (class assignments, corrections) afterward.
+                </p>
+                <p className="text-xs text-[var(--brand-muted)] italic">
+                  💡 Tip: After approval, you can edit student/teacher profiles to assign classes,
+                  correct information, or make other adjustments as needed.
+                </p>
+              </div>
             </div>
-          </div>
-          <Button variant="outline" onClick={loadUsers} loading={loading}>
-            Reload
-          </Button>
-        </header>
+            <Button variant="outline" onClick={loadUsers} loading={loading}>
+              Reload
+            </Button>
+          </header>
 
-        {pendingUsers.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-[var(--brand-border)] px-4 py-6 text-sm text-[var(--brand-muted)]">
-            No pending approvals right now. New registrations will appear here for review.
-          </p>
-        ) : (
-          <ul className="space-y-4" role="list">
-            {pendingUsers.map((user) => (
-              <li
-                key={user.id}
-                role="listitem"
-                className="flex flex-col gap-4 rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/90 p-4"
-              >
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-[var(--brand-surface-contrast)]">
-                      {user.email}
-                    </p>
-                    <p className="text-xs uppercase tracking-wide text-[var(--brand-muted)]">
-                      {user.role} · {user.is_verified ? 'Verified' : 'Not verified'} · Requested on{' '}
-                      {new Date(user.created_at).toLocaleString()}
-                    </p>
-                    {/* Display profile data if available */}
-                    {user.pending_profile_data && (
-                      <div className="mt-3 rounded-lg border border-[var(--brand-border)]/50 bg-[var(--brand-surface)]/50 p-3">
-                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--brand-muted)]">
-                          Registration Details
-                        </p>
-                        <div className="space-y-1 text-xs text-[var(--brand-surface-contrast)]">
-                          {user.pending_profile_data?.fullName ? (
-                            <p>
-                              <span className="font-medium">Name:</span>{' '}
-                              {safeString(user.pending_profile_data.fullName)}
-                            </p>
-                          ) : null}
-                          {user.pending_profile_data?.gender ? (
-                            <p>
-                              <span className="font-medium">Gender:</span>{' '}
-                              {safeString(user.pending_profile_data.gender)}
-                            </p>
-                          ) : null}
-                          {user.role === 'student' && (
-                            <>
-                              {user.pending_profile_data.dateOfBirth && (
-                                <p>
-                                  <span className="font-medium">Date of Birth:</span>{' '}
-                                  {String(user.pending_profile_data.dateOfBirth)}
-                                </p>
-                              )}
-                              {user.pending_profile_data.parentGuardianName && (
-                                <p>
-                                  <span className="font-medium">Parent/Guardian:</span>{' '}
-                                  {String(user.pending_profile_data.parentGuardianName)}
-                                </p>
-                              )}
-                              {user.pending_profile_data.classId && (
-                                <p>
-                                  <span className="font-medium">Class:</span>{' '}
-                                  {String(user.pending_profile_data.classId)}
-                                </p>
-                              )}
-                            </>
-                          )}
-                          {user.role === 'teacher' && (
-                            <>
-                              {user.pending_profile_data.phone && (
-                                <p>
-                                  <span className="font-medium">Phone:</span>{' '}
-                                  {String(user.pending_profile_data.phone)}
-                                </p>
-                              )}
-                              {user.pending_profile_data.qualifications && (
-                                <p>
-                                  <span className="font-medium">Qualifications:</span>{' '}
-                                  {String(user.pending_profile_data.qualifications)}
-                                </p>
-                              )}
-                              {user.pending_profile_data.subjects &&
-                                Array.isArray(user.pending_profile_data.subjects) &&
-                                user.pending_profile_data.subjects.length > 0 && (
+          {pendingUsers.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-[var(--brand-border)] px-4 py-6 text-sm text-[var(--brand-muted)]">
+              No pending approvals right now. New registrations will appear here for review.
+            </p>
+          ) : (
+            <ul className="space-y-4" role="list">
+              {pendingUsers.map((user) => (
+                <li
+                  key={user.id}
+                  role="listitem"
+                  className="flex flex-col gap-4 rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/90 p-4"
+                >
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-[var(--brand-surface-contrast)]">
+                        {user.email}
+                      </p>
+                      <p className="text-xs uppercase tracking-wide text-[var(--brand-muted)]">
+                        {user.role} · {user.is_verified ? 'Verified' : 'Not verified'} · Requested
+                        on {new Date(user.created_at).toLocaleString()}
+                      </p>
+                      {/* Display profile data if available */}
+                      {user.pending_profile_data && (
+                        <div className="mt-3 rounded-lg border border-[var(--brand-border)]/50 bg-[var(--brand-surface)]/50 p-3">
+                          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--brand-muted)]">
+                            Registration Details
+                          </p>
+                          <div className="space-y-1 text-xs text-[var(--brand-surface-contrast)]">
+                            {user.pending_profile_data?.fullName ? (
+                              <p>
+                                <span className="font-medium">Name:</span>{' '}
+                                {safeString(user.pending_profile_data.fullName)}
+                              </p>
+                            ) : null}
+                            {user.pending_profile_data?.gender ? (
+                              <p>
+                                <span className="font-medium">Gender:</span>{' '}
+                                {safeString(user.pending_profile_data.gender)}
+                              </p>
+                            ) : null}
+                            {user.role === 'student' && (
+                              <>
+                                {user.pending_profile_data.dateOfBirth && (
                                   <p>
-                                    <span className="font-medium">Subjects:</span>{' '}
-                                    {(user.pending_profile_data.subjects as string[]).join(', ')}
+                                    <span className="font-medium">Date of Birth:</span>{' '}
+                                    {String(user.pending_profile_data.dateOfBirth)}
                                   </p>
                                 )}
-                            </>
-                          )}
-                          {user.pending_profile_data?.address ? (
-                            <p>
-                              <span className="font-medium">Address:</span>{' '}
-                              {safeString(user.pending_profile_data.address)}
-                            </p>
-                          ) : null}
+                                {user.pending_profile_data.parentGuardianName && (
+                                  <p>
+                                    <span className="font-medium">Parent/Guardian:</span>{' '}
+                                    {String(user.pending_profile_data.parentGuardianName)}
+                                  </p>
+                                )}
+                                {user.pending_profile_data.classId && (
+                                  <p>
+                                    <span className="font-medium">Class:</span>{' '}
+                                    {String(user.pending_profile_data.classId)}
+                                  </p>
+                                )}
+                              </>
+                            )}
+                            {user.role === 'teacher' && (
+                              <>
+                                {user.pending_profile_data.phone && (
+                                  <p>
+                                    <span className="font-medium">Phone:</span>{' '}
+                                    {String(user.pending_profile_data.phone)}
+                                  </p>
+                                )}
+                                {user.pending_profile_data.qualifications && (
+                                  <p>
+                                    <span className="font-medium">Qualifications:</span>{' '}
+                                    {String(user.pending_profile_data.qualifications)}
+                                  </p>
+                                )}
+                                {user.pending_profile_data.subjects &&
+                                  Array.isArray(user.pending_profile_data.subjects) &&
+                                  user.pending_profile_data.subjects.length > 0 && (
+                                    <p>
+                                      <span className="font-medium">Subjects:</span>{' '}
+                                      {(user.pending_profile_data.subjects as string[]).join(', ')}
+                                    </p>
+                                  )}
+                              </>
+                            )}
+                            {user.pending_profile_data?.address ? (
+                              <p>
+                                <span className="font-medium">Address:</span>{' '}
+                                {safeString(user.pending_profile_data.address)}
+                              </p>
+                            ) : null}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        onClick={() => {
-                          void handleApprove(user);
-                        }}
-                        disabled={loading}
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          void handleReject(user);
-                        }}
-                        disabled={loading}
-                      >
-                        Reject
-                      </Button>
+                      )}
                     </div>
-                    {user.status === 'active' && (
-                      <p className="text-xs text-[var(--brand-muted)] italic">
-                        ✓ Approved - Profile created. You can now edit and assign classes.
-                      </p>
-                    )}
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          onClick={() => {
+                            void handleApprove(user);
+                          }}
+                          disabled={loading}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            void handleReject(user);
+                          }}
+                          disabled={loading}
+                        >
+                          Reject
+                        </Button>
+                      </div>
+                      {user.status === 'active' && (
+                        <p className="text-xs text-[var(--brand-muted)] italic">
+                          ✓ Approved - Profile created. You can now edit and assign classes.
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {message ? <StatusBanner status={status} message={message} onDismiss={clear} /> : null}
+
+        <Table columns={columns} data={rows} caption="Tenant user roles" />
+
+        {/* Admin User Registration Modal */}
+        {showRegisterModal && (
+          <AdminUserRegistrationModal
+            onClose={() => setShowRegisterModal(false)}
+            onSuccess={async () => {
+              setShowRegisterModal(false);
+              await loadUsers();
+              toast.success('User registered successfully and is now active.');
+            }}
+          />
         )}
-      </section>
-
-      {message ? <StatusBanner status={status} message={message} onDismiss={clear} /> : null}
-
-      <Table columns={columns} data={rows} caption="Tenant user roles" />
-
-      {/* Admin User Registration Modal */}
-      {showRegisterModal && (
-        <AdminUserRegistrationModal
-          onClose={() => setShowRegisterModal(false)}
-          onSuccess={async () => {
-            setShowRegisterModal(false);
-            await loadUsers();
-            toast.success('User registered successfully and is now active.');
-          }}
-        />
-      )}
       </div>
     </RouteMeta>
   );

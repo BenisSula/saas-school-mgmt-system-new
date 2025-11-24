@@ -26,7 +26,7 @@ const EXPECTED_CORE_TABLES = [
   'subjects',
   'attendance_records',
   'grades',
-  'exams'
+  'exams',
 ];
 
 /**
@@ -53,7 +53,7 @@ export async function inspectSchema(pool: Pool, schemaName: string): Promise<Sch
     tableCount: tables.length,
     tables,
     missingTables,
-    expectedTables: EXPECTED_CORE_TABLES
+    expectedTables: EXPECTED_CORE_TABLES,
   };
 }
 
@@ -91,4 +91,3 @@ export async function getTableCount(pool: Pool, schemaName: string): Promise<num
 
   return parseInt(result.rows[0].count, 10);
 }
-

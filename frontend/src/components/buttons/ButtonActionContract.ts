@@ -1,6 +1,6 @@
 /**
  * Global Button Behavior Contract
- * 
+ *
  * All functional buttons must follow this contract to ensure consistent behavior:
  * 1. Execute mutation
  * 2. Show toast feedback (pending, success, error)
@@ -17,22 +17,22 @@ export interface ButtonActionConfig<TData = unknown, TVariables = unknown> {
    * The mutation to execute
    */
   mutation: UseMutationResult<TData, Error, TVariables>;
-  
+
   /**
    * Variables to pass to the mutation
    */
   variables: TVariables;
-  
+
   /**
    * Query keys to invalidate after successful mutation
    */
   invalidateQueries?: readonly unknown[][];
-  
+
   /**
    * Query client instance (optional, will use default if not provided)
    */
   queryClient?: QueryClient;
-  
+
   /**
    * Toast messages
    */
@@ -41,22 +41,22 @@ export interface ButtonActionConfig<TData = unknown, TVariables = unknown> {
     success: string;
     error?: string;
   };
-  
+
   /**
    * Toast ID for managing loading state
    */
   toastId?: string;
-  
+
   /**
    * Callback to close modal (if applicable)
    */
   onClose?: () => void;
-  
+
   /**
    * Additional success callback
    */
   onSuccess?: (data: TData) => void;
-  
+
   /**
    * Additional error callback
    */
@@ -76,7 +76,7 @@ export async function executeButtonAction<TData = unknown, TVariables = unknown>
     toastId = 'button-action',
     onClose,
     onSuccess,
-    onError
+    onError,
   } = config;
 
   // Show pending toast
@@ -114,8 +114,6 @@ export async function executeButtonAction<TData = unknown, TVariables = unknown>
  */
 export function useButtonAction<TData = unknown, TVariables = unknown>() {
   return {
-    execute: (config: ButtonActionConfig<TData, TVariables>) => 
-      executeButtonAction(config)
+    execute: (config: ButtonActionConfig<TData, TVariables>) => executeButtonAction(config),
   };
 }
-

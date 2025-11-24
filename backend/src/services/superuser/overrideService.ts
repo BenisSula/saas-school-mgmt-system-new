@@ -70,7 +70,7 @@ export async function createOverride(
       input.reason,
       actorId,
       input.expiresAt || null,
-      JSON.stringify(input.metadata || {})
+      JSON.stringify(input.metadata || {}),
     ]
   );
 
@@ -86,8 +86,8 @@ export async function createOverride(
       overrideType: input.overrideType,
       targetId: input.targetId,
       action: input.action,
-      reason: input.reason
-    }
+      reason: input.reason,
+    },
   });
 
   return override;
@@ -195,8 +195,8 @@ export async function revokeOverride(
     details: {
       overrideType: existing.overrideType,
       targetId: existing.targetId,
-      reason: reason || 'Override revoked by superuser'
-    }
+      reason: reason || 'Override revoked by superuser',
+    },
   });
 
   return revoked;
@@ -239,4 +239,3 @@ export async function cleanupExpiredOverrides(): Promise<number> {
   );
   return result.rowCount || 0;
 }
-

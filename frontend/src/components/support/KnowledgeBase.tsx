@@ -45,7 +45,7 @@ export const KnowledgeBase: React.FC = () => {
       const result = await api.support.getKbArticles({
         categoryId: selectedCategory || undefined,
         published: true,
-        search: searchQuery || undefined
+        search: searchQuery || undefined,
       });
       setArticles(result.articles as Article[]);
     } catch (error) {

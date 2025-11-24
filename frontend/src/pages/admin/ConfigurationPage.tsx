@@ -14,8 +14,18 @@ import { useAuth } from '../../context/AuthContext';
 import { formatDate } from '../../lib/utils/date';
 import { EditButton, DeleteButton, ActionButtonGroup } from '../../components/table-actions';
 import { FormModal } from '../../components/shared';
-import { useTerms, useCreateTerm, useUpdateTerm, useDeleteTerm } from '../../hooks/queries/useTerms';
-import { useClasses, useCreateClass, useUpdateClass, useDeleteClass } from '../../hooks/queries/useClasses';
+import {
+  useTerms,
+  useCreateTerm,
+  useUpdateTerm,
+  useDeleteTerm,
+} from '../../hooks/queries/useTerms';
+import {
+  useClasses,
+  useCreateClass,
+  useUpdateClass,
+  useDeleteClass,
+} from '../../hooks/queries/useClasses';
 import { queryKeys } from '../../hooks/useQuery';
 
 interface BrandingFormState {
@@ -29,7 +39,7 @@ const defaultBranding: BrandingFormState = {
   logoUrl: '',
   primaryColor: '#1d4ed8',
   secondaryColor: '#0f172a',
-  themeFlags: {}
+  themeFlags: {},
 };
 
 function toDateInput(value: string | null | undefined): string {
@@ -106,7 +116,7 @@ function AdminConfigurationPage() {
   const termModalInitialRef = useRef<HTMLInputElement>(null);
   const classModalInitialRef = useRef<HTMLInputElement>(null);
   const { status, message, setSuccess, setError, clear } = useAsyncFeedback();
-  
+
   // Use React Query hooks
   const { data: terms = [] } = useTerms();
   const { data: classes = [] } = useClasses();
@@ -130,7 +140,7 @@ function AdminConfigurationPage() {
             logoUrl: brandingResponse.logo_url ?? '',
             primaryColor: brandingResponse.primary_color ?? '',
             secondaryColor: brandingResponse.secondary_color ?? '',
-            themeFlags: (brandingResponse.theme_flags as Record<string, boolean> | null) ?? {}
+            themeFlags: (brandingResponse.theme_flags as Record<string, boolean> | null) ?? {},
           });
         }
       } catch (error) {
@@ -146,7 +156,7 @@ function AdminConfigurationPage() {
   const brandingColumns = useMemo(
     () => [
       { header: 'Key', key: 'key' },
-      { header: 'Value', key: 'value' }
+      { header: 'Value', key: 'value' },
     ],
     []
   );
@@ -161,8 +171,8 @@ function AdminConfigurationPage() {
         value:
           Object.entries(branding.themeFlags)
             .map(([flag, enabled]) => `${flag}: ${enabled ? 'on' : 'off'}`)
-            .join(', ') || 'Not set'
-      }
+            .join(', ') || 'Not set',
+      },
     ],
     [branding]
   );
@@ -175,7 +185,7 @@ function AdminConfigurationPage() {
         logo_url: sanitizeText(branding.logoUrl),
         primary_color: sanitizeText(branding.primaryColor),
         secondary_color: sanitizeText(branding.secondaryColor),
-        theme_flags: branding.themeFlags
+        theme_flags: branding.themeFlags,
       };
       await api.updateBranding(payload);
       setSuccess('Branding saved.');
@@ -194,7 +204,7 @@ function AdminConfigurationPage() {
     const payload = {
       name: sanitizeText(termForm.name),
       startsOn: termForm.startsOn,
-      endsOn: termForm.endsOn
+      endsOn: termForm.endsOn,
     };
     const validationMessage = validateTermInput(payload);
     if (validationMessage) {
@@ -216,7 +226,7 @@ function AdminConfigurationPage() {
     clear();
     const payload = {
       name: sanitizeText(classForm.name),
-      description: classForm.description.trim() ? sanitizeText(classForm.description) : undefined
+      description: classForm.description.trim() ? sanitizeText(classForm.description) : undefined,
     };
     const validationMessage = validateClassInput(payload);
     if (validationMessage) {
@@ -240,7 +250,7 @@ function AdminConfigurationPage() {
         id: term.id,
         name: term.name,
         startsOn: toDateInput(term.starts_on),
-        endsOn: toDateInput(term.ends_on)
+        endsOn: toDateInput(term.ends_on),
       });
     },
     [clear]
@@ -250,13 +260,15 @@ function AdminConfigurationPage() {
     setTermEditor(null);
   }, []);
 
-  const getTermUpdateVariables = (): { id: string; data: { name: string; startsOn: string; endsOn: string } } | undefined => {
+  const getTermUpdateVariables = ():
+    | { id: string; data: { name: string; startsOn: string; endsOn: string } }
+    | undefined => {
     if (!termEditor) return undefined;
-    
+
     const payload = {
       name: sanitizeText(termEditor.name),
       startsOn: termEditor.startsOn,
-      endsOn: termEditor.endsOn
+      endsOn: termEditor.endsOn,
     };
     const validationMessage = validateTermInput(payload);
     if (validationMessage) {
@@ -264,13 +276,12 @@ function AdminConfigurationPage() {
       toast.error(validationMessage);
       return undefined;
     }
-    
+
     return {
       id: termEditor.id,
-      data: payload
+      data: payload,
     };
   };
-
 
   const openClassEditor = useCallback(
     (classItem: SchoolClass) => {
@@ -278,7 +289,7 @@ function AdminConfigurationPage() {
       setClassEditor({
         id: classItem.id,
         name: classItem.name,
-        description: classItem.description ?? ''
+        description: classItem.description ?? '',
       });
     },
     [clear]
@@ -288,14 +299,16 @@ function AdminConfigurationPage() {
     setClassEditor(null);
   }, []);
 
-  const getClassUpdateVariables = (): { id: string; data: { name: string; description?: string } } | undefined => {
+  const getClassUpdateVariables = ():
+    | { id: string; data: { name: string; description?: string } }
+    | undefined => {
     if (!classEditor) return undefined;
-    
+
     const payload = {
       name: sanitizeText(classEditor.name),
       description: classEditor.description.trim()
         ? sanitizeText(classEditor.description)
-        : undefined
+        : undefined,
     };
     const validationMessage = validateClassInput(payload);
     if (validationMessage) {
@@ -303,13 +316,12 @@ function AdminConfigurationPage() {
       toast.error(validationMessage);
       return undefined;
     }
-    
+
     return {
       id: classEditor.id,
-      data: payload
+      data: payload,
     };
   };
-
 
   const termColumns = useMemo(
     () => [
@@ -317,12 +329,12 @@ function AdminConfigurationPage() {
       {
         header: 'Starts',
         key: 'starts_on',
-        render: (row: AcademicTerm) => formatDate(row.starts_on)
+        render: (row: AcademicTerm) => formatDate(row.starts_on),
       },
       {
         header: 'Ends',
         key: 'ends_on',
-        render: (row: AcademicTerm) => formatDate(row.ends_on)
+        render: (row: AcademicTerm) => formatDate(row.ends_on),
       },
       {
         header: 'Actions',
@@ -343,7 +355,7 @@ function AdminConfigurationPage() {
                 messages={{
                   pending: 'Deleting term...',
                   success: 'Term deleted successfully',
-                  error: 'Failed to delete term'
+                  error: 'Failed to delete term',
                 }}
                 confirmMessage={`Delete "${row.name}"? This cannot be undone and may impact reporting tied to this term.`}
                 onSuccess={() => {
@@ -354,8 +366,8 @@ function AdminConfigurationPage() {
               />
             </ActionButtonGroup>
           );
-        }
-      }
+        },
+      },
     ],
     [openTermEditor, deleteTermMutation, updateTermMutation, termEditor]
   );
@@ -366,7 +378,7 @@ function AdminConfigurationPage() {
       {
         header: 'Description',
         key: 'description',
-        render: (row: SchoolClass) => row.description ?? '—'
+        render: (row: SchoolClass) => row.description ?? '—',
       },
       {
         header: 'Actions',
@@ -387,7 +399,7 @@ function AdminConfigurationPage() {
                 messages={{
                   pending: 'Deleting class...',
                   success: 'Class deleted successfully',
-                  error: 'Failed to delete class'
+                  error: 'Failed to delete class',
                 }}
                 confirmMessage={`Delete class "${row.name}"? Students mapped to this class may appear in unassigned listings.`}
                 onSuccess={() => {
@@ -398,8 +410,8 @@ function AdminConfigurationPage() {
               />
             </ActionButtonGroup>
           );
-        }
-      }
+        },
+      },
     ],
     [openClassEditor, deleteClassMutation, updateClassMutation, classEditor]
   );
@@ -466,12 +478,12 @@ function AdminConfigurationPage() {
             onChange={(event) =>
               setBranding((state) => ({
                 ...state,
-                themeFlags: { ...state.themeFlags, darkMode: event.target.value === 'enabled' }
+                themeFlags: { ...state.themeFlags, darkMode: event.target.value === 'enabled' },
               }))
             }
             options={[
               { label: 'Enabled', value: 'enabled' },
-              { label: 'Disabled', value: 'disabled' }
+              { label: 'Disabled', value: 'disabled' },
             ]}
             disabled={pendingAction === 'save-branding'}
           />
@@ -582,11 +594,11 @@ function AdminConfigurationPage() {
         onClose={closeTermEditor}
         mutation={updateTermMutation}
         variables={getTermUpdateVariables()}
-            invalidateQueries={[queryKeys.admin.subjects()] as unknown as unknown[][]}
+        invalidateQueries={[queryKeys.admin.subjects()] as unknown as unknown[][]}
         messages={{
           pending: 'Updating term...',
           success: 'Term updated successfully',
-          error: 'Failed to update term'
+          error: 'Failed to update term',
         }}
         onSuccess={() => {
           setTermEditor(null);
@@ -642,7 +654,7 @@ function AdminConfigurationPage() {
         messages={{
           pending: 'Updating class...',
           success: 'Class updated successfully',
-          error: 'Failed to update class'
+          error: 'Failed to update class',
         }}
         onSuccess={() => {
           setClassEditor(null);

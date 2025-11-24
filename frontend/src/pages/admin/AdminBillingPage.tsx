@@ -18,7 +18,7 @@ export default function AdminBillingPage() {
     if (!cents) return 'N/A';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency
+      currency,
     }).format(cents / 100);
   };
 
@@ -27,7 +27,7 @@ export default function AdminBillingPage() {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 

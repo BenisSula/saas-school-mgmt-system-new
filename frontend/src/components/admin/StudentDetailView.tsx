@@ -15,11 +15,11 @@ export interface StudentDetailViewProps {
  * Displays all student information using APIs
  */
 export function StudentDetailView({ studentId }: StudentDetailViewProps) {
-  const { data: student, isLoading, error } = useQuery(
-    ['student', studentId],
-    () => api.getStudent(studentId),
-    { enabled: !!studentId }
-  );
+  const {
+    data: student,
+    isLoading,
+    error,
+  } = useQuery(['student', studentId], () => api.getStudent(studentId), { enabled: !!studentId });
 
   // Fetch student subjects if available
   const { data: studentSubjects } = useQuery(
@@ -45,25 +45,42 @@ export function StudentDetailView({ studentId }: StudentDetailViewProps) {
     return <StatusBanner status="error" message="Student not found" />;
   }
 
-  const fullName = `${student.first_name} ${student.last_name}`;
-  const age = student.date_of_birth
-    ? Math.floor((new Date().getTime() - new Date(student.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-    : null;
+  // Memoize expensive computations
+  const fullName = useMemo(
+    () => `${student.first_name} ${student.last_name}`,
+    [student.first_name, student.last_name]
+  );
 
-  const parentContacts = Array.isArray(student.parent_contacts)
-    ? student.parent_contacts
-    : typeof student.parent_contacts === 'string'
-      ? JSON.parse(student.parent_contacts || '[]')
-      : [];
+  const age = useMemo(() => {
+    if (!student.date_of_birth) return null;
+    return Math.floor(
+      (new Date().getTime() - new Date(student.date_of_birth).getTime()) /
+        (365.25 * 24 * 60 * 60 * 1000)
+    );
+  }, [student.date_of_birth]);
+
+  const parentContacts = useMemo(() => {
+    if (Array.isArray(student.parent_contacts)) {
+      return student.parent_contacts;
+    }
+    if (typeof student.parent_contacts === 'string') {
+      try {
+        return JSON.parse(student.parent_contacts || '[]');
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  }, [student.parent_contacts]);
 
   const fields: DetailField[] = [
     {
       label: 'Full Name',
-      value: fullName
+      value: fullName,
     },
     {
       label: 'Admission Number',
-      value: student.admission_number || 'Not assigned'
+      value: student.admission_number || 'Not assigned',
     },
     {
       label: 'Date of Birth',
@@ -77,7 +94,7 @@ export function StudentDetailView({ studentId }: StudentDetailViewProps) {
         </div>
       ) : (
         'Not provided'
-      )
+      ),
     },
     {
       label: 'Class',
@@ -88,7 +105,7 @@ export function StudentDetailView({ studentId }: StudentDetailViewProps) {
         </div>
       ) : (
         'Not assigned'
-      )
+      ),
     },
     {
       label: 'Enrollment Status',
@@ -106,11 +123,11 @@ export function StudentDetailView({ studentId }: StudentDetailViewProps) {
         >
           {student.enrollment_status || 'active'}
         </span>
-      )
+      ),
     },
     {
       label: 'Student ID',
-      value: student.id
+      value: student.id,
     },
     {
       label: 'Subjects',
@@ -130,53 +147,56 @@ export function StudentDetailView({ studentId }: StudentDetailViewProps) {
           )}
         </div>
       ),
-      span: 2
+      span: 2,
     },
     {
       label: 'Parent/Guardian Contacts',
-      value: parentContacts.length > 0 ? (
-        <div className="space-y-2">
-          {parentContacts.map((contact: { name: string; relationship: string; phone: string }, idx: number) => (
-            <div
-              key={idx}
-              className="rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface)]/50 p-3"
-            >
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-[var(--brand-muted)]" />
-                <span className="font-medium">{contact.name}</span>
-                <span className="text-[var(--brand-muted)]">({contact.relationship})</span>
-              </div>
-              {contact.phone && (
-                <div className="mt-1 flex items-center gap-2 text-sm text-[var(--brand-muted)]">
-                  <Phone className="h-3 w-3" />
-                  <a
-                    href={`tel:${contact.phone}`}
-                    className="text-[var(--brand-primary)] hover:underline"
-                  >
-                    {contact.phone}
-                  </a>
+      value:
+        parentContacts.length > 0 ? (
+          <div className="space-y-2">
+            {parentContacts.map(
+              (contact: { name: string; relationship: string; phone: string }, idx: number) => (
+                <div
+                  key={idx}
+                  className="rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface)]/50 p-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-[var(--brand-muted)]" />
+                    <span className="font-medium">{contact.name}</span>
+                    <span className="text-[var(--brand-muted)]">({contact.relationship})</span>
+                  </div>
+                  {contact.phone && (
+                    <div className="mt-1 flex items-center gap-2 text-sm text-[var(--brand-muted)]">
+                      <Phone className="h-3 w-3" />
+                      <a
+                        href={`tel:${contact.phone}`}
+                        className="text-[var(--brand-primary)] hover:underline"
+                      >
+                        {contact.phone}
+                      </a>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
-      ) : (
-        <span className="text-[var(--brand-muted)]">No parent/guardian contacts</span>
-      ),
-      span: 2
+              )
+            )}
+          </div>
+        ) : (
+          <span className="text-[var(--brand-muted)]">No parent/guardian contacts</span>
+        ),
+      span: 2,
     },
     {
       label: 'Account Created',
       value: student.created_at
         ? new Date(student.created_at).toLocaleDateString()
-        : 'Not available'
+        : 'Not available',
     },
     {
       label: 'Last Updated',
       value: student.updated_at
         ? new Date(student.updated_at).toLocaleDateString()
-        : 'Not available'
-    }
+        : 'Not available',
+    },
   ];
 
   return (
@@ -187,4 +207,3 @@ export function StudentDetailView({ studentId }: StudentDetailViewProps) {
 }
 
 export default StudentDetailView;
-

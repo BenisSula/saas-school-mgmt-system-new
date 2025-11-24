@@ -49,12 +49,12 @@ export function useExport<T extends Record<string, unknown>>() {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
-                  Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                  Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
                 },
                 body: JSON.stringify({
                   format,
-                  ...apiPayload
-                })
+                  ...apiPayload,
+                }),
               });
 
               if (!response.ok) {
@@ -71,21 +71,25 @@ export function useExport<T extends Record<string, unknown>>() {
               a.click();
               document.body.removeChild(a);
               window.URL.revokeObjectURL(url);
-              
+
               toast.success(`${format.toUpperCase()} exported successfully`);
               return;
             } catch (error) {
               console.error('Export error:', error);
-              toast.error(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+              toast.error(
+                `Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+              );
               // Fallback to CSV
               toast.info('Falling back to CSV export');
               exportToCSV(data, filename, headers);
               return;
             }
           }
-          
+
           // If no backend endpoint, fallback to CSV
-          toast.info(`${format.toUpperCase()} export requires backend endpoint. Exporting as CSV instead.`);
+          toast.info(
+            `${format.toUpperCase()} export requires backend endpoint. Exporting as CSV instead.`
+          );
           exportToCSV(data, filename, headers);
           return;
         }
@@ -129,12 +133,12 @@ export function createExportHandlers<T extends Record<string, unknown>>(
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+              Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
             },
             body: JSON.stringify({
               format: 'pdf',
-              ...apiPayload
-            })
+              ...apiPayload,
+            }),
           });
 
           if (!response.ok) {
@@ -151,7 +155,7 @@ export function createExportHandlers<T extends Record<string, unknown>>(
           a.click();
           document.body.removeChild(a);
           window.URL.revokeObjectURL(url);
-          
+
           toast.success('PDF exported successfully');
         } catch (error) {
           console.error('Export error:', error);
@@ -172,12 +176,12 @@ export function createExportHandlers<T extends Record<string, unknown>>(
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+              Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
             },
             body: JSON.stringify({
               format: 'excel',
-              ...apiPayload
-            })
+              ...apiPayload,
+            }),
           });
 
           if (!response.ok) {
@@ -194,7 +198,7 @@ export function createExportHandlers<T extends Record<string, unknown>>(
           a.click();
           document.body.removeChild(a);
           window.URL.revokeObjectURL(url);
-          
+
           toast.success('Excel exported successfully');
         } catch (error) {
           console.error('Export error:', error);
@@ -207,7 +211,6 @@ export function createExportHandlers<T extends Record<string, unknown>>(
         toast.info('Excel export requires backend endpoint. Exporting as CSV instead.');
         exportToCSV(data, filename, headers);
       }
-    }
+    },
   };
 }
-

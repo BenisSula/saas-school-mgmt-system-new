@@ -17,16 +17,18 @@ export default function StudentResourcesPage() {
   // Get student profile to get classId
   const { data: profile } = useQuery({
     queryKey: ['student', 'profile'],
-    queryFn: () => api.student.getProfile()
+    queryFn: () => api.student.getProfile(),
   });
 
   const classId = useMemo(() => {
     if (!profile) return undefined;
     // Profile has classId or className field
-    return (profile as { classId?: string; className?: string }).classId || 
-           (profile as { classId?: string; className?: string }).className;
+    return (
+      (profile as { classId?: string; className?: string }).classId ||
+      (profile as { classId?: string; className?: string }).className
+    );
   }, [profile]);
-  
+
   const { data: resources, isLoading } = useStudentResources(classId);
 
   const handleDownload = (fileUrl: string, filename: string) => {
@@ -85,4 +87,3 @@ export default function StudentResourcesPage() {
     </RouteMeta>
   );
 }
-

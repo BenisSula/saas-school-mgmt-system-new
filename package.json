@@ -7,6 +7,7 @@
     "test": "npm run test --prefix backend && npm run test --prefix frontend",
     "format": "npm run format --prefix backend && npm run format --prefix frontend",
     "format:write": "npm run format:write --prefix backend && npm run format:write --prefix frontend",
+    "generate:api-types": "openapi-typescript backend/openapi.yaml -o frontend/src/lib/api-types.ts",
     "qa:test": "node scripts/qa-test-runner.js",
     "qa:setup": "powershell -ExecutionPolicy Bypass -File scripts/setup-qa-environment.ps1",
     "load:test:export": "node scripts/load-tests/export-load-test.js",
@@ -24,7 +25,8 @@
     "lint-staged": "^16.2.6",
     "eslint-plugin-react": "^7.37.3",
     "eslint-plugin-react-hooks": "^5.1.0",
-    "globals": "^15.12.0"
+    "globals": "^15.12.0",
+    "openapi-typescript": "^7.4.2"
   },
   "lint-staged": {
     "backend/src/**/*.ts": [

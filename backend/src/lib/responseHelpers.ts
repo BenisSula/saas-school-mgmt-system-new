@@ -1,15 +1,15 @@
 /**
  * Standardized API Response Helpers
  * Ensures all endpoints return consistent { success, message, data } format
- * 
+ *
  * CONSOLIDATED: This is the canonical file for error and success response helpers.
- * 
+ *
  * MERGED FROM: backend/src/lib/apiErrors.ts
  * - apiErrors.ts used 'status: error|success' format (incompatible)
  * - responseHelpers.ts uses 'success: boolean' format (canonical, used in 15+ files)
  * - apiErrors.ts ApiSuccessResponse interface was simpler than responseHelpers createPaginatedSuccessResponse
  * - DECISION: Keep responseHelpers.ts format, apiErrors.ts marked for removal
- * 
+ *
  * STATUS: ✅ COMPLETE - Canonical file ready
  */
 
@@ -37,7 +37,7 @@ export function createSuccessResponse<T>(
   return {
     success: true,
     message,
-    data
+    data,
   };
 }
 
@@ -53,7 +53,7 @@ export function createErrorResponse(
     success: false,
     message,
     ...(field && { field }),
-    ...(code && { code })
+    ...(code && { code }),
   };
 }
 
@@ -79,8 +79,7 @@ export function createPaginatedSuccessResponse<T>(
     message,
     data: {
       items: data,
-      pagination
-    }
+      pagination,
+    },
   };
 }
-

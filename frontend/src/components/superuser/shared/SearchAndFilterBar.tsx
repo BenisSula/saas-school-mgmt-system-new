@@ -23,7 +23,7 @@ export function SearchAndFilterBar({
   searchPlaceholder = 'Search...',
   filters = [],
   onClearFilters,
-  className = ''
+  className = '',
 }: SearchAndFilterBarProps) {
   const hasActiveFilters = searchValue || filters.some((f) => f.value && f.value !== 'all');
 
@@ -68,4 +68,3 @@ export function SearchAndFilterBar({
     </div>
   );
 }
-

@@ -50,14 +50,14 @@ async function checkDatabase(): Promise<ComponentHealth> {
       const poolStats = {
         total: pool.totalCount,
         idle: pool.idleCount,
-        waiting: pool.waitingCount
+        waiting: pool.waitingCount,
       };
 
       return {
         status: responseTime < 1000 ? 'healthy' : responseTime < 3000 ? 'degraded' : 'unhealthy',
         responseTime,
         message: `Pool: ${poolStats.total} total, ${poolStats.idle} idle, ${poolStats.waiting} waiting`,
-        lastChecked: new Date().toISOString()
+        lastChecked: new Date().toISOString(),
       };
     } finally {
       client.release();
@@ -67,7 +67,7 @@ async function checkDatabase(): Promise<ComponentHealth> {
       status: 'unhealthy',
       responseTime: Date.now() - start,
       message: error instanceof Error ? error.message : 'Database connection failed',
-      lastChecked: new Date().toISOString()
+      lastChecked: new Date().toISOString(),
     };
   }
 }
@@ -106,7 +106,7 @@ function getSystemMetrics(): HealthStatus['metrics'] {
   return {
     memoryUsage: memoryUsageMB,
     activeConnections: 0, // Will be updated by metrics middleware
-    requestRate: 0 // Will be updated by metrics middleware
+    requestRate: 0, // Will be updated by metrics middleware
   };
 }
 
@@ -118,11 +118,11 @@ export async function getHealthStatus(): Promise<HealthStatus> {
     checkDatabase(),
     checkRedis(),
     checkStorage(),
-    checkExternalApis()
+    checkExternalApis(),
   ]);
 
   const checks: HealthStatus['checks'] = {
-    database: databaseHealth
+    database: databaseHealth,
   };
 
   if (redisHealth) checks.redis = redisHealth;
@@ -145,7 +145,7 @@ export async function getHealthStatus(): Promise<HealthStatus> {
     version: process.env.npm_package_version || '1.0.0',
     uptime: Math.floor((Date.now() - startTime) / 1000),
     checks,
-    metrics: getSystemMetrics()
+    metrics: getSystemMetrics(),
   };
 }
 
@@ -165,7 +165,7 @@ export async function getReadinessStatus(): Promise<{
 
   return {
     ready: health.status === 'healthy',
-    checks
+    checks,
   };
 }
 
@@ -175,6 +175,6 @@ export async function getReadinessStatus(): Promise<{
 export function getLivenessStatus(): { alive: boolean; uptime: number } {
   return {
     alive: true,
-    uptime: Math.floor((Date.now() - startTime) / 1000)
+    uptime: Math.floor((Date.now() - startTime) / 1000),
   };
 }

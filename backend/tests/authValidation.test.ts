@@ -14,8 +14,8 @@ describe('Auth Validation', () => {
         profile: {
           fullName: 'John Doe',
           gender: 'male',
-          dateOfBirth: '2010-01-01'
-        }
+          dateOfBirth: '2010-01-01',
+        },
       };
 
       const result = validateSignupInput(input);
@@ -36,8 +36,8 @@ describe('Auth Validation', () => {
         profile: {
           fullName: 'Jane Smith',
           phone: '+1234567890',
-          subjects: ['mathematics', 'physics']
-        }
+          subjects: ['mathematics', 'physics'],
+        },
       };
 
       const result = validateSignupInput(input);
@@ -52,7 +52,7 @@ describe('Auth Validation', () => {
         email: 'admin@newschool.edu',
         password: 'AdminPass789!',
         role: 'admin',
-        tenantName: 'New School District'
+        tenantName: 'New School District',
       };
 
       const result = validateSignupInput(input);
@@ -68,7 +68,7 @@ describe('Auth Validation', () => {
         email: 'invalid-email',
         password: 'StrongPass123!',
         role: 'student',
-        tenantId: 'tenant-123'
+        tenantId: 'tenant-123',
       };
 
       expect(() => validateSignupInput(input)).toThrow('Invalid email format');
@@ -87,7 +87,7 @@ describe('Auth Validation', () => {
         email: 'student@example.com',
         password: 'Short1!',
         role: 'student',
-        tenantId: 'tenant-123'
+        tenantId: 'tenant-123',
       };
 
       expect(() => validateSignupInput(input)).toThrow(/Password validation failed/);
@@ -106,7 +106,7 @@ describe('Auth Validation', () => {
         email: 'student@example.com',
         password: 'lowercase123!',
         role: 'student',
-        tenantId: 'tenant-123'
+        tenantId: 'tenant-123',
       };
 
       expect(() => {
@@ -124,7 +124,7 @@ describe('Auth Validation', () => {
         email: 'student@example.com',
         password: 'UPPERCASE123!',
         role: 'student',
-        tenantId: 'tenant-123'
+        tenantId: 'tenant-123',
       };
 
       expect(() => {
@@ -142,7 +142,7 @@ describe('Auth Validation', () => {
         email: 'student@example.com',
         password: 'NoNumberPass!',
         role: 'student',
-        tenantId: 'tenant-123'
+        tenantId: 'tenant-123',
       };
 
       expect(() => {
@@ -160,7 +160,7 @@ describe('Auth Validation', () => {
         email: 'student@example.com',
         password: 'NoSymbolPass123',
         role: 'student',
-        tenantId: 'tenant-123'
+        tenantId: 'tenant-123',
       };
 
       expect(() => {
@@ -178,7 +178,7 @@ describe('Auth Validation', () => {
         email: 'user@example.com',
         password: 'StrongPass123!',
         role: 'invalid-role' as 'student' | 'teacher' | 'admin',
-        tenantId: 'tenant-123'
+        tenantId: 'tenant-123',
       };
 
       expect(() => {
@@ -197,7 +197,7 @@ describe('Auth Validation', () => {
         email: 'superadmin@example.com',
         password: 'StrongPass123!',
         role: 'superadmin' as 'student' | 'teacher' | 'admin',
-        tenantId: 'tenant-123'
+        tenantId: 'tenant-123',
       };
 
       expect(() => {
@@ -216,7 +216,7 @@ describe('Auth Validation', () => {
         email: 'hod@example.com',
         password: 'StrongPass123!',
         role: 'hod' as 'student' | 'teacher' | 'admin',
-        tenantId: 'tenant-123'
+        tenantId: 'tenant-123',
       };
 
       expect(() => {
@@ -233,7 +233,7 @@ describe('Auth Validation', () => {
       const input: SignUpInputRaw = {
         email: 'admin@example.com',
         password: 'StrongPass123!',
-        role: 'admin'
+        role: 'admin',
       };
 
       expect(() => {
@@ -253,7 +253,7 @@ describe('Auth Validation', () => {
       const input: SignUpInputRaw = {
         email: 'student@example.com',
         password: 'StrongPass123!',
-        role: 'student'
+        role: 'student',
       };
 
       expect(() => {
@@ -271,7 +271,7 @@ describe('Auth Validation', () => {
       const input: SignUpInputRaw = {
         email: 'teacher@example.com',
         password: 'StrongPass123!',
-        role: 'teacher'
+        role: 'teacher',
       };
 
       expect(() => {
@@ -289,7 +289,7 @@ describe('Auth Validation', () => {
         email: 'admin@example.com',
         password: 'StrongPass123!',
         role: 'admin',
-        tenantName: '  New School @#$% District  '
+        tenantName: '  New School @#$% District  ',
       };
 
       const result = validateSignupInput(input);
@@ -301,7 +301,7 @@ describe('Auth Validation', () => {
         email: '',
         password: 'StrongPass123!',
         role: 'student',
-        tenantId: 'tenant-123'
+        tenantId: 'tenant-123',
       };
 
       expect(() => {
@@ -320,7 +320,7 @@ describe('Auth Validation', () => {
         email: 'student@example.com',
         password: '',
         role: 'student',
-        tenantId: 'tenant-123'
+        tenantId: 'tenant-123',
       };
 
       expect(() => {
@@ -341,7 +341,7 @@ describe('Auth Validation', () => {
         email: '  USER@EXAMPLE.COM  ',
         password: 'StrongPass123!',
         role: 'student' as const,
-        tenantId: 'tenant-123'
+        tenantId: 'tenant-123',
       };
 
       const result = normalizeSignupPayload(input);
@@ -354,7 +354,7 @@ describe('Auth Validation', () => {
         password: 'StrongPass123!',
         role: 'student' as const,
         tenantId: '  tenant-123  ',
-        tenantName: '  School Name  '
+        tenantName: '  School Name  ',
       };
 
       const result = normalizeSignupPayload(input);

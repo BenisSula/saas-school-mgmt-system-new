@@ -9,15 +9,15 @@ export interface ExportButtonProps {
   format?: 'CSV' | 'PDF' | 'Excel';
 }
 
-export function ExportButton({ 
-  onClick, 
-  label, 
+export function ExportButton({
+  onClick,
+  label,
   size = 'sm',
   variant = 'outline',
-  format
+  format,
 }: ExportButtonProps) {
   const displayLabel = label || (format ? `Export ${format}` : 'Export');
-  
+
   return (
     <Button
       size={size}
@@ -30,4 +30,3 @@ export function ExportButton({
     </Button>
   );
 }
-

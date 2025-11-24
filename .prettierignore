@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Build outputs
+dist/
+build/
+coverage/
+.next/
+out/
+
+# Generated files
+*.min.js
+*.min.css
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Husky
+.husky/_/
+
+# Generated API types
+frontend/src/lib/api-types.ts
+frontend/src/lib/api-types.d.ts
+

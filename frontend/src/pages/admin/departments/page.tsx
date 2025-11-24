@@ -17,7 +17,7 @@ import {
   useDepartments,
   useCreateDepartment,
   useUpdateDepartment,
-  useDeleteDepartment
+  useDeleteDepartment,
 } from '../../../hooks/queries/admin/useDepartments';
 
 interface Department {
@@ -41,7 +41,7 @@ export default function AdminDepartmentsPage() {
     name: '',
     slug: '',
     contactEmail: '',
-    contactPhone: ''
+    contactPhone: '',
   });
 
   const { data, isLoading, error } = useDepartments(true);
@@ -54,7 +54,7 @@ export default function AdminDepartmentsPage() {
       onSuccess: () => {
         setIsCreateModalOpen(false);
         setFormData({ name: '', slug: '', contactEmail: '', contactPhone: '' });
-      }
+      },
     });
   };
 
@@ -64,7 +64,7 @@ export default function AdminDepartmentsPage() {
       name: dept.name,
       slug: dept.slug,
       contactEmail: dept.contactEmail || '',
-      contactPhone: dept.contactPhone || ''
+      contactPhone: dept.contactPhone || '',
     });
     setIsEditModalOpen(true);
   };
@@ -77,7 +77,7 @@ export default function AdminDepartmentsPage() {
         onSuccess: () => {
           setIsEditModalOpen(false);
           setSelectedDepartment(null);
-        }
+        },
       }
     );
   };
@@ -99,12 +99,12 @@ export default function AdminDepartmentsPage() {
     {
       key: 'hodCount',
       label: 'HODs',
-      render: (dept) => dept.hodCount ?? 0
+      render: (dept) => dept.hodCount ?? 0,
     },
     {
       key: 'teacherCount',
       label: 'Teachers',
-      render: (dept) => dept.teacherCount ?? 0
+      render: (dept) => dept.teacherCount ?? 0,
     },
     {
       key: 'actions',
@@ -122,8 +122,8 @@ export default function AdminDepartmentsPage() {
             Assign HOD
           </Button>
         </ActionButtonGroup>
-      )
-    }
+      ),
+    },
   ];
 
   if (isLoading) {

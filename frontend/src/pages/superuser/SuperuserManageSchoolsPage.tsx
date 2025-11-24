@@ -12,7 +12,7 @@ import {
   api,
   type PlatformSchool,
   type SubscriptionTier,
-  type TenantLifecycleStatus
+  type TenantLifecycleStatus,
 } from '../../lib/api';
 import { formatDate } from '../../lib/utils/date';
 
@@ -49,19 +49,19 @@ const defaultFormState: SchoolFormState = {
   domain: '',
   subscriptionType: 'trial',
   billingEmail: '',
-  status: 'active'
+  status: 'active',
 };
 
 const subscriptionOptions: Array<{ label: string; value: SubscriptionTier }> = [
   { label: 'Free', value: 'free' },
   { label: 'Trial', value: 'trial' },
-  { label: 'Paid', value: 'paid' }
+  { label: 'Paid', value: 'paid' },
 ];
 
 const statusOptions: Array<{ label: string; value: TenantLifecycleStatus }> = [
   { label: 'Active', value: 'active' },
   { label: 'Suspended', value: 'suspended' },
-  { label: 'Deleted', value: 'deleted' }
+  { label: 'Deleted', value: 'deleted' },
 ];
 
 export function SuperuserManageSchoolsPage() {
@@ -78,7 +78,7 @@ export function SuperuserManageSchoolsPage() {
     password: '',
     username: '',
     fullName: '',
-    phone: ''
+    phone: '',
   });
   const [showAnalyticsModal, setShowAnalyticsModal] = useState<boolean>(false);
   const [selectedSchoolForAnalytics, setSelectedSchoolForAnalytics] =
@@ -87,7 +87,7 @@ export function SuperuserManageSchoolsPage() {
     status: feedbackStatus,
     message: feedbackMessage,
     setError: setFeedbackError,
-    clear
+    clear,
   } = useAsyncFeedback();
 
   const loadSchools = useCallback(async () => {
@@ -127,7 +127,7 @@ export function SuperuserManageSchoolsPage() {
       domain: school.domain ?? '',
       subscriptionType: school.subscriptionType,
       billingEmail: school.billingEmail ?? '',
-      status: school.status
+      status: school.status,
     });
     setShowSchoolModal(true);
   };
@@ -139,7 +139,7 @@ export function SuperuserManageSchoolsPage() {
       password: '',
       username: '',
       fullName: '',
-      phone: ''
+      phone: '',
     });
     setShowAdminModal(true);
   };
@@ -193,7 +193,7 @@ export function SuperuserManageSchoolsPage() {
           registrationCode: formState.registrationCode.trim(),
           domain: prepareOptionalField(formState.domain),
           subscriptionType: formState.subscriptionType,
-          billingEmail: prepareOptionalField(formState.billingEmail)
+          billingEmail: prepareOptionalField(formState.billingEmail),
         });
         toast.success(`School "${formState.name}" created successfully`);
       } else if (formState.id) {
@@ -206,7 +206,7 @@ export function SuperuserManageSchoolsPage() {
           domain: prepareOptionalField(formState.domain),
           subscriptionType: formState.subscriptionType,
           billingEmail: prepareOptionalField(formState.billingEmail),
-          status: formState.status
+          status: formState.status,
         });
         toast.success(`School "${formState.name}" updated successfully`);
       }
@@ -215,14 +215,21 @@ export function SuperuserManageSchoolsPage() {
     } catch (err) {
       // Handle API errors with user-friendly messages
       let errorMessage = 'Failed to save school. Please try again.';
-      
+
       if (err instanceof Error) {
         errorMessage = err.message;
       } else if (typeof err === 'object' && err !== null) {
-        const apiError = err as { message?: string; errors?: Array<{ message: string; path: string[] }> };
+        const apiError = err as {
+          message?: string;
+          errors?: Array<{ message: string; path: string[] }>;
+        };
         if (apiError.message) {
           errorMessage = apiError.message;
-        } else if (apiError.errors && Array.isArray(apiError.errors) && apiError.errors.length > 0) {
+        } else if (
+          apiError.errors &&
+          Array.isArray(apiError.errors) &&
+          apiError.errors.length > 0
+        ) {
           // Format Zod validation errors
           const formattedErrors = apiError.errors.map((e) => {
             const field = e.path.join(' ');
@@ -231,7 +238,7 @@ export function SuperuserManageSchoolsPage() {
           errorMessage = formattedErrors.join('; ');
         }
       }
-      
+
       toast.error(errorMessage);
     }
   };
@@ -256,7 +263,7 @@ export function SuperuserManageSchoolsPage() {
         password: adminFormState.password,
         username: adminFormState.username,
         fullName: adminFormState.fullName,
-        phone: adminFormState.phone || undefined
+        phone: adminFormState.phone || undefined,
       });
       toast.success('Admin user created');
       setShowAdminModal(false);
@@ -297,11 +304,11 @@ export function SuperuserManageSchoolsPage() {
             {row.domain ?? 'No domain assigned'}
           </p>
         </div>
-      )
+      ),
     },
     {
       header: 'Subscription',
-      render: (row) => row.subscriptionType.charAt(0).toUpperCase() + row.subscriptionType.slice(1)
+      render: (row) => row.subscriptionType.charAt(0).toUpperCase() + row.subscriptionType.slice(1),
     },
     {
       header: 'Status',
@@ -317,16 +324,16 @@ export function SuperuserManageSchoolsPage() {
         >
           {row.status.charAt(0).toUpperCase() + row.status.slice(1)}
         </span>
-      )
+      ),
     },
     {
       header: 'Users',
       key: 'userCount',
-      align: 'center'
+      align: 'center',
     },
     {
       header: 'Created',
-      render: (row) => formatDate(row.createdAt)
+      render: (row) => formatDate(row.createdAt),
     },
     {
       header: 'Actions',
@@ -354,8 +361,8 @@ export function SuperuserManageSchoolsPage() {
             Delete
           </Button>
         </div>
-      )
-    }
+      ),
+    },
   ];
 
   return (
@@ -406,7 +413,9 @@ export function SuperuserManageSchoolsPage() {
                   required
                   placeholder="Enter school name"
                   value={formState.name}
-                  onChange={(event) => setFormState((state) => ({ ...state, name: event.target.value }))}
+                  onChange={(event) =>
+                    setFormState((state) => ({ ...state, name: event.target.value }))
+                  }
                 />
               </div>
               <div className="sm:col-span-2">
@@ -489,12 +498,12 @@ export function SuperuserManageSchoolsPage() {
                 onChange={(event) =>
                   setFormState((state) => ({
                     ...state,
-                    subscriptionType: event.target.value as SubscriptionTier
+                    subscriptionType: event.target.value as SubscriptionTier,
                   }))
                 }
                 options={subscriptionOptions.map((option) => ({
                   label: option.label,
-                  value: option.value
+                  value: option.value,
                 }))}
               />
               <Input
@@ -535,12 +544,12 @@ export function SuperuserManageSchoolsPage() {
                   onChange={(event) =>
                     setFormState((state) => ({
                       ...state,
-                      status: event.target.value as TenantLifecycleStatus
+                      status: event.target.value as TenantLifecycleStatus,
                     }))
                   }
                   options={statusOptions.map((option) => ({
                     label: option.label,
-                    value: option.value
+                    value: option.value,
                   }))}
                 />
               ) : (

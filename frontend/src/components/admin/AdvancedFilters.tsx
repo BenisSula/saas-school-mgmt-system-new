@@ -28,7 +28,7 @@ export function AdvancedFilters({
   onFiltersChange,
   onReset,
   defaultSearchKey = 'search',
-  searchPlaceholder = 'Search...'
+  searchPlaceholder = 'Search...',
 }: AdvancedFiltersProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [localFilters, setLocalFilters] = useState<Record<string, string | undefined>>(filters);
@@ -46,10 +46,9 @@ export function AdvancedFilters({
   };
 
   const handleReset = () => {
-    const emptyFilters = fields.reduce(
-      (acc, field) => ({ ...acc, [field.key]: undefined }),
-      { [defaultSearchKey]: undefined }
-    );
+    const emptyFilters = fields.reduce((acc, field) => ({ ...acc, [field.key]: undefined }), {
+      [defaultSearchKey]: undefined,
+    });
     setLocalFilters(emptyFilters);
     onFiltersChange(emptyFilters);
     onReset();
@@ -141,12 +140,7 @@ export function AdvancedFilters({
         isOpen={isOpen}
         onToggle={() => setIsOpen(!isOpen)}
         trigger={
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            onClick={() => setIsOpen(!isOpen)}
-          >
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsOpen(!isOpen)}>
             <Filter className="h-4 w-4" />
             Advanced Filters
             {hasActiveFilters && (
@@ -180,4 +174,3 @@ export function AdvancedFilters({
 }
 
 export default AdvancedFilters;
-

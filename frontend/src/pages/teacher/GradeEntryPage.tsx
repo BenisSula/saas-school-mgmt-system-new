@@ -10,7 +10,7 @@ import {
   type GradeEntryInput,
   type GradeAggregate,
   type TeacherClassRosterEntry,
-  type TeacherClassSummary
+  type TeacherClassSummary,
 } from '../../lib/api';
 import { sanitizeIdentifier, sanitizeText } from '../../lib/sanitize';
 import { Select } from '../../components/ui/Select';
@@ -26,7 +26,7 @@ export function TeacherGradeEntryPage() {
   const { user } = useAuth();
   const [examId, setExamId] = useState('');
   const [rows, setRows] = useState<GradeRow[]>([
-    { id: 'row-0', studentId: '', subject: '', score: 0 }
+    { id: 'row-0', studentId: '', subject: '', score: 0 },
   ]);
   const [distributionLoading, setDistributionLoading] = useState(false);
   const [distribution, setDistribution] = useState<GradeAggregate[]>([]);
@@ -56,7 +56,7 @@ export function TeacherGradeEntryPage() {
             }
             placeholder="uuid-1234..."
           />
-        )
+        ),
       },
       {
         header: 'Subject',
@@ -74,7 +74,7 @@ export function TeacherGradeEntryPage() {
             }
             placeholder="Mathematics"
           />
-        )
+        ),
       },
       {
         header: 'Score',
@@ -96,7 +96,7 @@ export function TeacherGradeEntryPage() {
               );
             }}
           />
-        )
+        ),
       },
       {
         header: 'Remarks',
@@ -114,7 +114,7 @@ export function TeacherGradeEntryPage() {
             }
             placeholder="Optional notes"
           />
-        )
+        ),
       },
       {
         header: '',
@@ -130,8 +130,8 @@ export function TeacherGradeEntryPage() {
           >
             Remove
           </Button>
-        )
-      }
+        ),
+      },
     ],
     [rows.length]
   );
@@ -191,7 +191,7 @@ export function TeacherGradeEntryPage() {
             studentId: student.id,
             subject: subjectName,
             score: 0,
-            name: `${student.first_name} ${student.last_name}`
+            name: `${student.first_name} ${student.last_name}`,
           }))
         );
         toast.success('Roster loaded for grade entry.');
@@ -216,12 +216,12 @@ export function TeacherGradeEntryPage() {
       toast.error('Provide an exam identifier.');
       return;
     }
-    
+
     // Find subject ID from selected subject
     const selectedSubject = classes
       .find((clazz) => clazz.id === selectedClassId)
       ?.subjects.find((subject) => subject.id === selectedSubjectId);
-    
+
     const payload = rows
       .filter((row) => row.studentId && row.subject)
       .map(({ studentId, score, remarks }) => ({
@@ -230,7 +230,7 @@ export function TeacherGradeEntryPage() {
         subjectId: selectedSubject?.id,
         examId: sanitizeIdentifier(examId),
         score,
-        remarks: remarks ? sanitizeText(remarks) : undefined
+        remarks: remarks ? sanitizeText(remarks) : undefined,
       }));
 
     if (payload.length === 0) {
@@ -282,7 +282,7 @@ export function TeacherGradeEntryPage() {
               onChange={(event) => setSelectedClassId(event.target.value)}
               options={classes.map((clazz) => ({
                 value: clazz.id,
-                label: clazz.name
+                label: clazz.name,
               }))}
             />
             <Select
@@ -294,7 +294,7 @@ export function TeacherGradeEntryPage() {
                   .find((clazz) => clazz.id === selectedClassId)
                   ?.subjects.map((subject) => ({
                     value: subject.id,
-                    label: subject.name
+                    label: subject.name,
                   })) ?? []
               }
             />
@@ -332,8 +332,8 @@ export function TeacherGradeEntryPage() {
                   classes
                     .find((clazz) => clazz.id === selectedClassId)
                     ?.subjects.find((subject) => subject.id === selectedSubjectId)?.name ?? '',
-                score: 0
-              }
+                score: 0,
+              },
             ])
           }
         >
@@ -392,4 +392,3 @@ export function TeacherGradeEntryPage() {
 }
 
 export default TeacherGradeEntryPage;
-

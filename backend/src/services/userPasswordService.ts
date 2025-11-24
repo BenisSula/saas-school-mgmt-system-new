@@ -48,7 +48,7 @@ export async function changeOwnPassword(
 
   // Ensure new password is clean
   const cleanPassword = newPassword.trim();
-  
+
   // Hash new password
   const passwordHash = await argon2.hash(cleanPassword);
 
@@ -96,14 +96,17 @@ export async function changeOwnPassword(
         userId, // Changed by self
         ipAddress || null,
         userAgent || null,
-        JSON.stringify({ deviceInfo })
+        JSON.stringify({ deviceInfo }),
       ]
     );
   } catch (historyError: unknown) {
     // If table doesn't exist, log warning but don't fail the password change
-    const errorMessage = historyError instanceof Error ? historyError.message : String(historyError);
+    const errorMessage =
+      historyError instanceof Error ? historyError.message : String(historyError);
     if (errorMessage.includes('does not exist') || errorMessage.includes('relation')) {
-      console.warn('[userPasswordService] Password change history table not found. Please run migration 016_password_change_history.sql');
+      console.warn(
+        '[userPasswordService] Password change history table not found. Please run migration 016_password_change_history.sql'
+      );
     } else {
       // Re-throw other errors
       throw historyError;
@@ -121,15 +124,14 @@ export async function changeOwnPassword(
       resourceId: userId,
       details: {
         changedBy: userId,
-        changedByEmail: user.email
+        changedByEmail: user.email,
       },
       ipAddress: ipAddress || undefined,
       userAgent: userAgent || undefined,
       severity: 'info',
-      tags: ['password_change', 'security']
+      tags: ['password_change', 'security'],
     });
   } finally {
     client.release();
   }
 }
-

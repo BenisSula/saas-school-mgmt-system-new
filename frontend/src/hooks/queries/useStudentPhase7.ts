@@ -15,7 +15,7 @@ export function useStudentDashboard() {
   return useQuery({
     queryKey: ['student', 'dashboard', user?.id],
     queryFn: () => api.student.getDashboard(),
-    enabled: !!user?.id
+    enabled: !!user?.id,
   });
 }
 
@@ -25,7 +25,7 @@ export function useStudentAnnouncements(classId: string | undefined) {
   return useQuery({
     queryKey: ['student', 'announcements', classId],
     queryFn: () => api.student.getAnnouncements(classId!),
-    enabled: !!classId
+    enabled: !!classId,
   });
 }
 
@@ -35,7 +35,7 @@ export function useStudentResources(classId: string | undefined) {
   return useQuery({
     queryKey: ['student', 'resources', classId],
     queryFn: () => api.student.getResources(classId!),
-    enabled: !!classId
+    enabled: !!classId,
   });
 }
 
@@ -47,7 +47,7 @@ export function useStudentAttendance(params?: { from?: string; to?: string }) {
   return useQuery({
     queryKey: ['student', 'attendance', user?.id, params],
     queryFn: () => api.student.getAttendance(params),
-    enabled: !!user?.id
+    enabled: !!user?.id,
   });
 }
 
@@ -59,7 +59,6 @@ export function useStudentGrades(params?: { term?: string }) {
   return useQuery({
     queryKey: ['student', 'grades', user?.id, params],
     queryFn: () => api.student.getGrades(params),
-    enabled: !!user?.id
+    enabled: !!user?.id,
   });
 }
-

@@ -35,7 +35,7 @@ export function useActivityLogs(filters?: ActivityLogFilters) {
         entityType: filters?.entityType,
         from: filters?.from,
         to: filters?.to,
-        limit: filters?.limit || 10
+        limit: filters?.limit || 10,
       });
 
       // Filter by entityId if provided
@@ -54,9 +54,9 @@ export function useActivityLogs(filters?: ActivityLogFilters) {
         userId: log.userId,
         userEmail: log.userEmail,
         timestamp: log.timestamp,
-        metadata: log.details
+        metadata: log.details,
       }));
     },
-    staleTime: 30000 // 30 seconds
+    staleTime: 30000, // 30 seconds
   });
 }

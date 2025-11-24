@@ -58,7 +58,7 @@ export async function createAnnouncement(
       input.targetRoles || [],
       input.startDate || null,
       input.endDate || null,
-      input.createdBy || null
+      input.createdBy || null,
     ]
   );
 
@@ -79,7 +79,7 @@ export async function getAnnouncementsForUser(
   const conditions: string[] = [
     'is_active = TRUE',
     '(start_date IS NULL OR start_date <= $1)',
-    '(end_date IS NULL OR end_date >= $1)'
+    '(end_date IS NULL OR end_date >= $1)',
   ];
   const values: unknown[] = [now];
   let paramIndex = 2;
@@ -91,7 +91,9 @@ export async function getAnnouncementsForUser(
 
   // Filter by role if specified
   if (userRole) {
-    conditions.push(`(array_length(target_roles, 1) IS NULL OR $${paramIndex++} = ANY(target_roles))`);
+    conditions.push(
+      `(array_length(target_roles, 1) IS NULL OR $${paramIndex++} = ANY(target_roles))`
+    );
     values.push(userRole);
   }
 
@@ -186,7 +188,7 @@ export async function getAllAnnouncements(
 
   return {
     announcements: announcementsResult.rows,
-    total
+    total,
   };
 }
 
@@ -298,4 +300,3 @@ export async function deleteAnnouncement(
     throw new Error('Announcement not found');
   }
 }
-

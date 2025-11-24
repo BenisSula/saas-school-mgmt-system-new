@@ -56,7 +56,7 @@ export function TeacherAttendancePage() {
       const mapped: AttendanceRow[] = rosterEntries.map((student) => ({
         studentId: student.id,
         name: `${student.first_name} ${student.last_name}`,
-        status: 'present'
+        status: 'present',
       }));
       setRows(mapped);
       if (mapped.length === 0) {
@@ -100,7 +100,7 @@ export function TeacherAttendancePage() {
       status: row.status,
       date,
       markedBy: user.id,
-      classId: selectedClassId
+      classId: selectedClassId,
     }));
 
     try {
@@ -133,7 +133,7 @@ export function TeacherAttendancePage() {
             onChange={(event) => setSelectedClassId(event.target.value)}
             options={classes.map((clazz) => ({
               value: clazz.id,
-              label: clazz.name
+              label: clazz.name,
             }))}
           />
           <DatePicker

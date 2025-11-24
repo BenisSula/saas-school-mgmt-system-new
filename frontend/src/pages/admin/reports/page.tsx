@@ -14,7 +14,7 @@ import { FileText, LogIn, TrendingUp } from 'lucide-react';
 import {
   useActivityReport,
   useLoginReport,
-  usePerformanceReport
+  usePerformanceReport,
 } from '../../../hooks/queries/admin/useAdminReports';
 import { useClasses } from '../../../hooks/queries/useClasses';
 import { useSubjects } from '../../../hooks/queries/useAdminQueries';
@@ -27,35 +27,35 @@ export default function AdminReportsPage() {
     userId: '',
     action: '',
     limit: 100,
-    offset: 0
+    offset: 0,
   });
   const [loginFilters, setLoginFilters] = useState({
     startDate: '',
     endDate: '',
     userId: '',
     limit: 100,
-    offset: 0
+    offset: 0,
   });
   const [performanceFilters, setPerformanceFilters] = useState({
     classId: '',
     subjectId: '',
-    academicYear: ''
+    academicYear: '',
   });
 
   const {
     data: activityData,
     isLoading: activityLoading,
-    error: activityError
+    error: activityError,
   } = useActivityReport(activityFilters);
   const {
     data: loginData,
     isLoading: loginLoading,
-    error: loginError
+    error: loginError,
   } = useLoginReport(loginFilters);
   const {
     data: performanceData,
     isLoading: performanceLoading,
-    error: performanceError
+    error: performanceError,
   } = usePerformanceReport(performanceFilters);
   const { data: classesData } = useClasses();
   const { data: subjectsData } = useSubjects();
@@ -90,8 +90,8 @@ export default function AdminReportsPage() {
     {
       key: 'createdAt',
       label: 'Date',
-      render: (log) => new Date(log.createdAt).toLocaleString()
-    }
+      render: (log) => new Date(log.createdAt).toLocaleString(),
+    },
   ];
 
   const loginColumns: TableColumn<LoginLog>[] = [
@@ -104,13 +104,13 @@ export default function AdminReportsPage() {
         <span className={log.success ? 'text-emerald-500' : 'text-red-500'}>
           {log.success ? 'Success' : 'Failed'}
         </span>
-      )
+      ),
     },
     {
       key: 'loginAt',
       label: 'Date',
-      render: (log) => new Date(log.loginAt).toLocaleString()
-    }
+      render: (log) => new Date(log.loginAt).toLocaleString(),
+    },
   ];
 
   const performanceColumns: TableColumn<PerformanceData>[] = [
@@ -119,7 +119,7 @@ export default function AdminReportsPage() {
     { key: 'exam_count', label: 'Exams' },
     { key: 'avg_score', label: 'Avg Score' },
     { key: 'min_score', label: 'Min Score' },
-    { key: 'max_score', label: 'Max Score' }
+    { key: 'max_score', label: 'Max Score' },
   ];
 
   const isLoading = activityLoading || loginLoading || performanceLoading;
@@ -294,7 +294,7 @@ export default function AdminReportsPage() {
                   }
                   options={[
                     { value: '', label: 'All Classes' },
-                    ...(classesData || []).map((c) => ({ value: c.id, label: c.name }))
+                    ...(classesData || []).map((c) => ({ value: c.id, label: c.name })),
                   ]}
                 />
                 <Select
@@ -305,7 +305,7 @@ export default function AdminReportsPage() {
                   }
                   options={[
                     { value: '', label: 'All Subjects' },
-                    ...(subjectsData || []).map((s) => ({ value: s.id, label: s.name }))
+                    ...(subjectsData || []).map((s) => ({ value: s.id, label: s.name })),
                   ]}
                 />
                 <Input

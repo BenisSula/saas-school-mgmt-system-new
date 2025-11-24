@@ -7,8 +7,8 @@ import { useLoginForm } from '../hooks/useLoginForm';
 const mockLogin = vi.fn();
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
-    login: mockLogin
-  })
+    login: mockLogin,
+  }),
 }));
 
 describe('useLoginForm', () => {
@@ -30,8 +30,8 @@ describe('useLoginForm', () => {
       useLoginForm({
         initialValues: {
           email: 'test@example.com',
-          password: 'password123'
-        }
+          password: 'password123',
+        },
       })
     );
 
@@ -59,7 +59,7 @@ describe('useLoginForm', () => {
 
     await act(async () => {
       await result.current.handleSubmit({
-        preventDefault: vi.fn()
+        preventDefault: vi.fn(),
       } as unknown as React.FormEvent);
     });
 
@@ -79,7 +79,7 @@ describe('useLoginForm', () => {
 
     await act(async () => {
       await result.current.handleSubmit({
-        preventDefault: vi.fn()
+        preventDefault: vi.fn(),
       } as unknown as React.FormEvent);
     });
 
@@ -99,15 +99,15 @@ describe('useLoginForm', () => {
         role: 'student' as const,
         tenantId: 'tenant-1',
         isVerified: true,
-        status: 'active' as const
-      }
+        status: 'active' as const,
+      },
     };
 
     mockLogin.mockResolvedValue(mockAuthResponse);
 
     const { result } = renderHook(() =>
       useLoginForm({
-        onSuccess: vi.fn()
+        onSuccess: vi.fn(),
       })
     );
 
@@ -118,14 +118,14 @@ describe('useLoginForm', () => {
 
     await act(async () => {
       await result.current.handleSubmit({
-        preventDefault: vi.fn()
+        preventDefault: vi.fn(),
       } as unknown as React.FormEvent);
     });
 
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith({
         email: 'test@example.com', // Normalized to lowercase
-        password: 'password123'
+        password: 'password123',
       });
     });
   });
@@ -138,7 +138,7 @@ describe('useLoginForm', () => {
       status: 'error',
       message: 'Invalid credentials',
       field: 'password',
-      code: 'INVALID_CREDENTIALS'
+      code: 'INVALID_CREDENTIALS',
     };
 
     mockLogin.mockRejectedValue(apiError);
@@ -153,7 +153,7 @@ describe('useLoginForm', () => {
     await act(async () => {
       try {
         await result.current.handleSubmit({
-          preventDefault: vi.fn()
+          preventDefault: vi.fn(),
         } as unknown as React.FormEvent);
       } catch {
         // Expected error, ignore

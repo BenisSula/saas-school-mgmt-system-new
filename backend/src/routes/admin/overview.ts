@@ -33,7 +33,7 @@ router.get(
       logger.info('Admin overview data retrieved', {
         requestId: req.requestId,
         tenantId: req.tenant.id,
-        userId: req.user?.id
+        userId: req.user?.id,
       });
 
       res.json(createSuccessResponse(overview, 'Overview data retrieved successfully'));
@@ -44,4 +44,3 @@ router.get(
 );
 
 export default router;
-

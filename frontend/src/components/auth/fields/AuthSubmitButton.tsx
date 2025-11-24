@@ -16,7 +16,7 @@ export function AuthSubmitButton({
   children,
   variant = 'primary',
   fullWidth = true,
-  className = ''
+  className = '',
 }: AuthSubmitButtonProps) {
   const isDisabled = disabled || loading;
 
@@ -26,7 +26,7 @@ export function AuthSubmitButton({
     secondary:
       'bg-[var(--brand-secondary)] text-[var(--brand-secondary-contrast)] hover:brightness-110 focus-visible:outline-[var(--brand-secondary)]',
     accent:
-      'bg-[var(--brand-accent)] text-[var(--brand-accent-contrast)] hover:brightness-110 focus-visible:outline-[var(--brand-accent)]'
+      'bg-[var(--brand-accent)] text-[var(--brand-accent-contrast)] hover:brightness-110 focus-visible:outline-[var(--brand-accent)]',
   };
 
   return (

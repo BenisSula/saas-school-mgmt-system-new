@@ -90,7 +90,7 @@ export async function markAttendance(
       record.status,
       record.markedBy,
       record.date,
-      JSON.stringify(record.metadata ?? {})
+      JSON.stringify(record.metadata ?? {}),
     ]);
   }
 
@@ -98,25 +98,25 @@ export async function markAttendance(
   if (actorId && records.length > 0) {
     const firstRecord = records[0];
     try {
-      await createAuditLog(
-        client,
-        {
-          tenantId: undefined, // Will be set by tenant context
-          userId: actorId,
-          action: 'ATTENDANCE_MARKED',
-          resourceType: 'attendance',
-          resourceId: undefined,
-          details: {
-            classId: firstRecord.classId,
-            date: firstRecord.date,
-            studentCount: records.length,
-            attendanceRecordsCount: records.length
-          },
-          severity: 'info'
-        }
-      );
+      await createAuditLog(client, {
+        tenantId: undefined, // Will be set by tenant context
+        userId: actorId,
+        action: 'ATTENDANCE_MARKED',
+        resourceType: 'attendance',
+        resourceId: undefined,
+        details: {
+          classId: firstRecord.classId,
+          date: firstRecord.date,
+          studentCount: records.length,
+          attendanceRecordsCount: records.length,
+        },
+        severity: 'info',
+      });
     } catch (auditError) {
-      console.error('[attendanceService] Failed to create audit log for attendance marking:', auditError);
+      console.error(
+        '[attendanceService] Failed to create audit log for attendance marking:',
+        auditError
+      );
     }
   }
 
@@ -125,8 +125,8 @@ export async function markAttendance(
     students: records.map((record) => record.studentId),
     dateRange: {
       from: records[0]?.date,
-      to: records[records.length - 1]?.date
-    }
+      to: records[records.length - 1]?.date,
+    },
   });
 }
 
@@ -212,6 +212,6 @@ export async function getAttendanceSummary(
   return {
     present,
     total,
-    percentage
+    percentage,
   };
 }

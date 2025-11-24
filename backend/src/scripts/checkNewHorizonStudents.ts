@@ -9,7 +9,7 @@ import { getTenantClient } from '../db/connection';
 
 async function checkNewHorizonStudents() {
   const pool = getPool();
-  
+
   try {
     // Find New Horizon tenant
     const tenantResult = await pool.query(
@@ -72,7 +72,9 @@ async function checkNewHorizonStudents() {
       if (studentsList.rows.length > 0) {
         console.log(`\n📝 Sample Students (first 5):`);
         studentsList.rows.forEach((s, i) => {
-          console.log(`   ${i + 1}. ${s.first_name || ''} ${s.last_name || ''} (${s.admission_number || 'N/A'}) - ${s.enrollment_status || 'N/A'}`);
+          console.log(
+            `   ${i + 1}. ${s.first_name || ''} ${s.last_name || ''} (${s.admission_number || 'N/A'}) - ${s.enrollment_status || 'N/A'}`
+          );
         });
       } else {
         console.log('\n⚠️  No students found in students table');
@@ -81,11 +83,9 @@ async function checkNewHorizonStudents() {
       // Check if overview endpoint would return correct count
       console.log(`\n✅ Expected Overview Count: ${studentCount} students (from students table)`);
       console.log(`   This is the count that should appear on the dashboard\n`);
-
     } finally {
       tenantClient.release();
     }
-
   } catch (error) {
     console.error('❌ Error checking students:', error);
     throw error;
@@ -107,4 +107,3 @@ if (require.main === module) {
 }
 
 export { checkNewHorizonStudents };
-

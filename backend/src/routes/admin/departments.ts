@@ -16,22 +16,30 @@ import {
   getDepartmentById,
   updateDepartment,
   deleteDepartment,
-  assignHODToDepartment
+  assignHODToDepartment,
 } from '../../services/admin/departmentService';
 import { getPool } from '../../db/connection';
 import { createSuccessResponse, createErrorResponse } from '../../lib/responseHelpers';
-import { getSchoolIdForTenant, verifyTenantAndUserContext } from '../../services/shared/adminHelpers';
+import {
+  getSchoolIdForTenant,
+  verifyTenantAndUserContext,
+} from '../../services/shared/adminHelpers';
 
 const router = Router();
 
-router.use(authenticate, tenantResolver(), ensureTenantContext(), requirePermission('users:manage'));
+router.use(
+  authenticate,
+  tenantResolver(),
+  ensureTenantContext(),
+  requirePermission('users:manage')
+);
 
 const departmentSchema = z.object({
   name: z.string().min(1, 'Department name is required'),
   slug: z.string().optional(),
   contactEmail: z.string().email().optional().nullable(),
   contactPhone: z.string().optional().nullable(),
-  metadata: z.record(z.string(), z.unknown()).optional()
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const updateDepartmentSchema = departmentSchema.partial();
@@ -59,13 +67,7 @@ router.post('/', validateInput(departmentSchema, 'body'), async (req, res, next)
     const tenantId = req.tenant!.id;
     const userId = req.user!.id;
 
-    const department = await createDepartment(
-      client,
-      tenantId,
-      schoolId,
-      req.body,
-      userId
-    );
+    const department = await createDepartment(client, tenantId, schoolId, req.body, userId);
 
     res.status(201).json(createSuccessResponse(department, 'Department created successfully'));
   } catch (error) {
@@ -149,13 +151,7 @@ router.patch('/:id', validateInput(updateDepartmentSchema, 'body'), async (req, 
     // TypeScript: After validation, we know these are defined
     const userId = req.user!.id;
 
-    const department = await updateDepartment(
-      client,
-      req.params.id,
-      schoolId,
-      req.body,
-      userId
-    );
+    const department = await updateDepartment(client, req.params.id, schoolId, req.body, userId);
 
     res.json(createSuccessResponse(department, 'Department updated successfully'));
   } catch (error) {
@@ -204,41 +200,41 @@ router.delete('/:id', async (req, res, next) => {
  * PATCH /admin/departments/:id/assign-hod
  * Assign HOD to department
  */
-router.patch('/:id/assign-hod', validateInput(z.object({
-  userId: z.string().uuid('Invalid user ID')
-}), 'body'), async (req, res, next) => {
-  const pool = getPool();
-  const client = await pool.connect();
-  try {
-    const contextCheck = verifyTenantAndUserContext(req.tenant, req.tenantClient, req.user);
-    if (!contextCheck.isValid) {
-      return res.status(500).json(createErrorResponse(contextCheck.error!));
+router.patch(
+  '/:id/assign-hod',
+  validateInput(
+    z.object({
+      userId: z.string().uuid('Invalid user ID'),
+    }),
+    'body'
+  ),
+  async (req, res, next) => {
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      const contextCheck = verifyTenantAndUserContext(req.tenant, req.tenantClient, req.user);
+      if (!contextCheck.isValid) {
+        return res.status(500).json(createErrorResponse(contextCheck.error!));
+      }
+
+      // Get school ID for tenant
+      const schoolId = await getSchoolIdForTenant(req.tenant!.id);
+      if (!schoolId) {
+        return res.status(404).json(createErrorResponse('School not found for tenant'));
+      }
+
+      // TypeScript: After validation, we know these are defined
+      const userId = req.user!.id;
+
+      await assignHODToDepartment(client, req.params.id, schoolId, req.body.userId, userId);
+
+      res.json(createSuccessResponse(null, 'HOD assigned to department successfully'));
+    } catch (error) {
+      next(error);
+    } finally {
+      client.release();
     }
-
-    // Get school ID for tenant
-    const schoolId = await getSchoolIdForTenant(req.tenant!.id);
-    if (!schoolId) {
-      return res.status(404).json(createErrorResponse('School not found for tenant'));
-    }
-
-    // TypeScript: After validation, we know these are defined
-    const userId = req.user!.id;
-
-    await assignHODToDepartment(
-      client,
-      req.params.id,
-      schoolId,
-      req.body.userId,
-      userId
-    );
-
-    res.json(createSuccessResponse(null, 'HOD assigned to department successfully'));
-  } catch (error) {
-    next(error);
-  } finally {
-    client.release();
   }
-});
+);
 
 export default router;
-

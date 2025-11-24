@@ -36,7 +36,9 @@ const migrationFileName = process.argv[2];
 
 if (!migrationFileName) {
   console.error('Usage: ts-node src/scripts/runSingleMigration.ts <migration-filename>');
-  console.error('Example: ts-node src/scripts/runSingleMigration.ts 023_add_enrollment_status_to_students.sql');
+  console.error(
+    'Example: ts-node src/scripts/runSingleMigration.ts 023_add_enrollment_status_to_students.sql'
+  );
   process.exit(1);
 }
 
@@ -44,4 +46,3 @@ runSingleMigration(migrationFileName).catch((error) => {
   console.error('Migration script failed:', error);
   process.exit(1);
 });
-

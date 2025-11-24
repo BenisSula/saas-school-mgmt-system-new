@@ -7,7 +7,7 @@ import { getPool } from '../src/db/connection';
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -42,7 +42,7 @@ describe('SuperUser → Admin Flow Integration', () => {
 
     // Check if user already exists
     const existingUser = await pool.query('SELECT * FROM shared.users WHERE email = $1', [
-      superUserEmail
+      superUserEmail,
     ]);
 
     if (existingUser.rows.length === 0) {
@@ -59,7 +59,7 @@ describe('SuperUser → Admin Flow Integration', () => {
     // Login to get token
     const loginResponse = await request(app).post('/auth/login').send({
       email: superUserEmail,
-      password: superUserPassword
+      password: superUserPassword,
     });
 
     if (loginResponse.status === 200) {
@@ -83,7 +83,7 @@ describe('SuperUser → Admin Flow Integration', () => {
       .set('Authorization', `Bearer ${superUserToken}`)
       .send({
         name: tenantName,
-        domain: 'testacademy.local'
+        domain: 'testacademy.local',
       });
 
     expect(createTenantResponse.status).toBe(201);
@@ -95,7 +95,7 @@ describe('SuperUser → Admin Flow Integration', () => {
       email: adminEmail,
       password: adminPassword,
       role: 'admin',
-      tenantId: tenantId // Use the tenant ID we just created
+      tenantId: tenantId, // Use the tenant ID we just created
     });
 
     // Check response - may be 201 (success), 400 (if tenant creation failed), or 422 (validation error)
@@ -116,7 +116,7 @@ describe('SuperUser → Admin Flow Integration', () => {
     // Step 3: Verify admin can login (but may be pending)
     const adminLoginResponse = await request(app).post('/auth/login').send({
       email: adminEmail,
-      password: adminPassword
+      password: adminPassword,
     });
 
     expect(adminLoginResponse.status).toBe(200);
@@ -138,7 +138,7 @@ describe('SuperUser → Admin Flow Integration', () => {
 
     // Step 6: Verify admin is now active
     const activeAdminCheck = await pool.query(`SELECT status FROM shared.users WHERE id = $1`, [
-      adminUserId
+      adminUserId,
     ]);
 
     expect(activeAdminCheck.rows[0].status).toBe('active');
@@ -166,7 +166,7 @@ describe('SuperUser → Admin Flow Integration', () => {
       .set('Authorization', `Bearer ${superUserToken}`)
       .send({
         name: tenantName,
-        domain: 'anotheracademy.local'
+        domain: 'anotheracademy.local',
       });
 
     expect(createTenantResponse.status).toBe(201);
@@ -177,7 +177,7 @@ describe('SuperUser → Admin Flow Integration', () => {
       email: adminEmail,
       password: adminPassword,
       role: 'admin',
-      tenantId: newTenantId
+      tenantId: newTenantId,
     });
 
     // Admin signup may return 201 (success) or 422 (validation error)

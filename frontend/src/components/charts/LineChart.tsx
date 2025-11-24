@@ -22,7 +22,7 @@ export function LineChart({
   height = 200,
   color = 'var(--brand-primary)',
   showDots = true,
-  responsive = true
+  responsive = true,
 }: LineChartProps) {
   const maxValue = useMemo(() => Math.max(...data.map((d) => d.value), 1), [data]);
   const minValue = useMemo(() => Math.min(...data.map((d) => d.value), 0), [data]);

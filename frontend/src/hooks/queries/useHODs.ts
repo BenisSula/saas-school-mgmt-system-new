@@ -29,20 +29,17 @@ export interface UseHODsFilters {
  * Hook to fetch HODs with optional filters
  */
 export function useHODs(filters?: UseHODsFilters) {
-  const queryKey = useMemo(
-    () => [...queryKeys.admin.hods(), filters] as const,
-    [filters]
-  );
+  const queryKey = useMemo(() => [...queryKeys.admin.hods(), filters] as const, [filters]);
 
   return useQuery({
     queryKey,
     queryFn: async () => {
       const users = await api.listUsers();
       const teachers = await api.listTeachers();
-      
+
       // Combine users and teachers to get HODs
       const hodUsers = users.filter((u) => isHOD(u));
-      
+
       // Map to HOD records with teacher data
       const hods = hodUsers
         .map((user) => {
@@ -50,18 +47,20 @@ export function useHODs(filters?: UseHODsFilters) {
           if (!teacher) return null;
 
           const hodRole = user.additional_roles?.find((r) => r.role === 'hod');
-          const department = (hodRole?.metadata?.department as string) || teacher.subjects[0] || 'General';
+          const department =
+            (hodRole?.metadata?.department as string) || teacher.subjects[0] || 'General';
 
           // Count teachers under oversight (teachers with same subjects)
           const hodSubjects = teacher.subjects;
           const teachersUnderOversight = teachers.filter(
-            (t) => t.id !== teacher.id && t.subjects.some((subject) => hodSubjects.includes(subject))
+            (t) =>
+              t.id !== teacher.id && t.subjects.some((subject) => hodSubjects.includes(subject))
           ).length;
 
           return {
             ...teacher,
             department,
-            teachersUnderOversight
+            teachersUnderOversight,
           } as HODRecord;
         })
         .filter((hod): hod is HODRecord => hod !== null);
@@ -117,7 +116,9 @@ export function useBulkRemoveHODRoles() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.admin.hods() });
       if (result.failed > 0) {
-        toast.warning(`HOD role removed from ${result.removed} user(s), but ${result.failed} failed`);
+        toast.warning(
+          `HOD role removed from ${result.removed} user(s), but ${result.failed} failed`
+        );
       } else {
         toast.success(result.message || `HOD role removed from ${result.removed} user(s)`);
       }
@@ -127,4 +128,3 @@ export function useBulkRemoveHODRoles() {
     },
   });
 }
-

@@ -5,11 +5,11 @@ import {
   createAuditLog,
   searchAuditLogs,
   AuditLogFilters,
-  AuditLogEntry
+  AuditLogEntry,
 } from '../audit/enhancedAuditService';
 import {
   normalizeDeviceInfo,
-  type NormalizedDeviceInfo
+  type NormalizedDeviceInfo,
 } from '../../lib/serializers/deviceInfoSerializer';
 
 /**
@@ -43,7 +43,7 @@ export async function logAuditEvent(
     userAgent: entry.userAgent || undefined,
     requestId: entry.requestId || undefined,
     severity: entry.severity || 'info',
-    tags: entry.tags || []
+    tags: entry.tags || [],
   });
 }
 
@@ -99,7 +99,7 @@ export async function logLoginAttempt(
         entry.ipAddress || null,
         entry.userAgent || null,
         entry.success,
-        entry.failureReason || null
+        entry.failureReason || null,
       ]
     );
   } catch (error) {
@@ -119,12 +119,12 @@ export async function logLoginAttempt(
         resourceType: 'authentication',
         details: {
           email: entry.email,
-          failureReason: entry.failureReason || 'Unknown'
+          failureReason: entry.failureReason || 'Unknown',
         },
         ipAddress: entry.ipAddress || null,
         userAgent: entry.userAgent || null,
         severity: 'warning',
-        tags: ['security', 'authentication']
+        tags: ['security', 'authentication'],
       });
     } finally {
       auditClient.release();
@@ -181,7 +181,7 @@ export async function getLoginAttempts(
     // Silently return empty result - table doesn't exist (expected when migrations haven't run)
     return {
       attempts: [],
-      total: 0
+      total: 0,
     };
   }
 
@@ -253,7 +253,7 @@ export async function getLoginAttempts(
 
     return {
       attempts: attemptsResult.rows.map(mapLoginAttemptRow),
-      total
+      total,
     };
   } catch (error) {
     // Only log actual errors, not expected missing table errors
@@ -261,7 +261,7 @@ export async function getLoginAttempts(
       // Silently skip - expected when migrations haven't run
       return {
         attempts: [],
-        total: 0
+        total: 0,
       };
     }
     throw error;
@@ -295,7 +295,7 @@ function mapLoginAttemptRow(row: {
     deviceInfo,
     success: row.success,
     failureReason: row.failure_reason,
-    attemptedAt: row.attempted_at
+    attemptedAt: row.attempted_at,
   };
 }
 

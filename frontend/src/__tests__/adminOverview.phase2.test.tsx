@@ -11,7 +11,7 @@ import * as useAdminQueriesModule from '../hooks/queries/useAdminQueries';
 vi.mock('../hooks/queries/useDashboardStats');
 vi.mock('../hooks/queries/useAdminQueries');
 vi.mock('../components/admin/ActivityLog', () => ({
-  ActivityLog: () => <div data-testid="activity-log">Activity Log</div>
+  ActivityLog: () => <div data-testid="activity-log">Activity Log</div>,
 }));
 
 const mockUseAdminOverview = vi.fn();
@@ -24,8 +24,8 @@ describe('AdminOverviewPage - Phase 2', () => {
   beforeEach(() => {
     queryClient = new QueryClient({
       defaultOptions: {
-        queries: { retry: false }
-      }
+        queries: { retry: false },
+      },
     });
 
     // Mock useAdminOverview
@@ -39,38 +39,42 @@ describe('AdminOverviewPage - Phase 2', () => {
         school: {
           name: 'Test School',
           domain: 'test.school',
-          schema_name: 'test_schema'
+          schema_name: 'test_schema',
         },
         users: [
           { id: '1', email: 'user1@test.com', role: 'teacher', status: 'active' },
-          { id: '2', email: 'user2@test.com', role: 'student', status: 'pending' }
+          { id: '2', email: 'user2@test.com', role: 'student', status: 'pending' },
         ],
-        teachers: [
-          { id: '1', email: 'teacher@test.com', first_name: 'John', last_name: 'Doe' }
-        ],
+        teachers: [{ id: '1', email: 'teacher@test.com', first_name: 'John', last_name: 'Doe' }],
         students: [
-          { id: '1', email: 'student@test.com', first_name: 'Jane', last_name: 'Smith', created_at: new Date().toISOString() }
+          {
+            id: '1',
+            email: 'student@test.com',
+            first_name: 'Jane',
+            last_name: 'Smith',
+            created_at: new Date().toISOString(),
+          },
         ],
-        classes: []
+        classes: [],
       },
       isLoading: false,
-      error: null
+      error: null,
     });
 
     mockUseAttendance.mockReturnValue({
       data: [],
-      isLoading: false
+      isLoading: false,
     });
 
     mockUseClasses.mockReturnValue({
       data: [],
-      isLoading: false
+      isLoading: false,
     });
 
     // Mock dashboard stats hooks
     vi.mocked(useDashboardStatsModule.useTeacherStats).mockReturnValue({
       data: { total: 10, active: 8, assigned: 7, unassigned: 3 },
-      isLoading: false
+      isLoading: false,
     } as ReturnType<typeof useDashboardStatsModule.useTeacherStats>);
 
     vi.mocked(useDashboardStatsModule.useStudentStats).mockReturnValue({
@@ -78,34 +82,34 @@ describe('AdminOverviewPage - Phase 2', () => {
         total: 50,
         active: 48,
         byClass: { 'class-1': 25, 'class-2': 25 },
-        byGender: { male: 25, female: 23, other: 2 }
+        byGender: { male: 25, female: 23, other: 2 },
       },
-      isLoading: false
+      isLoading: false,
     } as ReturnType<typeof useDashboardStatsModule.useStudentStats>);
 
     vi.mocked(useDashboardStatsModule.useClassStats).mockReturnValue({
       data: { total: 5, withStudents: 4, withTeachers: 3 },
-      isLoading: false
+      isLoading: false,
     } as ReturnType<typeof useDashboardStatsModule.useClassStats>);
 
     vi.mocked(useDashboardStatsModule.useSubjectStats).mockReturnValue({
       data: { total: 12, assigned: 10, unassigned: 2 },
-      isLoading: false
+      isLoading: false,
     } as ReturnType<typeof useDashboardStatsModule.useSubjectStats>);
 
     vi.mocked(useDashboardStatsModule.useTodayAttendance).mockReturnValue({
       data: { present: 40, absent: 5, late: 3, total: 48, percentage: 83.3 },
-      isLoading: false
+      isLoading: false,
     } as ReturnType<typeof useDashboardStatsModule.useTodayAttendance>);
 
     vi.mocked(useDashboardStatsModule.useLoginAttempts).mockReturnValue({
       data: [],
-      isLoading: false
+      isLoading: false,
     } as ReturnType<typeof useDashboardStatsModule.useLoginAttempts>);
 
     vi.mocked(useDashboardStatsModule.useActiveSessions).mockReturnValue({
       data: [],
-      isLoading: false
+      isLoading: false,
     } as ReturnType<typeof useDashboardStatsModule.useActiveSessions>);
   });
 
@@ -208,12 +212,12 @@ describe('AdminOverviewPage - Phase 2', () => {
     mockUseAdminOverview.mockReturnValue({
       data: null,
       isLoading: true,
-      error: null
+      error: null,
     });
 
     vi.mocked(useDashboardStatsModule.useTeacherStats).mockReturnValue({
       data: null,
-      isLoading: true
+      isLoading: true,
     } as ReturnType<typeof useDashboardStatsModule.useTeacherStats>);
 
     renderPage();
@@ -230,14 +234,16 @@ describe('AdminOverviewPage - Phase 2', () => {
     mockUseAdminOverview.mockReturnValue({
       data: null,
       isLoading: false,
-      error: new Error('Failed to load data')
+      error: new Error('Failed to load data'),
     });
 
     renderPage();
 
     await waitFor(() => {
       // Error should be handled gracefully
-      expect(screen.queryByText(/Failed to load data/i) || screen.getByText(/Quick Actions/i)).toBeTruthy();
+      expect(
+        screen.queryByText(/Failed to load data/i) || screen.getByText(/Quick Actions/i)
+      ).toBeTruthy();
     });
   });
 
@@ -247,7 +253,7 @@ describe('AdminOverviewPage - Phase 2', () => {
       data: { school: {}, users: [], teachers: [], students: [], classes: [] },
       isLoading: false,
       error: null,
-      refetch: refetchMock
+      refetch: refetchMock,
     });
 
     renderPage();
@@ -260,4 +266,3 @@ describe('AdminOverviewPage - Phase 2', () => {
     expect(refreshButton).toBeInTheDocument();
   });
 });
-

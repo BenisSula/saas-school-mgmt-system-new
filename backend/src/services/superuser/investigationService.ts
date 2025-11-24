@@ -125,7 +125,7 @@ export async function createInvestigationCase(
       input.assignedTo || null,
       createdBy,
       input.tags || [],
-      JSON.stringify(input.metadata || {})
+      JSON.stringify(input.metadata || {}),
     ]
   );
 
@@ -144,10 +144,10 @@ export async function createInvestigationCase(
         caseNumber: case_.caseNumber,
         title: case_.title,
         caseType: case_.caseType,
-        priority: case_.priority
+        priority: case_.priority,
       },
       severity: 'info',
-      tags: ['investigation', 'security']
+      tags: ['investigation', 'security'],
     });
   } finally {
     client.release();
@@ -298,7 +298,7 @@ export async function getInvestigationCases(
 
   return {
     cases: casesResult.rows.map(mapCaseRow),
-    total
+    total,
   };
 }
 
@@ -316,10 +316,9 @@ export async function getInvestigationCase(
 }> {
   requireSuperuser(requesterRole);
 
-  const caseResult = await pool.query(
-    `SELECT * FROM shared.investigation_cases WHERE id = $1`,
-    [caseId]
-  );
+  const caseResult = await pool.query(`SELECT * FROM shared.investigation_cases WHERE id = $1`, [
+    caseId,
+  ]);
 
   if (caseResult.rows.length === 0) {
     throw new Error('Case not found');
@@ -338,7 +337,7 @@ export async function getInvestigationCase(
   return {
     case: mapCaseRow(caseResult.rows[0]),
     notes: notesResult.rows.map(mapNoteRow),
-    evidence: evidenceResult.rows.map(mapEvidenceRow)
+    evidence: evidenceResult.rows.map(mapEvidenceRow),
   };
 }
 
@@ -402,7 +401,7 @@ export async function addCaseEvidence(
       evidenceSource,
       description,
       addedBy,
-      JSON.stringify(metadata || {})
+      JSON.stringify(metadata || {}),
     ]
   );
 
@@ -429,110 +428,110 @@ export async function detectAnomalies(
   // 1. Detect multiple failed login attempts
   const loginAttemptsResult = await getLoginAttempts(
     pool,
+    {
+      userId: filters.userId,
+      tenantId: filters.tenantId,
+      success: false,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      limit: 1000,
+    },
+    requesterRole
+  );
+
+  // Group by email/userId
+  const failedAttemptsByUser = new Map<string, typeof loginAttemptsResult.attempts>();
+  loginAttemptsResult.attempts.forEach((attempt) => {
+    const key = attempt.userId || attempt.email;
+    if (!failedAttemptsByUser.has(key)) {
+      failedAttemptsByUser.set(key, []);
+    }
+    failedAttemptsByUser.get(key)!.push(attempt);
+  });
+
+  // Flag users with 5+ failed attempts
+  failedAttemptsByUser.forEach((attempts) => {
+    if (attempts.length >= 5) {
+      anomalies.push({
+        type: 'failed_logins',
+        severity: attempts.length >= 10 ? 'high' : attempts.length >= 7 ? 'medium' : 'low',
+        description: `${attempts.length} failed login attempts detected`,
+        userId: attempts[0].userId || undefined,
+        userEmail: attempts[0].email,
+        tenantId: attempts[0].tenantId || null,
+        evidence: attempts.slice(0, 10).map((a) => ({
+          type: 'login_attempt',
+          id: a.id,
+          timestamp: new Date(a.attemptedAt),
+          details: {
+            email: a.email,
+            ipAddress: a.ipAddress,
+            failureReason: a.failureReason,
+          },
+        })),
+        detectedAt: new Date(),
+      });
+    }
+  });
+
+  // 2. Detect multiple IP logins for same user
+  const sessionsResult = await getPlatformActiveSessions(
+    pool,
+    {
+      userId: filters.userId,
+      tenantId: filters.tenantId,
+      limit: 1000,
+    },
+    requesterRole
+  );
+
+  const sessionsByUser = new Map<string, typeof sessionsResult.sessions>();
+  sessionsResult.sessions.forEach((session) => {
+    if (!sessionsByUser.has(session.userId)) {
+      sessionsByUser.set(session.userId, []);
+    }
+    sessionsByUser.get(session.userId)!.push(session);
+  });
+
+  sessionsByUser.forEach((sessions, userId) => {
+    const uniqueIPs = new Set(sessions.map((s) => s.ipAddress).filter(Boolean));
+    if (uniqueIPs.size >= 3) {
+      anomalies.push({
+        type: 'multiple_ips',
+        severity: uniqueIPs.size >= 5 ? 'high' : 'medium',
+        description: `User logged in from ${uniqueIPs.size} different IP addresses`,
+        userId,
+        tenantId: sessions[0].tenantId,
+        evidence: sessions.slice(0, 10).map((s) => ({
+          type: 'session',
+          id: s.id,
+          timestamp: s.loginAt,
+          details: {
+            ipAddress: s.ipAddress,
+            userAgent: s.userAgent,
+            loginAt: s.loginAt,
+          },
+        })),
+        detectedAt: new Date(),
+      });
+    }
+  });
+
+  // 3. Detect unusual activity patterns from audit logs
+  const client = await pool.connect();
+  try {
+    const auditLogsResult = await getPlatformAuditLogs(
+      client,
       {
         userId: filters.userId,
-        tenantId: filters.tenantId,
-        success: false,
+        tenantId: filters.tenantId === null ? undefined : filters.tenantId,
+        severity: 'warning',
         startDate: filters.startDate,
         endDate: filters.endDate,
-        limit: 1000
+        limit: 100,
       },
       requesterRole
     );
-
-    // Group by email/userId
-    const failedAttemptsByUser = new Map<string, typeof loginAttemptsResult.attempts>();
-    loginAttemptsResult.attempts.forEach((attempt) => {
-      const key = attempt.userId || attempt.email;
-      if (!failedAttemptsByUser.has(key)) {
-        failedAttemptsByUser.set(key, []);
-      }
-      failedAttemptsByUser.get(key)!.push(attempt);
-    });
-
-    // Flag users with 5+ failed attempts
-    failedAttemptsByUser.forEach((attempts) => {
-      if (attempts.length >= 5) {
-        anomalies.push({
-          type: 'failed_logins',
-          severity: attempts.length >= 10 ? 'high' : attempts.length >= 7 ? 'medium' : 'low',
-          description: `${attempts.length} failed login attempts detected`,
-          userId: attempts[0].userId || undefined,
-          userEmail: attempts[0].email,
-          tenantId: attempts[0].tenantId || null,
-          evidence: attempts.slice(0, 10).map((a) => ({
-            type: 'login_attempt',
-            id: a.id,
-            timestamp: new Date(a.attemptedAt),
-            details: {
-              email: a.email,
-              ipAddress: a.ipAddress,
-              failureReason: a.failureReason
-            }
-          })),
-          detectedAt: new Date()
-        });
-      }
-    });
-
-    // 2. Detect multiple IP logins for same user
-    const sessionsResult = await getPlatformActiveSessions(
-      pool,
-      {
-        userId: filters.userId,
-        tenantId: filters.tenantId,
-        limit: 1000
-      },
-      requesterRole
-    );
-
-    const sessionsByUser = new Map<string, typeof sessionsResult.sessions>();
-    sessionsResult.sessions.forEach((session) => {
-      if (!sessionsByUser.has(session.userId)) {
-        sessionsByUser.set(session.userId, []);
-      }
-      sessionsByUser.get(session.userId)!.push(session);
-    });
-
-    sessionsByUser.forEach((sessions, userId) => {
-      const uniqueIPs = new Set(sessions.map((s) => s.ipAddress).filter(Boolean));
-      if (uniqueIPs.size >= 3) {
-        anomalies.push({
-          type: 'multiple_ips',
-          severity: uniqueIPs.size >= 5 ? 'high' : 'medium',
-          description: `User logged in from ${uniqueIPs.size} different IP addresses`,
-          userId,
-          tenantId: sessions[0].tenantId,
-          evidence: sessions.slice(0, 10).map((s) => ({
-            type: 'session',
-            id: s.id,
-            timestamp: s.loginAt,
-            details: {
-              ipAddress: s.ipAddress,
-              userAgent: s.userAgent,
-              loginAt: s.loginAt
-            }
-          })),
-          detectedAt: new Date()
-        });
-      }
-    });
-
-    // 3. Detect unusual activity patterns from audit logs
-    const client = await pool.connect();
-    try {
-      const auditLogsResult = await getPlatformAuditLogs(
-        client,
-        {
-          userId: filters.userId,
-          tenantId: filters.tenantId === null ? undefined : filters.tenantId,
-          severity: 'warning',
-          startDate: filters.startDate,
-          endDate: filters.endDate,
-          limit: 100
-        },
-        requesterRole
-      );
 
     if (auditLogsResult.logs.length >= 10) {
       anomalies.push({
@@ -548,15 +547,15 @@ export async function detectAnomalies(
           details: {
             action: log.action,
             severity: log.severity,
-            resourceType: log.resourceType
-          }
+            resourceType: log.resourceType,
+          },
         })),
-        detectedAt: new Date()
+        detectedAt: new Date(),
       });
     }
-    } finally {
-      client.release();
-    }
+  } finally {
+    client.release();
+  }
 
   return anomalies;
 }
@@ -588,14 +587,14 @@ export async function getUserActions(
         startDate: filters.startDate,
         endDate: filters.endDate,
         limit: filters.limit || 100,
-        offset: filters.offset || 0
+        offset: filters.offset || 0,
       },
       requesterRole
     );
 
     return {
       actions: auditLogsResult.logs,
-      total: auditLogsResult.total
+      total: auditLogsResult.total,
     };
   } finally {
     client.release();
@@ -619,13 +618,12 @@ export async function exportCaseAuditTrail(
   try {
     // Get all audit logs related to this case
     const auditLogs: AuditLogEntry[] = [];
-    
+
     for (const evidence of caseData.evidence) {
       if (evidence.evidenceType === 'audit_log') {
-        const logResult = await client.query(
-          `SELECT * FROM shared.audit_logs WHERE id = $1`,
-          [evidence.evidenceId]
-        );
+        const logResult = await client.query(`SELECT * FROM shared.audit_logs WHERE id = $1`, [
+          evidence.evidenceId,
+        ]);
         if (logResult.rows.length > 0) {
           const row = logResult.rows[0];
           auditLogs.push({
@@ -641,7 +639,7 @@ export async function exportCaseAuditTrail(
             requestId: row.request_id,
             severity: row.severity,
             tags: row.tags,
-            createdAt: row.created_at
+            createdAt: row.created_at,
           });
         }
       }
@@ -654,7 +652,7 @@ export async function exportCaseAuditTrail(
         {
           userId: caseData.case.relatedUserId,
           tenantId: caseData.case.relatedTenantId || undefined,
-          limit: 1000
+          limit: 1000,
         },
         requesterRole
       );
@@ -664,20 +662,24 @@ export async function exportCaseAuditTrail(
     // Format based on requested format
     if (format === 'json') {
       return {
-        data: JSON.stringify({
-          case: caseData.case,
-          notes: caseData.notes,
-          evidence: caseData.evidence,
-          auditLogs
-        }, null, 2),
+        data: JSON.stringify(
+          {
+            case: caseData.case,
+            notes: caseData.notes,
+            evidence: caseData.evidence,
+            auditLogs,
+          },
+          null,
+          2
+        ),
         filename: `${caseData.case.caseNumber}-audit-trail.json`,
-        mimeType: 'application/json'
+        mimeType: 'application/json',
       };
     } else if (format === 'csv') {
       // Convert to CSV
       const csvRows: string[] = [];
       csvRows.push('Timestamp,Action,User,IP Address,Resource Type,Resource ID,Severity,Details');
-      
+
       auditLogs.forEach((log) => {
         const timestamp = log.createdAt ? log.createdAt.toISOString() : '';
         const action = log.action || '';
@@ -687,13 +689,15 @@ export async function exportCaseAuditTrail(
         const resourceId = log.resourceId || '';
         const severity = log.severity || '';
         const details = JSON.stringify(log.details || {}).replace(/"/g, '""');
-        csvRows.push(`"${timestamp}","${action}","${user}","${ip}","${resourceType}","${resourceId}","${severity}","${details}"`);
+        csvRows.push(
+          `"${timestamp}","${action}","${user}","${ip}","${resourceType}","${resourceId}","${severity}","${details}"`
+        );
       });
 
       return {
         data: csvRows.join('\n'),
         filename: `${caseData.case.caseNumber}-audit-trail.csv`,
-        mimeType: 'text/csv'
+        mimeType: 'text/csv',
       };
     } else {
       // PDF - for now, return JSON (PDF generation would require a library like pdfkit)
@@ -751,7 +755,7 @@ function mapCaseRow(row: {
     tags: row.tags || [],
     metadata: (row.metadata as Record<string, unknown>) || {},
     createdAt: row.created_at,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
   };
 }
 
@@ -771,7 +775,7 @@ function mapNoteRow(row: {
     noteType: row.note_type as 'note' | 'finding' | 'evidence' | 'action',
     createdBy: row.created_by,
     createdAt: row.created_at,
-    metadata: (row.metadata as Record<string, unknown>) || {}
+    metadata: (row.metadata as Record<string, unknown>) || {},
   };
 }
 
@@ -789,13 +793,18 @@ function mapEvidenceRow(row: {
   return {
     id: row.id,
     caseId: row.case_id,
-    evidenceType: row.evidence_type as 'audit_log' | 'session' | 'login_attempt' | 'password_change' | 'file' | 'other',
+    evidenceType: row.evidence_type as
+      | 'audit_log'
+      | 'session'
+      | 'login_attempt'
+      | 'password_change'
+      | 'file'
+      | 'other',
     evidenceId: row.evidence_id,
     evidenceSource: row.evidence_source,
     description: row.description,
     addedBy: row.added_by,
     addedAt: row.added_at,
-    metadata: (row.metadata as Record<string, unknown>) || {}
+    metadata: (row.metadata as Record<string, unknown>) || {},
   };
 }
-

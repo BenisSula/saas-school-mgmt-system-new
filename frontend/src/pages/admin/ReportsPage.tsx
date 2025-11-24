@@ -6,7 +6,7 @@ import {
   type AttendanceAggregate,
   type FeeAggregate,
   type GradeAggregate,
-  type StudentRecord
+  type StudentRecord,
 } from '../../lib/api';
 import { Button } from '../../components/ui/Button';
 import { Table } from '../../components/ui/Table';
@@ -22,7 +22,7 @@ function AdminReportsPage() {
   const [attendanceFilters, setAttendanceFilters] = useState({
     from: '',
     to: '',
-    classId: ''
+    classId: '',
   });
   const [examId, setExamId] = useState('');
   const [feeStatus, setFeeStatus] = useState('');
@@ -42,7 +42,7 @@ function AdminReportsPage() {
       { header: 'Date', key: 'attendance_date' },
       { header: 'Class', key: 'class_id' },
       { header: 'Status', key: 'status' },
-      { header: 'Count', key: 'count' }
+      { header: 'Count', key: 'count' },
     ],
     []
   );
@@ -52,7 +52,7 @@ function AdminReportsPage() {
       { header: 'Subject', key: 'subject' },
       { header: 'Grade', key: 'grade' },
       { header: 'Count', key: 'count' },
-      { header: 'Average score', key: 'average_score' }
+      { header: 'Average score', key: 'average_score' },
     ],
     []
   );
@@ -62,7 +62,7 @@ function AdminReportsPage() {
       { header: 'Status', key: 'status' },
       { header: 'Invoices', key: 'invoice_count' },
       { header: 'Total amount', key: 'total_amount' },
-      { header: 'Total paid', key: 'total_paid' }
+      { header: 'Total paid', key: 'total_paid' },
     ],
     []
   );
@@ -100,7 +100,7 @@ function AdminReportsPage() {
       const data = await api.getAttendanceReport({
         from: attendanceFilters.from || undefined,
         to: attendanceFilters.to || undefined,
-        classId: attendanceFilters.classId || undefined
+        classId: attendanceFilters.classId || undefined,
       });
       setAttendanceData(data);
       if (data.length === 0) {
@@ -128,7 +128,7 @@ function AdminReportsPage() {
       clear();
       const blob = await api.admin.exportTermReport({
         studentId: selectedReportStudentId,
-        termId: selectedReportTermId
+        termId: selectedReportTermId,
       });
       const student = students.find((item) => item.id === selectedReportStudentId);
       const studentName = student
@@ -251,7 +251,7 @@ function AdminReportsPage() {
             onChange={(event) =>
               setAttendanceFilters((state) => ({
                 ...state,
-                classId: sanitizeIdentifier(event.target.value)
+                classId: sanitizeIdentifier(event.target.value),
               }))
             }
           />
@@ -330,7 +330,7 @@ function AdminReportsPage() {
               { label: 'Partial', value: 'partial' },
               { label: 'Paid', value: 'paid' },
               { label: 'Overdue', value: 'overdue' },
-              { label: 'Refunded', value: 'refunded' }
+              { label: 'Refunded', value: 'refunded' },
             ]}
           />
         </div>
@@ -355,7 +355,7 @@ function AdminReportsPage() {
             onChange={(event) => setSelectedReportStudentId(event.target.value)}
             options={students.map((student) => ({
               value: student.id,
-              label: `${student.first_name} ${student.last_name}`
+              label: `${student.first_name} ${student.last_name}`,
             }))}
           />
           <Select
@@ -364,7 +364,7 @@ function AdminReportsPage() {
             onChange={(event) => setSelectedReportTermId(event.target.value)}
             options={terms.map((term) => ({
               value: term.id,
-              label: term.name
+              label: term.name,
             }))}
           />
         </div>
