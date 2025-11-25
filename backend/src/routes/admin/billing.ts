@@ -44,11 +44,13 @@ router.get('/subscription', async (req, res, next) => {
         return res.status(404).json(createErrorResponse('No subscription found for this tenant'));
       }
       res.json(createSuccessResponse(subscription, 'Subscription retrieved successfully'));
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 

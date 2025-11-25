@@ -16,18 +16,21 @@ export function requireFeatureFlag(flagKey: string) {
         const enabled = await isFeatureEnabled(client, flagKey, tenantId);
 
         if (!enabled) {
-          return res.status(403).json({
+          res.status(403).json({
             message: 'Feature not available',
             flagKey,
           });
+          return;
         }
 
         next();
+        return;
       } finally {
         client.release();
       }
     } catch (error) {
       next(error);
+      return;
     }
   };
 }

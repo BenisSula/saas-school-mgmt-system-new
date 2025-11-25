@@ -42,12 +42,14 @@ export function validateParams<T extends z.ZodTypeAny>(schema: T) {
       // Replace params with validated data
       req.params = result.data as Record<string, string>;
       next();
+      return;
     } catch (error) {
       console.error('[validateParams] Unexpected error:', error);
-      return res.status(400).json({
+      res.status(400).json({
         message: 'Invalid route parameters',
         code: 'INVALID_PARAMS',
       });
+      return;
     }
   };
 }

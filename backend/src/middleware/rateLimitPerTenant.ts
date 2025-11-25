@@ -70,11 +70,13 @@ export function rateLimitPerTenant(requestsPerWindow: number, windowSeconds: num
         res.setHeader('X-RateLimit-Reset', windowEnd.getTime().toString());
 
         next();
+        return;
       } finally {
         client.release();
       }
     } catch (error) {
       next(error);
+      return;
     }
   };
 }

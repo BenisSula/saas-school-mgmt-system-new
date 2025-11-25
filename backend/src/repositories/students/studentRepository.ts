@@ -8,7 +8,6 @@
 import type { PoolClient } from 'pg';
 import { BaseRepository } from '../base/baseRepository';
 // Shared types are outside rootDir, but this is intentional for monorepo structure
-// @ts-expect-error TS6059 - File is not under rootDir, but this is expected for shared types
 import type { Student, StudentFilters } from '../../../../shared/domain/types/student.types';
 import { resolveClassId } from '../../lib/crudHelpers';
 import { serializeJsonField } from '../../lib/serviceUtils';
