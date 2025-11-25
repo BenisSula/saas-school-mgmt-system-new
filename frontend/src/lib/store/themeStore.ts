@@ -32,7 +32,7 @@ export const useThemeStore = create<ThemeStore>()(
       getEffectiveTheme: () => {
         const { theme } = get();
         return theme === 'system' ? getSystemTheme() : theme;
-      }
+      },
     }),
     {
       name: 'theme-storage',
@@ -43,7 +43,7 @@ export const useThemeStore = create<ThemeStore>()(
           document.documentElement.setAttribute('data-theme', effectiveTheme);
           document.documentElement.style.colorScheme = effectiveTheme;
         }
-      }
+      },
     }
   )
 );

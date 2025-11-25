@@ -19,7 +19,7 @@ const searchQuerySchema = z.object({
     .string()
     .optional()
     .transform((val) => (val ? val.split(',') : undefined))
-    .pipe(z.array(z.enum(['student', 'teacher', 'class', 'subject'])).optional())
+    .pipe(z.array(z.enum(['student', 'teacher', 'class', 'subject'])).optional()),
 });
 
 router.get(
@@ -38,9 +38,9 @@ router.get(
         return res.status(400).json({ message: parsed.error.message });
       }
 
-      const results = await search(req.tenantClient, req.tenant.schema, parsed.data.q, {
+      const results = await search(req.tenantClient!, req.tenant!.schema, parsed.data.q, {
         limit: parsed.data.limit,
-        types: parsed.data.types
+        types: parsed.data.types,
       });
 
       res.json({ results });
@@ -51,4 +51,3 @@ router.get(
 );
 
 export default router;
-

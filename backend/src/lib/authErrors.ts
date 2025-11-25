@@ -67,4 +67,3 @@ export class TenantBootstrappingError extends AuthError {
     this.name = 'TenantBootstrappingError';
   }
 }
-

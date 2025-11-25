@@ -62,7 +62,9 @@ export const ScheduledReportsManager: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="p-6 text-[var(--brand-text-secondary)]">Loading scheduled reports...</div>;
+    return (
+      <div className="p-6 text-[var(--brand-text-secondary)]">Loading scheduled reports...</div>
+    );
   }
 
   return (
@@ -73,7 +75,9 @@ export const ScheduledReportsManager: React.FC = () => {
           onClick={() => {
             // For now, we need a report ID - in a real scenario, you'd select from available reports
             // For this implementation, we'll show a message that user needs to select a report first
-            alert('Please select a report from the "View Reports" tab first, then use the "Schedule" button on that report.');
+            alert(
+              'Please select a report from the "View Reports" tab first, then use the "Schedule" button on that report.'
+            );
           }}
           className="px-4 py-2 bg-[var(--brand-success)] text-white rounded hover:opacity-90 transition-opacity"
         >
@@ -112,22 +116,47 @@ export const ScheduledReportsManager: React.FC = () => {
           <table className="w-full border-collapse border border-[var(--brand-border)]">
             <thead>
               <tr className="bg-[var(--brand-surface-secondary)]">
-                <th className="border border-[var(--brand-border)] px-4 py-2 text-left text-[var(--brand-text-primary)] font-semibold">Name</th>
-                <th className="border border-[var(--brand-border)] px-4 py-2 text-left text-[var(--brand-text-primary)] font-semibold">Schedule</th>
-                <th className="border border-[var(--brand-border)] px-4 py-2 text-left text-[var(--brand-text-primary)] font-semibold">Format</th>
-                <th className="border border-[var(--brand-border)] px-4 py-2 text-left text-[var(--brand-text-primary)] font-semibold">Recipients</th>
-                <th className="border border-[var(--brand-border)] px-4 py-2 text-left text-[var(--brand-text-primary)] font-semibold">Next Run</th>
-                <th className="border border-[var(--brand-border)] px-4 py-2 text-left text-[var(--brand-text-primary)] font-semibold">Last Run</th>
-                <th className="border border-[var(--brand-border)] px-4 py-2 text-left text-[var(--brand-text-primary)] font-semibold">Status</th>
-                <th className="border border-[var(--brand-border)] px-4 py-2 text-left text-[var(--brand-text-primary)] font-semibold">Actions</th>
+                <th className="border border-[var(--brand-border)] px-4 py-2 text-left text-[var(--brand-text-primary)] font-semibold">
+                  Name
+                </th>
+                <th className="border border-[var(--brand-border)] px-4 py-2 text-left text-[var(--brand-text-primary)] font-semibold">
+                  Schedule
+                </th>
+                <th className="border border-[var(--brand-border)] px-4 py-2 text-left text-[var(--brand-text-primary)] font-semibold">
+                  Format
+                </th>
+                <th className="border border-[var(--brand-border)] px-4 py-2 text-left text-[var(--brand-text-primary)] font-semibold">
+                  Recipients
+                </th>
+                <th className="border border-[var(--brand-border)] px-4 py-2 text-left text-[var(--brand-text-primary)] font-semibold">
+                  Next Run
+                </th>
+                <th className="border border-[var(--brand-border)] px-4 py-2 text-left text-[var(--brand-text-primary)] font-semibold">
+                  Last Run
+                </th>
+                <th className="border border-[var(--brand-border)] px-4 py-2 text-left text-[var(--brand-text-primary)] font-semibold">
+                  Status
+                </th>
+                <th className="border border-[var(--brand-border)] px-4 py-2 text-left text-[var(--brand-text-primary)] font-semibold">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {scheduledReports.map((report) => (
-                <tr key={report.id} className="hover:bg-[var(--brand-surface-secondary)] transition-colors">
-                  <td className="border border-[var(--brand-border)] px-4 py-2 text-[var(--brand-text-primary)]">{report.name}</td>
-                  <td className="border border-[var(--brand-border)] px-4 py-2 text-[var(--brand-text-primary)] capitalize">{report.scheduleType}</td>
-                  <td className="border border-[var(--brand-border)] px-4 py-2 text-[var(--brand-text-primary)] uppercase">{report.exportFormat}</td>
+                <tr
+                  key={report.id}
+                  className="hover:bg-[var(--brand-surface-secondary)] transition-colors"
+                >
+                  <td className="border border-[var(--brand-border)] px-4 py-2 text-[var(--brand-text-primary)]">
+                    {report.name}
+                  </td>
+                  <td className="border border-[var(--brand-border)] px-4 py-2 text-[var(--brand-text-primary)] capitalize">
+                    {report.scheduleType}
+                  </td>
+                  <td className="border border-[var(--brand-border)] px-4 py-2 text-[var(--brand-text-primary)] uppercase">
+                    {report.exportFormat}
+                  </td>
                   <td className="border border-[var(--brand-border)] px-4 py-2 text-[var(--brand-text-primary)]">
                     {report.recipients.length} recipient(s)
                   </td>
@@ -138,7 +167,9 @@ export const ScheduledReportsManager: React.FC = () => {
                     {report.lastRunAt ? new Date(report.lastRunAt).toLocaleString() : 'Never'}
                   </td>
                   <td className="border border-[var(--brand-border)] px-4 py-2">
-                    <span className={`px-2 py-1 rounded ${report.isActive ? 'bg-[var(--brand-success)]/20 text-[var(--brand-success)]' : 'bg-[var(--brand-surface-tertiary)] text-[var(--brand-text-secondary)]'}`}>
+                    <span
+                      className={`px-2 py-1 rounded ${report.isActive ? 'bg-[var(--brand-success)]/20 text-[var(--brand-success)]' : 'bg-[var(--brand-surface-tertiary)] text-[var(--brand-text-secondary)]'}`}
+                    >
                       {report.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
@@ -167,4 +198,3 @@ export const ScheduledReportsManager: React.FC = () => {
     </div>
   );
 };
-

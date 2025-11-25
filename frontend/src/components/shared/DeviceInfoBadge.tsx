@@ -4,7 +4,11 @@
 
 import { Monitor, Smartphone, Tablet, Laptop } from 'lucide-react';
 import { Badge } from '../ui/Badge';
-import { formatDeviceInfo, formatDevicePlatform, type NormalizedDeviceInfo } from '../../utils/formatters';
+import {
+  formatDeviceInfo,
+  formatDevicePlatform,
+  type NormalizedDeviceInfo,
+} from '../../utils/formatters';
 
 export interface DeviceInfoBadgeProps {
   deviceInfo?: NormalizedDeviceInfo | Record<string, unknown> | null;
@@ -30,10 +34,10 @@ export function DeviceInfoBadge({
   deviceInfo,
   userAgent,
   variant = 'default',
-  className = ''
+  className = '',
 }: DeviceInfoBadgeProps) {
   const normalized = deviceInfo as NormalizedDeviceInfo | undefined;
-  
+
   if (!normalized && !userAgent) {
     return (
       <Badge variant="outline" className={className}>
@@ -73,12 +77,13 @@ export function DeviceInfoBadge({
 
   // Default variant
   const displayText = formatDeviceInfo(normalized) || userAgent || 'Unknown';
-  
+
   return (
     <Badge variant="outline" className={className}>
       <DeviceIcon className="h-3 w-3 mr-1" />
-      <span className="truncate max-w-xs" title={userAgent || displayText}>{displayText}</span>
+      <span className="truncate max-w-xs" title={userAgent || displayText}>
+        {displayText}
+      </span>
     </Badge>
   );
 }
-

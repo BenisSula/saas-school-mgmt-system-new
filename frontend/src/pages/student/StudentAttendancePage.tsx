@@ -18,7 +18,7 @@ const ATTENDANCE_RANGES: Array<{ label: string; value: '7' | '30' | '90' | 'all'
   { label: 'Last 7 days', value: '7' },
   { label: 'Last 30 days', value: '30' },
   { label: 'Last 90 days', value: '90' },
-  { label: 'All time', value: 'all' }
+  { label: 'All time', value: 'all' },
 ];
 
 export default function StudentAttendancePage() {
@@ -37,7 +37,7 @@ export default function StudentAttendancePage() {
       try {
         const result = await api.getStudentAttendance(user.id, {
           from: nextFilters.from || undefined,
-          to: nextFilters.to || undefined
+          to: nextFilters.to || undefined,
         });
         setResponse(result);
         if (result.history.length === 0) {
@@ -75,14 +75,14 @@ export default function StudentAttendancePage() {
       return {
         present: 0,
         total: 0,
-        percentage: 0
+        percentage: 0,
       };
     }
     const { present, total, percentage } = response.summary;
     return {
       present,
       total,
-      percentage: Math.round(percentage)
+      percentage: Math.round(percentage),
     };
   }, [response]);
 
@@ -90,11 +90,11 @@ export default function StudentAttendancePage() {
     () => [
       {
         header: 'Date',
-        render: (row) => formatDate(row.attendance_date)
+        render: (row) => formatDate(row.attendance_date),
       },
       {
         header: 'Class',
-        render: (row) => row.class_id ?? '—'
+        render: (row) => row.class_id ?? '—',
       },
       {
         header: 'Status',
@@ -110,8 +110,8 @@ export default function StudentAttendancePage() {
           >
             {row.status.toUpperCase()}
           </span>
-        )
-      }
+        ),
+      },
     ],
     []
   );

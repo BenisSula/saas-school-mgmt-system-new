@@ -15,7 +15,7 @@ export function getCsrfHeader(): Record<string, string> {
     return {};
   }
   return {
-    'x-csrf-token': token
+    'x-csrf-token': token,
   };
 }
 
@@ -35,9 +35,9 @@ export async function fetchWithCsrf(
     headers: {
       ...csrfHeaders,
       ...options.headers,
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
-    credentials: 'include' // Include cookies for CSRF token
+    credentials: 'include', // Include cookies for CSRF token
   };
 
   return fetch(url, enhancedOptions);

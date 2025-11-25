@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { getPool } from '../db/connection';
 import { isIpWhitelisted } from '../services/security/ipWhitelistService';
+import { extractIpAddress } from '../lib/requestUtils';
 
 /**
  * Middleware to enforce IP whitelisting for tenants
@@ -17,10 +18,7 @@ export async function enforceIpWhitelist(
     }
 
     // Get IP address
-    const forwarded = req.headers['x-forwarded-for'];
-    const ipAddress = forwarded
-      ? (typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : forwarded[0])
-      : req.socket.remoteAddress || req.ip || 'unknown';
+    const ipAddress = extractIpAddress(req) || 'unknown';
 
     const pool = getPool();
     const client = await pool.connect();
@@ -31,7 +29,7 @@ export async function enforceIpWhitelist(
       if (!allowed) {
         res.status(403).json({
           message: 'IP address not whitelisted',
-          ipAddress
+          ipAddress,
         });
         return;
       }
@@ -44,4 +42,3 @@ export async function enforceIpWhitelist(
     next(error);
   }
 }
-

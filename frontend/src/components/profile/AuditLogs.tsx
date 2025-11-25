@@ -17,12 +17,12 @@ export function AuditLogs({
   logs,
   loading = false,
   onRefresh,
-  emptyMessage = 'No audit logs available'
+  emptyMessage = 'No audit logs available',
 }: AuditLogsProps) {
   const [filter, setFilter] = useState<{ action: string; dateFrom: string; dateTo: string }>({
     action: 'all',
     dateFrom: '',
-    dateTo: ''
+    dateTo: '',
   });
 
   const filteredLogs = logs.filter((log) => {
@@ -48,7 +48,7 @@ export function AuditLogs({
           onChange={(e) => setFilter((f) => ({ ...f, action: e.target.value }))}
           options={[
             { label: 'All actions', value: 'all' },
-            ...uniqueActions.map((action) => ({ label: action, value: action }))
+            ...uniqueActions.map((action) => ({ label: action, value: action })),
           ]}
         />
         <Input

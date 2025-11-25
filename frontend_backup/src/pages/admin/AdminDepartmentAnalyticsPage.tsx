@@ -1,0 +1,167 @@
+import React, { useMemo, useState } from 'react';
+import { useDepartmentAnalytics } from '../../hooks/queries/useAdminQueries';
+import { useTeachers, useStudents, useClasses } from '../../hooks/queries/useAdminQueries';
+import { BarChart, type BarChartData } from '../../components/charts/BarChart';
+import { PieChart, type PieChartData } from '../../components/charts/PieChart';
+import { StatCard } from '../../components/charts/StatCard';
+import { LineChart, type LineChartDataPoint } from '../../components/charts/LineChart';
+import { Select } from '../../components/ui/Select';
+import RouteMeta from '../../components/layout/RouteMeta';
+import { Users, GraduationCap, BookOpen, TrendingUp } from 'lucide-react';
+import type { TeacherProfile, StudentRecord, SchoolClass } from '../../lib/api';
+
+export default function AdminDepartmentAnalyticsPage() {
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
+
+  const { data: teachersData } = useTeachers();
+  const { data: studentsData } = useStudents();
+  const { data: classesData } = useClasses();
+  const { data: analyticsData } = useDepartmentAnalytics(
+    selectedDepartment !== 'all' ? selectedDepartment : undefined
+  );
+
+  const teachers = useMemo(() => teachersData || [], [teachersData]);
+  const students = useMemo(() => studentsData || [], [studentsData]);
+  const classes = useMemo(() => classesData || [], [classesData]);
+
+  // Extract departments from teachers' subjects
+  const departments = useMemo(() => {
+    const deptSet = new Set<string>();
+    teachers.forEach((teacher: TeacherProfile) => {
+      teacher.subjects.forEach((subject: string) => {
+        // Use subject as department (can be enhanced with actual department field)
+        deptSet.add(subject);
+      });
+    });
+    return Array.from(deptSet);
+  }, [teachers]);
+
+  // Teacher distribution by department
+  const teacherDistribution: BarChartData[] = useMemo(() => {
+    return departments.map((dept) => ({
+      label: dept,
+      value: teachers.filter((t: TeacherProfile) => t.subjects.includes(dept)).length,
+      color: 'var(--brand-primary)'
+    }));
+  }, [departments, teachers]);
+
+  // Student distribution by class
+  const studentDistribution: PieChartData[] = useMemo(() => {
+    const classCounts = new Map<string, number>();
+    students.forEach((student: StudentRecord) => {
+      const className = student.class_id || 'Unassigned';
+      classCounts.set(className, (classCounts.get(className) || 0) + 1);
+    });
+    return Array.from(classCounts.entries()).map(([label, value]) => ({
+      label,
+      value,
+      color: undefined // Will use default colors
+    }));
+  }, [students]);
+
+  // Class size trend based on actual class assignments
+  const classSizeTrend: LineChartDataPoint[] = useMemo(() => {
+    return classes.map((clazz: SchoolClass) => ({
+      label: clazz.name,
+      value: students.filter((s: StudentRecord) => s.class_uuid === clazz.id || s.class_id === clazz.id).length
+    }));
+  }, [classes, students]);
+
+  const stats = useMemo(() => {
+    // Use analytics data if available for specific department
+    if (analyticsData && selectedDepartment !== 'all') {
+      return {
+        totalTeachers: analyticsData.totalTeachers,
+        totalStudents: analyticsData.totalStudents,
+        totalClasses: classes.length,
+        avgClassSize: analyticsData.averageClassSize
+      };
+    }
+
+    // Platform-wide stats
+    const totalTeachers = teachers.length;
+    const totalStudents = students.length;
+    const totalClasses = classes.length;
+    const avgClassSize = totalClasses > 0 ? totalStudents / totalClasses : 0;
+
+    return {
+      totalTeachers,
+      totalStudents,
+      totalClasses,
+      avgClassSize: Math.round(avgClassSize * 10) / 10
+    };
+  }, [teachers, students, classes, analyticsData, selectedDepartment]);
+
+  return (
+    <RouteMeta title="Department Analytics">
+      <div className="space-y-6">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-[var(--brand-surface-contrast)]">
+              Department Analytics
+            </h1>
+            <p className="mt-1 text-sm text-[var(--brand-muted)]">
+              Overview of department performance and statistics
+            </p>
+          </div>
+          <div className="sm:w-48">
+            <Select
+              label="Department"
+              value={selectedDepartment}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedDepartment(e.target.value)}
+              options={[
+                { label: 'All Departments', value: 'all' },
+                ...departments.map((dept) => ({ label: dept, value: dept }))
+              ]}
+            />
+          </div>
+        </header>
+
+        {/* Stats Cards */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Total Teachers"
+            value={stats.totalTeachers}
+            icon={<Users className="h-5 w-5" />}
+            description="Active teaching staff"
+          />
+          <StatCard
+            title="Total Students"
+            value={stats.totalStudents}
+            icon={<GraduationCap className="h-5 w-5" />}
+            description="Enrolled students"
+          />
+          <StatCard
+            title="Total Classes"
+            value={stats.totalClasses}
+            icon={<BookOpen className="h-5 w-5" />}
+            description="Active classes"
+          />
+          <StatCard
+            title="Avg Class Size"
+            value={stats.avgClassSize}
+            icon={<TrendingUp className="h-5 w-5" />}
+            description="Students per class"
+          />
+        </div>
+
+        {/* Charts */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
+            <BarChart
+              data={teacherDistribution}
+              title="Teacher Distribution by Department"
+              height={250}
+            />
+          </div>
+          <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
+            <PieChart data={studentDistribution} title="Student Distribution by Class" size={250} />
+          </div>
+          <div className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm lg:col-span-2">
+            <LineChart data={classSizeTrend} title="Class Size Trend" height={200} />
+          </div>
+        </div>
+      </div>
+    </RouteMeta>
+  );
+}

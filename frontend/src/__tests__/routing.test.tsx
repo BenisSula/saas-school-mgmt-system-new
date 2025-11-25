@@ -17,7 +17,7 @@ vi.mock('../pages/AdminReportsPage', () => ({
       <h1 className="text-2xl font-semibold">Reports & Exports</h1>
       <p>Mocked reports dashboard</p>
     </div>
-  )
+  ),
 }));
 
 vi.mock('../pages/superuser/SuperuserOverviewPage', () => {
@@ -67,14 +67,14 @@ describe('Dashboard routing', () => {
         removeListener: vi.fn(),
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
-        dispatchEvent: vi.fn()
-      }))
+        dispatchEvent: vi.fn(),
+      })),
     });
     vi.spyOn(api, 'listClasses').mockResolvedValue([
-      { id: 'class-1', name: 'Grade 7', description: null }
+      { id: 'class-1', name: 'Grade 7', description: null },
     ]);
     vi.spyOn(api.admin, 'listSubjects').mockResolvedValue([
-      { id: 'subject-1', name: 'Mathematics', code: 'MATH', description: null }
+      { id: 'subject-1', name: 'Mathematics', code: 'MATH', description: null },
     ]);
     vi.spyOn(api, 'listTeachers').mockResolvedValue([
       {
@@ -82,8 +82,8 @@ describe('Dashboard routing', () => {
         name: 'Ms. Jane',
         email: 'teacher@example.com',
         subjects: [],
-        assigned_classes: []
-      }
+        assigned_classes: [],
+      },
     ]);
     vi.spyOn(api, 'listStudents').mockResolvedValue([
       {
@@ -91,14 +91,14 @@ describe('Dashboard routing', () => {
         first_name: 'Alex',
         last_name: 'Johnson',
         class_id: 'class-1',
-        admission_number: 'ADM-1'
-      }
+        admission_number: 'ADM-1',
+      },
     ]);
     vi.spyOn(api.admin, 'listTeacherAssignments').mockResolvedValue([]);
     vi.spyOn(api.admin, 'getClassSubjects').mockResolvedValue([]);
     vi.spyOn(api.admin, 'getStudentSubjects').mockResolvedValue([]);
     vi.spyOn(api, 'listTerms').mockResolvedValue([
-      { id: 'term-1', name: 'Term 1', starts_on: '2025-01-01', ends_on: '2025-03-31' }
+      { id: 'term-1', name: 'Term 1', starts_on: '2025-01-01', ends_on: '2025-03-31' },
     ]);
     vi.spyOn(api.admin, 'setClassSubjects').mockResolvedValue([]);
     vi.spyOn(api.admin, 'setStudentSubjects').mockResolvedValue([]);
@@ -111,7 +111,7 @@ describe('Dashboard routing', () => {
       class_name: 'Grade 7',
       subject_id: 'subject-1',
       subject_name: 'Mathematics',
-      is_class_teacher: false
+      is_class_teacher: false,
     });
     vi.spyOn(api.admin, 'removeTeacherAssignment').mockResolvedValue(undefined);
     vi.spyOn(api.admin, 'exportTermReport').mockResolvedValue(new Blob());
@@ -121,7 +121,7 @@ describe('Dashboard routing', () => {
         totalClasses: 1,
         totalSubjects: 1,
         classTeacherRoles: 1,
-        pendingDropRequests: 0
+        pendingDropRequests: 0,
       },
       assignments: [
         {
@@ -132,17 +132,19 @@ describe('Dashboard routing', () => {
           subjectName: 'Mathematics',
           subjectCode: 'MATH',
           isClassTeacher: true,
-          metadata: {}
-        }
-      ]
+          metadata: {},
+        },
+      ],
     });
     vi.spyOn(api.teacher, 'listClasses').mockResolvedValue([
       {
         id: 'class-1',
         name: 'Grade 7',
         isClassTeacher: true,
-        subjects: [{ id: 'subject-1', name: 'Mathematics', code: 'MATH', assignmentId: 'assign-1' }]
-      }
+        subjects: [
+          { id: 'subject-1', name: 'Mathematics', code: 'MATH', assignmentId: 'assign-1' },
+        ],
+      },
     ]);
     vi.spyOn(api.teacher, 'getClassRoster').mockResolvedValue([
       {
@@ -151,8 +153,8 @@ describe('Dashboard routing', () => {
         last_name: 'Johnson',
         admission_number: 'ADM-1',
         parent_contacts: [],
-        class_id: 'class-1'
-      }
+        class_id: 'class-1',
+      },
     ]);
     vi.spyOn(api.teacher, 'getClassReport').mockResolvedValue({
       class: { id: 'class-1', name: 'Grade 7' },
@@ -160,7 +162,7 @@ describe('Dashboard routing', () => {
       attendance: { present: 1, absent: 0, late: 0, total: 1, percentage: 100 },
       grades: [{ subject: 'Mathematics', entries: 1, average: 90 }],
       fees: { billed: 500, paid: 250, outstanding: 250 },
-      generatedAt: new Date().toISOString()
+      generatedAt: new Date().toISOString(),
     });
     vi.spyOn(api.teacher, 'downloadClassReportPdf').mockResolvedValue(new Blob());
     vi.spyOn(api.teacher, 'getMessages').mockResolvedValue([]);
@@ -174,9 +176,9 @@ describe('Dashboard routing', () => {
           id: 'class-1',
           name: 'Grade 7',
           subjects: ['Mathematics'],
-          isClassTeacher: true
-        }
-      ]
+          isClassTeacher: true,
+        },
+      ],
     });
     vi.spyOn(api.teacher, 'dropSubject').mockResolvedValue({
       assignmentId: 'assign-1',
@@ -186,7 +188,7 @@ describe('Dashboard routing', () => {
       subjectName: 'Mathematics',
       subjectCode: 'MATH',
       isClassTeacher: false,
-      metadata: { dropRequested: true }
+      metadata: { dropRequested: true },
     });
   });
 
@@ -200,7 +202,7 @@ describe('Dashboard routing', () => {
 
     const headerHeading = await screen.findByRole('heading', {
       level: 1,
-      name: /Classes & subjects/i
+      name: /Classes & subjects/i,
     });
     expect(headerHeading).toBeInTheDocument();
 
@@ -208,12 +210,13 @@ describe('Dashboard routing', () => {
     expect(main).toBeInTheDocument();
     expect(main).toHaveAttribute('tabindex', '-1');
 
-    const reportsLink = screen.getByRole('button', { name: /Reports \(printable\)/i });
+    const reportsLink = screen.getByRole('link', { name: /Reports \(printable\)/i });
     await user.click(reportsLink);
 
+    // The page heading is "Reports & Exports", not "Reports Dashboard"
     const reportsHeading = await within(screen.getByRole('main')).findByRole('heading', {
       level: 1,
-      name: /Reports Dashboard/i
+      name: /Reports/i,
     });
     expect(reportsHeading).toBeInTheDocument();
 
@@ -231,25 +234,25 @@ describe('Dashboard routing', () => {
         activeSchools: 4,
         suspendedSchools: 1,
         users: 250,
-        pendingUsers: 6
+        pendingUsers: 6,
       },
       roleDistribution: {
         admins: 20,
         hods: 30,
         teachers: 80,
-        students: 150
+        students: 150,
       },
       subscriptionBreakdown: {
         free: 1,
         trial: 2,
-        paid: 2
+        paid: 2,
       },
       revenue: {
         total: 125000,
         byTenant: [
           { tenantId: 'tenant_a', amount: 50000 },
-          { tenantId: 'tenant_b', amount: 75000 }
-        ]
+          { tenantId: 'tenant_b', amount: 75000 },
+        ],
       },
       recentSchools: [
         {
@@ -257,9 +260,9 @@ describe('Dashboard routing', () => {
           name: 'North Ridge Academy',
           status: 'active',
           subscriptionType: 'paid',
-          createdAt: new Date().toISOString()
-        }
-      ]
+          createdAt: new Date().toISOString(),
+        },
+      ],
     } as PlatformOverview);
     try {
       renderApp(['/dashboard/superuser/overview']);

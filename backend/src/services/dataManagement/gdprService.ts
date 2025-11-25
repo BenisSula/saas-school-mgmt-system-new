@@ -45,7 +45,7 @@ export async function createGdprErasureRequest(
       input.reason || null,
       input.dataCategories || [],
       verificationToken,
-      input.requestedBy || null
+      input.requestedBy || null,
     ]
   );
 
@@ -71,7 +71,7 @@ export async function verifyGdprErasureRequest(
     [requestId, verificationToken]
   );
 
-  return result.rowCount > 0;
+  return (result.rowCount ?? 0) > 0;
 }
 
 /**
@@ -107,7 +107,7 @@ export async function processGdprErasure(
     tablesAffected: [],
     recordsDeleted: 0,
     recordsAnonymized: 0,
-    dataCategories: request.data_categories || []
+    dataCategories: request.data_categories || [],
   };
 
   // Process based on request type
@@ -121,7 +121,7 @@ export async function processGdprErasure(
       'attendance',
       'grades',
       'invoices',
-      'messages'
+      'messages',
     ];
 
     for (const table of tablesToProcess) {
@@ -130,8 +130,8 @@ export async function processGdprErasure(
           `DELETE FROM tenant_${request.tenant_id}.${table} WHERE user_id = $1 OR id = $1`,
           [request.user_id]
         );
-        erasureReport.recordsDeleted += deleteResult.rowCount || 0;
-        if (deleteResult.rowCount > 0) {
+        erasureReport.recordsDeleted += deleteResult.rowCount ?? 0;
+        if ((deleteResult.rowCount ?? 0) > 0) {
           erasureReport.tablesAffected.push(table);
         }
       } catch (error) {
@@ -141,10 +141,7 @@ export async function processGdprErasure(
     }
 
     // Delete from shared schema
-    await client.query(
-      'DELETE FROM shared.users WHERE id = $1',
-      [request.user_id]
-    );
+    await client.query('DELETE FROM shared.users WHERE id = $1', [request.user_id]);
     erasureReport.recordsDeleted += 1;
     erasureReport.tablesAffected.push('shared.users');
   } else if (request.request_type === 'anonymize') {
@@ -183,8 +180,8 @@ export async function processGdprErasure(
           `,
           [anonymizedName, anonymizedEmail, request.user_id]
         );
-        erasureReport.recordsAnonymized += updateResult.rowCount || 0;
-        if (updateResult.rowCount > 0) {
+        erasureReport.recordsAnonymized += updateResult.rowCount ?? 0;
+        if ((updateResult.rowCount ?? 0) > 0) {
           erasureReport.tablesAffected.push(table);
         }
       } catch (error) {
@@ -214,7 +211,7 @@ export async function processGdprErasure(
     erasure_report: erasureReport,
     status: 'completed',
     processed_at: new Date(),
-    processed_by: processedBy
+    processed_by: processedBy,
   };
 }
 
@@ -281,7 +278,7 @@ export async function getGdprErasureRequests(
 
   return {
     requests: requestsResult.rows,
-    total
+    total,
   };
 }
 
@@ -302,8 +299,7 @@ export async function cancelGdprErasureRequest(
     [requestId]
   );
 
-  if (result.rowCount === 0) {
+  if ((result.rowCount ?? 0) === 0) {
     throw new Error('Request not found or cannot be cancelled');
   }
 }
-

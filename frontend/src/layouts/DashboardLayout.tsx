@@ -23,7 +23,14 @@ export interface DashboardLayoutProps {
 export function DashboardLayout({ children, user, onLogout, storageKey }: DashboardLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const links = useMemo(() => getSidebarLinksForRole(user?.role), [user?.role]);
+  const additionalRoles = useMemo(() => {
+    if (!user?.additional_roles) return [];
+    return user.additional_roles.map((r) => r.role);
+  }, [user?.additional_roles]);
+  const links = useMemo(
+    () => getSidebarLinksForRole(user?.role, additionalRoles),
+    [user?.role, additionalRoles]
+  );
 
   const {
     isOpen,
@@ -32,7 +39,7 @@ export function DashboardLayout({ children, user, onLogout, storageKey }: Dashbo
     toggleMobile,
     closeMobile,
     toggleCollapsed,
-    shouldShowOverlay
+    shouldShowOverlay,
   } = useSidebar({ storageKey: storageKey ?? user?.id });
 
   const content = children;
@@ -103,7 +110,7 @@ function DashboardLayoutContent({
   toggleCollapsed,
   shouldShowOverlay,
   navigate,
-  location
+  location,
 }: DashboardLayoutContentProps) {
   const mainRef = useRef<HTMLElement | null>(null);
   const { titleId } = useDashboardRouteMeta();

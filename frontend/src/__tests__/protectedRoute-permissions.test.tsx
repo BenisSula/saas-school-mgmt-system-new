@@ -7,7 +7,7 @@ import type { AuthUser } from '../lib/api';
 
 // Mock the AuthContext
 vi.mock('../context/AuthContext', () => ({
-  useAuth: vi.fn()
+  useAuth: vi.fn(),
 }));
 
 const mockUseAuth = AuthContextModule.useAuth as ReturnType<typeof vi.fn>;
@@ -24,13 +24,13 @@ describe('ProtectedRoute with Permissions', () => {
       role: 'teacher',
       tenantId: 'tenant-1',
       isVerified: true,
-      status: 'active'
+      status: 'active',
     };
 
     mockUseAuth.mockReturnValue({
       user: mockUser,
       isLoading: false,
-      isAuthenticated: true
+      isAuthenticated: true,
     });
 
     render(
@@ -51,13 +51,13 @@ describe('ProtectedRoute with Permissions', () => {
       role: 'student',
       tenantId: 'tenant-1',
       isVerified: true,
-      status: 'active'
+      status: 'active',
     };
 
     mockUseAuth.mockReturnValue({
       user: mockUser,
       isLoading: false,
-      isAuthenticated: true
+      isAuthenticated: true,
     });
 
     render(
@@ -80,13 +80,13 @@ describe('ProtectedRoute with Permissions', () => {
       role: 'teacher',
       tenantId: 'tenant-1',
       isVerified: true,
-      status: 'active'
+      status: 'active',
     };
 
     mockUseAuth.mockReturnValue({
       user: mockUser,
       isLoading: false,
-      isAuthenticated: true
+      isAuthenticated: true,
     });
 
     render(
@@ -107,13 +107,13 @@ describe('ProtectedRoute with Permissions', () => {
       role: 'teacher',
       tenantId: 'tenant-1',
       isVerified: true,
-      status: 'active'
+      status: 'active',
     };
 
     mockUseAuth.mockReturnValue({
       user: mockUser,
       isLoading: false,
-      isAuthenticated: true
+      isAuthenticated: true,
     });
 
     render(
@@ -138,13 +138,13 @@ describe('ProtectedRoute with Permissions', () => {
       role: 'admin',
       tenantId: 'tenant-1',
       isVerified: true,
-      status: 'active'
+      status: 'active',
     };
 
     mockUseAuth.mockReturnValue({
       user: mockUser,
       isLoading: false,
-      isAuthenticated: true
+      isAuthenticated: true,
     });
 
     render(
@@ -168,13 +168,13 @@ describe('ProtectedRoute with Permissions', () => {
       role: 'admin',
       tenantId: 'tenant-1',
       isVerified: true,
-      status: 'active'
+      status: 'active',
     };
 
     mockUseAuth.mockReturnValue({
       user: mockUser,
       isLoading: false,
-      isAuthenticated: true
+      isAuthenticated: true,
     });
 
     // Admin has users:manage permission, so should pass both role and permission checks

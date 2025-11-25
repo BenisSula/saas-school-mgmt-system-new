@@ -35,12 +35,12 @@ jest.mock('../src/middleware/authenticate', () => ({
       req.user = { ...currentMockUser };
     }
     next();
-  }
+  },
 }));
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -77,7 +77,7 @@ describe('Tenant Isolation', () => {
         'School 2',
         'school2.local',
         'tenant_2',
-        'active'
+        'active',
       ]
     );
 
@@ -105,7 +105,7 @@ describe('Tenant Isolation', () => {
         '$argon2id$v=19$m=65536,t=3,p=4$test',
         'admin',
         'active',
-        tenant2Id
+        tenant2Id,
       ]
     );
 
@@ -133,12 +133,12 @@ describe('Tenant Isolation', () => {
       role,
       tenantId,
       email: `admin@school${tenantId === tenant1Id ? '1' : '2'}.com`,
-      tokenId: 'test-token'
+      tokenId: 'test-token',
     };
 
     return {
       Authorization: 'Bearer fake-token',
-      'x-tenant-id': tenantId
+      'x-tenant-id': tenantId,
     };
   };
 
@@ -198,12 +198,12 @@ describe('Tenant Isolation', () => {
         role: 'admin',
         tenantId: tenant1Id,
         email: 'admin1@school1.com',
-        tokenId: 'test-token'
+        tokenId: 'test-token',
       };
 
       const response = await request(app).get('/students').set({
         Authorization: 'Bearer fake-token',
-        'x-tenant-id': tenant2Id
+        'x-tenant-id': tenant2Id,
       });
 
       // Should reject due to tenant mismatch
@@ -216,11 +216,11 @@ describe('Tenant Isolation', () => {
         role: 'admin',
         tenantId: tenant1Id,
         email: 'admin1@school1.com',
-        tokenId: 'test-token'
+        tokenId: 'test-token',
       };
 
       const response = await request(app).get('/students').set({
-        Authorization: 'Bearer fake-token'
+        Authorization: 'Bearer fake-token',
         // Missing x-tenant-id header
       });
 
@@ -233,7 +233,7 @@ describe('Tenant Isolation', () => {
       const newStudent = {
         firstName: 'New',
         lastName: 'Student',
-        admissionNumber: 'NS001'
+        admissionNumber: 'NS001',
       };
 
       const createResponse = await request(app)
@@ -246,14 +246,14 @@ describe('Tenant Isolation', () => {
 
         // Verify student exists in tenant 1 schema
         const result = await pool.query('SELECT * FROM tenant_1.students WHERE id = $1', [
-          studentId
+          studentId,
         ]);
 
         expect(result.rows.length).toBeGreaterThan(0);
 
         // Verify student does NOT exist in tenant 2 schema
         const result2 = await pool.query('SELECT * FROM tenant_2.students WHERE id = $1', [
-          studentId
+          studentId,
         ]);
 
         expect(result2.rows.length).toBe(0);
@@ -273,7 +273,7 @@ describe('Tenant Isolation', () => {
           '$argon2id$v=19$m=65536,t=3,p=4$test',
           'superadmin',
           'active',
-          null
+          null,
         ]
       );
 
@@ -283,18 +283,18 @@ describe('Tenant Isolation', () => {
         role: 'superadmin',
         tenantId: '',
         email: 'super@platform.com',
-        tokenId: 'test-token'
+        tokenId: 'test-token',
       };
 
       const response1 = await request(app).get('/students').set({
         Authorization: 'Bearer fake-token',
-        'x-tenant-id': tenant1Id
+        'x-tenant-id': tenant1Id,
       });
 
       // Superadmin should be able to access tenant 2 data
       const response2 = await request(app).get('/students').set({
         Authorization: 'Bearer fake-token',
-        'x-tenant-id': tenant2Id
+        'x-tenant-id': tenant2Id,
       });
 
       // Both should succeed (or at least not be 403)

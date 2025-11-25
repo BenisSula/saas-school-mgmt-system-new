@@ -112,7 +112,7 @@ export async function listStudentSubjectsDetailed(
   for (const row of dropRequestResult.rows) {
     dropStatusMap.set(row.subject_id, {
       status: row.status,
-      requested_at: row.requested_at
+      requested_at: row.requested_at,
     });
   }
 
@@ -125,7 +125,7 @@ export async function listStudentSubjectsDetailed(
       code: subject.code,
       dropRequested: Boolean(metadata.dropRequested ?? dropRecord?.status === 'pending'),
       dropStatus: dropRecord?.status ?? 'none',
-      dropRequestedAt: dropRecord?.requested_at ?? null
+      dropRequestedAt: dropRecord?.requested_at ?? null,
     };
   });
 }
@@ -215,7 +215,7 @@ export async function listStudentExamSummaries(
     name: row.name,
     examDate: row.exam_date,
     averageScore: row.average_score,
-    subjectCount: row.subject_count
+    subjectCount: row.subject_count,
   }));
 }
 
@@ -280,7 +280,7 @@ export async function getStudentProfileDetail(
     className,
     admissionNumber: student.admission_number,
     parentContacts: parseJson<unknown[]>(student.parent_contacts, []),
-    subjects
+    subjects,
   };
 }
 
@@ -314,7 +314,7 @@ export async function updateStudentProfile(
       payload.firstName ?? existing.first_name,
       payload.lastName ?? existing.last_name,
       serializeJsonField(payload.parentContacts ?? parseJson(existing.parent_contacts, [])),
-      studentId
+      studentId,
     ]
   );
 
@@ -360,7 +360,7 @@ export async function listStudentMessages(
     body: row.body,
     className: row.class_name,
     status: row.status,
-    sentAt: row.sent_at
+    sentAt: row.sent_at,
   }));
 }
 
@@ -392,7 +392,7 @@ export async function listAcademicTermsForStudent(
     id: row.id,
     name: row.name,
     startsOn: row.starts_on ?? null,
-    endsOn: row.ends_on ?? null
+    endsOn: row.ends_on ?? null,
   }));
 }
 
@@ -415,7 +415,7 @@ export async function listStudentTermReports(
     id: row.id,
     termId: row.term_id,
     generatedAt: row.generated_at,
-    summary: parseJson(row.summary, {})
+    summary: parseJson(row.summary, {}),
   }));
 }
 
@@ -432,7 +432,7 @@ export async function generateStudentTermReport(
     {
       studentId,
       termId,
-      includeBreakdown: true
+      includeBreakdown: true,
     },
     studentId
   );

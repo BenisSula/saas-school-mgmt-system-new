@@ -5,7 +5,7 @@ const LINKS = [
   { label: 'Features', section: 'features-section' },
   { label: 'Pricing', section: 'pricing-section' },
   { label: 'Top schools', section: 'top-schools-section' },
-  { label: 'Contact', section: 'contact-section' }
+  { label: 'Contact', section: 'contact-section' },
 ];
 
 export interface LandingHeaderProps {

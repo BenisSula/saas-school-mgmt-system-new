@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import AdminReportsPage from '../pages/AdminReportsPage';
+import AdminReportsPage from '../pages/admin/ReportsPage';
 
 describe('AdminReportsPage', () => {
   const fetchMock = vi.fn().mockResolvedValue({
     ok: true,
     status: 200,
-    json: async () => ({})
+    json: async () => ({}),
   });
   const originalFetch = globalThis.fetch;
 
@@ -14,7 +14,7 @@ describe('AdminReportsPage', () => {
     fetchMock.mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => []
+      json: async () => [],
     });
     globalThis.fetch = fetchMock as unknown as typeof fetch;
   });

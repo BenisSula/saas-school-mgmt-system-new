@@ -10,7 +10,7 @@ const HOD_EMAILS = [
   'ebrima.sanyang@stpeterslamin.edu.gm',
   'momodou.bojang@daddyjobe.edu.gm',
   'isatou.jatta@daddyjobe.edu.gm',
-  'ousman.darboe@daddyjobe.edu.gm'
+  'ousman.darboe@daddyjobe.edu.gm',
 ];
 
 async function fixHodRoles() {
@@ -20,7 +20,7 @@ async function fixHodRoles() {
 
   for (const email of HOD_EMAILS) {
     const result = await pool.query(`SELECT id, email, role FROM shared.users WHERE email = $1`, [
-      email.toLowerCase()
+      email.toLowerCase(),
     ]);
 
     if ((result.rowCount ?? 0) === 0) {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import RouteMeta from '../../components/layout/RouteMeta';
 import { StatusBanner } from '../../components/ui/StatusBanner';
 import { Table, type TableColumn } from '../../components/ui/Table';
@@ -10,8 +10,9 @@ import {
   api,
   type TeacherClassRosterEntry,
   type TeacherClassSummary,
-  type TeacherAssignmentSummary
+  type TeacherAssignmentSummary,
 } from '../../lib/api';
+import { extractPaginatedData } from '../../lib/api/pagination';
 import { toast } from 'sonner';
 
 interface SubjectRow {
@@ -35,7 +36,7 @@ const rosterColumns: TableColumn<TeacherClassRosterEntry>[] = [
           <p className="text-xs text-[var(--brand-muted)]">Adm: {row.admission_number}</p>
         ) : null}
       </div>
-    )
+    ),
   },
   {
     header: 'Contacts',
@@ -46,8 +47,8 @@ const rosterColumns: TableColumn<TeacherClassRosterEntry>[] = [
         </div>
       ) : (
         <span className="text-xs text-[var(--brand-muted)]">Not provided</span>
-      )
-  }
+      ),
+  },
 ];
 
 function SubjectBadge({ subject }: { subject: SubjectRow }) {
@@ -91,7 +92,7 @@ export default function TeacherClassesPage() {
     return selectedClass.subjects.map((subject) => ({
       ...subject,
       isClassTeacher: selectedClass.isClassTeacher,
-      metadata: assignments[subject.assignmentId]?.metadata ?? {}
+      metadata: assignments[subject.assignmentId]?.metadata ?? {},
     }));
   }, [assignments, selectedClass]);
 
@@ -99,16 +100,52 @@ export default function TeacherClassesPage() {
     setLoading(true);
     setError(null);
     try {
-      const [classSummaries, overview] = await Promise.all([
-        api.teacher.listClasses(),
-        api.teacher.getOverview()
+      // Use new API endpoints
+      const [classInfos, overview] = await Promise.all([
+        api.teachers.getMyClasses(),
+        api.teacher.getOverview(),
       ]);
-      setClasses(classSummaries);
+
+      // Build assignment map for metadata lookup
       const assignmentMap: Record<string, TeacherAssignmentSummary> = {};
       overview.assignments.forEach((assignment) => {
         assignmentMap[assignment.assignmentId] = assignment;
       });
       setAssignments(assignmentMap);
+
+      // Group assignments by classId to build TeacherClassSummary structure
+      const assignmentsByClass = new Map<string, TeacherAssignmentSummary[]>();
+      overview.assignments.forEach((assignment) => {
+        const existing = assignmentsByClass.get(assignment.classId) || [];
+        existing.push(assignment);
+        assignmentsByClass.set(assignment.classId, existing);
+      });
+
+      // Build TeacherClassSummary[] by combining classInfos with assignments
+      const classSummaries: TeacherClassSummary[] = classInfos.map((classInfo) => {
+        const classAssignments = assignmentsByClass.get(classInfo.id) || [];
+
+        // Determine if teacher is class teacher (any assignment with isClassTeacher=true)
+        const isClassTeacher = classAssignments.some((a) => a.isClassTeacher);
+
+        // Build subjects array from assignments
+        const subjects = classAssignments.map((assignment) => ({
+          id: assignment.subjectId,
+          name: assignment.subjectName,
+          code: assignment.subjectCode,
+          assignmentId: assignment.assignmentId,
+        }));
+
+        return {
+          id: classInfo.id,
+          name: classInfo.name,
+          isClassTeacher,
+          subjects,
+        };
+      });
+
+      setClasses(classSummaries);
+
       if (classSummaries.length > 0) {
         setSelectedClassId((current) => current || classSummaries[0].id);
         const firstSubject = classSummaries[0].subjects[0];
@@ -156,7 +193,20 @@ export default function TeacherClassesPage() {
     }
     setRostering(true);
     try {
-      const rosterEntries = await api.teacher.getClassRoster(selectedClassId);
+      // Use new API endpoint
+      const studentsData = await api.teachers.getMyStudents({ classId: selectedClassId });
+      const students = extractPaginatedData(studentsData);
+
+      // Convert TeacherStudent[] to TeacherClassRosterEntry[] format
+      const rosterEntries: TeacherClassRosterEntry[] = students.map((student) => ({
+        id: student.id,
+        first_name: student.first_name,
+        last_name: student.last_name,
+        admission_number: student.admission_number || null,
+        parent_contacts: [], // Parent contacts not available in new API
+        class_id: student.class_id || null,
+      }));
+
       setRoster(rosterEntries);
       if (rosterEntries.length === 0) {
         toast.info('No students found for this class.');
@@ -175,7 +225,7 @@ export default function TeacherClassesPage() {
       const updated = await api.teacher.dropSubject(assignmentId);
       setAssignments((current) => ({
         ...current,
-        [assignmentId]: updated
+        [assignmentId]: updated,
       }));
       toast.success('Drop request submitted.');
     } catch (err) {
@@ -214,12 +264,20 @@ export default function TeacherClassesPage() {
     <RouteMeta title="My classes">
       <div className="space-y-6">
         <header className="space-y-2">
-          <h1 className="text-2xl font-semibold text-[var(--brand-surface-contrast)]">
-            Manage your classes
-          </h1>
-          <p className="text-sm text-[var(--brand-muted)]">
-            Review subject allocations, request reassignments, and keep track of classroom rosters.
-          </p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-[var(--brand-surface-contrast)]">
+                Manage your classes
+              </h1>
+              <p className="text-sm text-[var(--brand-muted)]">
+                Review subject allocations, request reassignments, and keep track of classroom
+                rosters.
+              </p>
+            </div>
+            <Link to="/dashboard/teacher/students">
+              <Button variant="outline">View Students</Button>
+            </Link>
+          </div>
         </header>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -256,7 +314,7 @@ export default function TeacherClassesPage() {
             disabled={filteredClasses.length === 0}
             options={filteredClasses.map((clazz) => ({
               value: clazz.id,
-              label: `${clazz.name}${clazz.isClassTeacher ? ' · Homeroom' : ''}`
+              label: `${clazz.name}${clazz.isClassTeacher ? ' · Homeroom' : ''}`,
             }))}
           />
           <Select
@@ -266,7 +324,7 @@ export default function TeacherClassesPage() {
             disabled={subjects.length === 0}
             options={subjects.map((subject) => ({
               value: subject.id,
-              label: subject.code ? `${subject.name} (${subject.code})` : subject.name
+              label: subject.code ? `${subject.name} (${subject.code})` : subject.name,
             }))}
           />
           <div className="flex items-end justify-start gap-2">

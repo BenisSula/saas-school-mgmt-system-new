@@ -1,0 +1,54 @@
+{
+  "summary": {
+    "total_users_tested": 5,
+    "successful_logins": 5,
+    "failed_logins": 0,
+    "average_login_time_ms": 61.72,
+    "report_generated_at": "2025-11-13T18:28:24.110Z"
+  },
+  "login_metrics": {
+    "totalUsers": 5,
+    "successes": 5,
+    "failures": 0,
+    "averageLoginMs": 61.72,
+    "byRole": {
+      "admin": {
+        "count": 2,
+        "avgMs": 59.54,
+        "failures": 0
+      },
+      "student": {
+        "count": 1,
+        "avgMs": 61.83,
+        "failures": 0
+      },
+      "superadmin": {
+        "count": 1,
+        "avgMs": 68.43,
+        "failures": 0
+      },
+      "teacher": {
+        "count": 1,
+        "avgMs": 59.23,
+        "failures": 0
+      }
+    }
+  },
+  "endpoints": [
+    {
+      "label": "dashboard",
+      "runs": 40,
+      "concurrency": 8,
+      "averageMs": 73.54,
+      "p95Ms": 128.25,
+      "maxThresholdMs": 1200
+    }
+  ],
+  "cache_metrics": {
+    "dashboard": 0.55
+  },
+  "rbac": {
+    "checks_passed": 2,
+    "violations": 0
+  }
+}

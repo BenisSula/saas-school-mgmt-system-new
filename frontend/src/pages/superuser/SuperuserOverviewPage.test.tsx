@@ -13,25 +13,25 @@ const overview: PlatformOverview = {
     activeSchools: 4,
     suspendedSchools: 1,
     users: 250,
-    pendingUsers: 6
+    pendingUsers: 6,
   },
   roleDistribution: {
     admins: 20,
     hods: 12,
     teachers: 80,
-    students: 150
+    students: 150,
   },
   subscriptionBreakdown: {
     free: 1,
     trial: 2,
-    paid: 2
+    paid: 2,
   },
   revenue: {
     total: 125000,
     byTenant: [
       { tenantId: 'tenant_a', amount: 50000 },
-      { tenantId: 'tenant_b', amount: 75000 }
-    ]
+      { tenantId: 'tenant_b', amount: 75000 },
+    ],
   },
   recentSchools: [
     {
@@ -39,9 +39,9 @@ const overview: PlatformOverview = {
       name: 'North Ridge Academy',
       status: 'active',
       subscriptionType: 'paid',
-      createdAt: new Date('2025-02-01T00:00:00Z').toISOString()
-    }
-  ]
+      createdAt: new Date('2025-02-01T00:00:00Z').toISOString(),
+    },
+  ],
 };
 
 describe('SuperuserOverviewPage', () => {

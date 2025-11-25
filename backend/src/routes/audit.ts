@@ -25,17 +25,13 @@ router.get('/logs', async (req, res, next) => {
       return res.status(403).json({ message: 'You can only view your own audit logs' });
     }
 
-    const logs = await listAuditLogs(
-      req.tenantClient!,
-      req.tenant!.schema,
-      {
-        userId: targetUserId,
-        entityType: entityType as AuditEntityType | undefined,
-        from,
-        to,
-        limit
-      }
-    );
+    const logs = await listAuditLogs(req.tenantClient!, req.tenant!.schema, {
+      userId: targetUserId,
+      entityType: entityType as AuditEntityType | undefined,
+      from,
+      to,
+      limit,
+    });
 
     // Transform to match frontend AuditLogEntry interface
     const transformedLogs = logs.map((log) => ({
@@ -47,7 +43,7 @@ router.get('/logs', async (req, res, next) => {
       userEmail: null, // Will need to join with users table if needed
       timestamp: log.created_at,
       details: log.details,
-      ipAddress: null // Not stored in audit_logs table currently
+      ipAddress: null, // Not stored in audit_logs table currently
     }));
 
     res.json(transformedLogs);
@@ -69,14 +65,10 @@ router.get('/activity', async (req, res, next) => {
       return res.status(403).json({ message: 'You can only view your own activity' });
     }
 
-    const logs = await listAuditLogs(
-      req.tenantClient!,
-      req.tenant!.schema,
-      {
-        userId: targetUserId,
-        limit
-      }
-    );
+    const logs = await listAuditLogs(req.tenantClient!, req.tenant!.schema, {
+      userId: targetUserId,
+      limit,
+    });
 
     // Transform to activity history format
     const activities = logs.map((log) => ({
@@ -84,7 +76,7 @@ router.get('/activity', async (req, res, next) => {
       action: log.action,
       description: `${log.action} on ${log.entityType}`,
       timestamp: log.created_at,
-      metadata: log.details || {}
+      metadata: log.details || {},
     }));
 
     res.json(activities);
@@ -94,4 +86,3 @@ router.get('/activity', async (req, res, next) => {
 });
 
 export default router;
-

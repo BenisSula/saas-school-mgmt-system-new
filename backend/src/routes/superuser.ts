@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import authenticate from '../middleware/authenticate';
-import { requirePermission } from '../middleware/rbac';
+import { requireSuperuser } from '../middleware/rbac';
 import {
   createAdminForSchool,
   createSchool,
@@ -9,17 +9,17 @@ import {
   getUsageMonitoring,
   listSchools,
   softDeleteSchool,
-  updateSchool
+  updateSchool,
 } from '../services/superuserService';
 import {
   createAdminSchema,
   createSchoolSchema,
   updateSchoolSchema,
-  sendAdminNotificationSchema
+  sendAdminNotificationSchema,
 } from '../validators/superuserValidator';
 import {
   listAllPlatformUsers,
-  sendNotificationToAdmins
+  sendNotificationToAdmins,
 } from '../services/platformMonitoringService';
 import billingRouter from './superuser/billing';
 import onboardingRouter from './superuser/onboarding';
@@ -30,10 +30,18 @@ import sessionsRouter from './superuser/sessions';
 import passwordsRouter from './superuser/passwords';
 import auditRouter from './superuser/audit';
 import investigationsRouter from './superuser/investigations';
+import subscriptionsRouter from './superuser/subscriptions';
+import overridesRouter from './superuser/overrides';
+import permissionOverridesRouter from './superuser/permissionOverrides';
+import schoolsRouter from './superuser/schools';
+import usersRouter from './superuser/users';
+import rolesRouter from './superuser/roles';
+import maintenanceRouter from './superuser/maintenance';
 
 const router = Router();
 
-router.use(authenticate, requirePermission('tenants:manage'));
+// Apply superuser middleware to all routes
+router.use(authenticate, requireSuperuser());
 
 router.get('/overview', async (req, res, next) => {
   try {
@@ -57,7 +65,11 @@ router.post('/schools', async (req, res, next) => {
   try {
     const parsed = createSchoolSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: parsed.error.message });
+      const { formatValidationErrors } = await import('../lib/validationHelpers');
+      return res.status(400).json({
+        message: formatValidationErrors(parsed.error),
+        errors: parsed.error.issues,
+      });
     }
     const school = await createSchool(parsed.data, req.user?.id ?? null);
     res.status(201).json(school);
@@ -70,7 +82,11 @@ router.patch('/schools/:id', async (req, res, next) => {
   try {
     const parsed = updateSchoolSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: parsed.error.message });
+      const { formatValidationErrors } = await import('../lib/validationHelpers');
+      return res.status(400).json({
+        message: formatValidationErrors(parsed.error),
+        errors: parsed.error.issues,
+      });
     }
     const updated = await updateSchool(req.params.id, parsed.data, req.user?.id ?? null);
     if (!updated) {
@@ -95,7 +111,11 @@ router.post('/schools/:id/admins', async (req, res, next) => {
   try {
     const parsed = createAdminSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: parsed.error.message });
+      const { formatValidationErrors } = await import('../lib/validationHelpers');
+      return res.status(400).json({
+        message: formatValidationErrors(parsed.error),
+        errors: parsed.error.issues,
+      });
     }
     const admin = await createAdminForSchool(req.params.id, parsed.data, req.user?.id ?? null);
     res.status(201).json(admin);
@@ -121,7 +141,7 @@ router.post('/notifications', async (req, res, next) => {
     }
     const result = await sendNotificationToAdmins({
       ...parsed.data,
-      actorId: req.user?.id ?? null
+      actorId: req.user?.id ?? null,
     });
     res.status(201).json(result);
   } catch (error) {
@@ -215,5 +235,69 @@ router.use('/', auditRouter);
 
 // Investigation routes
 router.use('/investigations', investigationsRouter);
+
+// Subscription routes
+router.use('/subscriptions', subscriptionsRouter);
+
+// Override routes
+router.use('/overrides', overridesRouter);
+
+// Permission override routes
+router.use('/permission-overrides', permissionOverridesRouter);
+
+// School-specific routes
+router.use('/schools', schoolsRouter);
+
+// User-specific routes
+router.use('/users', usersRouter);
+
+// Role management routes
+router.use('/roles', rolesRouter);
+
+// Maintenance routes
+router.use('/maintenance', maintenanceRouter);
+
+// PUT /superuser/subscription-tiers - Alias for subscription tier config update
+router.put('/subscription-tiers', async (req, res, next) => {
+  try {
+    const { updateSubscriptionTierConfigs } = await import(
+      '../services/superuser/subscriptionTierService'
+    );
+    const { z } = await import('zod');
+
+    const updateTierConfigsSchema = z.object({
+      configs: z
+        .array(
+          z.object({
+            tier: z.enum(['free', 'trial', 'paid']),
+            config: z.object({
+              name: z.string().optional(),
+              description: z.string().optional(),
+              monthlyPrice: z.number().optional(),
+              yearlyPrice: z.number().optional(),
+              maxUsers: z.number().nullable().optional(),
+              maxStudents: z.number().nullable().optional(),
+              maxTeachers: z.number().nullable().optional(),
+              maxStorageGb: z.number().nullable().optional(),
+              features: z.record(z.string(), z.unknown()).optional(),
+              limits: z.record(z.string(), z.unknown()).optional(),
+              isActive: z.boolean().optional(),
+            }),
+          })
+        )
+        .min(1, 'At least one tier configuration is required'),
+    });
+
+    const parsed = updateTierConfigsSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: parsed.error.message });
+    }
+
+    const updated = await updateSubscriptionTierConfigs(parsed.data.configs, req.user?.id ?? null);
+    res.json(updated);
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;

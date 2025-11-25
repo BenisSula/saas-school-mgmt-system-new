@@ -34,12 +34,12 @@ jest.mock('../src/middleware/authenticate', () => ({
       req.user = { ...currentMockUser };
     }
     next();
-  }
+  },
 }));
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -94,7 +94,7 @@ describe('API Integration Tests', () => {
         '$argon2id$v=19$m=65536,t=3,p=4$test',
         'student',
         'active',
-        tenantId
+        tenantId,
       ]
     );
   });
@@ -106,12 +106,12 @@ describe('API Integration Tests', () => {
       role,
       tenantId,
       email: `${role}@integration.com`,
-      tokenId: 'test-token'
+      tokenId: 'test-token',
     };
 
     return {
       Authorization: 'Bearer fake-token',
-      'x-tenant-id': tenantId
+      'x-tenant-id': tenantId,
     };
   };
 
@@ -125,7 +125,7 @@ describe('API Integration Tests', () => {
           firstName: 'Integration',
           lastName: 'Test',
           admissionNumber: 'INT001',
-          dateOfBirth: '2010-01-01'
+          dateOfBirth: '2010-01-01',
         });
 
       if (createResponse.status === 201) {
@@ -144,7 +144,7 @@ describe('API Integration Tests', () => {
           .set(getAuthHeaders(adminId, 'admin'))
           .send({
             firstName: 'Updated',
-            lastName: 'Name'
+            lastName: 'Name',
           });
 
         expect([200, 404]).toContain(updateResponse.status);
@@ -172,9 +172,9 @@ describe('API Integration Tests', () => {
               classId: 'class-1',
               status: 'present',
               markedBy: teacherId,
-              date: new Date().toISOString().split('T')[0]
-            }
-          ]
+              date: new Date().toISOString().split('T')[0],
+            },
+          ],
         });
 
       // Might fail if student/class doesn't exist, but should not be 403
@@ -199,7 +199,7 @@ describe('API Integration Tests', () => {
         .send({
           name: 'Integration Test Exam',
           examDate: '2024-06-01',
-          description: 'Test exam'
+          description: 'Test exam',
         });
 
       if (examResponse.status === 201) {
@@ -216,9 +216,9 @@ describe('API Integration Tests', () => {
                 studentId: studentId,
                 subject: 'Mathematics',
                 score: 85,
-                classId: 'class-1'
-              }
-            ]
+                classId: 'class-1',
+              },
+            ],
           });
 
         // Should succeed or fail gracefully (not 403)
@@ -264,7 +264,7 @@ describe('API Integration Tests', () => {
         .send({
           primaryColor: '#FF5733',
           secondaryColor: '#33FF57',
-          logoUrl: 'https://example.com/logo.png'
+          logoUrl: 'https://example.com/logo.png',
         });
 
       expect([200, 404]).toContain(brandingResponse.status);
@@ -275,7 +275,7 @@ describe('API Integration Tests', () => {
         .set(getAuthHeaders(adminId, 'admin'))
         .send({
           name: 'Grade 10A',
-          description: 'Integration test class'
+          description: 'Integration test class',
         });
 
       if (classResponse.status === 201) {

@@ -39,7 +39,22 @@ export type Permission =
   | 'status:view'
   | 'status:manage'
   | 'reports:manage'
-  | 'notifications:send';
+  | 'notifications:send'
+  | 'subscriptions:manage'
+  | 'subscriptions:view'
+  | 'subscriptions:update'
+  | 'overrides:manage'
+  | 'overrides:view'
+  | 'overrides:create'
+  | 'overrides:revoke'
+  | 'permission_overrides:manage'
+  | 'permission_overrides:view'
+  | 'resources:upload'
+  | 'announcements:post'
+  | 'attendance:view_own_class'
+  | 'grades:view_own_class'
+  | 'billing:view'
+  | 'billing:manage';
 
 export const rolePermissions: Record<Role, Permission[]> = {
   student: [
@@ -51,31 +66,41 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'messages:receive',
     'students:view_self',
     'profile:view_self',
-    'support:raise'
+    'support:raise',
   ],
   teacher: [
     'dashboard:view',
     'attendance:mark',
     'attendance:view',
+    'attendance:view_own_class',
     'grades:enter',
     'grades:edit',
+    'grades:view_own_class',
     'performance:generate',
     'messages:send',
     'messages:receive',
-    'students:view_own_class'
+    'students:view_own_class',
+    'resources:upload',
+    'announcements:post',
   ],
+  // Note: HOD is now an additional role, not a primary role
+  // HOD permissions are granted in addition to teacher permissions
   hod: [
     'dashboard:view',
     'attendance:view',
     'exams:view',
-    'grades:manage',
+    'grades:manage', // Department-level grade management
     'department-analytics',
     'reports:view',
     'performance:charts',
-    'messages:send'
+    'messages:send',
+    // Note: HOD does NOT get users:manage by default (only if explicitly granted)
+    // Note: HOD does NOT get teachers:manage by default (only if explicitly granted)
   ],
   admin: [
     'dashboard:view',
+    'billing:view',
+    'billing:manage',
     'attendance:manage',
     'attendance:view',
     'exams:manage',
@@ -102,7 +127,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'announcements:manage',
     'kb:manage',
     'status:view',
-    'status:manage'
+    'status:manage',
   ],
   superadmin: [
     'dashboard:view',
@@ -134,8 +159,17 @@ export const rolePermissions: Record<Role, Permission[]> = {
     'announcements:manage',
     'kb:manage',
     'status:view',
-    'status:manage'
-  ]
+    'status:manage',
+    'subscriptions:manage',
+    'subscriptions:view',
+    'subscriptions:update',
+    'overrides:manage',
+    'overrides:view',
+    'overrides:create',
+    'overrides:revoke',
+    'permission_overrides:manage',
+    'permission_overrides:view',
+  ],
 };
 
 export function hasPermission(role: Role, permission: Permission): boolean {

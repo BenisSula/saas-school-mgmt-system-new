@@ -69,7 +69,7 @@ async function verifySeedUsers() {
     admins: [
       'fatou.jallow@newhorizon.edu.gm',
       'lamin.sowe@stpeterslamin.edu.gm',
-      'musu.bah@daddyjobe.edu.gm'
+      'musu.bah@daddyjobe.edu.gm',
     ],
     hods: [
       'alhaji.saine@newhorizon.edu.gm',
@@ -80,8 +80,8 @@ async function verifySeedUsers() {
       'ebrima.sanyang@stpeterslamin.edu.gm',
       'momodou.bojang@daddyjobe.edu.gm',
       'isatou.jatta@daddyjobe.edu.gm',
-      'ousman.darboe@daddyjobe.edu.gm'
-    ]
+      'ousman.darboe@daddyjobe.edu.gm',
+    ],
   };
 
   console.log('\n[verify] Checking seed users:');

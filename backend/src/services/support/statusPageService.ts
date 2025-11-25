@@ -54,7 +54,7 @@ export async function createIncident(
       input.status,
       input.severity,
       input.affectedServices || [],
-      input.createdBy || null
+      input.createdBy || null,
     ]
   );
 
@@ -63,7 +63,7 @@ export async function createIncident(
     incidentId,
     status: input.status,
     message: input.description,
-    createdBy: input.createdBy
+    createdBy: input.createdBy,
   });
 
   return result.rows[0];
@@ -131,7 +131,7 @@ export async function getIncidents(
 
   return {
     incidents: incidentsResult.rows,
-    total
+    total,
   };
 }
 
@@ -142,10 +142,9 @@ export async function getIncidentWithUpdates(
   client: PoolClient,
   incidentId: string
 ): Promise<unknown | null> {
-  const incidentResult = await client.query(
-    'SELECT * FROM shared.status_incidents WHERE id = $1',
-    [incidentId]
-  );
+  const incidentResult = await client.query('SELECT * FROM shared.status_incidents WHERE id = $1', [
+    incidentId,
+  ]);
 
   if (incidentResult.rowCount === 0) {
     return null;
@@ -168,7 +167,7 @@ export async function getIncidentWithUpdates(
 
   return {
     ...incident,
-    updates: updatesResult.rows
+    updates: updatesResult.rows,
   };
 }
 
@@ -189,13 +188,7 @@ export async function addIncidentUpdate(
       VALUES ($1, $2, $3, $4, $5)
       RETURNING *
     `,
-    [
-      updateId,
-      input.incidentId,
-      input.status,
-      input.message,
-      input.createdBy || null
-    ]
+    [updateId, input.incidentId, input.status, input.message, input.createdBy || null]
   );
 
   // Update incident status if changed
@@ -240,7 +233,7 @@ export async function createScheduledMaintenance(
       input.scheduledStart,
       input.scheduledEnd,
       'scheduled',
-      input.createdBy || null
+      input.createdBy || null,
     ]
   );
 
@@ -304,7 +297,7 @@ export async function getScheduledMaintenance(
 
   return {
     maintenance: maintenanceResult.rows,
-    total
+    total,
   };
 }
 
@@ -372,7 +365,7 @@ export async function recordUptimeCheck(
       input.serviceName,
       input.status,
       input.responseTimeMs || null,
-      JSON.stringify(input.metadata || {})
+      JSON.stringify(input.metadata || {}),
     ]
   );
 }
@@ -387,17 +380,19 @@ export async function getUptimeStatistics(
     serviceName?: string;
     days?: number;
   }
-): Promise<{
-  serviceName: string;
-  uptimePercentage: number;
-  totalChecks: number;
-  upChecks: number;
-  downChecks: number;
-  degradedChecks: number;
-  averageResponseTime: number;
-  lastStatus: string;
-  lastChecked: Date;
-}> {
+): Promise<
+  Array<{
+    serviceName: string;
+    uptimePercentage: number;
+    totalChecks: number;
+    upChecks: number;
+    downChecks: number;
+    degradedChecks: number;
+    averageResponseTime: number;
+    lastStatus: string;
+    lastChecked: Date;
+  }>
+> {
   const days = filters.days || 30;
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - days);
@@ -441,7 +436,7 @@ export async function getUptimeStatistics(
     values
   );
 
-  return result.rows.map(row => ({
+  return result.rows.map((row) => ({
     serviceName: row.service_name,
     uptimePercentage: parseFloat(row.uptime_percentage) || 0,
     totalChecks: row.total_checks,
@@ -450,18 +445,8 @@ export async function getUptimeStatistics(
     degradedChecks: row.degraded_checks,
     averageResponseTime: parseFloat(row.average_response_time) || 0,
     lastStatus: row.last_status,
-    lastChecked: row.last_checked
-  })) as unknown as {
-    serviceName: string;
-    uptimePercentage: number;
-    totalChecks: number;
-    upChecks: number;
-    downChecks: number;
-    degradedChecks: number;
-    averageResponseTime: number;
-    lastStatus: string;
-    lastChecked: Date;
-  };
+    lastChecked: row.last_checked,
+  }));
 }
 
 /**
@@ -528,13 +513,14 @@ export async function getStatusPageSummary(
 
   return {
     overallStatus,
-    services: uptimeStats.map(stat => ({
-      name: stat.serviceName,
-      status: stat.lastStatus as 'up' | 'down' | 'degraded',
-      uptimePercentage: stat.uptimePercentage
-    })),
+    services: uptimeStats.map(
+      (stat: { serviceName: string; lastStatus: string; uptimePercentage: number }) => ({
+        name: stat.serviceName,
+        status: stat.lastStatus as 'up' | 'down' | 'degraded',
+        uptimePercentage: stat.uptimePercentage,
+      })
+    ),
     activeIncidents: incidentsResult.rows,
-    upcomingMaintenance: maintenanceResult.rows
+    upcomingMaintenance: maintenanceResult.rows,
   };
 }
-

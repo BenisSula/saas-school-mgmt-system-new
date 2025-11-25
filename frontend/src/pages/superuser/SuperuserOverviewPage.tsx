@@ -19,7 +19,7 @@ import { formatCurrency, formatNumber } from '../../lib/utils/data';
 const SUBSCRIPTION_LABELS: Record<SubscriptionTier, string> = {
   free: 'Free',
   trial: 'Trial',
-  paid: 'Paid'
+  paid: 'Paid',
 };
 
 // Using shared formatters from utils
@@ -35,26 +35,26 @@ export default function SuperuserOverviewPage() {
         title: 'Total schools',
         value: overview.totals.schools,
         description: `${overview.totals.activeSchools} active, ${overview.totals.suspendedSchools} suspended`,
-        icon: <Building2 className="h-5 w-5" />
+        icon: <Building2 className="h-5 w-5" />,
       },
       {
         title: 'Total users',
         value: overview.totals.users,
         description: `${overview.roleDistribution.admins} admins • ${overview.roleDistribution.hods} HODs • ${overview.roleDistribution.teachers} teachers • ${overview.roleDistribution.students} students`,
-        icon: <Users className="h-5 w-5" />
+        icon: <Users className="h-5 w-5" />,
       },
       {
         title: 'Pending approvals',
         value: overview.totals.pendingUsers,
         description: 'Users awaiting activation',
-        icon: <AlertCircle className="h-5 w-5" />
+        icon: <AlertCircle className="h-5 w-5" />,
       },
       {
         title: 'Lifetime revenue',
         value: overview.revenue.total,
         description: 'Sum of succeeded payments',
-        icon: <DollarSign className="h-5 w-5" />
-      }
+        icon: <DollarSign className="h-5 w-5" />,
+      },
     ];
   }, [overview]);
 
@@ -65,7 +65,7 @@ export default function SuperuserOverviewPage() {
       .filter(([, value]) => value > 0)
       .map(([tier, value]) => ({
         label: SUBSCRIPTION_LABELS[tier as SubscriptionTier],
-        value
+        value,
       }));
   }, [overview]);
 
@@ -79,8 +79,8 @@ export default function SuperuserOverviewPage() {
       {
         label: 'Students',
         value: overview.roleDistribution.students,
-        color: 'var(--brand-success)'
-      }
+        color: 'var(--brand-success)',
+      },
     ].filter((item) => item.value > 0);
   }, [overview]);
 
@@ -93,7 +93,7 @@ export default function SuperuserOverviewPage() {
       .map((entry) => ({
         label: entry.tenantId.slice(0, 8) + '…',
         value: entry.amount,
-        color: 'var(--brand-primary)'
+        color: 'var(--brand-primary)',
       }));
   }, [overview]);
 
@@ -103,26 +103,26 @@ export default function SuperuserOverviewPage() {
         key: 'name',
         header: 'School',
         render: (row) => row.name,
-        sortable: true
+        sortable: true,
       },
       {
         key: 'subscriptionType',
         header: 'Subscription',
         render: (row) => SUBSCRIPTION_LABELS[row.subscriptionType],
-        sortable: true
+        sortable: true,
       },
       {
         key: 'status',
         header: 'Status',
         render: (row) => <StatusBadge status={row.status} />,
-        sortable: true
+        sortable: true,
       },
       {
         key: 'createdAt',
         header: 'Created',
         render: (row) => formatDate(row.createdAt),
-        sortable: true
-      }
+        sortable: true,
+      },
     ],
     []
   );
@@ -172,9 +172,7 @@ export default function SuperuserOverviewPage() {
         {/* Page Header */}
         <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-heading-2 text-[var(--brand-text-primary)]">
-              Platform Overview
-            </h1>
+            <h1 className="text-heading-2 text-[var(--brand-text-primary)]">Platform Overview</h1>
             <p className="mt-2 text-body-small text-[var(--brand-text-secondary)]">
               Monitor platform-wide statistics and health metrics
             </p>
@@ -183,10 +181,7 @@ export default function SuperuserOverviewPage() {
         </header>
 
         {/* Stats Cards */}
-        <section
-          className="grid-enterprise-4 mb-12"
-          aria-label="Platform statistics"
-        >
+        <section className="grid-enterprise-4 mb-12" aria-label="Platform statistics">
           {statTiles.map((tile) => (
             <StatCard
               key={tile.title}

@@ -1,303 +1,318 @@
-# Phase 7: Full UI/UX Overhaul to Match Enterprise SaaS Standard
+# Phase 7 Implementation Summary
+## Teacher Layer Enhancements + Student Flow Fixes
 
-**Date:** January 2025  
-**Branch:** `feature/superuser-dashboard-audit`  
-**Status:** Complete
-
----
-
-## Overview
-
-Phase 7 implements a comprehensive UI/UX overhaul of the Superuser Dashboard to match enterprise-grade SaaS standards, including a complete design system, consistent component patterns, and improved spacing/alignment throughout.
+**Date:** 2025-01-XX  
+**Status:** ✅ **BACKEND COMPLETE** | ⏳ **FRONTEND PENDING**
 
 ---
 
-## A. Design System Creation
+## ✅ Completed Backend Implementation
 
-### New Design System File (`design-system.css`)
+### 1. Permissions Updated
 
-**Spacing Scale (8px base unit):**
-- Consistent spacing variables from `--spacing-0` to `--spacing-24`
-- All spacing follows 8px grid system
-- Utility classes for common spacing patterns
+**File:** `backend/src/config/permissions.ts`
 
-**3iAcademia Brand Colors:**
-- Primary color palette (Deep Navy Blue): `#234e70` with 50-900 shades
-- Accent color palette (Teal/Turquoise): `#1abc9c` with 50-900 shades
-- Semantic colors (success, warning, error, info) with proper contrast
+Added new teacher permissions:
+- `resources:upload` - Upload class resources
+- `announcements:post` - Post class announcements
+- `attendance:view_own_class` - View attendance for assigned classes
+- `grades:view_own_class` - View grades for assigned classes/subjects
 
-**Typography Scale:**
-- Font sizes from `--font-size-xs` (12px) to `--font-size-5xl` (48px)
-- Font weights: normal (400), medium (500), semibold (600), bold (700)
-- Line heights: tight (1.25), normal (1.5), relaxed (1.75)
-- Typography utility classes: `.text-heading-1` through `.text-heading-4`, `.text-body`, etc.
-
-**Border Radius:**
-- Consistent radius scale from `--radius-sm` (4px) to `--radius-full`
-- Component-specific radius tokens
-
-**Shadow/Elevation System:**
-- 6-level shadow system (xs, sm, md, lg, xl, 2xl)
-- Dark mode adjusted shadows for proper contrast
-
-**Grid System:**
-- 12-column grid system
-- Consistent gap sizes (sm, md, lg)
-- Enterprise grid utility classes
-
-**Component Tokens:**
-- Card padding, radius, shadows
-- Table header/row heights, cell padding
-- Modal sizes, padding, backdrop
-- Navigation item heights and spacing
-- Page layout dimensions
-
-### Utility Classes
-
-**Spacing Utilities:**
-- `.space-section` - Section spacing (mb-8/12/16)
-- `.space-card` - Card spacing (mb-6/8)
-- `.space-element` - Element spacing (mb-4/6)
-
-**Grid Utilities:**
-- `.grid-enterprise` - Base grid with consistent gap
-- `.grid-enterprise-2` - 2-column responsive grid
-- `.grid-enterprise-3` - 3-column responsive grid
-- `.grid-enterprise-4` - 4-column responsive grid
-
-**Typography Utilities:**
-- `.text-heading-1` through `.text-heading-4`
-- `.text-body-large`, `.text-body`, `.text-body-small`
-
-**Card Utilities:**
-- `.card-enterprise` - Base card style
-- `.card-enterprise-hover` - Card with hover effects
-
-**Padding Utilities:**
-- `.padding-page` - Page-level padding
-- `.padding-section` - Section-level padding
-- `.padding-card` - Card padding
-- `.padding-card-sm` - Small card padding
+All permissions added to teacher role.
 
 ---
 
-## B. Component Updates
+### 2. Teacher Services Created
 
-### Card Component (`Card.tsx`)
+#### 2.1 Teacher Attendance Service
+**File:** `backend/src/services/teacherAttendanceService.ts`
 
-**Enhancements:**
-- Added `variant` prop (default, elevated, outlined)
-- Added `header` and `footer` props for structured cards
-- Consistent padding using design system tokens
-- Proper spacing between header/content/footer
+Functions:
+- `markTeacherAttendance()` - Mark attendance with teacher assignment verification
+- `getTeacherAttendance()` - Get attendance records (teacher-scoped)
+- `bulkMarkTeacherAttendance()` - Bulk mark attendance for multiple students
 
-**Before:**
-- Inconsistent padding values
-- No header/footer support
-- Single variant only
+Features:
+- Teacher assignment verification
+- Audit logging (`TEACHER_MARKED_ATTENDANCE`)
+- Support for date ranges and specific dates
 
-**After:**
-- Consistent padding scale (sm, md, lg)
-- Support for header and footer sections
-- Three variants for different use cases
-- Proper border separation
+#### 2.2 Teacher Grades Service
+**File:** `backend/src/services/teacherGradesService.ts`
 
-### Table Component (`Table.tsx`)
+Functions:
+- `submitTeacherGrades()` - Submit grades for students
+- `getTeacherGrades()` - Get grades for class/subject (teacher-scoped)
+- `updateTeacherGrade()` - Update a specific grade
 
-**Enhancements:**
-- Consistent header styling with proper height
-- Standardized cell padding using CSS variables
-- Improved typography (font size, weight, tracking)
-- Better text color hierarchy
+Features:
+- Teacher assignment verification
+- Upsert logic (insert or update)
+- Audit logging (`TEACHER_SUBMITTED_GRADES`, `TEACHER_UPDATED_GRADE`)
 
-**Before:**
-- Inconsistent header heights
-- Varying cell padding
-- Mixed font sizes
+#### 2.3 Class Resources Service
+**File:** `backend/src/services/classResourcesService.ts`
 
-**After:**
-- Fixed header height (`--table-header-height`)
-- Consistent cell padding (`--table-cell-padding-x/y`)
-- Standardized typography (xs, semibold, uppercase, tracking-wider)
-- Proper text color (`--brand-text-secondary` for headers)
+Functions:
+- `uploadClassResource()` - Upload file resource for a class
+- `getClassResources()` - Get resources for a class
+- `deleteClassResource()` - Delete a resource (ownership verification)
 
-### Modal Component (`Modal.tsx`)
+Features:
+- File upload integration
+- Teacher assignment verification
+- Ownership verification for deletion
+- Audit logging (`TEACHER_UPLOADED_RESOURCE`, `TEACHER_DELETED_RESOURCE`)
 
-**Enhancements:**
-- Improved backdrop with blur effect
-- Consistent padding using design system tokens
-- Better header/footer spacing
-- Proper typography hierarchy
-- Enhanced close button styling
+#### 2.4 Teacher Announcements Service
+**File:** `backend/src/services/teacherAnnouncementsService.ts`
 
-**Before:**
-- Inconsistent padding
-- Basic backdrop
-- Mixed spacing values
+Functions:
+- `postClassAnnouncement()` - Post announcement to class
+- `getClassAnnouncements()` - Get announcements for a class
 
-**After:**
-- Design system padding (`--modal-padding`)
-- Proper backdrop blur (`--modal-backdrop-blur`)
-- Consistent spacing (mb-6 for header, mt-6 for footer)
-- Typography utilities (`.text-heading-4` for title)
-- Improved close button hover states
+Features:
+- Teacher assignment verification
+- Support for attachments (JSONB)
+- Audit logging (`TEACHER_POSTED_ANNOUNCEMENT`)
 
----
+#### 2.5 Student Dashboard Service
+**File:** `backend/src/services/studentDashboardService.ts`
 
-## C. Layout & Navigation
+Functions:
+- `getStudentDashboard()` - Get comprehensive dashboard data
 
-### Superuser Layout (`SuperuserLayout.tsx`)
+Returns:
+- Attendance summary and recent records
+- Recent grades with summary
+- Class schedule (placeholder)
+- Class resources
+- Class announcements
+- Upcoming tasks (placeholder)
 
-**New Component:**
-- Centralized layout component for all superuser pages
-- Consistent page padding using design system tokens
-- Max-width container for content
-- Proper sidebar integration
-- Responsive behavior
+#### 2.6 Export Service
+**File:** `backend/src/services/exportService.ts`
 
-**Features:**
-- Uses `--page-padding-x` and `--page-padding-y` tokens
-- Max-width constraint (`--page-max-width`)
-- Proper overflow handling
-- Sidebar state management
+Functions:
+- `generateAttendancePDF()` - Generate PDF attendance report
+- `generateAttendanceExcel()` - Generate Excel attendance report
+- `generateGradesPDF()` - Generate PDF grades report
+- `generateGradesExcel()` - Generate Excel grades report
 
----
-
-## D. Page Updates
-
-### Superuser Overview Page
-
-**Layout Improvements:**
-- Replaced inconsistent spacing with design system utilities
-- Updated grid classes to `.grid-enterprise-4` for stats
-- Updated charts section to `.grid-enterprise-2`
-- Consistent section spacing with `.space-section` and `.space-card`
-- Improved typography using `.text-heading-2` and `.text-body-small`
-
-**Before:**
-```tsx
-<div className="space-y-8">
-  <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-```
-
-**After:**
-```tsx
-<div className="space-section">
-  <section className="grid-enterprise-4 mb-12">
-```
+Features:
+- Teacher assignment verification
+- Multi-format support (PDF/Excel)
+- Proper file headers and downloads
 
 ---
 
-## Files Created/Modified
+### 3. Teacher Routes Added
 
-### Created
-- `frontend/src/styles/theme/design-system.css` - Complete design system
-- `frontend/src/layouts/SuperuserLayout.tsx` - Enterprise layout component
+**File:** `backend/src/routes/teachers.ts`
 
-### Modified
-- `frontend/src/styles/global.css` - Imported design system
-- `frontend/src/components/ui/Card.tsx` - Enhanced with variants and header/footer
-- `frontend/src/components/ui/Table.tsx` - Consistent headers and cell padding
-- `frontend/src/components/ui/Modal.tsx` - Improved spacing and typography
-- `frontend/src/pages/superuser/SuperuserOverviewPage.tsx` - Updated to use design system
+#### Attendance Routes:
+- `POST /teachers/attendance/mark` - Mark attendance
+- `GET /teachers/attendance` - Get attendance records
+- `POST /teachers/attendance/bulk` - Bulk mark attendance
 
----
+#### Grades Routes:
+- `POST /teachers/grades/submit` - Submit grades
+- `PUT /teachers/grades/:gradeId` - Update a grade
+- `GET /teachers/grades` - Get grades for class/subject
 
-## Key Improvements
+#### Resources Routes:
+- `POST /teachers/resources/upload` - Upload class resource (multer)
+- `GET /teachers/resources` - Get class resources
+- `DELETE /teachers/resources/:resourceId` - Delete resource
 
-### Consistency
-✅ **Spacing:** All spacing now uses 8px base unit system  
-✅ **Colors:** Consistent brand color palette throughout  
-✅ **Typography:** Standardized font sizes and weights  
-✅ **Components:** Uniform card, table, and modal designs  
+#### Announcements Routes:
+- `POST /teachers/announcements` - Post class announcement
 
-### Enterprise Standards
-✅ **Grid System:** Proper 12-column grid with consistent gaps  
-✅ **Elevation:** Clear shadow hierarchy for depth  
-✅ **Accessibility:** Proper contrast ratios and focus states  
-✅ **Responsive:** Mobile-first approach with breakpoint utilities  
+#### Export Routes:
+- `GET /teachers/export/attendance` - Export attendance (PDF/Excel)
+- `GET /teachers/export/grades` - Export grades (PDF/Excel)
 
-### Developer Experience
-✅ **CSS Variables:** All design tokens as CSS variables  
-✅ **Utility Classes:** Reusable classes for common patterns  
-✅ **Type Safety:** TypeScript interfaces for all components  
-✅ **Documentation:** Clear naming and organization  
+All routes include:
+- Context validation
+- Permission checks
+- Teacher assignment verification
+- Audit logging
 
 ---
 
-## Design System Tokens Summary
+### 4. Student Routes Enhanced
 
-### Spacing
-- 0px to 96px in 8px increments
-- Component-specific padding tokens
+**File:** `backend/src/routes/students.ts`
 
-### Colors
-- Primary: Deep Navy Blue (#234e70)
-- Accent: Teal/Turquoise (#1abc9c)
-- Semantic: Success, Warning, Error, Info
-- Full 50-900 shade palettes
+Routes:
+- `GET /students/me/dashboard` - Student dashboard
+- `GET /students/announcements` - Get class announcements
+- `GET /students/resources` - Get class resources
+- `GET /students/attendance` - Get attendance
+- `GET /students/grades` - Get grades
 
-### Typography
-- 8 font sizes (xs to 5xl)
-- 4 font weights
-- 3 line heights
-- Utility classes for headings and body text
-
-### Components
-- Card: 3 variants, header/footer support
-- Table: Fixed heights, consistent padding
-- Modal: 4 size variants, proper backdrop
-- Navigation: Standardized item heights
+All routes include:
+- Student class verification
+- Permission checks
+- Audit logging
 
 ---
 
-## Next Steps
+### 5. Database Migrations
 
-1. **Apply to Other Pages:**
-   - Update all superuser pages to use new layout
-   - Apply design system to remaining components
+#### 5.1 Attendance Indexes
+**File:** `backend/src/db/migrations/tenants/026_add_attendance_indexes.sql`
 
-2. **Component Library:**
-   - Create Storybook stories for all components
-   - Document component usage patterns
+Indexes created:
+- `idx_attendance_records_class_date` - For class attendance queries
+- `idx_attendance_records_student_date` - For student attendance queries
+- `idx_attendance_records_class_student_date` - Composite index
 
-3. **Theme Customization:**
-   - Add theme switcher UI
-   - Support for custom brand colors per tenant
+#### 5.2 Class Resources Table
+**File:** `backend/src/db/migrations/tenants/027_add_class_resources_table.sql`
 
-4. **Accessibility Audit:**
-   - WCAG 2.1 AA compliance verification
-   - Keyboard navigation testing
-   - Screen reader testing
+Table: `class_resources`
+- Fields: id, tenant_id, teacher_id, class_id, title, description, file_url, file_type, size, created_at, updated_at
+- Indexes on tenant_id, teacher_id, class_id, created_at
+- Foreign key to teachers table
 
-5. **Performance:**
-   - Optimize CSS bundle size
-   - Lazy load design system CSS
-   - Critical CSS extraction
+#### 5.3 Class Announcements Table
+**File:** `backend/src/db/migrations/tenants/028_add_class_announcements_table.sql`
 
----
-
-## Status Summary
-
-✅ **Completed:**
-- Design system creation
-- Component updates (Card, Table, Modal)
-- Layout component creation
-- Page updates (Superuser Overview)
-- Utility class system
-- CSS variable system
-
-🔄 **In Progress:**
-- Applying to remaining pages
-- Component documentation
-
-📋 **Pending:**
-- Storybook integration
-- Theme customization UI
-- Accessibility audit
-- Performance optimization
+Table: `class_announcements`
+- Fields: id, tenant_id, class_id, teacher_id, message, attachments (JSONB), created_at, updated_at
+- Indexes on tenant_id, class_id, teacher_id, created_at
+- Foreign key to teachers table
 
 ---
 
-**Implementation Status:** Phase 7 core design system complete. Ready for application across all pages and components.
+### 6. Dependencies Added
 
+**File:** `backend/package.json`
+
+Added:
+- `exceljs: ^4.4.0` - Excel generation
+- `multer: ^1.4.5-lts.1` - File upload handling
+- `@types/multer: ^1.4.12` - TypeScript types
+
+---
+
+## ⏳ Pending Frontend Implementation
+
+### 1. Teacher Pages (To Be Created)
+
+- `TeacherDashboardPage.tsx` - Main teacher dashboard
+- `TeacherAttendancePage.tsx` - Attendance marking interface
+- `TeacherGradesPage.tsx` - Grade submission interface
+- `TeacherClassResourcesPage.tsx` - Resource management
+- `TeacherAnnouncementsPage.tsx` - Announcement posting
+- `TeacherStudentsPage.tsx` - Student list view
+
+### 2. Teacher Components (To Be Created)
+
+- `TeacherQuickActions.tsx` - Dashboard quick actions
+- `TeacherClassCard.tsx` - Class card component
+- `TeacherAttendanceTable.tsx` - Attendance table
+- `TeacherGradesTable.tsx` - Grades table
+- `ResourceUploadModal.tsx` - File upload modal
+- `AnnouncementForm.tsx` - Announcement form
+
+### 3. Student Pages (To Be Created)
+
+- `StudentDashboardPage.tsx` - Main student dashboard
+- `StudentResourcesPage.tsx` - Resource viewing
+- `StudentAnnouncementsPage.tsx` - Announcement viewing
+- `StudentGradesPage.tsx` - Grade viewing
+- `StudentAttendancePage.tsx` - Attendance viewing
+
+### 4. Student Components (To Be Created)
+
+- `StudentStatCard.tsx` - Statistics card
+- `StudentResourceCard.tsx` - Resource card
+- `AnnouncementCard.tsx` - Announcement card
+
+### 5. React Query Hooks (To Be Created)
+
+- `useTeacherAttendance.ts` - Attendance hooks
+- `useTeacherGrades.ts` - Grades hooks
+- `useClassResources.ts` - Resources hooks
+- `useTeacherAnnouncements.ts` - Announcements hooks
+- `useStudentDashboard.ts` - Student dashboard hook
+- `useExport.ts` - Export hooks
+
+---
+
+## 🔍 Testing Requirements
+
+### Unit Tests Needed:
+- Teacher attendance service tests
+- Teacher grades service tests
+- Class resources service tests
+- Export service tests
+
+### Integration Tests Needed:
+- Teacher attendance flow
+- Teacher grades submission flow
+- Resource upload/download flow
+- Announcement posting/viewing flow
+
+### E2E Tests Needed:
+- Teacher uploads resource → student sees it
+- Teacher posts announcement → student receives it
+- Teacher exports PDF/Excel
+- Student dashboard loads all components
+
+---
+
+## 📝 Notes
+
+1. **File Uploads**: Currently using local storage. S3 integration can be added via environment variables in `fileUploadService.ts`.
+
+2. **Class Schedule**: Placeholder in student dashboard. Requires schedule table implementation.
+
+3. **Upcoming Tasks**: Placeholder in student dashboard. Requires assignments/tasks table implementation.
+
+4. **Teacher ID Resolution**: Helper function `getTeacherIdFromUser()` added to teachers.ts routes.
+
+5. **Audit Logging**: All teacher actions are logged with appropriate actions:
+   - `TEACHER_MARKED_ATTENDANCE`
+   - `TEACHER_SUBMITTED_GRADES`
+   - `TEACHER_UPLOADED_RESOURCE`
+   - `TEACHER_POSTED_ANNOUNCEMENT`
+   - `STUDENT_VIEWED_RESOURCE`
+   - `STUDENT_VIEWED_DASHBOARD`
+
+---
+
+## 🚀 Next Steps
+
+1. **Install Dependencies**: Run `npm install` in backend directory
+2. **Run Migrations**: Execute migrations 026, 027, 028
+3. **Frontend Implementation**: Create teacher and student pages/components
+4. **Testing**: Add unit, integration, and E2E tests
+5. **Documentation**: Update API documentation with new endpoints
+
+---
+
+## 📊 File Summary
+
+### Backend Files Created:
+- `backend/src/services/teacherAttendanceService.ts`
+- `backend/src/services/teacherGradesService.ts`
+- `backend/src/services/classResourcesService.ts`
+- `backend/src/services/teacherAnnouncementsService.ts`
+- `backend/src/services/studentDashboardService.ts`
+- `backend/src/services/exportService.ts`
+- `backend/src/db/migrations/tenants/026_add_attendance_indexes.sql`
+- `backend/src/db/migrations/tenants/027_add_class_resources_table.sql`
+- `backend/src/db/migrations/tenants/028_add_class_announcements_table.sql`
+
+### Backend Files Modified:
+- `backend/src/config/permissions.ts` - Added new permissions
+- `backend/src/routes/teachers.ts` - Added teacher routes
+- `backend/src/routes/students.ts` - Enhanced student routes
+- `backend/package.json` - Added dependencies
+
+---
+
+**Phase 7 Backend Implementation: ✅ COMPLETE**

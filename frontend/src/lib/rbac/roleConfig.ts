@@ -14,31 +14,31 @@ export const roleConfig: Record<Role, RoleConfig> = {
   superadmin: {
     label: 'Super Admin',
     description: 'Platform administrator with access to all tenants',
-    level: 5
+    level: 5,
   },
   admin: {
     label: 'Admin',
     description: 'School administrator with full access to their tenant',
-    level: 4
+    level: 4,
   },
   hod: {
     label: 'Head of Department',
     description: 'Department head with access to department resources',
     level: 3,
-    parent: 'admin'
+    parent: 'admin',
   },
   teacher: {
     label: 'Teacher',
     description: 'Teacher with access to assigned classes and students',
     level: 2,
-    parent: 'hod'
+    parent: 'hod',
   },
   student: {
     label: 'Student',
     description: 'Student with access to own data and resources',
     level: 1,
-    parent: 'teacher'
-  }
+    parent: 'teacher',
+  },
 };
 
 /**

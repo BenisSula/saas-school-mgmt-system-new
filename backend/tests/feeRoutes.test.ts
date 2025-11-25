@@ -25,15 +25,15 @@ jest.mock('../src/middleware/authenticate', () => ({
       role: 'admin',
       tenantId: 'tenant_alpha',
       email: 'admin@test.com',
-      tokenId: 'token'
+      tokenId: 'token',
     };
     next();
-  }
+  },
 }));
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -50,7 +50,7 @@ describe('Fee management routes', () => {
     await createTenant(
       {
         name: 'Alpha Academy',
-        schemaName: 'tenant_alpha'
+        schemaName: 'tenant_alpha',
       },
       pool
     );
@@ -74,8 +74,8 @@ describe('Fee management routes', () => {
         dueDate: '2025-03-01T00:00:00.000Z',
         items: [
           { description: 'Tuition', amount: 80 },
-          { description: 'Library', amount: 20 }
-        ]
+          { description: 'Library', amount: 20 },
+        ],
       });
 
     expect(response.status).toBe(201);
@@ -99,7 +99,7 @@ describe('Fee management routes', () => {
       paymentId: `pay_${invoiceId}`,
       invoiceId,
       amount: 100,
-      currency: 'USD'
+      currency: 'USD',
     };
 
     const webhook = await request(app)

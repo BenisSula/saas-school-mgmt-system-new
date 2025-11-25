@@ -14,10 +14,12 @@ export const ScheduleReportModal: React.FC<ScheduleReportModalProps> = ({
   reportName,
   isOpen,
   onClose,
-  onSuccess
+  onSuccess,
 }) => {
   const [name, setName] = useState('');
-  const [scheduleType, setScheduleType] = useState<'daily' | 'weekly' | 'monthly' | 'custom'>('daily');
+  const [scheduleType, setScheduleType] = useState<'daily' | 'weekly' | 'monthly' | 'custom'>(
+    'daily'
+  );
   const [dayOfWeek, setDayOfWeek] = useState(1); // Monday
   const [dayOfMonth, setDayOfMonth] = useState(1);
   const [time, setTime] = useState('09:00');
@@ -44,8 +46,8 @@ export const ScheduleReportModal: React.FC<ScheduleReportModalProps> = ({
 
     const recipientList = recipients
       .split(',')
-      .map(email => email.trim())
-      .filter(email => email.length > 0);
+      .map((email) => email.trim())
+      .filter((email) => email.length > 0);
 
     if (recipientList.length === 0) {
       setError('At least one recipient email is required');
@@ -54,7 +56,7 @@ export const ScheduleReportModal: React.FC<ScheduleReportModalProps> = ({
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const invalidEmails = recipientList.filter(email => !emailRegex.test(email));
+    const invalidEmails = recipientList.filter((email) => !emailRegex.test(email));
     if (invalidEmails.length > 0) {
       setError(`Invalid email addresses: ${invalidEmails.join(', ')}`);
       return;
@@ -64,7 +66,7 @@ export const ScheduleReportModal: React.FC<ScheduleReportModalProps> = ({
 
     try {
       const scheduleConfig: Record<string, unknown> = {};
-      
+
       if (scheduleType === 'daily') {
         scheduleConfig.time = time;
       } else if (scheduleType === 'weekly') {
@@ -83,7 +85,7 @@ export const ScheduleReportModal: React.FC<ScheduleReportModalProps> = ({
         scheduleType,
         scheduleConfig,
         exportFormat,
-        recipients: recipientList
+        recipients: recipientList,
       });
 
       onSuccess();
@@ -152,7 +154,10 @@ export const ScheduleReportModal: React.FC<ScheduleReportModalProps> = ({
 
             {scheduleType === 'daily' && (
               <div>
-                <label htmlFor="daily-time" className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">
+                <label
+                  htmlFor="daily-time"
+                  className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]"
+                >
                   Time *
                 </label>
                 <input
@@ -191,7 +196,10 @@ export const ScheduleReportModal: React.FC<ScheduleReportModalProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="weekly-time" className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">
+                  <label
+                    htmlFor="weekly-time"
+                    className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]"
+                  >
                     Time *
                   </label>
                   <input
@@ -212,7 +220,10 @@ export const ScheduleReportModal: React.FC<ScheduleReportModalProps> = ({
             {scheduleType === 'monthly' && (
               <>
                 <div>
-                  <label htmlFor="monthly-day" className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">
+                  <label
+                    htmlFor="monthly-day"
+                    className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]"
+                  >
                     Day of Month *
                   </label>
                   <input
@@ -230,7 +241,10 @@ export const ScheduleReportModal: React.FC<ScheduleReportModalProps> = ({
                   />
                 </div>
                 <div>
-                  <label htmlFor="monthly-time" className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]">
+                  <label
+                    htmlFor="monthly-time"
+                    className="block text-sm font-medium mb-1 text-[var(--brand-text-primary)]"
+                  >
                     Time *
                   </label>
                   <input
@@ -262,7 +276,8 @@ export const ScheduleReportModal: React.FC<ScheduleReportModalProps> = ({
                   required
                 />
                 <p className="mt-1 text-xs text-[var(--brand-text-secondary)]">
-                  Format: minute hour day month dayOfWeek (e.g., &quot;0 9 * * *&quot; for daily at 9 AM)
+                  Format: minute hour day month dayOfWeek (e.g., &quot;0 9 * * *&quot; for daily at
+                  9 AM)
                 </p>
               </div>
             )}
@@ -320,4 +335,3 @@ export const ScheduleReportModal: React.FC<ScheduleReportModalProps> = ({
     </div>
   );
 };
-

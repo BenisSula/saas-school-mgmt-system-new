@@ -21,7 +21,7 @@ export function PieChart({
   title,
   size = 200,
   showLegend = true,
-  responsive = true
+  responsive = true,
 }: PieChartProps) {
   const total = useMemo(() => data.reduce((sum, item) => sum + item.value, 0), [data]);
 
@@ -51,14 +51,14 @@ export function PieChart({
         `M ${centerX} ${centerY}`,
         `L ${x1} ${y1}`,
         `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
-        'Z'
+        'Z',
       ].join(' ');
 
       return {
         ...item,
         pathData,
         percentage,
-        color: item.color || `hsl(${(data.indexOf(item) * 360) / data.length}, 70%, 50%)`
+        color: item.color || `hsl(${(data.indexOf(item) * 360) / data.length}, 70%, 50%)`,
       };
     });
   }, [data, total, size]);

@@ -10,13 +10,13 @@ import {
   storeRefreshToken,
   verifyRefreshToken,
   revokeRefreshToken,
-  TokenPayload
+  TokenPayload,
 } from './tokenService';
 import {
   recordLoginEvent,
   recordLogoutEvent,
   rotateSessionToken,
-  SessionContext
+  SessionContext,
 } from './platformMonitoringService';
 import { createSchemaSlug, runTenantMigrations, seedTenant } from '../db/tenantManager';
 import { registerUser, type UserRegistrationInput } from './userRegistrationService';
@@ -68,6 +68,12 @@ export interface AuthResponse {
     tenantId: string | null;
     isVerified: boolean;
     status: 'pending' | 'active' | 'suspended' | 'rejected';
+    additional_roles?: Array<{
+      role: string;
+      granted_at?: string;
+      granted_by?: string;
+      metadata?: Record<string, unknown>;
+    }>;
   };
 }
 
@@ -100,7 +106,7 @@ function buildTokenPayload(user: DbUserRow): TokenPayload {
     userId: user.id,
     tenantId: user.tenant_id ?? '',
     email: user.email,
-    role: user.role as Role
+    role: user.role as Role,
   };
 }
 
@@ -158,7 +164,7 @@ export async function signUp(input: SignUpInput): Promise<AuthResponse> {
           schemaName,
           'trial',
           'active',
-          normalizedInput.email
+          normalizedInput.email,
         ]
       );
       resolvedTenantId = tenantResult.rows[0].id;
@@ -183,7 +189,7 @@ export async function signUp(input: SignUpInput): Promise<AuthResponse> {
     tenantId: resolvedTenantId || undefined,
     tenantName: normalizedInput.tenantName,
     // Profile data from input.profile
-    ...(normalizedInput.profile || {})
+    ...(normalizedInput.profile || {}),
   };
 
   // Determine if user should be immediately active
@@ -197,7 +203,7 @@ export async function signUp(input: SignUpInput): Promise<AuthResponse> {
     registrationInput,
     {
       immediateActivation,
-      createProfileImmediately: false // Profile created when admin approves
+      createProfileImmediately: false, // Profile created when admin approves
     }
   );
 
@@ -207,7 +213,7 @@ export async function signUp(input: SignUpInput): Promise<AuthResponse> {
     role: registrationResult.role,
     tenant_id: resolvedTenantId,
     is_verified: registrationResult.isVerified,
-    status: registrationResult.status
+    status: registrationResult.status,
   };
 
   const payload = buildTokenPayload(user);
@@ -227,8 +233,8 @@ export async function signUp(input: SignUpInput): Promise<AuthResponse> {
       role: user.role,
       tenantId: user.tenant_id,
       isVerified: user.is_verified,
-      status: (user.status as 'pending' | 'active' | 'suspended' | 'rejected') ?? 'pending'
-    }
+      status: (user.status as 'pending' | 'active' | 'suspended' | 'rejected') ?? 'pending',
+    },
   };
 }
 
@@ -313,7 +319,7 @@ export async function login(input: LoginInput, context?: SessionContext): Promis
       if (passwordHistoryResult.rows.length > 0) {
         const latestReset = passwordHistoryResult.rows[0];
         const metadata = latestReset.metadata || {};
-        
+
         // Check if this was a temporary password reset
         if (metadata.temporaryPassword === true) {
           // Check if user hasn't changed password since reset
@@ -340,9 +346,28 @@ export async function login(input: LoginInput, context?: SessionContext): Promis
       }
     } catch (historyError: unknown) {
       // If password_change_history table doesn't exist, ignore (user can login normally)
-      const errorMessage = historyError instanceof Error ? historyError.message : String(historyError);
+      const errorMessage =
+        historyError instanceof Error ? historyError.message : String(historyError);
       if (!errorMessage.includes('does not exist') && !errorMessage.includes('relation')) {
         console.error('[auth] Error checking password history:', historyError);
+      }
+    }
+
+    // Get additional roles if tenant exists
+    let additionalRoles: Array<{
+      role: string;
+      granted_at?: string;
+      granted_by?: string;
+      metadata?: Record<string, unknown>;
+    }> = [];
+    if (user.tenant_id) {
+      try {
+        const { getUserWithAdditionalRoles } = await import('./userService');
+        const userWithRoles = await getUserWithAdditionalRoles(user.id, user.tenant_id);
+        additionalRoles = userWithRoles.additional_roles || [];
+      } catch (error) {
+        // If additional_roles table doesn't exist or query fails, continue without them
+        console.warn('[auth] Failed to fetch additional roles:', error);
       }
     }
 
@@ -357,14 +382,15 @@ export async function login(input: LoginInput, context?: SessionContext): Promis
         role: user.role,
         tenantId: user.tenant_id,
         isVerified: user.is_verified,
-        status: userStatus
-      }
+        status: userStatus,
+        additional_roles: additionalRoles,
+      },
     };
 
     // Record login event - don't fail login if this fails
     try {
       await recordLoginEvent(user.id, refreshToken, context);
-      
+
       // Also log successful login attempt
       const { logLoginAttempt } = await import('./superuser/platformAuditService');
       await logLoginAttempt(pool, {
@@ -374,7 +400,7 @@ export async function login(input: LoginInput, context?: SessionContext): Promis
         userAgent: context?.userAgent || null,
         userId: user.id,
         tenantId: user.tenant_id,
-        failureReason: null
+        failureReason: null,
       });
     } catch (error) {
       // Log error but don't fail the login
@@ -404,7 +430,7 @@ export async function refreshToken(token: string, context?: SessionContext): Pro
   const tokenInfo = await verifyRefreshToken(pool, token);
 
   const userResult = await pool.query(
-    `SELECT id, email, role, tenant_id, is_verified FROM shared.users WHERE id = $1`,
+    `SELECT id, email, role, tenant_id, is_verified, status FROM shared.users WHERE id = $1`,
     [tokenInfo.userId]
   );
 
@@ -422,6 +448,30 @@ export async function refreshToken(token: string, context?: SessionContext): Pro
 
   await rotateSessionToken(user.id, token, newRefreshToken, context);
 
+  // Safely get status
+  let userStatus: 'pending' | 'active' | 'suspended' | 'rejected' = 'pending';
+  if (user.status) {
+    userStatus = user.status as 'pending' | 'active' | 'suspended' | 'rejected';
+  }
+
+  // Get additional roles if tenant exists
+  let additionalRoles: Array<{
+    role: string;
+    granted_at?: string;
+    granted_by?: string;
+    metadata?: Record<string, unknown>;
+  }> = [];
+  if (user.tenant_id) {
+    try {
+      const { getUserWithAdditionalRoles } = await import('./userService');
+      const userWithRoles = await getUserWithAdditionalRoles(user.id, user.tenant_id);
+      additionalRoles = userWithRoles.additional_roles || [];
+    } catch (error) {
+      // If additional_roles table doesn't exist or query fails, continue without them
+      console.warn('[auth] Failed to fetch additional roles during refresh:', error);
+    }
+  }
+
   return {
     accessToken,
     refreshToken: newRefreshToken,
@@ -432,8 +482,9 @@ export async function refreshToken(token: string, context?: SessionContext): Pro
       role: user.role,
       tenantId: user.tenant_id,
       isVerified: user.is_verified,
-      status: (user.status as 'pending' | 'active' | 'suspended' | 'rejected') ?? 'pending'
-    }
+      status: userStatus,
+      additional_roles: additionalRoles,
+    },
   };
 }
 
@@ -497,7 +548,7 @@ export async function resetPassword(token: string, newPassword: string): Promise
 
   await pool.query(`UPDATE shared.users SET password_hash = $1 WHERE id = $2`, [
     passwordHash,
-    userId
+    userId,
   ]);
 
   await pool.query(`DELETE FROM shared.password_reset_tokens WHERE token_hash = $1`, [tokenHash]);
@@ -547,7 +598,7 @@ export async function verifyEmail(token: string): Promise<void> {
 
   await pool.query(`UPDATE shared.users SET is_verified = TRUE WHERE id = $1`, [userId]);
   await pool.query(`DELETE FROM shared.email_verification_tokens WHERE token_hash = $1`, [
-    tokenHash
+    tokenHash,
   ]);
 }
 

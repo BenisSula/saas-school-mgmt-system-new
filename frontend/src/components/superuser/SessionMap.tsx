@@ -34,7 +34,7 @@ export function SessionMap({ sessions, className = '' }: SessionMapProps) {
       // In a real implementation, you'd use a geolocation API like MaxMind or ipapi.co
       // For now, we'll show IP addresses grouped
       country: undefined,
-      city: undefined
+      city: undefined,
     }));
 
     return locations.sort((a, b) => b.count - a.count);
@@ -65,11 +65,15 @@ export function SessionMap({ sessions, className = '' }: SessionMapProps) {
           <div className="flex items-center gap-4 text-sm text-[var(--brand-text-secondary)]">
             <div className="flex items-center gap-1">
               <Globe className="h-4 w-4" />
-              <span>{totalIPs} {totalIPs === 1 ? 'location' : 'locations'}</span>
+              <span>
+                {totalIPs} {totalIPs === 1 ? 'location' : 'locations'}
+              </span>
             </div>
             <div className="flex items-center gap-1">
               <Users className="h-4 w-4" />
-              <span>{totalSessions} {totalSessions === 1 ? 'session' : 'sessions'}</span>
+              <span>
+                {totalSessions} {totalSessions === 1 ? 'session' : 'sessions'}
+              </span>
             </div>
           </div>
         </div>
@@ -98,12 +102,16 @@ export function SessionMap({ sessions, className = '' }: SessionMapProps) {
                   )}
                   <div className="mt-2 flex flex-wrap gap-2">
                     {location.sessions.slice(0, 3).map((session) => {
-                      const deviceInfo = (session.normalizedDeviceInfo || session.deviceInfo) as {
-                        platform?: string;
-                        browser?: string;
-                        os?: string;
-                      } | undefined;
-                      const deviceLabel = deviceInfo?.platform || deviceInfo?.browser || 
+                      const deviceInfo = (session.normalizedDeviceInfo || session.deviceInfo) as
+                        | {
+                            platform?: string;
+                            browser?: string;
+                            os?: string;
+                          }
+                        | undefined;
+                      const deviceLabel =
+                        deviceInfo?.platform ||
+                        deviceInfo?.browser ||
                         (session.userAgent ? session.userAgent.split(' ')[0] : 'Unknown Device');
                       return (
                         <div
@@ -136,4 +144,3 @@ export function SessionMap({ sessions, className = '' }: SessionMapProps) {
     </Card>
   );
 }
-

@@ -11,7 +11,7 @@ import {
   getTeacherOverview,
   listTeacherClasses,
   listTeacherMessages,
-  type TeacherRecord
+  type TeacherRecord,
 } from '../src/services/teacherDashboardService';
 
 type MockAuthRequest = Request & {
@@ -33,7 +33,7 @@ const currentUser: NonNullable<MockAuthRequest['user']> = {
   role: 'teacher',
   tenantId: 'tenant_alpha',
   email: 'teacher@example.com',
-  tokenId: 'token'
+  tokenId: 'token',
 };
 
 jest.mock('../src/middleware/authenticate', () => ({
@@ -41,7 +41,7 @@ jest.mock('../src/middleware/authenticate', () => ({
   default: (req: MockAuthRequest, _res: Response, next: NextFunction) => {
     req.user = { ...currentUser };
     next();
-  }
+  },
 }));
 
 jest.mock('../src/middleware/tenantResolver', () => {
@@ -51,7 +51,7 @@ jest.mock('../src/middleware/tenantResolver', () => {
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 jest.mock('../src/services/teacherDashboardService', () => {
@@ -62,7 +62,7 @@ jest.mock('../src/services/teacherDashboardService', () => {
     findTeacherByEmail: jest.fn(),
     getTeacherOverview: jest.fn(),
     listTeacherClasses: jest.fn(),
-    listTeacherMessages: jest.fn()
+    listTeacherMessages: jest.fn(),
   };
 });
 
@@ -116,29 +116,29 @@ describe('Teacher routes RBAC', () => {
       id: teacherUserId,
       role: 'teacher' as const,
       tenantId,
-      email: 'teacher@example.com'
+      email: 'teacher@example.com',
     });
 
     teacherRecord = {
       id: teacherUserId,
       name: 'Teacher Example',
       email: 'teacher@example.com',
-      subjects: []
+      subjects: [],
     };
 
     const overviewMock: TeacherOverview = {
       teacher: {
         id: teacherRecord.id,
         name: teacherRecord.name,
-        email: teacherRecord.email
+        email: teacherRecord.email,
       },
       summary: {
         totalClasses: 0,
         totalSubjects: 0,
         classTeacherRoles: 0,
-        pendingDropRequests: 0
+        pendingDropRequests: 0,
       },
-      assignments: []
+      assignments: [],
     };
 
     const classesMock: TeacherClasses = [];
@@ -156,7 +156,7 @@ describe('Teacher routes RBAC', () => {
       id: 'student-user',
       role: 'student' as const,
       email: 'student@example.com',
-      tenantId
+      tenantId,
     });
 
     const before = await pool.query(
@@ -185,7 +185,7 @@ describe('Teacher routes RBAC', () => {
       totalClasses: 0,
       totalSubjects: 0,
       classTeacherRoles: 0,
-      pendingDropRequests: 0
+      pendingDropRequests: 0,
     });
     expect(findTeacherByEmailMock).toHaveBeenCalled();
   });

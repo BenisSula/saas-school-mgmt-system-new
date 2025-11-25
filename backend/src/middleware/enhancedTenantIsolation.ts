@@ -26,7 +26,7 @@ export function enhancedTenantIsolation(req: Request, res: Response, next: NextF
   if (!tenant || !tenantClient) {
     return res.status(403).json({
       message: 'Tenant context required',
-      code: 'TENANT_CONTEXT_REQUIRED'
+      code: 'TENANT_CONTEXT_REQUIRED',
     });
   }
 
@@ -38,7 +38,7 @@ export function enhancedTenantIsolation(req: Request, res: Response, next: NextF
     );
     return res.status(403).json({
       message: 'Access denied: tenant mismatch',
-      code: 'TENANT_MISMATCH'
+      code: 'TENANT_MISMATCH',
     });
   }
 
@@ -56,9 +56,8 @@ export function requireTenantContext(req: Request, res: Response, next: NextFunc
   if (!req.tenant || !req.tenantClient) {
     return res.status(400).json({
       message: 'Tenant context is required for this operation',
-      code: 'TENANT_CONTEXT_MISSING'
+      code: 'TENANT_CONTEXT_MISSING',
     });
   }
   next();
 }
-

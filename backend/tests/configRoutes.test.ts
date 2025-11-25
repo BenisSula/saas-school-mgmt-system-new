@@ -23,17 +23,17 @@ jest.mock('../src/middleware/authenticate', () => ({
       role: 'admin',
       tenantId: 'tenant_alpha',
       email: 'admin@test.com',
-      tokenId: 'token'
+      tokenId: 'token',
     };
     next();
-  }
+  },
 }));
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn().mockImplementation(() => {
     throw new Error('should be mocked in test');
   }),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -42,7 +42,7 @@ describe('Configuration routes', () => {
   const headers = { Authorization: 'Bearer fake', 'x-tenant-id': 'tenant_alpha' };
   const mockTerms = [
     { name: 'Term 1 2025', startsOn: '2025-01-10', endsOn: '2025-04-10' },
-    { name: 'Term 2 2025', startsOn: '2025-05-05', endsOn: '2025-08-20' }
+    { name: 'Term 2 2025', startsOn: '2025-05-05', endsOn: '2025-08-20' },
   ];
 
   beforeAll(async () => {
@@ -51,7 +51,7 @@ describe('Configuration routes', () => {
     await createTenant(
       {
         name: 'Alpha Academy',
-        schemaName: 'tenant_alpha'
+        schemaName: 'tenant_alpha',
       },
       pool
     );
@@ -67,7 +67,7 @@ describe('Configuration routes', () => {
         secondaryColor: '#0f172a',
         themeFlags: { darkMode: true },
         typography: { fontFamily: 'Inter' },
-        navigation: { style: 'top', showLogo: true }
+        navigation: { style: 'top', showLogo: true },
       });
 
     expect(response.status).toBe(200);
@@ -94,7 +94,7 @@ describe('Configuration routes', () => {
       .send({
         name: `${firstTerm.name} Updated`,
         startsOn: firstTerm.starts_on.slice(0, 10),
-        endsOn: firstTerm.ends_on.slice(0, 10)
+        endsOn: firstTerm.ends_on.slice(0, 10),
       });
     expect(updatedTerm.status).toBe(200);
     expect(updatedTerm.body.name).toContain('Updated');
@@ -108,7 +108,7 @@ describe('Configuration routes', () => {
 
     const classResponse = await request(app).post('/configuration/classes').set(headers).send({
       name: 'Grade 10',
-      description: 'Senior class'
+      description: 'Senior class',
     });
 
     expect(classResponse.status).toBe(201);
@@ -119,7 +119,7 @@ describe('Configuration routes', () => {
       .set(headers)
       .send({
         name: 'Grade 10 Updated',
-        description: 'Senior class updated'
+        description: 'Senior class updated',
       });
     expect(updatedClass.status).toBe(200);
     expect(updatedClass.body.name).toBe('Grade 10 Updated');

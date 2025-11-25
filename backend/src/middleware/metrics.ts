@@ -14,100 +14,100 @@ const httpRequestDuration = new Histogram({
   name: 'http_request_duration_seconds',
   help: 'Duration of HTTP requests in seconds',
   labelNames: ['method', 'route', 'status_code'],
-  buckets: [0.1, 0.5, 1, 2, 5, 10]
+  buckets: [0.1, 0.5, 1, 2, 5, 10],
 });
 
 const httpRequestTotal = new Counter({
   name: 'http_requests_total',
   help: 'Total number of HTTP requests',
-  labelNames: ['method', 'route', 'status_code']
+  labelNames: ['method', 'route', 'status_code'],
 });
 
 const httpRequestSize = new Histogram({
   name: 'http_request_size_bytes',
   help: 'Size of HTTP requests in bytes',
   labelNames: ['method', 'route'],
-  buckets: [100, 1000, 10000, 100000, 1000000]
+  buckets: [100, 1000, 10000, 100000, 1000000],
 });
 
 const httpResponseSize = new Histogram({
   name: 'http_response_size_bytes',
   help: 'Size of HTTP responses in bytes',
   labelNames: ['method', 'route', 'status_code'],
-  buckets: [100, 1000, 10000, 100000, 1000000]
+  buckets: [100, 1000, 10000, 100000, 1000000],
 });
 
 // Business Metrics
 const activeUsers = new Gauge({
   name: 'active_users_total',
   help: 'Number of active users',
-  labelNames: ['tenant_id']
+  labelNames: ['tenant_id'],
 });
 
 const activeTenants = new Gauge({
   name: 'active_tenants_total',
-  help: 'Number of active tenants'
+  help: 'Number of active tenants',
 });
 
 const apiCallsTotal = new Counter({
   name: 'api_calls_total',
   help: 'Total number of API calls',
-  labelNames: ['endpoint', 'method', 'tenant_id']
+  labelNames: ['endpoint', 'method', 'tenant_id'],
 });
 
 const databaseQueryDuration = new Histogram({
   name: 'database_query_duration_seconds',
   help: 'Duration of database queries in seconds',
   labelNames: ['query_type', 'table'],
-  buckets: [0.01, 0.05, 0.1, 0.5, 1, 2, 5]
+  buckets: [0.01, 0.05, 0.1, 0.5, 1, 2, 5],
 });
 
 const databaseConnections = new Gauge({
   name: 'database_connections_active',
-  help: 'Number of active database connections'
+  help: 'Number of active database connections',
 });
 
 // Error Metrics
 const errorsTotal = new Counter({
   name: 'errors_total',
   help: 'Total number of errors',
-  labelNames: ['type', 'endpoint', 'status_code']
+  labelNames: ['type', 'endpoint', 'status_code'],
 });
 
 // Authentication Metrics
 const authAttempts = new Counter({
   name: 'auth_attempts_total',
   help: 'Total number of authentication attempts',
-  labelNames: ['method', 'success']
+  labelNames: ['method', 'success'],
 });
 
 const authAttemptsSuccess = new Counter({
   name: 'auth_attempts_success_total',
   help: 'Total number of successful authentication attempts',
-  labelNames: ['method']
+  labelNames: ['method'],
 });
 
 const authAttemptsFailed = new Counter({
   name: 'auth_attempts_failed_total',
   help: 'Total number of failed authentication attempts',
-  labelNames: ['method', 'ip_address']
+  labelNames: ['method', 'ip_address'],
 });
 
 const sessionsActive = new Gauge({
   name: 'sessions_active',
-  help: 'Number of active sessions'
+  help: 'Number of active sessions',
 });
 
 const tenantsTotal = new Gauge({
   name: 'tenants_total',
-  help: 'Total number of active tenants'
+  help: 'Total number of active tenants',
 });
 
 // Failed Login IP Heatmap (using Gauge to track counts per IP)
 const failedLoginIPCount = new Gauge({
   name: 'failed_login_attempts_by_ip',
   help: 'Number of failed login attempts by IP address',
-  labelNames: ['ip_address']
+  labelNames: ['ip_address'],
 });
 
 // Export metrics for Prometheus scraping
@@ -141,19 +141,29 @@ export function metricsMiddleware(req: Request, res: Response, next: NextFunctio
 
     // Override res.end to capture response metrics
     const originalEnd = res.end.bind(res);
-    (res as { end: typeof res.end }).end = function (chunk?: unknown, encoding?: unknown, cb?: unknown): Response {
+    (res as { end: typeof res.end }).end = function (
+      chunk?: unknown,
+      encoding?: unknown,
+      cb?: unknown
+    ): Response {
       try {
         const duration = (Date.now() - start) / 1000;
         const statusCode = res.statusCode.toString();
 
         // Record metrics
-        httpRequestDuration.observe({ method: req.method, route, status_code: statusCode }, duration);
+        httpRequestDuration.observe(
+          { method: req.method, route, status_code: statusCode },
+          duration
+        );
         httpRequestTotal.inc({ method: req.method, route, status_code: statusCode });
 
         // Track response size
         if (chunk) {
           const responseSize = Buffer.isBuffer(chunk) ? chunk.length : String(chunk).length;
-          httpResponseSize.observe({ method: req.method, route, status_code: statusCode }, responseSize);
+          httpResponseSize.observe(
+            { method: req.method, route, status_code: statusCode },
+            responseSize
+          );
         }
       } catch (metricsError) {
         console.error('[Metrics] Failed to record metrics:', metricsError);
@@ -248,6 +258,5 @@ export const metrics = {
   resetFailedLoginIPCount: (ipAddress: string) => {
     // Remove specific IP address gauge (reset to 0)
     failedLoginIPCount.remove({ ip_address: ipAddress });
-  }
+  },
 };
-

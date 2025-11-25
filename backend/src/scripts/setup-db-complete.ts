@@ -17,7 +17,7 @@ async function setupDatabase(): Promise<void> {
   const adminPool = new Pool({
     connectionString:
       process.env.DATABASE_URL?.replace(/\/saas_school$/, '/postgres') ||
-      'postgres://postgres:postgres@localhost:5432/postgres'
+      'postgres://postgres:postgres@localhost:5432/postgres',
   });
 
   try {
@@ -42,7 +42,7 @@ async function setupDatabase(): Promise<void> {
     console.log('🔄 Running migrations...');
     const pool = new Pool({
       connectionString:
-        process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/saas_school'
+        process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/saas_school',
     });
 
     await runMigrations(pool);

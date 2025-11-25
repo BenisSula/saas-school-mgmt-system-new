@@ -37,16 +37,29 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     const secret = process.env.JWT_ACCESS_SECRET ?? 'change-me-access';
     const payload = jwt.verify(token, secret) as JwtPayload;
 
+    // SECURITY: Verify token expiration explicitly
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp && payload.exp < now) {
+      return res.status(401).json({ message: 'Token has expired' });
+    }
+
     req.user = {
       id: payload.sub,
       tenantId: payload.tenantId || '',
       role: payload.role,
       email: payload.email,
-      tokenId: payload.tokenId
+      tokenId: payload.tokenId,
     };
 
     return next();
-  } catch {
+  } catch (error) {
+    // SECURITY: Provide more specific error messages for debugging (but don't leak sensitive info)
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({ message: 'Token has expired' });
+    }
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
     return res.status(401).json({ message: 'Invalid or expired token' });
   }
 }

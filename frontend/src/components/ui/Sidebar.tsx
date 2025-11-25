@@ -16,12 +16,12 @@ export interface SidebarProps {
 
 const sidebarVariants = {
   expanded: { width: 'var(--layout-sidebar-width)' },
-  collapsed: { width: 'var(--layout-sidebar-collapsed-width)' }
+  collapsed: { width: 'var(--layout-sidebar-collapsed-width)' },
 };
 
 const navItemVariants = {
   hidden: { opacity: 0, x: -10 },
-  visible: { opacity: 1, x: 0 }
+  visible: { opacity: 1, x: 0 },
 };
 
 function SidebarComponent({
@@ -32,7 +32,7 @@ function SidebarComponent({
   collapsed,
   onCollapsedToggle,
   onNavigate,
-  isDesktop
+  isDesktop,
 }: SidebarProps) {
   const shouldCollapse = collapsed && isDesktop;
   const isExpanded = !collapsed;
@@ -99,7 +99,7 @@ function SidebarComponent({
     className:
       'interactive-button inline-flex h-9 w-9 items-center justify-center rounded-md text-[var(--brand-surface-contrast)]',
     'aria-label': collapsed ? 'Expand sidebar' : 'Collapse sidebar',
-    'aria-expanded': isExpanded
+    'aria-expanded': isExpanded,
   } as React.ButtonHTMLAttributes<HTMLButtonElement>;
 
   // Track if sidebar is hidden on mobile to prevent focus issues
@@ -120,13 +120,13 @@ function SidebarComponent({
       transition={{
         type: 'tween',
         duration: 0.3,
-        ease: [0.4, 0, 0.2, 1]
+        ease: [0.4, 0, 0.2, 1],
       }}
       style={{
         // Prevent interaction when hidden on mobile
         pointerEvents: isHidden ? 'none' : 'auto',
         // Hide visually when closed on mobile to prevent focus issues
-        ...(isHidden && !isDesktop ? { display: 'none' } : {})
+        ...(isHidden && !isDesktop ? { display: 'none' } : {}),
       }}
     >
       <div className="flex h-full flex-col">
@@ -169,10 +169,7 @@ function SidebarComponent({
             {links.map((link, index) => {
               const isActive = activePath === link.path;
               return (
-                <li
-                  key={link.id}
-                  className="list-none"
-                >
+                <li key={link.id} className="list-none">
                   <motion.a
                     ref={(el) => {
                       buttonRefs.current[index] = el;

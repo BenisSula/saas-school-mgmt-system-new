@@ -25,15 +25,15 @@ jest.mock('../src/middleware/authenticate', () => ({
       role: 'admin',
       tenantId: 'tenant_alpha',
       email: 'admin@test.com',
-      tokenId: 'token'
+      tokenId: 'token',
     };
     next();
-  }
+  },
 }));
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -51,7 +51,7 @@ describe('Report routes', () => {
     await createTenant(
       {
         name: 'Alpha Academy',
-        schemaName: 'tenant_alpha'
+        schemaName: 'tenant_alpha',
       },
       pool
     );
@@ -131,7 +131,7 @@ describe('Report routes', () => {
     expect(gradeRows).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ subject: 'Mathematics', grade: 'A', count: 1 }),
-        expect.objectContaining({ subject: 'Science', grade: 'B', count: 1 })
+        expect.objectContaining({ subject: 'Science', grade: 'B', count: 1 }),
       ])
     );
   });

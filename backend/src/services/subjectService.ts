@@ -4,7 +4,7 @@ import { getTableName, serializeJsonField } from '../lib/serviceUtils';
 import {
   classSubjectAssignmentSchema,
   studentSubjectSchema,
-  teacherAssignmentSchema
+  teacherAssignmentSchema,
 } from '../validators/subjectValidator';
 import type { SubjectInput } from '../validators/subjectValidator';
 import { z } from 'zod';
@@ -31,7 +31,7 @@ export async function createSubject(client: PoolClient, schema: string, payload:
       payload.name,
       payload.code?.toUpperCase() ?? null,
       payload.description ?? null,
-      serializeJsonField(payload.metadata ?? {})
+      serializeJsonField(payload.metadata ?? {}),
     ]
   );
   return result.rows[0];
@@ -68,7 +68,7 @@ export async function updateSubject(
       (payload.code ?? subject.code)?.toUpperCase() ?? null,
       payload.description ?? subject.description,
       serializeJsonField(payload.metadata ?? subject.metadata ?? {}),
-      id
+      id,
     ]
   );
   return result.rows[0];
@@ -152,7 +152,7 @@ export async function upsertTeacherAssignment(
       payload.classId,
       payload.subjectId,
       payload.isClassTeacher ?? false,
-      serializeJsonField(payload.metadata ?? {})
+      serializeJsonField(payload.metadata ?? {}),
     ]
   );
   return result.rows[0];
@@ -178,7 +178,7 @@ export async function removeTeacherAssignment(
   assignmentId: string
 ) {
   await client.query(`DELETE FROM ${getTableName(schema, 'teacher_assignments')} WHERE id = $1`, [
-    assignmentId
+    assignmentId,
   ]);
 }
 

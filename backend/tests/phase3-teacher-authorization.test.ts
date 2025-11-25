@@ -9,7 +9,7 @@ import { markAttendance } from '../src/services/attendanceService';
 import { bulkUpsertGrades } from '../src/services/examService';
 import {
   getTeacherClassRoster,
-  getTeacherClassReport
+  getTeacherClassReport,
 } from '../src/services/teacherDashboardService';
 
 type MockAuthRequest = Request & {
@@ -27,7 +27,7 @@ const currentUser: NonNullable<MockAuthRequest['user']> = {
   role: 'teacher',
   tenantId: 'tenant_test',
   email: 'teacher@test.com',
-  tokenId: 'token'
+  tokenId: 'token',
 };
 
 jest.mock('../src/middleware/authenticate', () => ({
@@ -35,7 +35,7 @@ jest.mock('../src/middleware/authenticate', () => ({
   default: (req: MockAuthRequest, _res: Response, next: NextFunction) => {
     req.user = { ...currentUser };
     next();
-  }
+  },
 }));
 
 jest.mock('../src/middleware/tenantResolver', () => {
@@ -45,7 +45,7 @@ jest.mock('../src/middleware/tenantResolver', () => {
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -316,7 +316,7 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
       id: teacherUserId,
       role: 'teacher',
       tenantId,
-      email: 'teacher@test.com'
+      email: 'teacher@test.com',
     });
   });
 
@@ -324,7 +324,7 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
     it('should allow teacher to mark attendance for assigned class', async () => {
       const headers = {
         Authorization: 'Bearer fake',
-        'x-tenant-id': tenantId
+        'x-tenant-id': tenantId,
       };
 
       const res = await request(app)
@@ -337,9 +337,9 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
               classId: assignedClassId,
               status: 'present',
               markedBy: teacherUserId,
-              date: '2025-01-30'
-            }
-          ]
+              date: '2025-01-30',
+            },
+          ],
         });
 
       // Should succeed (204) or fail with validation, but not 403 (forbidden)
@@ -357,7 +357,7 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
     it('should forbid teacher from marking attendance for non-assigned class', async () => {
       const headers = {
         Authorization: 'Bearer fake',
-        'x-tenant-id': tenantId
+        'x-tenant-id': tenantId,
       };
 
       const res = await request(app)
@@ -370,9 +370,9 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
               classId: unassignedClassId, // Not assigned
               status: 'present',
               markedBy: teacherUserId,
-              date: '2025-01-30'
-            }
-          ]
+              date: '2025-01-30',
+            },
+          ],
         });
 
       expect(res.status).toBe(403);
@@ -384,12 +384,12 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
         id: crypto.randomUUID(),
         role: 'admin',
         tenantId,
-        email: 'admin@test.com'
+        email: 'admin@test.com',
       });
 
       const headers = {
         Authorization: 'Bearer fake',
-        'x-tenant-id': tenantId
+        'x-tenant-id': tenantId,
       };
 
       const res = await request(app)
@@ -402,9 +402,9 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
               classId: unassignedClassId,
               status: 'present',
               markedBy: currentUser.id,
-              date: '2025-01-30'
-            }
-          ]
+              date: '2025-01-30',
+            },
+          ],
         });
 
       // Admin should be able to access (not 403)
@@ -418,14 +418,14 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
         id: teacherUserId,
         role: 'teacher',
         tenantId,
-        email: 'teacher@test.com'
+        email: 'teacher@test.com',
       });
     });
 
     it('should allow teacher to enter grades for assigned class', async () => {
       const headers = {
         Authorization: 'Bearer fake',
-        'x-tenant-id': tenantId
+        'x-tenant-id': tenantId,
       };
 
       const res = await request(app)
@@ -438,9 +438,9 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
               studentId: studentId,
               subject: 'Mathematics',
               score: 85,
-              classId: assignedClassId
-            }
-          ]
+              classId: assignedClassId,
+            },
+          ],
         });
 
       // Should succeed (200) or fail with validation, but not 403 (forbidden)
@@ -458,7 +458,7 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
     it('should forbid teacher from entering grades for non-assigned class', async () => {
       const headers = {
         Authorization: 'Bearer fake',
-        'x-tenant-id': tenantId
+        'x-tenant-id': tenantId,
       };
 
       const res = await request(app)
@@ -471,9 +471,9 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
               studentId: studentId,
               subject: 'Mathematics',
               score: 85,
-              classId: unassignedClassId // Not assigned
-            }
-          ]
+              classId: unassignedClassId, // Not assigned
+            },
+          ],
         });
 
       expect(res.status).toBe(403);
@@ -485,12 +485,12 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
         id: crypto.randomUUID(),
         role: 'admin',
         tenantId,
-        email: 'admin@test.com'
+        email: 'admin@test.com',
       });
 
       const headers = {
         Authorization: 'Bearer fake',
-        'x-tenant-id': tenantId
+        'x-tenant-id': tenantId,
       };
 
       const res = await request(app)
@@ -503,9 +503,9 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
               studentId: studentId,
               subject: 'Mathematics',
               score: 85,
-              classId: unassignedClassId
-            }
-          ]
+              classId: unassignedClassId,
+            },
+          ],
         });
 
       // Admin should be able to access (not 403)
@@ -529,8 +529,8 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
                 classId: unassignedClassId,
                 status: 'present',
                 markedBy: teacherUserId,
-                date: '2025-01-30'
-              }
+                date: '2025-01-30',
+              },
             ],
             teacherUserId
           )
@@ -558,8 +558,8 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
                 classId: assignedClassId,
                 status: 'present',
                 markedBy: teacherUserId,
-                date: uniqueDate
-              }
+                date: uniqueDate,
+              },
             ],
             teacherUserId
           );
@@ -605,8 +605,8 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
                 classId: unassignedClassId,
                 status: 'present',
                 markedBy: adminUserId,
-                date: '2025-01-30'
-              }
+                date: '2025-01-30',
+              },
             ],
             adminUserId
           )
@@ -634,8 +634,8 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
                 studentId: studentId,
                 subject: 'Mathematics',
                 score: 85,
-                classId: unassignedClassId
-              }
+                classId: unassignedClassId,
+              },
             ],
             teacherUserId
           )
@@ -661,8 +661,8 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
                 studentId: studentId,
                 subject: 'Mathematics',
                 score: 85,
-                classId: assignedClassId
-              }
+                classId: assignedClassId,
+              },
             ],
             teacherUserId
           )
@@ -757,7 +757,7 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
       // service-level check will still prevent unauthorized access
       const headers = {
         Authorization: 'Bearer fake',
-        'x-tenant-id': tenantId
+        'x-tenant-id': tenantId,
       };
 
       // Try to mark attendance for non-assigned class
@@ -771,9 +771,9 @@ describe('Phase 3: Teacher → Student Authorization & Route Guards', () => {
               classId: unassignedClassId,
               status: 'present',
               markedBy: teacherUserId,
-              date: '2025-01-30'
-            }
-          ]
+              date: '2025-01-30',
+            },
+          ],
         });
 
       // Should be blocked at route level (403)

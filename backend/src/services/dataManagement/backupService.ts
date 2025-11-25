@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import type { PoolClient } from 'pg';
-import { z } from 'zod';
+// z from zod not used in this file but may be needed for future implementations
 
 const execAsync = promisify(exec);
 
@@ -37,7 +37,9 @@ function generateBackupFilename(tenantId: string | null, backupType: string): st
 
 /**
  * Execute PostgreSQL backup using pg_dump
+ * Not currently used but kept for future implementation
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function executePgDump(
   tenantId: string | null,
   backupType: string,
@@ -53,7 +55,7 @@ async function executePgDump(
   try {
     const env = {
       ...process.env,
-      PGPASSWORD: dbConfig.password
+      PGPASSWORD: dbConfig.password,
     };
 
     let pgDumpArgs = '';
@@ -84,7 +86,7 @@ async function executePgDump(
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 }
@@ -92,10 +94,7 @@ async function executePgDump(
 /**
  * Create backup job
  */
-export async function createBackup(
-  client: PoolClient,
-  input: CreateBackupInput
-): Promise<unknown> {
+export async function createBackup(client: PoolClient, input: CreateBackupInput): Promise<unknown> {
   const backupId = crypto.randomUUID();
   const backupFilename = generateBackupFilename(input.tenantId || null, input.backupType);
 
@@ -117,7 +116,7 @@ export async function createBackup(
       `${input.storageLocation}/${backupFilename}`,
       input.storageProvider,
       JSON.stringify(input.metadata || {}),
-      input.createdBy || null
+      input.createdBy || null,
     ]
   );
 
@@ -189,7 +188,7 @@ export async function getBackupJobs(
 
   return {
     jobs: jobsResult.rows,
-    total
+    total,
   };
 }
 
@@ -227,7 +226,7 @@ export async function createBackupSchedule(
       input.storageProvider,
       JSON.stringify(input.storageConfig || {}),
       nextRunAt,
-      input.createdBy || null
+      input.createdBy || null,
     ]
   );
 
@@ -358,4 +357,3 @@ export async function deleteBackupSchedule(
     throw new Error('Backup schedule not found');
   }
 }
-

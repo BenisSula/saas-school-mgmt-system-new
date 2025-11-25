@@ -9,8 +9,8 @@ const mockGetBranding = vi.fn().mockResolvedValue(null);
 vi.mock('../../../lib/api', () => ({
   api: {
     getTopSchools: (...args: unknown[]) => mockGetTopSchools(...args),
-    getBranding: (...args: unknown[]) => mockGetBranding(...args)
-  }
+    getBranding: (...args: unknown[]) => mockGetBranding(...args),
+  },
 }));
 
 const renderComponent = () =>
@@ -31,8 +31,8 @@ beforeEach(() => {
       removeEventListener: vi.fn(),
       addListener: vi.fn(),
       removeListener: vi.fn(),
-      dispatchEvent: vi.fn()
-    }))
+      dispatchEvent: vi.fn(),
+    })),
   });
 });
 
@@ -45,8 +45,8 @@ describe('TopSchools', () => {
         logo_url: null,
         metric_label: 'Active students',
         metric_value: 1240,
-        case_study_url: 'https://example.com/case-study'
-      }
+        case_study_url: 'https://example.com/case-study',
+      },
     ]);
 
     renderComponent();

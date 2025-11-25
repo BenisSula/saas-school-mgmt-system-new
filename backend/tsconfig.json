@@ -12,7 +12,10 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node", "jest"],
     "verbatimModuleSyntax": false,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "paths": {
+      "@shared/*": ["../shared/*"]
+    }
   },
   "include": ["src", "tests"],
   "exclude": ["dist", "node_modules"]

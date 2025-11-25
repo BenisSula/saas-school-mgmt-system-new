@@ -71,7 +71,7 @@ async function startServer(): Promise<void> {
     } catch {
       // noop
     }
-    
+
     // Start session cleanup job
     try {
       startSessionCleanupJob();
@@ -79,7 +79,7 @@ async function startServer(): Promise<void> {
     } catch (error) {
       console.error('⚠️  Failed to start session cleanup job:', error);
     }
-    
+
     // Start platform metrics collection
     try {
       startMetricsCollection();
@@ -87,7 +87,7 @@ async function startServer(): Promise<void> {
     } catch (error) {
       console.error('⚠️  Failed to start platform metrics collection:', error);
     }
-    
+
     listenWithRetry(server, PORT, 5);
   } catch (error) {
     const err = error as Error & { code?: string };

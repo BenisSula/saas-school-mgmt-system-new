@@ -4,8 +4,11 @@ import { StatusBanner } from '../../components/ui/StatusBanner';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
 import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton';
-import { api, type TeacherClassReport, type TeacherClassSummary } from '../../lib/api';
+import { api, type TeacherClassReport } from '../../lib/api';
 import { toast } from 'sonner';
+import { useTeacherClasses } from '../../hooks/queries/useTeachers';
+import { useExportAttendance, useExportGrades } from '../../hooks/queries/useTeacherPhase7';
+import { Download } from 'lucide-react';
 
 interface StatPair {
   label: string;
@@ -17,7 +20,7 @@ function buildAttendanceStats(report: TeacherClassReport): StatPair[] {
     { label: 'Present', value: String(report.attendance.present) },
     { label: 'Absent', value: String(report.attendance.absent) },
     { label: 'Late', value: String(report.attendance.late) },
-    { label: 'Attendance rate', value: `${report.attendance.percentage}%` }
+    { label: 'Attendance rate', value: `${report.attendance.percentage}%` },
   ];
 }
 
@@ -25,47 +28,33 @@ function buildFeeStats(report: TeacherClassReport): StatPair[] {
   return [
     { label: 'Billed', value: `$${report.fees.billed.toFixed(2)}` },
     { label: 'Paid', value: `$${report.fees.paid.toFixed(2)}` },
-    { label: 'Outstanding', value: `$${report.fees.outstanding.toFixed(2)}` }
+    { label: 'Outstanding', value: `$${report.fees.outstanding.toFixed(2)}` },
   ];
 }
 
 export default function TeacherReportsPage() {
-  const [classes, setClasses] = useState<TeacherClassSummary[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [report, setReport] = useState<TeacherClassReport | null>(null);
-  const [loading, setLoading] = useState(true);
   const [fetchingReport, setFetchingReport] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [exportFormat, setExportFormat] = useState<'pdf' | 'xlsx'>('pdf');
 
-  const selectedClassName = useMemo(() => {
+  const { data: classes = [], isLoading: loading } = useTeacherClasses();
+  const exportAttendanceMutation = useExportAttendance();
+  const exportGradesMutation = useExportGrades();
+
+  // selectedClassName is computed but not used - keeping for potential future use
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _selectedClassName = useMemo(() => {
     const clazz = classes.find((entry) => entry.id === selectedClassId);
     return clazz?.name ?? '';
   }, [classes, selectedClassId]);
 
   useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const data = await api.teacher.listClasses();
-        if (cancelled) return;
-        setClasses(data);
-        if (data.length > 0) {
-          setSelectedClassId((current) => current || data[0].id);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError((err as Error).message);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    if (classes.length > 0 && !selectedClassId) {
+      setSelectedClassId(classes[0].id);
+    }
+  }, [classes, selectedClassId]);
 
   const loadReport = async () => {
     if (!selectedClassId) {
@@ -86,23 +75,28 @@ export default function TeacherReportsPage() {
     }
   };
 
-  const downloadPdf = async () => {
+  const handleExportAttendance = async () => {
     if (!selectedClassId) {
-      toast.error('Select a class to export its report.');
+      toast.error('Select a class to export attendance.');
       return;
     }
-    try {
-      const blob = await api.teacher.downloadClassReportPdf(selectedClassId);
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = `class-report-${selectedClassName.replace(/\s+/g, '-').toLowerCase()}.pdf`;
-      anchor.click();
-      URL.revokeObjectURL(url);
-      toast.success('Class report downloaded.');
-    } catch (err) {
-      toast.error((err as Error).message);
+    const today = new Date().toISOString().split('T')[0];
+    await exportAttendanceMutation.mutateAsync({
+      classId: selectedClassId,
+      date: today,
+      format: exportFormat,
+    });
+  };
+
+  const handleExportGrades = async () => {
+    if (!selectedClassId) {
+      toast.error('Select a class to export grades.');
+      return;
     }
+    await exportGradesMutation.mutateAsync({
+      classId: selectedClassId,
+      format: exportFormat,
+    });
   };
 
   if (loading) {
@@ -152,15 +146,39 @@ export default function TeacherReportsPage() {
             onChange={(event) => setSelectedClassId(event.target.value)}
             options={classes.map((clazz) => ({
               value: clazz.id,
-              label: clazz.name
+              label: clazz.name,
             }))}
           />
           <div className="flex items-end gap-2">
             <Button onClick={() => void loadReport()} loading={fetchingReport}>
               Load report
             </Button>
-            <Button variant="outline" onClick={() => void downloadPdf()} disabled={!report}>
-              Export PDF
+            <Select
+              label="Format"
+              value={exportFormat}
+              onChange={(e) => setExportFormat(e.target.value as 'pdf' | 'xlsx')}
+              options={[
+                { value: 'pdf', label: 'PDF' },
+                { value: 'xlsx', label: 'Excel' },
+              ]}
+            />
+            <Button
+              variant="outline"
+              onClick={() => void handleExportAttendance()}
+              disabled={!selectedClassId}
+              loading={exportAttendanceMutation.isPending}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export Attendance
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => void handleExportGrades()}
+              disabled={!selectedClassId}
+              loading={exportGradesMutation.isPending}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export Grades
             </Button>
           </div>
         </section>

@@ -352,6 +352,22 @@ paths:
         '201':
           description: Class created
   /school:
+    get:
+      summary: Get school profile
+      responses:
+        '200':
+          description: School record
+    put:
+      summary: Upsert school profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SchoolInput'
+      responses:
+        '200':
+          description: School updated
   /attendance/mark:
     post:
       summary: Bulk mark attendance
@@ -467,22 +483,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/FeeAggregate'
-    get:
-      summary: Get school profile
-      responses:
-        '200':
-          description: School record
-    put:
-      summary: Upsert school profile
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SchoolInput'
-      responses:
-        '200':
-          description: School updated
   /exams:
     post:
       summary: Create an exam for the tenant

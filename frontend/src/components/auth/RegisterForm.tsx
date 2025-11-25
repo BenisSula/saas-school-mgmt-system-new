@@ -23,13 +23,13 @@ const SUBJECT_OPTIONS = [
   { label: 'Computer Science', value: 'computer-science' },
   { label: 'Physical Education', value: 'physical-education' },
   { label: 'Art', value: 'art' },
-  { label: 'Music', value: 'music' }
+  { label: 'Music', value: 'music' },
 ];
 
 const GENDER_OPTIONS = [
   { label: 'Male', value: 'male' },
   { label: 'Female', value: 'female' },
-  { label: 'Other', value: 'other' }
+  { label: 'Other', value: 'other' },
 ];
 
 // Ensure default role is in allowed list
@@ -62,7 +62,7 @@ export function RegisterForm({
   defaultRole = getDefaultRole(),
   defaultTenantId,
   initialValues,
-  submitLabel = 'Create account'
+  submitLabel = 'Create account',
 }: RegisterFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -78,13 +78,13 @@ export function RegisterForm({
     isStudent,
     isTeacher,
     tenantId,
-    handleTenantSelect
+    handleTenantSelect,
   } = useRegisterForm({
     defaultRole,
     defaultTenantId,
     initialValues,
     onSuccess,
-    onPending
+    onPending,
   });
 
   useEffect(() => {

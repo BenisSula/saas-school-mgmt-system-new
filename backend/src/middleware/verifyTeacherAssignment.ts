@@ -90,12 +90,12 @@ export function verifyTeacherAssignment(options: VerifyTeacherAssignmentOptions 
         try {
           const mainPool = getPool();
           const userResult = await mainPool.query(`SELECT email FROM shared.users WHERE id = $1`, [
-            req.user.id
+            req.user.id,
           ]);
           const userEmail = userResult.rows[0]?.email;
           if (!userEmail) {
             return res.status(403).json({
-              message: 'Teacher profile not found. Please contact an administrator.'
+              message: 'Teacher profile not found. Please contact an administrator.',
             });
           }
 
@@ -107,14 +107,14 @@ export function verifyTeacherAssignment(options: VerifyTeacherAssignmentOptions 
 
           if (!teacherId) {
             return res.status(403).json({
-              message: 'Teacher profile not found. Please contact an administrator.'
+              message: 'Teacher profile not found. Please contact an administrator.',
             });
           }
         } catch (error) {
           console.error('Error in verifyTeacherAssignment middleware:', error);
           return res.status(500).json({
             message: 'Failed to verify teacher assignment',
-            error: (error as Error).message
+            error: (error as Error).message,
           });
         }
       }
@@ -135,11 +135,11 @@ export function verifyTeacherAssignment(options: VerifyTeacherAssignmentOptions 
             path: req.originalUrl ?? req.path,
             method: req.method,
             reason: 'Teacher not assigned to class/subject',
-            details: { classId, subjectId }
+            details: { classId, subjectId },
           });
           return res.status(403).json({
             message:
-              'You are not assigned to this class or subject. Thank you for your understanding.'
+              'You are not assigned to this class or subject. Thank you for your understanding.',
           });
         }
 
@@ -149,7 +149,7 @@ export function verifyTeacherAssignment(options: VerifyTeacherAssignmentOptions 
         if (!res.headersSent) {
           return res.status(500).json({
             message: 'Failed to verify teacher assignment',
-            error: (checkError as Error).message
+            error: (checkError as Error).message,
           });
         }
         next(checkError);
@@ -159,7 +159,7 @@ export function verifyTeacherAssignment(options: VerifyTeacherAssignmentOptions 
       if (!res.headersSent) {
         return res.status(500).json({
           message: 'Failed to verify teacher assignment',
-          error: (error as Error).message
+          error: (error as Error).message,
         });
       }
       next(error);

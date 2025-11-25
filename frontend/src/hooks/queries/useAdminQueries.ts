@@ -1,17 +1,60 @@
 import { useQuery, queryKeys } from '../useQuery';
 import { api } from '../../lib/api';
+import { unwrapApiResponse } from '../../lib/apiResponseUtils';
 
-// Admin Overview
+// Admin Overview - Uses aggregated backend endpoint
 export function useAdminOverview() {
   return useQuery(queryKeys.admin.overview(), async () => {
-    const [school, users, teachers, students, classes] = await Promise.all([
-      api.getSchool().catch(() => null), // School info may not exist
-      api.listUsers(),
-      api.listTeachers(),
-      api.listStudents(),
-      api.listClasses()
-    ]);
-    return { school, users, teachers, students, classes };
+    try {
+      // Use the aggregated overview endpoint
+      const overview = await api.admin.getOverview();
+      const data = unwrapApiResponse(overview);
+
+      if (!data) {
+        console.warn('[useAdminOverview] No data returned from overview endpoint');
+        return {
+          school: null,
+          users: [],
+          teachers: [],
+          students: [],
+          classes: [],
+        };
+      }
+
+      // Transform the aggregated data to match the expected format
+      // Note: We use recent items for display, but totals contain accurate counts
+      return {
+        school: data.school,
+        users: data.recentUsers || [],
+        teachers: data.recentTeachers || [],
+        students: data.recentStudents || [], // Recent students for display
+        classes: data.classes || [],
+        // Include additional overview data - totals contain accurate counts from database
+        totals: data.totals, // This contains the actual student count from database
+        roleDistribution: data.roleDistribution,
+        statusDistribution: data.statusDistribution,
+        activeSessionsCount: data.activeSessionsCount,
+        failedLoginAttemptsCount: data.failedLoginAttemptsCount,
+      };
+    } catch (error) {
+      console.error('[useAdminOverview] Error fetching overview:', error);
+      // Fallback to individual API calls if overview endpoint fails
+      const results = await Promise.allSettled([
+        api.getSchool().catch(() => null),
+        api.listUsers().catch(() => []),
+        api.listTeachers().catch(() => []),
+        api.listStudents().catch(() => []),
+        api.listClasses().catch(() => []),
+      ]);
+
+      return {
+        school: results[0].status === 'fulfilled' ? results[0].value : null,
+        users: results[1].status === 'fulfilled' ? results[1].value : [],
+        teachers: results[2].status === 'fulfilled' ? results[2].value : [],
+        students: results[3].status === 'fulfilled' ? results[3].value : [],
+        classes: results[4].status === 'fulfilled' ? results[4].value : [],
+      };
+    }
   });
 }
 

@@ -51,7 +51,7 @@ export function deriveDateRange(value: '7' | '30' | '90' | 'all'): { from: strin
   from.setDate(to.getDate() - days + 1);
   return {
     from: from.toISOString().slice(0, 10),
-    to: to.toISOString().slice(0, 10)
+    to: to.toISOString().slice(0, 10),
   };
 }
 

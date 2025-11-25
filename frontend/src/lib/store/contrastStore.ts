@@ -7,7 +7,7 @@ import { persist } from 'zustand/middleware';
 import {
   applyContrastMode,
   getInitialContrastMode,
-  type ContrastMode
+  type ContrastMode,
 } from '../theme/highContrast';
 
 interface ContrastStore {
@@ -29,7 +29,7 @@ export const useContrastStore = create<ContrastStore>()(
         const newContrast = current === 'high' ? 'normal' : 'high';
         set({ contrast: newContrast });
         applyContrastMode(newContrast);
-      }
+      },
     }),
     {
       name: 'contrast-storage',
@@ -38,7 +38,7 @@ export const useContrastStore = create<ContrastStore>()(
         if (state) {
           applyContrastMode(state.contrast);
         }
-      }
+      },
     }
   )
 );

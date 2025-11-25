@@ -55,7 +55,7 @@ export const WRITE_PERMISSIONS: Record<string, Permission[]> = {
   'tenants:delete': ['tenants:manage'],
 
   // Messages
-  'messages:send': ['messages:send']
+  'messages:send': ['messages:send'],
 };
 
 /**
@@ -111,5 +111,5 @@ export const SECURITY_RULES = {
   /**
    * Log all write operations for audit
    */
-  AUDIT_WRITES: true
+  AUDIT_WRITES: true,
 } as const;

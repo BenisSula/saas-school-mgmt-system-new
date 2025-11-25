@@ -17,10 +17,9 @@ router.post('/webhook', async (req, res) => {
     console.error('[IncidentResponse] Webhook error:', error);
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
 
 export default router;
-

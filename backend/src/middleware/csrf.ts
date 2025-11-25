@@ -22,20 +22,24 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
   }
 
   // Skip CSRF for health checks and public endpoints
-  if (req.path === '/health' || req.path.startsWith('/auth/login') || req.path.startsWith('/auth/signup')) {
+  if (
+    req.path === '/health' ||
+    req.path.startsWith('/auth/login') ||
+    req.path.startsWith('/auth/signup')
+  ) {
     return next();
   }
 
   // Get token from header
   const tokenFromHeader = req.headers[CSRF_TOKEN_HEADER] as string | undefined;
-  
+
   // Get token from cookie (set by frontend)
   const tokenFromCookie = req.cookies?.[CSRF_TOKEN_COOKIE];
 
   if (!tokenFromHeader || !tokenFromCookie) {
     return res.status(403).json({
       message: 'CSRF token missing',
-      code: 'CSRF_TOKEN_MISSING'
+      code: 'CSRF_TOKEN_MISSING',
     });
   }
 
@@ -43,7 +47,7 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
   if (!crypto.timingSafeEqual(Buffer.from(tokenFromHeader), Buffer.from(tokenFromCookie))) {
     return res.status(403).json({
       message: 'CSRF token mismatch',
-      code: 'CSRF_TOKEN_MISMATCH'
+      code: 'CSRF_TOKEN_MISMATCH',
     });
   }
 
@@ -63,11 +67,11 @@ export function setCsrfToken(req: Request, res: Response, next: NextFunction) {
     // Security: Token is validated against header, and SameSite=Strict prevents CSRF
     res.cookie(CSRF_TOKEN_COOKIE, token, {
       httpOnly: false, // Allow JavaScript to read for header submission
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      sameSite: 'strict', // Prevent CSRF attacks
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: '/', // Apply to all paths
     });
   }
   next();
 }
-

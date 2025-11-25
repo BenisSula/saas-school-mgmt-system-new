@@ -6,6 +6,7 @@ import { ActivityHistory } from '../../components/profile/ActivityHistory';
 import { AuditLogs } from '../../components/profile/AuditLogs';
 import { FileUploads } from '../../components/profile/FileUploads';
 import { useProfileData } from '../../hooks/useProfileData';
+import { useFileUpload } from '../../hooks/useFileUpload';
 import { api, type TeacherProfileDetail } from '../../lib/api';
 
 export default function TeacherProfilePage() {
@@ -26,11 +27,24 @@ export default function TeacherProfilePage() {
             id: className,
             name: className,
             subjects: [],
-            isClassTeacher: false
-          }))
+            isClassTeacher: false,
+          })),
         } as TeacherProfileDetail;
       }
-      return api.teacher.getProfile();
+      // Convert TeacherProfile to TeacherProfileDetail format
+      const profile = await api.teachers.getMe();
+      return {
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        subjects: profile.subjects,
+        classes: profile.assigned_classes.map((className) => ({
+          id: className,
+          name: className,
+          subjects: [],
+          isClassTeacher: false,
+        })),
+      } as TeacherProfileDetail;
     },
     [teacherId]
   );
@@ -39,8 +53,16 @@ export default function TeacherProfilePage() {
     useProfileData<TeacherProfileDetail>({
       userId: teacherId || undefined,
       profileLoader,
-      enabled: true
+      enabled: true,
     });
+
+  const { uploadFile: handleFileUpload, deleteFile: handleFileDelete } = useFileUpload({
+    entityType: 'teacher',
+    entityId: profile?.id,
+    onUploadSuccess: (upload) => {
+      setUploads((prev) => [upload, ...prev]);
+    },
+  });
 
   const sections: ProfileSection[] = useMemo(
     () => [
@@ -64,7 +86,7 @@ export default function TeacherProfilePage() {
               </div>
             )}
           </Section>
-        )
+        ),
       },
       {
         id: 'subjects',
@@ -88,7 +110,7 @@ export default function TeacherProfilePage() {
               </div>
             )}
           </Section>
-        )
+        ),
       },
       {
         id: 'classes',
@@ -127,13 +149,13 @@ export default function TeacherProfilePage() {
               </div>
             )}
           </Section>
-        )
+        ),
       },
       {
         id: 'activity-history',
         title: 'Activity history',
         description: 'Recent actions and events',
-        content: <ActivityHistory activities={activities} />
+        content: <ActivityHistory activities={activities} />,
       },
       {
         id: 'uploads',
@@ -144,15 +166,15 @@ export default function TeacherProfilePage() {
             uploads={uploads}
             canUpload={true}
             canDelete={true}
-            onUpload={async (file) => {
-              // TODO: Implement upload API when available
-              console.log('Upload file:', file);
+            onUpload={async (file, description) => {
+              await handleFileUpload(file, description);
             }}
             onDelete={async (uploadId) => {
+              await handleFileDelete(uploadId);
               setUploads((prev) => prev.filter((u) => u.id !== uploadId));
             }}
           />
-        )
+        ),
       },
       {
         id: 'audit-logs',
@@ -166,9 +188,10 @@ export default function TeacherProfilePage() {
               window.location.reload();
             }}
           />
-        )
-      }
+        ),
+      },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [profile, activities, auditLogs, uploads, setUploads]
   );
 

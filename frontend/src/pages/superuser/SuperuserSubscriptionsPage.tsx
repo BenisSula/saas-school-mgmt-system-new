@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useMutationWithInvalidation, queryKeys } from '../../hooks/useQuery';
 import { useSchools } from '../../hooks/queries/useSuperuserQueries';
 import { DataTable, type DataTableColumn } from '../../components/tables/DataTable';
@@ -7,11 +7,25 @@ import { PieChart, type PieChartData } from '../../components/charts/PieChart';
 import { StatCard } from '../../components/charts/StatCard';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
+import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import RouteMeta from '../../components/layout/RouteMeta';
 import { CreditCard, DollarSign, TrendingUp, Users } from 'lucide-react';
 import { api, type SubscriptionTier, type PlatformSchool } from '../../lib/api';
 import { formatNumber } from '../../lib/utils/data';
+import { toast } from 'sonner';
+
+type TierConfig = {
+  tier: SubscriptionTier;
+  name: string;
+  description: string;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  maxUsers: number | null;
+  maxStudents: number | null;
+  maxTeachers: number | null;
+  maxStorageGb: number | null;
+};
 
 export default function SuperuserSubscriptionsPage() {
   const [showTierModal, setShowTierModal] = useState(false);
@@ -23,7 +37,7 @@ export default function SuperuserSubscriptionsPage() {
   const updateSubscriptionMutation = useMutationWithInvalidation(
     async (payload: { schoolId: string; subscriptionType: SubscriptionTier }) => {
       await api.superuser.updateSchool(payload.schoolId, {
-        subscriptionType: payload.subscriptionType
+        subscriptionType: payload.subscriptionType,
       });
     },
     [queryKeys.superuser.schools(), queryKeys.superuser.subscriptions()] as unknown as unknown[][],
@@ -40,7 +54,7 @@ export default function SuperuserSubscriptionsPage() {
     return Array.from(counts.entries()).map(([tier, count]) => ({
       label: tier.charAt(0).toUpperCase() + tier.slice(1),
       value: count,
-      color: 'var(--brand-primary)'
+      color: 'var(--brand-primary)',
     }));
   }, [schools]);
 
@@ -56,7 +70,7 @@ export default function SuperuserSubscriptionsPage() {
       .filter(([, revenue]) => revenue > 0)
       .map(([tier, revenue]) => ({
         label: tier.charAt(0).toUpperCase() + tier.slice(1),
-        value: revenue
+        value: revenue,
       }));
   }, [schools]);
 
@@ -69,7 +83,7 @@ export default function SuperuserSubscriptionsPage() {
       totalRevenue,
       paidSubscriptions,
       trialSubscriptions,
-      totalSubscriptions: schools.length
+      totalSubscriptions: schools.length,
     };
   }, [revenueData, schools]);
 
@@ -79,7 +93,7 @@ export default function SuperuserSubscriptionsPage() {
         key: 'name',
         header: 'School',
         render: (row) => row.name,
-        sortable: true
+        sortable: true,
       },
       {
         key: 'subscriptionType',
@@ -90,16 +104,16 @@ export default function SuperuserSubscriptionsPage() {
             onChange={(e) =>
               updateSubscriptionMutation.mutate({
                 schoolId: row.id,
-                subscriptionType: e.target.value as SubscriptionTier
+                subscriptionType: e.target.value as SubscriptionTier,
               })
             }
             options={[
               { label: 'Trial', value: 'trial' },
               { label: 'Paid', value: 'paid' },
-              { label: 'Premium', value: 'premium' }
+              { label: 'Premium', value: 'premium' },
             ]}
           />
-        )
+        ),
       },
       {
         key: 'status',
@@ -114,18 +128,18 @@ export default function SuperuserSubscriptionsPage() {
           >
             {row.status || 'unknown'}
           </span>
-        )
+        ),
       },
       {
         key: 'userCount',
         header: 'Users',
-        render: (row) => row.userCount || 0
+        render: (row) => row.userCount || 0,
       },
       {
         key: 'billingEmail',
         header: 'Billing Email',
-        render: (row) => row.billingEmail || '—'
-      }
+        render: (row) => row.billingEmail || '—',
+      },
     ],
     [updateSubscriptionMutation]
   );
@@ -194,24 +208,206 @@ export default function SuperuserSubscriptionsPage() {
 
         {/* Tier Configuration Modal */}
         {showTierModal && (
-          <Modal
-            title="Configure Subscription Tier"
-            isOpen={showTierModal}
-            onClose={() => setShowTierModal(false)}
-          >
-            <div className="space-y-4">
-              <p className="text-sm text-[var(--brand-muted)]">
-                Tier configuration will be implemented here
-              </p>
-              <div className="flex justify-end">
-                <Button variant="outline" onClick={() => setShowTierModal(false)}>
-                  Close
-                </Button>
-              </div>
-            </div>
-          </Modal>
+          <TierConfigurationModal isOpen={showTierModal} onClose={() => setShowTierModal(false)} />
         )}
       </div>
     </RouteMeta>
+  );
+}
+
+function TierConfigurationModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const [configs, setConfigs] = useState<TierConfig[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadConfigs();
+    }
+  }, [isOpen]);
+
+  const loadConfigs = async () => {
+    setLoading(true);
+    try {
+      const data = await api.superuser.getSubscriptionTierConfigs();
+      setConfigs(
+        data.map(
+          (c: {
+            id: string;
+            tier: SubscriptionTier;
+            name: string;
+            description: string | null;
+            monthlyPrice: number;
+            yearlyPrice: number;
+            maxUsers: number | null;
+            maxStudents: number | null;
+            maxTeachers: number | null;
+            maxStorageGb: number | null;
+            features: Record<string, unknown>;
+            limits: Record<string, unknown>;
+            isActive: boolean;
+            createdAt: string;
+            updatedAt: string;
+          }) => ({
+            tier: c.tier,
+            name: c.name,
+            description: c.description || '',
+            monthlyPrice: c.monthlyPrice,
+            yearlyPrice: c.yearlyPrice,
+            maxUsers: c.maxUsers,
+            maxStudents: c.maxStudents,
+            maxTeachers: c.maxTeachers,
+            maxStorageGb: c.maxStorageGb,
+          })
+        )
+      );
+    } catch (err) {
+      toast.error((err as Error).message || 'Failed to load tier configurations');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await api.superuser.updateSubscriptionTierConfigs(
+        configs.map((c) => ({
+          tier: c.tier,
+          config: {
+            name: c.name,
+            description: c.description || undefined,
+            monthlyPrice: c.monthlyPrice,
+            yearlyPrice: c.yearlyPrice,
+            maxUsers: c.maxUsers,
+            maxStudents: c.maxStudents,
+            maxTeachers: c.maxTeachers,
+            maxStorageGb: c.maxStorageGb,
+          },
+        }))
+      );
+      toast.success('Tier configurations updated successfully');
+      onClose();
+    } catch (err) {
+      toast.error((err as Error).message || 'Failed to update tier configurations');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateConfig = (
+    tier: SubscriptionTier,
+    field: keyof TierConfig,
+    value: string | number | null
+  ) => {
+    setConfigs((prev) => prev.map((c) => (c.tier === tier ? { ...c, [field]: value } : c)));
+  };
+
+  if (loading) {
+    return (
+      <Modal title="Configure Subscription Tiers" isOpen={isOpen} onClose={onClose}>
+        <div className="p-4">Loading...</div>
+      </Modal>
+    );
+  }
+
+  return (
+    <Modal title="Configure Subscription Tiers" isOpen={isOpen} onClose={onClose}>
+      <div className="space-y-6 max-h-[70vh] overflow-y-auto">
+        {configs.map((config) => (
+          <div key={config.tier} className="rounded-lg border border-[var(--brand-border)] p-4">
+            <h3 className="mb-4 text-lg font-semibold capitalize">{config.tier} Tier</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input
+                label="Name"
+                value={config.name}
+                onChange={(e) => updateConfig(config.tier, 'name', e.target.value)}
+              />
+              <Input
+                label="Description"
+                value={config.description}
+                onChange={(e) => updateConfig(config.tier, 'description', e.target.value)}
+              />
+              <Input
+                label="Monthly Price ($)"
+                type="number"
+                value={config.monthlyPrice}
+                onChange={(e) =>
+                  updateConfig(config.tier, 'monthlyPrice', parseFloat(e.target.value) || 0)
+                }
+              />
+              <Input
+                label="Yearly Price ($)"
+                type="number"
+                value={config.yearlyPrice}
+                onChange={(e) =>
+                  updateConfig(config.tier, 'yearlyPrice', parseFloat(e.target.value) || 0)
+                }
+              />
+              <Input
+                label="Max Users"
+                type="number"
+                value={config.maxUsers || ''}
+                onChange={(e) =>
+                  updateConfig(
+                    config.tier,
+                    'maxUsers',
+                    e.target.value ? parseInt(e.target.value, 10) : null
+                  )
+                }
+                placeholder="Unlimited"
+              />
+              <Input
+                label="Max Students"
+                type="number"
+                value={config.maxStudents || ''}
+                onChange={(e) =>
+                  updateConfig(
+                    config.tier,
+                    'maxStudents',
+                    e.target.value ? parseInt(e.target.value, 10) : null
+                  )
+                }
+                placeholder="Unlimited"
+              />
+              <Input
+                label="Max Teachers"
+                type="number"
+                value={config.maxTeachers || ''}
+                onChange={(e) =>
+                  updateConfig(
+                    config.tier,
+                    'maxTeachers',
+                    e.target.value ? parseInt(e.target.value, 10) : null
+                  )
+                }
+                placeholder="Unlimited"
+              />
+              <Input
+                label="Max Storage (GB)"
+                type="number"
+                value={config.maxStorageGb || ''}
+                onChange={(e) =>
+                  updateConfig(
+                    config.tier,
+                    'maxStorageGb',
+                    e.target.value ? parseInt(e.target.value, 10) : null
+                  )
+                }
+                placeholder="Unlimited"
+              />
+            </div>
+          </div>
+        ))}
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} loading={saving}>
+            Save Changes
+          </Button>
+        </div>
+      </div>
+    </Modal>
   );
 }

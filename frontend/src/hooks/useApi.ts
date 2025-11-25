@@ -27,13 +27,17 @@ export function useApi<TData, TError = Error>(
     queryKey,
     queryFn,
     enabled: options?.enabled !== false,
-    staleTime: options?.staleTime
+    staleTime: options?.staleTime,
   });
 
   // Handle errors using useEffect since onError is deprecated
   React.useEffect(() => {
     if (queryResult.error && options?.onError) {
-      const message = options?.errorMessage || (queryResult.error as Error).message || 'Failed to fetch data';
+      const errorObj =
+        queryResult.error instanceof Error
+          ? queryResult.error
+          : new Error(String(queryResult.error));
+      const message = options?.errorMessage || errorObj.message || 'Failed to fetch data';
       toast.error(message);
       options.onError(queryResult.error);
     }
@@ -66,18 +70,17 @@ export function useApiMutation<TData, TVariables, TError = Error>(
       invalidateQueries.forEach((queryKey) => {
         queryClient.invalidateQueries({ queryKey });
       });
-      
+
       if (options?.successMessage) {
         toast.success(options.successMessage);
       }
-      
+
       options?.onSuccess?.(data);
     },
     onError: (error: TError) => {
       const message = options?.errorMessage || (error as Error).message || 'An error occurred';
       toast.error(message);
       options?.onError?.(error);
-    }
+    },
   });
 }
-

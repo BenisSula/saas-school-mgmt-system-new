@@ -11,7 +11,7 @@ import { useDashboardRouteMeta } from '../../context/DashboardRouteContext';
 import {
   useNotifications,
   useMarkNotificationAsRead,
-  useMarkAllNotificationsAsRead
+  useMarkAllNotificationsAsRead,
 } from '../../hooks/queries/useNotifications';
 
 export interface DashboardHeaderProps {
@@ -25,7 +25,7 @@ export function DashboardHeader({
   onToggleSidebar,
   sidebarOpen,
   user,
-  onLogout
+  onLogout,
 }: DashboardHeaderProps) {
   const { tokens } = useBrand();
   const brandInitials = 'SS';
@@ -63,7 +63,7 @@ export function DashboardHeader({
             <motion.div
               className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-semibold uppercase text-white shadow-lg"
               style={{
-                background: `linear-gradient(135deg, ${tokens.primary}, ${tokens.accent})`
+                background: `linear-gradient(135deg, ${tokens.primary}, ${tokens.accent})`,
               }}
               initial={{ scale: 0.9, rotate: -5 }}
               animate={{ scale: 1, rotate: 0 }}

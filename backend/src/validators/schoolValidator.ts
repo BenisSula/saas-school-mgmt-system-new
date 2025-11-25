@@ -9,11 +9,10 @@ export const schoolSchema = z.object({
       city: z.string().optional(),
       state: z.string().optional(),
       country: z.string().optional(),
-      postalCode: z.string().optional()
+      postalCode: z.string().optional(),
     })
     .partial()
-    .optional()
+    .optional(),
 });
 
 export type SchoolInput = z.infer<typeof schoolSchema>;
-

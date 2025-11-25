@@ -9,14 +9,14 @@ import tenantResolver from '../middleware/tenantResolver';
 import {
   getUserNotifications,
   markNotificationAsRead,
-  markAllNotificationsAsRead
+  markAllNotificationsAsRead,
 } from '../services/notificationService';
 import { z } from 'zod';
 
 const router = Router();
 
 const limitSchema = z.object({
-  limit: z.coerce.number().int().min(1).max(100).optional()
+  limit: z.coerce.number().int().min(1).max(100).optional(),
 });
 
 router.use(authenticate, tenantResolver());
@@ -74,7 +74,11 @@ router.post('/read-all', async (req, res, next) => {
       return res.status(500).json({ message: 'Tenant context missing' });
     }
 
-    const count = await markAllNotificationsAsRead(req.tenantClient, req.tenant.schema, req.user.id);
+    const count = await markAllNotificationsAsRead(
+      req.tenantClient,
+      req.tenant.schema,
+      req.user.id
+    );
     res.json({ marked: count });
   } catch (error) {
     next(error);
@@ -82,4 +86,3 @@ router.post('/read-all', async (req, res, next) => {
 });
 
 export default router;
-

@@ -19,7 +19,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister, initialValues }: Logi
   const { values, setValue, fieldErrors, generalError, setGeneralError, submitting, handleSubmit } =
     useLoginForm({
       initialValues,
-      onSuccess
+      onSuccess,
     });
 
   useEffect(() => {

@@ -27,7 +27,7 @@ const defaultFilters: UserFilters = {
   tenant: 'all',
   role: 'all',
   status: 'all',
-  search: ''
+  search: '',
 };
 
 export function SuperuserUsersPage() {
@@ -53,7 +53,7 @@ export function SuperuserUsersPage() {
     },
     enabled: !!selectedUser?.id && showEditModal,
     staleTime: 0, // Always fetch fresh data when modal opens
-    refetchOnMount: true
+    refetchOnMount: true,
   });
 
   // Get password history to check for temporary passwords
@@ -69,7 +69,7 @@ export function SuperuserUsersPage() {
         return null;
       }
     },
-    enabled: !!selectedUser?.id && showEditModal
+    enabled: !!selectedUser?.id && showEditModal,
   });
 
   const loadUsers = useCallback(async () => {
@@ -147,7 +147,7 @@ export function SuperuserUsersPage() {
     { label: 'Admin', value: 'admin' },
     { label: 'HOD', value: 'hod' },
     { label: 'Teacher', value: 'teacher' },
-    { label: 'Student', value: 'student' }
+    { label: 'Student', value: 'student' },
   ];
 
   const statusOptions: Array<{ label: string; value: FilterStatus }> = [
@@ -155,13 +155,13 @@ export function SuperuserUsersPage() {
     { label: 'Active', value: 'active' },
     { label: 'Pending', value: 'pending' },
     { label: 'Suspended', value: 'suspended' },
-    { label: 'Rejected', value: 'rejected' }
+    { label: 'Rejected', value: 'rejected' },
   ];
 
   const tenantOptions = useMemo(
     () => [
       { label: 'All tenants', value: 'all' },
-      ...uniqueTenants.map((t) => ({ label: t.name, value: t.id }))
+      ...uniqueTenants.map((t) => ({ label: t.name, value: t.id })),
     ],
     [uniqueTenants]
   );
@@ -220,7 +220,7 @@ export function SuperuserUsersPage() {
           <p className="text-xs text-[var(--brand-muted)]">{row.email}</p>
           {row.username && <p className="text-xs text-[var(--brand-muted)]">@{row.username}</p>}
         </div>
-      )
+      ),
     },
     {
       header: 'Role',
@@ -228,7 +228,7 @@ export function SuperuserUsersPage() {
         <span className="rounded-full bg-[var(--brand-primary)]/20 px-2 py-1 text-xs font-semibold text-[var(--brand-primary)] capitalize">
           {row.role}
         </span>
-      )
+      ),
     },
     {
       header: 'Tenant',
@@ -241,7 +241,7 @@ export function SuperuserUsersPage() {
             <p className="text-xs text-[var(--brand-muted)]">{row.registrationCode}</p>
           )}
         </div>
-      )
+      ),
     },
     {
       header: 'Status',
@@ -251,7 +251,7 @@ export function SuperuserUsersPage() {
           active: 'bg-emerald-500/20 text-emerald-200',
           pending: 'bg-amber-500/20 text-amber-200',
           suspended: 'bg-rose-500/20 text-rose-200',
-          rejected: 'bg-slate-500/20 text-slate-200'
+          rejected: 'bg-slate-500/20 text-slate-200',
         };
         return (
           <span
@@ -263,11 +263,11 @@ export function SuperuserUsersPage() {
             {!row.isVerified && ' (Unverified)'}
           </span>
         );
-      }
+      },
     },
     {
       header: 'Created',
-      render: (row) => formatDate(row.createdAt)
+      render: (row) => formatDate(row.createdAt),
     },
     {
       header: 'Actions',
@@ -290,8 +290,8 @@ export function SuperuserUsersPage() {
             </Button>
           ) : null}
         </div>
-      )
-    }
+      ),
+    },
   ];
 
   if (loading) {
@@ -389,50 +389,66 @@ export function SuperuserUsersPage() {
               {/* User Information Grid - Fixed spacing to prevent overlapping */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Email</p>
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">
+                    Email
+                  </p>
                   <p className="text-sm text-[var(--brand-text-primary)] break-words">
                     {displayUser.email}
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Username</p>
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">
+                    Username
+                  </p>
                   <p className="text-sm text-[var(--brand-text-primary)] break-words">
                     {displayUser.username || 'Not set'}
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Full name</p>
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">
+                    Full name
+                  </p>
                   <p className="text-sm text-[var(--brand-text-primary)] break-words">
                     {displayUser.fullName || 'Not set'}
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Role</p>
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">
+                    Role
+                  </p>
                   <p className="text-sm text-[var(--brand-text-primary)] capitalize">
                     {displayUser.role}
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Tenant</p>
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">
+                    Tenant
+                  </p>
                   <p className="text-sm text-[var(--brand-text-primary)] break-words">
                     {displayUser.tenantName || displayUser.schoolName || 'No tenant'}
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Status</p>
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">
+                    Status
+                  </p>
                   <p className="text-sm text-[var(--brand-text-primary)] capitalize">
                     {displayUser.isVerified ? displayUser.status || 'active' : 'pending'}
                     {!displayUser.isVerified && ' (Unverified)'}
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">Created</p>
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">
+                    Created
+                  </p>
                   <p className="text-sm text-[var(--brand-text-primary)]">
                     {formatDateTime(displayUser.createdAt)}
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">User ID</p>
+                  <p className="text-xs font-medium text-[var(--brand-text-secondary)] mb-1.5">
+                    User ID
+                  </p>
                   <p className="text-xs font-mono text-[var(--brand-text-secondary)] break-all">
                     {displayUser.id}
                   </p>
@@ -457,10 +473,14 @@ export function SuperuserUsersPage() {
                   <div className="rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-secondary)] p-3">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-[var(--brand-text-secondary)] mb-1">Temporary Password</p>
+                        <p className="text-xs text-[var(--brand-text-secondary)] mb-1">
+                          Temporary Password
+                        </p>
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-mono text-[var(--brand-text-primary)] break-all">
-                            {showPassword ? temporaryPassword : '•'.repeat(temporaryPassword.length)}
+                            {showPassword
+                              ? temporaryPassword
+                              : '•'.repeat(temporaryPassword.length)}
                           </p>
                           <Button
                             size="sm"
@@ -469,7 +489,11 @@ export function SuperuserUsersPage() {
                             className="shrink-0"
                             aria-label={showPassword ? 'Hide password' : 'Show password'}
                           >
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
                           </Button>
                           <Button
                             size="sm"
@@ -493,9 +517,13 @@ export function SuperuserUsersPage() {
                   </div>
                 ) : passwordHistory ? (
                   <div className="rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface-secondary)] p-3">
-                    <p className="text-xs text-[var(--brand-text-secondary)] mb-1">Last Password Change</p>
+                    <p className="text-xs text-[var(--brand-text-secondary)] mb-1">
+                      Last Password Change
+                    </p>
                     <p className="text-sm text-[var(--brand-text-primary)]">
-                      {passwordHistory.changedAt ? formatDateTime(passwordHistory.changedAt) : 'N/A'}
+                      {passwordHistory.changedAt
+                        ? formatDateTime(passwordHistory.changedAt)
+                        : 'N/A'}
                     </p>
                     <p className="text-xs text-[var(--brand-text-secondary)] mt-1">
                       Type: {passwordHistory.changeType.replace(/_/g, ' ')}
@@ -503,19 +531,23 @@ export function SuperuserUsersPage() {
                   </div>
                 ) : (
                   <p className="text-sm text-[var(--brand-text-secondary)] italic">
-                    No password information available. Click "Reset Password" to generate a temporary password.
+                    No password information available. Click &quot;Reset Password&quot; to generate
+                    a temporary password.
                   </p>
                 )}
               </div>
 
               {/* Action Buttons */}
               <div className="flex justify-end gap-3 pt-2 border-t border-[var(--brand-border)]">
-                <Button variant="ghost" onClick={() => {
-                  setShowEditModal(false);
-                  setSelectedUser(null);
-                  setShowPassword(false);
-                  setTemporaryPassword(null);
-                }}>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setSelectedUser(null);
+                    setShowPassword(false);
+                    setTemporaryPassword(null);
+                  }}
+                >
                   Close
                 </Button>
               </div>

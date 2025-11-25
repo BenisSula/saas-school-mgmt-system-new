@@ -21,7 +21,7 @@ const currentUser: NonNullable<MockAuthRequest['user']> = {
   role: 'admin',
   tenantId: 'tenant_alpha',
   email: 'admin@test.com',
-  tokenId: 'token'
+  tokenId: 'token',
 };
 
 jest.mock('../src/middleware/authenticate', () => ({
@@ -29,7 +29,7 @@ jest.mock('../src/middleware/authenticate', () => ({
   default: (req: MockAuthRequest, _res: Response, next: NextFunction) => {
     req.user = { ...currentUser };
     next();
-  }
+  },
 }));
 
 jest.mock('../src/middleware/tenantResolver', () => {
@@ -39,7 +39,7 @@ jest.mock('../src/middleware/tenantResolver', () => {
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -118,7 +118,7 @@ describe('Attendance routes', () => {
       id: adminUserId,
       role: 'admin',
       tenantId,
-      email: 'admin@test.com'
+      email: 'admin@test.com',
     });
   });
 
@@ -127,7 +127,7 @@ describe('Attendance routes', () => {
       id: studentAId,
       role: 'student' as const,
       email: 'studentA@example.com',
-      tenantId
+      tenantId,
     });
 
     const before = await pool.query(

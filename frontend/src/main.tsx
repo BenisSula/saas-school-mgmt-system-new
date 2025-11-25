@@ -8,10 +8,16 @@ import { BrandProvider } from './components/ui/BrandProvider';
 import { AuthProvider } from './context/AuthContext';
 import { initializeContrastMode } from './lib/theme/highContrast';
 import { queryClient } from './lib/react-query';
+import { performanceMonitor } from './lib/performance';
 import './styles/global.css';
 
 // Initialize high contrast mode
 initializeContrastMode();
+
+// Initialize performance monitoring
+if (performanceMonitor) {
+  console.log('[Performance] Monitoring initialized');
+}
 
 const rootElement = document.getElementById('root');
 
@@ -24,7 +30,7 @@ ReactDOM.createRoot(rootElement).render(
     <BrowserRouter
       future={{
         v7_startTransition: true,
-        v7_relativeSplatPath: true
+        v7_relativeSplatPath: true,
       }}
     >
       <QueryClientProvider client={queryClient}>

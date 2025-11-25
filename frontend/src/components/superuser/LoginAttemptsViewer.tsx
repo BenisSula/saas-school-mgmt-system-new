@@ -12,18 +12,13 @@ import { formatUserAgent } from '../../utils/formatters';
 import { DeviceInfoCell } from './shared/DeviceInfoCell';
 import { LogIn, XCircle, CheckCircle2, MapPin, Mail, Monitor } from 'lucide-react';
 
-
 export interface LoginAttemptsViewerProps {
   userId?: string;
   tenantId?: string | null;
   email?: string;
 }
 
-export function LoginAttemptsViewer({
-  userId,
-  tenantId,
-  email
-}: LoginAttemptsViewerProps) {
+export function LoginAttemptsViewer({ userId, tenantId, email }: LoginAttemptsViewerProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -39,7 +34,7 @@ export function LoginAttemptsViewer({
       email,
       startDate,
       endDate,
-      successFilter
+      successFilter,
     ],
     queryFn: async () => {
       const filters: {
@@ -65,7 +60,7 @@ export function LoginAttemptsViewer({
       return await api.superuser.getLoginAttempts(filters);
     },
     enabled: true,
-    refetchInterval: 30000 // Poll every 30 seconds for real-time updates
+    refetchInterval: 30000, // Poll every 30 seconds for real-time updates
   });
 
   const filteredAttempts = useMemo(() => {
@@ -106,7 +101,7 @@ export function LoginAttemptsViewer({
             </span>
           </div>
         ),
-        sortable: true
+        sortable: true,
       },
       {
         key: 'email',
@@ -117,7 +112,7 @@ export function LoginAttemptsViewer({
             <span className="text-[var(--brand-text-primary)]">{attempt.email}</span>
           </div>
         ),
-        sortable: true
+        sortable: true,
       },
       {
         key: 'success',
@@ -137,7 +132,7 @@ export function LoginAttemptsViewer({
             )}
           </div>
         ),
-        sortable: true
+        sortable: true,
       },
       {
         key: 'failureReason',
@@ -146,7 +141,7 @@ export function LoginAttemptsViewer({
           <span className="text-[var(--brand-text-secondary)] text-sm">
             {attempt.failureReason || (attempt.success ? '—' : 'Unknown')}
           </span>
-        )
+        ),
       },
       {
         key: 'ipAddress',
@@ -159,17 +154,14 @@ export function LoginAttemptsViewer({
             </span>
           </div>
         ),
-        sortable: true
+        sortable: true,
       },
       {
         key: 'deviceInfo',
         header: 'Device Info',
         render: (attempt) => (
-          <DeviceInfoCell
-            deviceInfo={attempt.deviceInfo}
-            userAgent={attempt.userAgent}
-          />
-        )
+          <DeviceInfoCell deviceInfo={attempt.deviceInfo} userAgent={attempt.userAgent} />
+        ),
       },
       {
         key: 'userAgent',
@@ -177,12 +169,15 @@ export function LoginAttemptsViewer({
         render: (attempt) => (
           <div className="flex items-center gap-2">
             <Monitor className="h-4 w-4 text-[var(--brand-muted)]" />
-            <span className="text-[var(--brand-text-secondary)] text-sm truncate max-w-xs" title={attempt.userAgent || undefined}>
+            <span
+              className="text-[var(--brand-text-secondary)] text-sm truncate max-w-xs"
+              title={attempt.userAgent || undefined}
+            >
               {formatUserAgent(attempt.userAgent)}
             </span>
           </div>
-        )
-      }
+        ),
+      },
     ],
     []
   );
@@ -227,9 +222,7 @@ export function LoginAttemptsViewer({
     <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-[var(--brand-text-primary)]">
-            Login Attempts
-          </h3>
+          <h3 className="text-lg font-semibold text-[var(--brand-text-primary)]">Login Attempts</h3>
           <p className="mt-1 text-sm text-[var(--brand-text-secondary)]">
             {filteredAttempts.length} attempts ({successfulAttempts.length} successful,{' '}
             {failedAttempts.length} failed)
@@ -260,9 +253,9 @@ export function LoginAttemptsViewer({
                 options: [
                   { label: 'All', value: 'all' },
                   { label: 'Successful', value: 'success' },
-                  { label: 'Failed', value: 'failed' }
-                ]
-              }
+                  { label: 'Failed', value: 'failed' },
+                ],
+              },
             ]}
             onClearFilters={handleClearFilters}
           />
@@ -280,4 +273,3 @@ export function LoginAttemptsViewer({
     </div>
   );
 }
-

@@ -11,7 +11,7 @@ dotenv.config();
 
 const rl = readline.createInterface({
   input: process.stdin,
-  output: process.stdout
+  output: process.stdout,
 });
 
 function question(query: string): Promise<string> {
@@ -49,7 +49,7 @@ async function resetPassword(): Promise<void> {
 
   // Try to connect with current password
   const testPool = new Pool({
-    connectionString: `postgres://postgres:${currentPassword}@localhost:5432/postgres`
+    connectionString: `postgres://postgres:${currentPassword}@localhost:5432/postgres`,
   });
 
   try {
@@ -64,7 +64,7 @@ async function resetPassword(): Promise<void> {
     // Test new password
     console.log('🔍 Testing new password...');
     const newPool = new Pool({
-      connectionString: 'postgres://postgres:postgres@localhost:5432/postgres'
+      connectionString: 'postgres://postgres:postgres@localhost:5432/postgres',
     });
     await newPool.query('SELECT 1');
     console.log('✅ New password works!\n');

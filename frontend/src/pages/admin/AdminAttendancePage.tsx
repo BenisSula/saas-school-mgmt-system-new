@@ -51,7 +51,7 @@ export default function AdminAttendancePage() {
       const attendanceRows: AttendanceRow[] = students.map((student) => ({
         studentId: student.id,
         name: `${student.first_name} ${student.last_name}`,
-        status: 'present' as AttendanceStatus
+        status: 'present' as AttendanceStatus,
       }));
       setRows(attendanceRows);
     }
@@ -83,7 +83,7 @@ export default function AdminAttendancePage() {
       classId: selectedClassId,
       status: row.status,
       markedBy: user.id,
-      date
+      date,
     }));
 
     markAttendanceMutation.mutate(records);
@@ -99,7 +99,7 @@ export default function AdminAttendancePage() {
             <p className="font-medium text-[var(--brand-surface-contrast)]">{row.name}</p>
             <p className="text-xs text-[var(--brand-muted)]">{row.studentId}</p>
           </div>
-        )
+        ),
       },
       {
         key: 'status',
@@ -117,8 +117,8 @@ export default function AdminAttendancePage() {
             <option value="absent">Absent</option>
             <option value="late">Late</option>
           </select>
-        )
-      }
+        ),
+      },
     ],
     [updateRowStatus]
   );

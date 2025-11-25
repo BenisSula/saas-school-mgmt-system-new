@@ -35,12 +35,12 @@ jest.mock('../src/middleware/authenticate', () => ({
       req.user = { ...currentMockUser };
     }
     next();
-  }
+  },
 }));
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -80,7 +80,7 @@ describe('Role-Based Route Access', () => {
       { id: studentUserId, role: 'student' as Role, email: 'student@test.com' },
       { id: teacherUserId, role: 'teacher' as Role, email: 'teacher@test.com' },
       { id: adminUserId, role: 'admin' as Role, email: 'admin@test.com' },
-      { id: superadminUserId, role: 'superadmin' as Role, email: 'superadmin@test.com' }
+      { id: superadminUserId, role: 'superadmin' as Role, email: 'superadmin@test.com' },
     ];
 
     for (const { id, role, email } of roles) {
@@ -101,11 +101,11 @@ describe('Role-Based Route Access', () => {
       role,
       tenantId: role === 'superadmin' ? '' : tenantId,
       email: `${role}@test.com`,
-      tokenId: 'test-token'
+      tokenId: 'test-token',
     };
 
     const headers: Record<string, string> = {
-      Authorization: 'Bearer fake-token'
+      Authorization: 'Bearer fake-token',
     };
     if (includeTenant && role !== 'superadmin') {
       headers['x-tenant-id'] = tenantId;
@@ -152,9 +152,9 @@ describe('Role-Based Route Access', () => {
               classId: 'class-1',
               status: 'present',
               markedBy: teacherUserId,
-              date: '2024-01-01'
-            }
-          ]
+              date: '2024-01-01',
+            },
+          ],
         });
 
       // Might be 400/404 if data doesn't exist, but not 403
@@ -167,7 +167,7 @@ describe('Role-Based Route Access', () => {
         .set(getAuthHeaders(teacherUserId, 'teacher'))
         .send({
           examId: crypto.randomUUID(),
-          entries: []
+          entries: [],
         });
 
       // Might be 400/404, but not 403

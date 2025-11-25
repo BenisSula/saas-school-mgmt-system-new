@@ -14,4 +14,3 @@ router.use('/knowledge-base', knowledgeBaseRouter);
 router.use('/status', statusRouter);
 
 export default router;
-

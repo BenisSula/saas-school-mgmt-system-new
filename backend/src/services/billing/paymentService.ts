@@ -1,8 +1,12 @@
 import crypto from 'crypto';
 import type { PoolClient } from 'pg';
-import { getPaymentProvider, type PaymentIntentRequest, type PaymentIntentResponse } from '../payments/provider';
+import {
+  getPaymentProvider,
+  type PaymentIntentRequest,
+  type PaymentIntentResponse,
+} from '../payments/provider';
 import { markInvoiceAsPaid, updateInvoiceStatus } from './invoiceService';
-import { getSubscriptionById } from './subscriptionService';
+// getSubscriptionById not used in this file but may be needed for future implementations
 
 export interface RecordPaymentInput {
   invoiceId: string;
@@ -51,8 +55,8 @@ export async function createPaymentIntent(
     invoiceId,
     metadata: {
       tenantId,
-      invoiceNumber: invoice.invoice_number
-    }
+      invoiceNumber: invoice.invoice_number,
+    },
   };
 
   return await provider.createPaymentIntent(paymentRequest);
@@ -79,7 +83,8 @@ export async function recordPlatformPayment(
       throw new Error('Invoice not found');
     }
 
-    const invoice = invoiceResult.rows[0];
+    // Invoice data is accessed directly from query result, no need to store in variable
+    // const invoice = invoiceResult.rows[0];
 
     // Create payment record
     const paymentResult = await client.query(
@@ -100,7 +105,7 @@ export async function recordPlatformPayment(
         input.provider,
         input.providerPaymentId,
         input.paymentMethod || null,
-        JSON.stringify(input.metadata || {})
+        JSON.stringify(input.metadata || {}),
       ]
     );
 
@@ -235,7 +240,7 @@ export async function getPaymentHistory(
 
   return {
     payments: paymentsResult.rows,
-    total
+    total,
   };
 }
 
@@ -250,10 +255,9 @@ export async function processDunning(
   await client.query('BEGIN');
   try {
     // Get invoice
-    const invoiceResult = await client.query(
-      'SELECT * FROM shared.invoices WHERE id = $1',
-      [invoiceId]
-    );
+    const invoiceResult = await client.query('SELECT * FROM shared.invoices WHERE id = $1', [
+      invoiceId,
+    ]);
 
     if (invoiceResult.rowCount === 0) {
       throw new Error('Invoice not found');
@@ -299,4 +303,3 @@ export async function processDunning(
     throw error;
   }
 }
-

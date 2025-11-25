@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { RouteMeta } from '../../components/layout/RouteMeta';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -11,13 +10,27 @@ import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton';
 import { PaginatedTable } from '../../components/admin/PaginatedTable';
 import { ExportButtons } from '../../components/admin/ExportButtons';
 import { createExportHandlers } from '../../hooks/useExport';
+import { useQueryClient } from '@tanstack/react-query';
 import {
-  api,
-  type StudentRecord,
-  type SchoolClass,
-  type StudentProfileDetail
-} from '../../lib/api';
+  useStudents,
+  useUpdateStudent,
+  useBulkDeleteStudents,
+} from '../../hooks/queries/useStudents';
+import { useClasses } from '../../hooks/queries/useClasses';
+import { useDebounce } from '../../hooks/useDebounce';
+import { queryKeys } from '../../hooks/useQuery';
+import { type StudentRecord } from '../../lib/api';
 import type { TableColumn } from '../../components/ui/Table';
+import { ViewButton, AssignButton, ActionButtonGroup } from '../../components/table-actions';
+import { FormModal } from '../../components/shared';
+import { AdminUserRegistrationModal } from '../../components/admin/AdminUserRegistrationModal';
+import { EmptyState } from '../../components/admin/EmptyState';
+import { CSVImportModal } from '../../components/admin/CSVImportModal';
+import { AdvancedFilters, type AdvancedFilterField } from '../../components/admin/AdvancedFilters';
+import { ActivityLog } from '../../components/admin/ActivityLog';
+import { StudentDetailView } from '../../components/admin/StudentDetailView';
+import { useCSVImport } from '../../hooks/useCSVImport';
+import { Plus, Upload, Eye } from 'lucide-react';
 
 interface StudentFilters {
   search: string;
@@ -28,117 +41,117 @@ interface StudentFilters {
 const defaultFilters: StudentFilters = {
   search: '',
   classId: 'all',
-  enrollmentStatus: 'all'
+  enrollmentStatus: 'all',
 };
 
 export function StudentsManagementPage() {
   const navigate = useNavigate();
-  const [students, setStudents] = useState<StudentRecord[]>([]);
-  const [classes, setClasses] = useState<SchoolClass[]>([]);
-  const [studentDetails, setStudentDetails] = useState<Map<string, StudentProfileDetail>>(
-    new Map()
-  );
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState<StudentFilters>(defaultFilters);
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [showClassModal, setShowClassModal] = useState<boolean>(false);
   const [showParentModal, setShowParentModal] = useState<boolean>(false);
+  const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [showImportModal, setShowImportModal] = useState<boolean>(false);
+  const [showActivityLog, setShowActivityLog] = useState<boolean>(false);
+  const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
   const [selectedStudent, setSelectedStudent] = useState<StudentRecord | null>(null);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [parentName, setParentName] = useState<string>('');
   const [parentContact, setParentContact] = useState<string>('');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [studentsResult, classesResult] = await Promise.allSettled([
-        api.listStudents(),
-        api.listClasses()
-      ]);
+  // CSV Import
+  const csvImportMutation = useCSVImport({
+    entityType: 'students',
+    invalidateQueries: [[...queryKeys.admin.students()]] as unknown as unknown[][],
+  });
 
-      if (studentsResult.status === 'fulfilled') {
-        setStudents(studentsResult.value);
-        // Load details for students (lazy load on demand to avoid too many requests)
-        setStudentDetails(new Map());
-      } else {
-        throw new Error((studentsResult.reason as Error).message || 'Failed to load students');
-      }
+  // Debounce search filter to prevent excessive API calls
+  const debouncedSearch = useDebounce(filters.search, 500);
 
-      if (classesResult.status === 'fulfilled') {
-        setClasses(classesResult.value);
-      }
-    } catch (err) {
-      const message = (err as Error).message;
-      setError(message);
-      toast.error(message);
-    } finally {
-      setLoading(false);
+  // Build API filters
+  const apiFilters = useMemo(() => {
+    const result: { classId?: string; enrollmentStatus?: string; search?: string } = {};
+    if (filters.classId !== 'all') {
+      result.classId = filters.classId;
     }
-  }, []);
+    if (filters.enrollmentStatus !== 'all') {
+      result.enrollmentStatus = filters.enrollmentStatus;
+    }
+    if (debouncedSearch) {
+      result.search = debouncedSearch;
+    }
+    return Object.keys(result).length > 0 ? result : undefined;
+  }, [filters.classId, filters.enrollmentStatus, debouncedSearch]);
 
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
+  // Fetch data using React Query hooks
+  const {
+    data: students = [],
+    isLoading: studentsLoading,
+    error: studentsError,
+  } = useStudents(apiFilters);
+  const { data: classes = [], isLoading: classesLoading } = useClasses();
 
+  // Advanced filter fields (defined after classes is fetched)
+  const advancedFilterFields: AdvancedFilterField[] = useMemo(
+    () => [
+      {
+        key: 'classId',
+        label: 'Class',
+        type: 'select',
+        options: [
+          { label: 'All classes', value: 'all' },
+          ...classes.map((c) => ({ label: c.name, value: c.id })),
+        ],
+      },
+      {
+        key: 'enrollmentStatus',
+        label: 'Enrollment Status',
+        type: 'select',
+        options: [
+          { label: 'All statuses', value: 'all' },
+          { label: 'Active', value: 'active' },
+          { label: 'Graduated', value: 'graduated' },
+          { label: 'Transferred', value: 'transferred' },
+          { label: 'Suspended', value: 'suspended' },
+          { label: 'Withdrawn', value: 'withdrawn' },
+        ],
+      },
+    ],
+    [classes]
+  );
+
+  // Mutations
+  const updateStudentMutation = useUpdateStudent();
+  const bulkDeleteMutation = useBulkDeleteStudents();
+
+  const loading = studentsLoading || classesLoading;
+  const error = studentsError ? (studentsError as Error).message : null;
+
+  // Client-side filtering (for any additional filtering not handled by backend)
   const filteredStudents = useMemo(() => {
     return students.filter((student) => {
-      // Search filter
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        const fullName = `${student.first_name} ${student.last_name}`.toLowerCase();
-        const matchesSearch =
-          fullName.includes(searchLower) ||
-          student.admission_number?.toLowerCase().includes(searchLower) ||
-          student.class_id?.toLowerCase().includes(searchLower);
-        if (!matchesSearch) return false;
-      }
-
-      // Class filter
-      if (filters.classId !== 'all') {
-        if (student.class_id !== filters.classId && student.class_uuid !== filters.classId) {
+      // Enrollment status filter (now handled by backend, but keep for client-side fallback)
+      if (filters.enrollmentStatus !== 'all') {
+        if (student.enrollment_status !== filters.enrollmentStatus) {
           return false;
         }
       }
-
-      // Enrollment status filter (placeholder - would need backend support)
-      if (filters.enrollmentStatus !== 'all') {
-        // TODO: Implement enrollment status filtering when backend supports it
-      }
-
       return true;
     });
-  }, [students, filters]);
+  }, [students, filters.enrollmentStatus]);
 
-  const handleViewProfile = async (student: StudentRecord) => {
+  const handleViewProfile = (student: StudentRecord) => {
     setSelectedStudent(student);
-    // Load full profile if not already loaded
-    if (!studentDetails.has(student.id)) {
-      try {
-        const fullStudent = await api.getStudent(student.id);
-        const detail: StudentProfileDetail = {
-          id: fullStudent.id,
-          firstName: fullStudent.first_name,
-          lastName: fullStudent.last_name,
-          classId: fullStudent.class_id,
-          className: fullStudent.class_id,
-          admissionNumber: fullStudent.admission_number,
-          parentContacts: Array.isArray(fullStudent.parent_contacts)
-            ? fullStudent.parent_contacts.map((p) => ({
-                name: p.name,
-                contact: p.phone || p.relationship || ''
-              }))
-            : [],
-          subjects: [] // Will be loaded separately if needed
-        };
-        setStudentDetails((prev) => new Map(prev).set(student.id, detail));
-      } catch (err) {
-        toast.error((err as Error).message);
-      }
-    }
+    setSelectedStudentId(student.id);
     setShowProfileModal(true);
+  };
+
+  const handleViewDetails = (student: StudentRecord) => {
+    setSelectedStudentId(student.id);
+    setShowDetailModal(true);
   };
 
   const handleAssignClass = (student: StudentRecord) => {
@@ -147,121 +160,66 @@ export function StudentsManagementPage() {
     setShowClassModal(true);
   };
 
-  const handleSaveClassAssignment = async () => {
-    if (!selectedStudent || !selectedClass) {
-      toast.error('Please select a class');
-      return;
-    }
-
-    try {
-      await api.updateStudent(selectedStudent.id, { classId: selectedClass });
-      toast.success('Class assigned successfully');
-      setShowClassModal(false);
-      await loadData();
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
-  };
-
-  const handleManageParent = async (student: StudentRecord) => {
+  const handleManageParent = (student: StudentRecord) => {
     setSelectedStudent(student);
-    // Load student data if not already loaded
-    if (!studentDetails.has(student.id)) {
-      try {
-        const fullStudent = await api.getStudent(student.id);
-        const detail: StudentProfileDetail = {
-          id: fullStudent.id,
-          firstName: fullStudent.first_name,
-          lastName: fullStudent.last_name,
-          classId: fullStudent.class_id,
-          className: fullStudent.class_id,
-          admissionNumber: fullStudent.admission_number,
-          parentContacts: Array.isArray(fullStudent.parent_contacts)
-            ? fullStudent.parent_contacts.map((p) => ({
-                name: p.name,
-                contact: p.phone || p.relationship || ''
-              }))
-            : [],
-          subjects: []
-        };
-        setStudentDetails((prev) => new Map(prev).set(student.id, detail));
-      } catch (err) {
-        toast.error((err as Error).message);
-      }
-    }
 
-    const detail = studentDetails.get(student.id);
-    const parentContacts = detail?.parentContacts || [];
-    if (Array.isArray(parentContacts) && parentContacts.length > 0) {
-      const firstParent = parentContacts[0] as { name?: string; contact?: string };
+    // Get parent contacts from current student data
+    const rawStudent = students.find((s) => s.id === student.id);
+    if (
+      rawStudent &&
+      Array.isArray(rawStudent.parent_contacts) &&
+      rawStudent.parent_contacts.length > 0
+    ) {
+      const firstParent = rawStudent.parent_contacts[0];
       setParentName(firstParent.name || '');
-      setParentContact(firstParent.contact || '');
+      setParentContact(firstParent.phone || firstParent.relationship || '');
     } else {
-      // Check if student has parent_contacts in the raw data
-      const rawStudent = students.find((s) => s.id === student.id);
-      if (
-        rawStudent &&
-        Array.isArray(rawStudent.parent_contacts) &&
-        rawStudent.parent_contacts.length > 0
-      ) {
-        const firstParent = rawStudent.parent_contacts[0];
-        setParentName(firstParent.name || '');
-        setParentContact(firstParent.phone || firstParent.relationship || '');
-      } else {
-        setParentName('');
-        setParentContact('');
-      }
+      setParentName('');
+      setParentContact('');
     }
     setShowParentModal(true);
   };
 
-  const handleSaveParent = async () => {
+  const getParentMutationVariables = ():
+    | {
+        id: string;
+        data: { parentContacts: Array<{ name: string; relationship: string; phone: string }> };
+      }
+    | undefined => {
     if (!selectedStudent || !parentName || !parentContact) {
-      toast.error('Please provide parent/guardian name and contact');
-      return;
+      return undefined;
     }
 
-    try {
-      const existingStudent = students.find((s) => s.id === selectedStudent.id);
-      const existingContacts = Array.isArray(existingStudent?.parent_contacts)
-        ? existingStudent.parent_contacts
-        : [];
+    const existingStudent = students.find((s) => s.id === selectedStudent.id);
+    const existingContacts = Array.isArray(existingStudent?.parent_contacts)
+      ? existingStudent.parent_contacts
+      : [];
 
-      const updatedContacts = [
-        ...existingContacts.filter((c) => c.name !== parentName),
-        { name: parentName, relationship: 'Parent', phone: parentContact }
-      ];
+    const updatedContacts = [
+      ...existingContacts.filter((c) => c.name !== parentName),
+      { name: parentName, relationship: 'Parent', phone: parentContact },
+    ];
 
-      await api.updateStudent(selectedStudent.id, {
-        parentContacts: updatedContacts
-      });
-      toast.success('Parent/guardian information updated');
-      setShowParentModal(false);
-      await loadData();
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
+    return {
+      id: selectedStudent.id,
+      data: { parentContacts: updatedContacts },
+    };
   };
 
   const handleBulkDelete = async () => {
     if (selectedRows.size === 0) {
-      toast.error('Please select students to delete');
       return;
     }
 
-    if (!window.confirm(`Delete ${selectedRows.size} student(s)?`)) {
+    if (!window.confirm(`Delete ${selectedRows.size} student(s)? This action cannot be undone.`)) {
       return;
     }
 
-    try {
-      const deletePromises = Array.from(selectedRows).map((id) => api.deleteStudent(id));
-      await Promise.all(deletePromises);
-      toast.success(`${selectedRows.size} student(s) deleted`);
-      setSelectedRows(new Set());
-      await loadData();
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
+    bulkDeleteMutation.mutate(Array.from(selectedRows), {
+      onSuccess: () => {
+        setSelectedRows(new Set());
+      },
+    });
   };
 
   // Consolidated export handlers using DRY principle
@@ -270,16 +228,35 @@ export function StudentsManagementPage() {
       'First Name': s.first_name,
       'Last Name': s.last_name,
       'Admission Number': s.admission_number || 'N/A',
-      Class: s.class_id || 'N/A'
+      Class: s.class_id || 'N/A',
+      'Enrollment Status': s.enrollment_status || 'active',
     }));
 
-    return createExportHandlers(exportData, 'students', [
+    const handlers = createExportHandlers(exportData, 'students', [
       'First Name',
       'Last Name',
       'Admission Number',
-      'Class'
+      'Class',
+      'Enrollment Status',
     ]);
-  }, [filteredStudents]);
+
+    // For PDF/Excel, use backend endpoint with filters
+    const exportPayload = {
+      type: 'students' as const,
+      title: 'Students Export',
+      filters: {
+        classId: filters.classId !== 'all' ? filters.classId : undefined,
+        enrollmentStatus: filters.enrollmentStatus !== 'all' ? filters.enrollmentStatus : undefined,
+        search: filters.search || undefined,
+      },
+    };
+
+    return {
+      ...handlers,
+      exportPDF: () => handlers.exportPDF('/reports/export', exportPayload),
+      exportExcel: () => handlers.exportExcel('/reports/export', exportPayload),
+    };
+  }, [filteredStudents, filters]);
 
   const handleExportCSV = exportHandlers.exportCSV;
   const handleExportPDF = exportHandlers.exportPDF;
@@ -313,6 +290,7 @@ export function StudentsManagementPage() {
           checked={selectedRows.size === filteredStudents.length && filteredStudents.length > 0}
           onChange={toggleAllSelection}
           className="rounded border-[var(--brand-border)]"
+          aria-label="Select all students"
         />
       ),
       render: (row) => (
@@ -322,9 +300,10 @@ export function StudentsManagementPage() {
           onChange={() => toggleRowSelection(row.id)}
           className="rounded border-[var(--brand-border)]"
           onClick={(e) => e.stopPropagation()}
+          aria-label={`Select ${row.first_name} ${row.last_name}`}
         />
       ),
-      align: 'center'
+      align: 'center',
     },
     {
       header: 'Name',
@@ -337,7 +316,7 @@ export function StudentsManagementPage() {
             <p className="text-xs text-[var(--brand-muted)]">#{row.admission_number}</p>
           )}
         </div>
-      )
+      ),
     },
     {
       header: 'Class',
@@ -345,31 +324,29 @@ export function StudentsManagementPage() {
         <span className="text-sm text-[var(--brand-surface-contrast)]">
           {row.class_id || 'Not assigned'}
         </span>
-      )
+      ),
     },
     {
       header: 'Actions',
       render: (row) => (
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => handleViewProfile(row)}>
-            View
+        <ActionButtonGroup>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleViewDetails(row)}
+            className="gap-1"
+          >
+            <Eye className="h-3 w-3" />
+            Details
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => handleAssignClass(row)}>
-            Assign Class
-          </Button>
+          <ViewButton onClick={() => handleViewProfile(row)} />
+          <AssignButton onClick={() => handleAssignClass(row)} label="Assign Class" />
           <Button size="sm" variant="ghost" onClick={() => handleManageParent(row)}>
             Parent
           </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => navigate(`/dashboard/student/profile?studentId=${row.id}`)}
-          >
-            Profile
-          </Button>
-        </div>
-      )
-    }
+        </ActionButtonGroup>
+      ),
+    },
   ];
 
   if (loading) {
@@ -379,8 +356,6 @@ export function StudentsManagementPage() {
       </RouteMeta>
     );
   }
-
-  const selectedStudentDetail = selectedStudent ? studentDetails.get(selectedStudent.id) : null;
 
   return (
     <RouteMeta title="Students management">
@@ -395,7 +370,22 @@ export function StudentsManagementPage() {
               history.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => setShowCreateModal(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Create Student
+            </Button>
+            <Button variant="outline" onClick={() => setShowImportModal(true)} className="gap-2">
+              <Upload className="h-4 w-4" />
+              Import CSV
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowActivityLog(!showActivityLog)}
+              className="gap-2"
+            >
+              Activity Log
+            </Button>
             <ExportButtons
               onExportCSV={handleExportCSV}
               onExportPDF={handleExportPDF}
@@ -411,58 +401,60 @@ export function StudentsManagementPage() {
 
         {error ? <StatusBanner status="error" message={error} /> : null}
 
+        {/* Advanced Filters */}
         <section
           className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-4 shadow-sm"
           aria-label="Filters"
         >
-          <div className="grid gap-4 md:grid-cols-3">
-            <Input
-              label="Search"
-              placeholder="Search by name, admission number, class..."
-              value={filters.search}
-              onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
-            />
-            <Select
-              label="Class"
-              value={filters.classId}
-              onChange={(e) => setFilters((f) => ({ ...f, classId: e.target.value }))}
-              options={[
-                { label: 'All classes', value: 'all' },
-                ...classes.map((c) => ({ label: c.name, value: c.id }))
-              ]}
-            />
-            <Select
-              label="Enrollment status"
-              value={filters.enrollmentStatus}
-              onChange={(e) => setFilters((f) => ({ ...f, enrollmentStatus: e.target.value }))}
-              options={[
-                { label: 'All statuses', value: 'all' },
-                { label: 'Active', value: 'active' },
-                { label: 'Graduated', value: 'graduated' },
-                { label: 'Transferred', value: 'transferred' }
-              ]}
-            />
-          </div>
+          <AdvancedFilters
+            fields={advancedFilterFields}
+            filters={{
+              search: filters.search,
+              classId: filters.classId,
+              enrollmentStatus: filters.enrollmentStatus,
+            }}
+            onFiltersChange={(newFilters) => {
+              setFilters({
+                search: newFilters.search || '',
+                classId: newFilters.classId || 'all',
+                enrollmentStatus: newFilters.enrollmentStatus || 'all',
+              });
+            }}
+            onReset={() => setFilters(defaultFilters)}
+            searchPlaceholder="Search by name, admission number, class..."
+          />
           <div className="mt-4 flex items-center justify-between text-sm text-[var(--brand-muted)]">
             <span>
               Showing {filteredStudents.length} of {students.length} students
             </span>
-            {(filters.search ||
-              filters.classId !== 'all' ||
-              filters.enrollmentStatus !== 'all') && (
-              <Button size="sm" variant="ghost" onClick={() => setFilters(defaultFilters)}>
-                Clear filters
-              </Button>
-            )}
           </div>
         </section>
 
-        <PaginatedTable
-          columns={studentColumns}
-          data={filteredStudents}
-          caption="Students"
-          emptyMessage="No students found matching the current filters."
-        />
+        {/* Activity Log */}
+        {showActivityLog && (
+          <section className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-4 shadow-sm">
+            <ActivityLog entityType="student" limit={10} />
+          </section>
+        )}
+
+        {filteredStudents.length === 0 && students.length === 0 ? (
+          <EmptyState type="students" onAction={() => setShowCreateModal(true)} />
+        ) : filteredStudents.length === 0 ? (
+          <EmptyState
+            type="generic"
+            title="No students found"
+            description="No students match your current filters. Try adjusting your search or filter criteria."
+            onAction={() => setFilters(defaultFilters)}
+            actionLabel="Clear Filters"
+          />
+        ) : (
+          <PaginatedTable
+            columns={studentColumns}
+            data={filteredStudents}
+            caption="Students"
+            emptyMessage="No students found matching the current filters."
+          />
+        )}
 
         {showProfileModal && selectedStudent && (
           <Modal
@@ -492,52 +484,34 @@ export function StudentsManagementPage() {
                 <div>
                   <p className="text-xs font-medium text-[var(--brand-muted)] mb-1">Class</p>
                   <p className="text-sm text-[var(--brand-surface-contrast)]">
-                    {selectedStudentDetail?.className || selectedStudent.class_id || 'Not assigned'}
+                    {selectedStudent.class_id || 'Not assigned'}
                   </p>
                 </div>
-                {selectedStudentDetail && (
-                  <>
-                    <div>
-                      <p className="text-xs font-medium text-[var(--brand-muted)] mb-1">Subjects</p>
-                      <div className="flex flex-wrap gap-1">
-                        {selectedStudentDetail.subjects.length > 0 ? (
-                          selectedStudentDetail.subjects.map((subject) => (
-                            <span
-                              key={subject.subjectId}
-                              className="rounded-full bg-[var(--brand-primary)]/20 px-2 py-1 text-xs text-[var(--brand-primary)]"
-                            >
-                              {subject.name}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-xs text-[var(--brand-muted)]">No subjects</span>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-[var(--brand-muted)] mb-1">
-                        Parent/Guardian
-                      </p>
-                      <div className="text-sm text-[var(--brand-surface-contrast)]">
-                        {Array.isArray(selectedStudentDetail.parentContacts) &&
-                        selectedStudentDetail.parentContacts.length > 0 ? (
-                          selectedStudentDetail.parentContacts.map(
-                            (parent: unknown, idx: number) => {
-                              const p = parent as { name?: string; contact?: string };
-                              return (
-                                <div key={idx}>
-                                  {p.name} - {p.contact}
-                                </div>
-                              );
-                            }
-                          )
-                        ) : (
-                          <span className="text-[var(--brand-muted)]">No parent information</span>
-                        )}
-                      </div>
-                    </div>
-                  </>
-                )}
+                <div>
+                  <p className="text-xs font-medium text-[var(--brand-muted)] mb-1">
+                    Parent/Guardian
+                  </p>
+                  <div className="text-sm text-[var(--brand-surface-contrast)]">
+                    {Array.isArray(selectedStudent.parent_contacts) &&
+                    selectedStudent.parent_contacts.length > 0 ? (
+                      selectedStudent.parent_contacts.map((parent: unknown, idx: number) => {
+                        const p = parent as {
+                          name?: string;
+                          phone?: string;
+                          relationship?: string;
+                        };
+                        return (
+                          <div key={idx}>
+                            {p.name} {p.relationship ? `(${p.relationship})` : ''} -{' '}
+                            {p.phone || 'No contact'}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <span className="text-[var(--brand-muted)]">No parent information</span>
+                    )}
+                  </div>
+                </div>
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button variant="ghost" onClick={() => setShowProfileModal(false)}>
@@ -556,12 +530,32 @@ export function StudentsManagementPage() {
         )}
 
         {showClassModal && selectedStudent && (
-          <Modal
+          <FormModal
             title={`Assign class: ${selectedStudent.first_name} ${selectedStudent.last_name}`}
             isOpen={showClassModal}
             onClose={() => {
               setShowClassModal(false);
               setSelectedStudent(null);
+              setSelectedClass('');
+            }}
+            mutation={updateStudentMutation}
+            variables={
+              selectedClass
+                ? {
+                    id: selectedStudent.id,
+                    data: { classId: selectedClass },
+                  }
+                : undefined
+            }
+            invalidateQueries={[queryKeys.admin.students()] as unknown as unknown[][]}
+            messages={{
+              pending: 'Assigning class...',
+              success: 'Class assigned successfully',
+              error: 'Failed to assign class',
+            }}
+            saveLabel="Assign"
+            onSuccess={() => {
+              setSelectedClass('');
             }}
           >
             <div className="space-y-4">
@@ -572,26 +566,34 @@ export function StudentsManagementPage() {
                 onChange={(e) => setSelectedClass(e.target.value)}
                 options={[
                   { label: 'Select a class', value: '' },
-                  ...classes.map((c) => ({ label: c.name, value: c.id }))
+                  ...classes.map((c) => ({ label: c.name, value: c.id })),
                 ]}
               />
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="ghost" onClick={() => setShowClassModal(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSaveClassAssignment}>Assign</Button>
-              </div>
             </div>
-          </Modal>
+          </FormModal>
         )}
 
         {showParentModal && selectedStudent && (
-          <Modal
+          <FormModal
             title={`Parent/Guardian: ${selectedStudent.first_name} ${selectedStudent.last_name}`}
             isOpen={showParentModal}
             onClose={() => {
               setShowParentModal(false);
               setSelectedStudent(null);
+              setParentName('');
+              setParentContact('');
+            }}
+            mutation={updateStudentMutation}
+            variables={getParentMutationVariables()}
+            invalidateQueries={[queryKeys.admin.students()] as unknown as unknown[][]}
+            messages={{
+              pending: 'Saving parent information...',
+              success: 'Parent information saved successfully',
+              error: 'Failed to save parent information',
+            }}
+            onSuccess={() => {
+              setParentName('');
+              setParentContact('');
             }}
           >
             <div className="space-y-4">
@@ -599,19 +601,69 @@ export function StudentsManagementPage() {
                 label="Parent/Guardian name"
                 value={parentName}
                 onChange={(e) => setParentName(e.target.value)}
+                required
               />
               <Input
                 label="Contact information"
                 value={parentContact}
                 onChange={(e) => setParentContact(e.target.value)}
                 placeholder="Phone or email"
+                required
               />
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="ghost" onClick={() => setShowParentModal(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSaveParent}>Save</Button>
-              </div>
+            </div>
+          </FormModal>
+        )}
+
+        {showCreateModal && (
+          <AdminUserRegistrationModal
+            onClose={() => setShowCreateModal(false)}
+            onSuccess={() => {
+              setShowCreateModal(false);
+              // Invalidate students query to refresh the list
+              queryClient.invalidateQueries({ queryKey: queryKeys.admin.students() });
+            }}
+          />
+        )}
+
+        {showImportModal && (
+          <CSVImportModal
+            isOpen={showImportModal}
+            onClose={() => setShowImportModal(false)}
+            onImport={async (file) => {
+              const result = await csvImportMutation.mutateAsync(file);
+              return result;
+            }}
+            entityType="students"
+            acceptedColumns={[
+              'email',
+              'fullName',
+              'password',
+              'dateOfBirth',
+              'classId',
+              'studentId',
+              'parentGuardianName',
+              'parentGuardianContact',
+            ]}
+          />
+        )}
+
+        {showDetailModal && selectedStudentId && (
+          <Modal
+            title="Student Details"
+            isOpen={showDetailModal}
+            onClose={() => {
+              setShowDetailModal(false);
+              setSelectedStudentId(null);
+            }}
+          >
+            <div className="max-h-[80vh] overflow-y-auto">
+              <StudentDetailView
+                studentId={selectedStudentId}
+                onClose={() => {
+                  setShowDetailModal(false);
+                  setSelectedStudentId(null);
+                }}
+              />
             </div>
           </Modal>
         )}

@@ -11,10 +11,10 @@ export function TagsCell({ tags, maxDisplay = 3 }: TagsCellProps) {
   if (!tags || tags.length === 0) {
     return <span className="text-[var(--brand-text-secondary)] text-sm">—</span>;
   }
-  
+
   const displayTags = tags.slice(0, maxDisplay);
   const remaining = tags.length - maxDisplay;
-  
+
   return (
     <div className="flex flex-wrap gap-1">
       {displayTags.map((tag) => (
@@ -33,4 +33,3 @@ export function TagsCell({ tags, maxDisplay = 3 }: TagsCellProps) {
     </div>
   );
 }
-

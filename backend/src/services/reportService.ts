@@ -91,7 +91,7 @@ export async function getDepartmentAnalytics(
   departmentId?: string
 ) {
   assertValidSchemaName(schema);
-  
+
   // Get teachers in department
   const teachersQuery = departmentId
     ? `SELECT COUNT(*)::int AS count FROM teachers WHERE department_id = $1`
@@ -140,7 +140,7 @@ export async function getDepartmentAnalytics(
     departmentId,
     totalTeachers: teachersResult.rows[0]?.count || 0,
     totalStudents: studentsResult.rows[0]?.count || 0,
-    averageClassSize: Math.round((classSizeResult.rows[0]?.avg_size || 0) * 100) / 100
+    averageClassSize: Math.round((classSizeResult.rows[0]?.avg_size || 0) * 100) / 100,
   };
 }
 
@@ -209,7 +209,7 @@ async function fetchTermReportSummary(
   const student = studentResult.rows[0];
 
   const termResult = await client.query(`SELECT * FROM ${schema}.academic_terms WHERE id = $1`, [
-    input.termId
+    input.termId,
   ]);
   if (termResult.rowCount === 0) {
     throw new Error('Term not found');
@@ -276,31 +276,31 @@ async function fetchTermReportSummary(
       id: student.id,
       fullName: `${student.first_name} ${student.last_name}`,
       classId: student.class_id ?? null,
-      className: student.class_name ?? null
+      className: student.class_name ?? null,
     },
     term: {
       id: term.id,
       name: term.name,
       startsOn: term.starts_on.toISOString(),
-      endsOn: term.ends_on.toISOString()
+      endsOn: term.ends_on.toISOString(),
     },
     attendance: {
       present: attendanceCounts.present,
       absent: attendanceCounts.absent,
       late: attendanceCounts.late,
       total: attendanceCounts.total,
-      percentage: attendancePercentage
+      percentage: attendancePercentage,
     },
     academics: academicResult.rows.map((row) => ({
       subject: row.subject,
       score: row.score,
-      grade: row.grade
+      grade: row.grade,
     })),
     fees: {
       billed,
       paid,
-      outstanding: billed - paid
-    }
+      outstanding: billed - paid,
+    },
   };
 }
 
@@ -371,7 +371,7 @@ export async function generateTermReport(
   return {
     reportId: result.rows[0].id,
     summary,
-    pdfBuffer
+    pdfBuffer,
   };
 }
 
@@ -381,7 +381,7 @@ export async function fetchReportPdf(
   reportId: string
 ): Promise<Buffer | null> {
   const result = await client.query(`SELECT pdf FROM ${schema}.term_reports WHERE id = $1`, [
-    reportId
+    reportId,
   ]);
   if (result.rowCount === 0 || !result.rows[0].pdf) {
     return null;

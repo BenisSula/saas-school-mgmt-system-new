@@ -6,7 +6,7 @@ import {
   hydrateFromStorage,
   initialiseSession,
   setAuthHandlers,
-  setTenant
+  setTenant,
 } from '../lib/api';
 import type { AuthResponse, AuthUser, LoginPayload, RegisterPayload, Role } from '../lib/api';
 import { normalizeUser, ensureActive, isActive } from '../lib/userUtils';
@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setAuthHandlers({
       onUnauthorized: handleUnauthorized,
-      onRefresh: handleRefresh
+      onRefresh: handleRefresh,
     });
   }, [handleUnauthorized, handleRefresh]);
 
@@ -122,12 +122,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       initialiseSession(authWithStatus);
       setTenant(normalised.tenantId ?? null);
       setUser(normalised);
-      
+
       // Set must change password flag if present in response
       if (auth.mustChangePassword) {
         setMustChangePassword(true);
       }
-      
+
       return authWithStatus;
     } catch (error) {
       // Log error for debugging
@@ -198,9 +198,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login,
       register,
       logout,
-      clearMustChangePassword
+      clearMustChangePassword,
     }),
-    [user, isLoading, isSuperUser, mustChangePassword, login, register, logout, clearMustChangePassword]
+    [
+      user,
+      isLoading,
+      isSuperUser,
+      mustChangePassword,
+      login,
+      register,
+      logout,
+      clearMustChangePassword,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

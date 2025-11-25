@@ -7,6 +7,13 @@
     "test": "npm run test --prefix backend && npm run test --prefix frontend",
     "format": "npm run format --prefix backend && npm run format --prefix frontend",
     "format:write": "npm run format:write --prefix backend && npm run format:write --prefix frontend",
+    "generate:api-types": "openapi-typescript backend/openapi.yaml -o frontend/src/lib/api-types.ts",
+    "qa:test": "node scripts/qa-test-runner.js",
+    "qa:setup": "powershell -ExecutionPolicy Bypass -File scripts/setup-qa-environment.ps1",
+    "load:test:export": "node scripts/load-tests/export-load-test.js",
+    "load:test:upload": "node scripts/load-tests/upload-load-test.js",
+    "load:test:attendance": "node scripts/load-tests/attendance-load-test.js",
+    "load:test:all": "npm run load:test:export && npm run load:test:upload && npm run load:test:attendance",
     "prepare": "husky install"
   },
   "devDependencies": {
@@ -14,11 +21,13 @@
     "@typescript-eslint/eslint-plugin": "^8.46.3",
     "@typescript-eslint/parser": "^8.46.3",
     "concurrently": "^9.1.2",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.2.6",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react": "^7.37.3",
     "eslint-plugin-react-hooks": "^5.1.0",
-    "globals": "^15.12.0"
+    "globals": "^15.12.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6",
+    "openapi-typescript": "^7.4.2"
   },
   "lint-staged": {
     "backend/src/**/*.ts": [
@@ -35,4 +44,3 @@
     ]
   }
 }
-

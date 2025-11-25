@@ -24,7 +24,7 @@ export function exportToCSV<T extends Record<string, unknown>>(
           return String(value);
         })
         .join(',')
-    )
+    ),
   ];
 
   const csvContent = csvRows.join('\n');

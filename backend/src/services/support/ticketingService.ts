@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import type { PoolClient } from 'pg';
-import { z } from 'zod';
+// z from zod not used in this file but may be needed for future implementations
 
 export interface CreateTicketInput {
   tenantId?: string;
@@ -40,10 +40,7 @@ async function generateTicketNumber(client: PoolClient): Promise<string> {
 /**
  * Create support ticket
  */
-export async function createTicket(
-  client: PoolClient,
-  input: CreateTicketInput
-): Promise<unknown> {
+export async function createTicket(client: PoolClient, input: CreateTicketInput): Promise<unknown> {
   const ticketId = crypto.randomUUID();
   const ticketNumber = await generateTicketNumber(client);
 
@@ -66,7 +63,7 @@ export async function createTicket(
       input.priority || 'medium',
       input.category || 'other',
       input.createdBy,
-      JSON.stringify(input.metadata || {})
+      JSON.stringify(input.metadata || {}),
     ]
   );
 
@@ -177,7 +174,7 @@ export async function getTickets(
 
   return {
     tickets: ticketsResult.rows,
-    total
+    total,
   };
 }
 
@@ -277,15 +274,14 @@ export async function addTicketComment(
       input.userId,
       input.content,
       input.isInternal || false,
-      JSON.stringify(input.attachments || [])
+      JSON.stringify(input.attachments || []),
     ]
   );
 
   // Update ticket updated_at
-  await client.query(
-    'UPDATE shared.support_tickets SET updated_at = NOW() WHERE id = $1',
-    [input.ticketId]
-  );
+  await client.query('UPDATE shared.support_tickets SET updated_at = NOW() WHERE id = $1', [
+    input.ticketId,
+  ]);
 
   return result.rows[0];
 }
@@ -297,11 +293,13 @@ export async function getTicketComments(
   client: PoolClient,
   ticketId: string,
   includeInternal: boolean = false,
-  userId?: string
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _userId?: string
 ): Promise<unknown[]> {
   const conditions: string[] = ['ticket_id = $1'];
   const values: unknown[] = [ticketId];
-  let paramIndex = 2;
+  // paramIndex not used but kept for consistency with similar patterns
+  // let paramIndex = 2;
 
   // Only show internal comments to support staff or ticket creator
   if (!includeInternal) {
@@ -338,7 +336,6 @@ export async function getTicketWithComments(
 
   return {
     ...ticket,
-    comments
+    comments,
   };
 }
-

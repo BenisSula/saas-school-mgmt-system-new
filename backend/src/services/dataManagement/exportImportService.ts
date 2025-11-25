@@ -28,7 +28,7 @@ export async function createExportJob(
   input: CreateExportJobInput
 ): Promise<unknown> {
   const jobId = crypto.randomUUID();
-  
+
   // Set expiration (default: 7 days)
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
@@ -51,7 +51,7 @@ export async function createExportJob(
       input.tablesIncluded || [],
       JSON.stringify(input.filters || {}),
       expiresAt,
-      input.requestedBy || null
+      input.requestedBy || null,
     ]
   );
 
@@ -123,7 +123,7 @@ export async function getExportJobs(
 
   return {
     jobs: jobsResult.rows,
-    total
+    total,
   };
 }
 
@@ -154,7 +154,7 @@ export async function createImportJob(
       input.fileUrl,
       input.fileSizeBytes || null,
       input.tablesTargeted || [],
-      input.requestedBy || null
+      input.requestedBy || null,
     ]
   );
 
@@ -225,7 +225,7 @@ export async function getImportJobs(
 
   return {
     jobs: jobsResult.rows,
-    total
+    total,
   };
 }
 
@@ -338,4 +338,3 @@ export async function updateImportJobStatus(
     values
   );
 }
-

@@ -6,7 +6,7 @@ import type { AuthUser } from '../lib/api';
 
 // Mock the AuthContext
 vi.mock('../context/AuthContext', () => ({
-  useAuth: vi.fn()
+  useAuth: vi.fn(),
 }));
 
 const mockUseAuth = AuthContextModule.useAuth as ReturnType<typeof vi.fn>;
@@ -23,7 +23,7 @@ describe('usePermission', () => {
       role: 'teacher',
       tenantId: 'tenant-1',
       isVerified: true,
-      status: 'active'
+      status: 'active',
     };
 
     mockUseAuth.mockReturnValue({ user: mockUser });
@@ -39,7 +39,7 @@ describe('usePermission', () => {
       role: 'student',
       tenantId: 'tenant-1',
       isVerified: true,
-      status: 'active'
+      status: 'active',
     };
 
     mockUseAuth.mockReturnValue({ user: mockUser });
@@ -62,7 +62,7 @@ describe('usePermission', () => {
       role: 'admin',
       tenantId: 'tenant-1',
       isVerified: true,
-      status: 'active'
+      status: 'active',
     };
 
     mockUseAuth.mockReturnValue({ user: mockUser });
@@ -84,7 +84,7 @@ describe('useAnyPermission', () => {
       role: 'teacher',
       tenantId: 'tenant-1',
       isVerified: true,
-      status: 'active'
+      status: 'active',
     };
 
     mockUseAuth.mockReturnValue({ user: mockUser });
@@ -100,7 +100,7 @@ describe('useAnyPermission', () => {
       role: 'student',
       tenantId: 'tenant-1',
       isVerified: true,
-      status: 'active'
+      status: 'active',
     };
 
     mockUseAuth.mockReturnValue({ user: mockUser });
@@ -116,7 +116,7 @@ describe('useAnyPermission', () => {
       role: 'teacher',
       tenantId: 'tenant-1',
       isVerified: true,
-      status: 'active'
+      status: 'active',
     };
 
     mockUseAuth.mockReturnValue({ user: mockUser });
@@ -138,7 +138,7 @@ describe('useAllPermissions', () => {
       role: 'admin',
       tenantId: 'tenant-1',
       isVerified: true,
-      status: 'active'
+      status: 'active',
     };
 
     mockUseAuth.mockReturnValue({ user: mockUser });
@@ -154,7 +154,7 @@ describe('useAllPermissions', () => {
       role: 'teacher',
       tenantId: 'tenant-1',
       isVerified: true,
-      status: 'active'
+      status: 'active',
     };
 
     mockUseAuth.mockReturnValue({ user: mockUser });

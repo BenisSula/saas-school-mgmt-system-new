@@ -11,8 +11,8 @@ vi.mock('sonner', () => ({
   toast: {
     error: vi.fn(),
     success: vi.fn(),
-    info: vi.fn()
-  }
+    info: vi.fn(),
+  },
 }));
 
 // Mock AuthContext
@@ -22,14 +22,14 @@ const mockRegister = vi.fn();
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
     login: mockLogin,
-    register: mockRegister
-  })
+    register: mockRegister,
+  }),
 }));
 
 // Mock API for TenantSelector
 const { mockListSchools, mockLookupTenant } = vi.hoisted(() => ({
   mockListSchools: vi.fn(),
-  mockLookupTenant: vi.fn()
+  mockLookupTenant: vi.fn(),
 }));
 
 vi.mock('../lib/api', async (importOriginal) => {
@@ -39,8 +39,8 @@ vi.mock('../lib/api', async (importOriginal) => {
     api: {
       ...actual.api,
       listSchools: mockListSchools,
-      lookupTenant: mockLookupTenant
-    }
+      lookupTenant: mockLookupTenant,
+    },
   };
 });
 
@@ -58,11 +58,11 @@ describe('Login/Register Integration Tests', () => {
     const validTenantId = '123e4567-e89b-12d3-a456-426614174000';
     mockListSchools.mockResolvedValue({
       schools: [
-        { id: validTenantId, name: 'Test School', domain: null, registrationCode: 'TEST123' }
+        { id: validTenantId, name: 'Test School', domain: null, registrationCode: 'TEST123' },
       ],
       count: 1,
       total: 1,
-      type: 'recent' as const
+      type: 'recent' as const,
     });
 
     // Default mock for lookupTenant
@@ -70,7 +70,7 @@ describe('Login/Register Integration Tests', () => {
       id: validTenantId,
       name: 'Test School',
       domain: null,
-      registrationCode: 'TEST123'
+      registrationCode: 'TEST123',
     });
   });
 
@@ -89,8 +89,8 @@ describe('Login/Register Integration Tests', () => {
           role: 'student' as const,
           tenantId: '123e4567-e89b-12d3-a456-426614174000',
           isVerified: true,
-          status: 'active' as const
-        }
+          status: 'active' as const,
+        },
       };
 
       mockLogin.mockResolvedValue(mockAuthResponse);
@@ -108,7 +108,7 @@ describe('Login/Register Integration Tests', () => {
       await waitFor(() => {
         expect(mockLogin).toHaveBeenCalledWith({
           email: 'student@example.com',
-          password: 'password123'
+          password: 'password123',
         });
       });
 
@@ -127,8 +127,8 @@ describe('Login/Register Integration Tests', () => {
             status: 'error',
             message: 'Invalid credentials',
             field: 'password',
-            code: 'INVALID_CREDENTIALS'
-          }
+            code: 'INVALID_CREDENTIALS',
+          },
         });
         throw apiError;
       });
@@ -181,8 +181,8 @@ describe('Login/Register Integration Tests', () => {
           role: 'student' as const,
           tenantId: '123e4567-e89b-12d3-a456-426614174000',
           isVerified: false,
-          status: 'pending' as const
-        }
+          status: 'pending' as const,
+        },
       };
 
       mockRegister.mockResolvedValue(mockAuthResponse);
@@ -237,8 +237,8 @@ describe('Login/Register Integration Tests', () => {
           role: 'student' as const,
           tenantId: '123e4567-e89b-12d3-a456-426614174000',
           isVerified: false,
-          status: 'pending' as const
-        }
+          status: 'pending' as const,
+        },
       };
 
       mockRegister.mockResolvedValue(mockAuthResponse);
@@ -289,8 +289,8 @@ describe('Login/Register Integration Tests', () => {
           role: 'teacher' as const,
           tenantId: '123e4567-e89b-12d3-a456-426614174000',
           isVerified: false,
-          status: 'pending' as const
-        }
+          status: 'pending' as const,
+        },
       };
 
       mockRegister.mockResolvedValue(mockAuthResponse);
@@ -301,7 +301,7 @@ describe('Login/Register Integration Tests', () => {
         id: validTenantId,
         name: 'Test School',
         domain: null,
-        registrationCode: 'TEST123'
+        registrationCode: 'TEST123',
       });
 
       render(
@@ -430,8 +430,8 @@ describe('Login/Register Integration Tests', () => {
             status: 'error',
             message: 'Email already exists',
             field: 'email',
-            code: 'DUPLICATE_EMAIL'
-          }
+            code: 'DUPLICATE_EMAIL',
+          },
         });
         throw apiError;
       });
@@ -501,8 +501,8 @@ describe('Login/Register Integration Tests', () => {
           apiError: {
             status: 'error',
             message: 'Internal server error',
-            code: 'INTERNAL_ERROR'
-          }
+            code: 'INTERNAL_ERROR',
+          },
         });
         throw apiError;
       });

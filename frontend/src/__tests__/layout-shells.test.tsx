@@ -10,8 +10,8 @@ import { queryClient } from '../lib/react-query';
 
 vi.mock('../lib/api', () => ({
   api: {
-    getBranding: vi.fn().mockResolvedValue(null)
-  }
+    getBranding: vi.fn().mockResolvedValue(null),
+  },
 }));
 
 beforeAll(() => {
@@ -25,9 +25,9 @@ beforeAll(() => {
         removeEventListener: vi.fn(),
         addListener: vi.fn(),
         removeListener: vi.fn(),
-        dispatchEvent: vi.fn()
+        dispatchEvent: vi.fn(),
       };
-    })
+    }),
   });
 });
 
@@ -62,7 +62,7 @@ describe('Layout shells', () => {
           role: 'admin',
           tenantId: 'tenant',
           isVerified: true,
-          status: 'active'
+          status: 'active',
         }}
         onLogout={() => {}}
       >

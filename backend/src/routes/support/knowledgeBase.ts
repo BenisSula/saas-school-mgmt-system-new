@@ -10,7 +10,7 @@ import {
   getKbArticles,
   getKbArticleBySlug,
   updateKbArticle,
-  submitArticleFeedback
+  submitArticleFeedback,
 } from '../../services/support/knowledgeBaseService';
 import { z } from 'zod';
 
@@ -24,7 +24,7 @@ const createCategorySchema = z.object({
   name: z.string().min(1),
   slug: z.string().optional(),
   description: z.string().optional(),
-  displayOrder: z.number().int().optional()
+  displayOrder: z.number().int().optional(),
 });
 
 const createArticleSchema = z.object({
@@ -37,7 +37,7 @@ const createArticleSchema = z.object({
   summary: z.string().optional(),
   tags: z.array(z.string()).optional(),
   isPublished: z.boolean().optional(),
-  isFeatured: z.boolean().optional()
+  isFeatured: z.boolean().optional(),
 });
 
 const updateArticleSchema = z.object({
@@ -49,12 +49,12 @@ const updateArticleSchema = z.object({
   tags: z.array(z.string()).optional(),
   categoryId: z.string().uuid().optional(),
   isPublished: z.boolean().optional(),
-  isFeatured: z.boolean().optional()
+  isFeatured: z.boolean().optional(),
 });
 
 const feedbackSchema = z.object({
   feedbackType: z.enum(['helpful', 'not_helpful', 'comment']),
-  comment: z.string().optional()
+  comment: z.string().optional(),
 });
 
 // Get categories
@@ -86,7 +86,8 @@ router.post('/categories', requirePermission('kb:manage'), async (req, res, next
     try {
       const category = await createKbCategory(client, {
         ...parsed.data,
-        tenantId: req.tenant?.id
+        tenantId: req.tenant?.id,
+        slug: parsed.data.slug || parsed.data.name.toLowerCase().replace(/\s+/g, '-'),
       });
       res.status(201).json(category);
     } finally {
@@ -106,12 +107,17 @@ router.get('/articles', async (req, res, next) => {
       const result = await getKbArticles(client, {
         tenantId: req.tenant?.id,
         categoryId: req.query.categoryId as string,
-        isPublished: req.query.published === 'true' ? true : req.query.published === 'false' ? false : undefined,
+        isPublished:
+          req.query.published === 'true'
+            ? true
+            : req.query.published === 'false'
+              ? false
+              : undefined,
         isFeatured: req.query.featured === 'true' ? true : undefined,
         tags: req.query.tags ? (req.query.tags as string).split(',') : undefined,
         search: req.query.search as string,
         limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
-        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined
+        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
     } finally {
@@ -155,7 +161,8 @@ router.post('/articles', requirePermission('kb:manage'), async (req, res, next) 
       const article = await createKbArticle(client, {
         ...parsed.data,
         tenantId: req.tenant?.id,
-        authorId: req.user?.id
+        authorId: req.user?.id,
+        slug: parsed.data.slug || parsed.data.title.toLowerCase().replace(/\s+/g, '-'),
       });
       res.status(201).json(article);
     } finally {
@@ -215,4 +222,3 @@ router.post('/articles/:id/feedback', async (req, res, next) => {
 });
 
 export default router;
-

@@ -8,7 +8,7 @@ export function deriveContacts(raw: unknown[]): Array<{ label: string; value: st
   }
   return raw.map((value) => ({
     label: '',
-    value: typeof value === 'string' ? value : JSON.stringify(value)
+    value: typeof value === 'string' ? value : JSON.stringify(value),
   }));
 }
 
@@ -17,12 +17,15 @@ export function calculatePercentage(numerator: number, denominator: number): num
   return Math.round((numerator / denominator) * 100);
 }
 
-export function formatCurrency(amount: number | null | undefined, currency: string = 'USD'): string {
+export function formatCurrency(
+  amount: number | null | undefined,
+  currency: string = 'USD'
+): string {
   if (amount === null || amount === undefined) return '—';
   return new Intl.NumberFormat(undefined, {
     style: 'currency',
     currency,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   }).format(amount);
 }
 

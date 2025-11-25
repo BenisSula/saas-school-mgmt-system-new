@@ -35,7 +35,7 @@ describe('HomePage', () => {
 
     expect(
       screen.getByRole('heading', {
-        name: /Powering modern school operations across every tenant/i
+        name: /Powering modern school operations across every tenant/i,
       })
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Start onboarding/i })).toBeInTheDocument();

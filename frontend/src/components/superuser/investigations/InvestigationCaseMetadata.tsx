@@ -47,7 +47,10 @@ export function InvestigationCaseMetadata({ case_: case_ }: InvestigationCaseMet
 
       <div className={`mt-4 space-y-2 ${isExpanded ? 'block' : 'hidden'}`}>
         {metadataEntries.map(([key, value]) => (
-          <div key={key} className="flex items-start gap-4 border-b border-[var(--brand-border)] pb-2 last:border-0">
+          <div
+            key={key}
+            className="flex items-start gap-4 border-b border-[var(--brand-border)] pb-2 last:border-0"
+          >
             <dt className="w-1/3 font-medium text-[var(--brand-text-secondary)]">{key}:</dt>
             <dd className="flex-1 text-sm text-[var(--brand-text-primary)]">
               {typeof value === 'object' ? (
@@ -64,10 +67,10 @@ export function InvestigationCaseMetadata({ case_: case_ }: InvestigationCaseMet
 
       {!isExpanded && (
         <div className="mt-2 text-xs text-[var(--brand-muted)]">
-          {metadataEntries.length} metadata {metadataEntries.length === 1 ? 'entry' : 'entries'} available
+          {metadataEntries.length} metadata {metadataEntries.length === 1 ? 'entry' : 'entries'}{' '}
+          available
         </div>
       )}
     </div>
   );
 }
-

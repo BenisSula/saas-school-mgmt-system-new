@@ -19,10 +19,10 @@ jest.mock('../src/middleware/authenticate', () => ({
       role: 'admin',
       tenantId: 'tenant_alpha',
       email: 'admin@test.com',
-      tokenId: 'token'
+      tokenId: 'token',
     };
     next();
-  }
+  },
 }));
 
 import app from '../src/app';
@@ -32,7 +32,7 @@ import { getPool } from '../src/db/connection';
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -44,7 +44,7 @@ describe('Student routes', () => {
     await createTenant(
       {
         name: 'Test School',
-        schemaName: 'tenant_alpha'
+        schemaName: 'tenant_alpha',
       },
       testPool.pool
     );
@@ -56,7 +56,7 @@ describe('Student routes', () => {
     const create = await request(app).post('/students').set(authHeaders).send({
       firstName: 'Ada',
       lastName: 'Lovelace',
-      admissionNumber: 'A001'
+      admissionNumber: 'A001',
     });
 
     expect(create.status).toBe(201);

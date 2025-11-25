@@ -13,37 +13,41 @@ export const investigationKeys = {
   list: (filters?: CaseFilters) => [...investigationKeys.lists(), filters] as const,
   details: () => [...investigationKeys.all, 'detail'] as const,
   detail: (id: string) => [...investigationKeys.details(), id] as const,
-  anomalies: (filters?: { userId?: string; tenantId?: string | null; startDate?: string; endDate?: string }) =>
-    [...investigationKeys.all, 'anomalies', filters] as const,
-  userActions: (userId: string, filters?: { tenantId?: string | null; startDate?: string; endDate?: string; limit?: number; offset?: number }) =>
-    [...investigationKeys.all, 'user-actions', userId, filters] as const
+  anomalies: (filters?: {
+    userId?: string;
+    tenantId?: string | null;
+    startDate?: string;
+    endDate?: string;
+  }) => [...investigationKeys.all, 'anomalies', filters] as const,
+  userActions: (
+    userId: string,
+    filters?: {
+      tenantId?: string | null;
+      startDate?: string;
+      endDate?: string;
+      limit?: number;
+      offset?: number;
+    }
+  ) => [...investigationKeys.all, 'user-actions', userId, filters] as const,
 };
 
 /**
  * Hook to fetch investigation cases with filters
  */
 export function useInvestigationCases(filters?: CaseFilters) {
-  return useQuery(
-    investigationKeys.list(filters),
-    () => api.superuser.getCases(filters),
-    {
-      staleTime: 30000 // 30 seconds
-    }
-  );
+  return useQuery(investigationKeys.list(filters), () => api.superuser.getCases(filters), {
+    staleTime: 30000, // 30 seconds
+  });
 }
 
 /**
  * Hook to fetch a single investigation case with notes and evidence
  */
 export function useInvestigationCase(caseId: string) {
-  return useQuery(
-    investigationKeys.detail(caseId),
-    () => api.superuser.getCase(caseId),
-    {
-      enabled: !!caseId,
-      staleTime: 30000
-    }
-  );
+  return useQuery(investigationKeys.detail(caseId), () => api.superuser.getCase(caseId), {
+    enabled: !!caseId,
+    staleTime: 30000,
+  });
 }
 
 /**
@@ -70,7 +74,7 @@ export function useCreateInvestigationCase() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to create investigation case');
-    }
+    },
   });
 }
 
@@ -81,8 +85,15 @@ export function useUpdateCaseStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ caseId, ...payload }: { caseId: string; status: 'open' | 'investigating' | 'resolved' | 'closed'; resolution?: string; resolutionNotes?: string }) =>
-      api.superuser.updateCaseStatus(caseId, payload),
+    mutationFn: ({
+      caseId,
+      ...payload
+    }: {
+      caseId: string;
+      status: 'open' | 'investigating' | 'resolved' | 'closed';
+      resolution?: string;
+      resolutionNotes?: string;
+    }) => api.superuser.updateCaseStatus(caseId, payload),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: investigationKeys.lists() });
       queryClient.invalidateQueries({ queryKey: investigationKeys.detail(variables.caseId) });
@@ -90,7 +101,7 @@ export function useUpdateCaseStatus() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to update case status');
-    }
+    },
   });
 }
 
@@ -101,15 +112,22 @@ export function useAddCaseNote() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ caseId, ...payload }: { caseId: string; note: string; noteType?: 'note' | 'finding' | 'evidence' | 'action'; metadata?: Record<string, unknown> }) =>
-      api.superuser.addCaseNote(caseId, payload),
+    mutationFn: ({
+      caseId,
+      ...payload
+    }: {
+      caseId: string;
+      note: string;
+      noteType?: 'note' | 'finding' | 'evidence' | 'action';
+      metadata?: Record<string, unknown>;
+    }) => api.superuser.addCaseNote(caseId, payload),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: investigationKeys.detail(variables.caseId) });
       toast.success('Note added successfully');
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to add note');
-    }
+    },
   });
 }
 
@@ -125,7 +143,13 @@ export function useAddCaseEvidence() {
       ...payload
     }: {
       caseId: string;
-      evidenceType: 'audit_log' | 'session' | 'login_attempt' | 'password_change' | 'file' | 'other';
+      evidenceType:
+        | 'audit_log'
+        | 'session'
+        | 'login_attempt'
+        | 'password_change'
+        | 'file'
+        | 'other';
       evidenceId: string;
       evidenceSource: string;
       description?: string;
@@ -137,20 +161,25 @@ export function useAddCaseEvidence() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to add evidence');
-    }
+    },
   });
 }
 
 /**
  * Hook to detect anomalies
  */
-export function useDetectAnomalies(filters?: { userId?: string; tenantId?: string | null; startDate?: string; endDate?: string }) {
+export function useDetectAnomalies(filters?: {
+  userId?: string;
+  tenantId?: string | null;
+  startDate?: string;
+  endDate?: string;
+}) {
   return useQuery(
     investigationKeys.anomalies(filters),
     () => api.superuser.detectAnomalies(filters),
     {
       enabled: false, // Manual trigger only
-      staleTime: 60000
+      staleTime: 60000,
     }
   );
 }
@@ -158,13 +187,22 @@ export function useDetectAnomalies(filters?: { userId?: string; tenantId?: strin
 /**
  * Hook to get user actions
  */
-export function useUserActions(userId: string, filters?: { tenantId?: string | null; startDate?: string; endDate?: string; limit?: number; offset?: number }) {
+export function useUserActions(
+  userId: string,
+  filters?: {
+    tenantId?: string | null;
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+    offset?: number;
+  }
+) {
   return useQuery(
     investigationKeys.userActions(userId, filters),
     () => api.superuser.getUserActions(userId, filters),
     {
       enabled: !!userId,
-      staleTime: 30000
+      staleTime: 30000,
     }
   );
 }
@@ -189,7 +227,6 @@ export function useExportCaseAuditTrail() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to export audit trail');
-    }
+    },
   });
 }
-

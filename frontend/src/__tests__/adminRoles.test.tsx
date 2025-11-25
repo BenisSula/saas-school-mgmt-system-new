@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import AdminRoleManagementPage from '../pages/AdminRoleManagementPage';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { DashboardRouteProvider } from '../context/DashboardRouteContext';
+import AdminRoleManagementPage from '../pages/admin/RoleManagementPage';
 
 interface MockUser {
   id: string;
@@ -14,7 +16,7 @@ describe('AdminRoleManagementPage', () => {
   const fetchMock = vi.fn().mockResolvedValue({
     ok: true,
     status: 200,
-    json: async () => [] as MockUser[]
+    json: async () => [] as MockUser[],
   });
   const originalFetch = globalThis.fetch;
 
@@ -25,8 +27,8 @@ describe('AdminRoleManagementPage', () => {
         email: 'teacher@test.com',
         role: 'teacher',
         is_verified: true,
-        created_at: '2025-01-01T00:00:00.000Z'
-      }
+        created_at: '2025-01-01T00:00:00.000Z',
+      },
     ];
 
     fetchMock.mockImplementation((input: string | URL, init?: globalThis.RequestInit) => {
@@ -35,20 +37,20 @@ describe('AdminRoleManagementPage', () => {
         return Promise.resolve({
           ok: true,
           status: 200,
-          json: async () => users
+          json: async () => users,
         });
       }
       if (url.includes('/users/user-1/role') && init?.method === 'PATCH') {
         users = [
           {
             ...users[0],
-            role: 'admin'
-          }
+            role: 'admin',
+          },
         ];
         return Promise.resolve({
           ok: true,
           status: 200,
-          json: async () => users[0]
+          json: async () => users[0],
         });
       }
       throw new Error(`Unhandled fetch call: ${url}`);
@@ -63,7 +65,19 @@ describe('AdminRoleManagementPage', () => {
   });
 
   it('lists users and updates role', async () => {
-    render(<AdminRoleManagementPage />);
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+      },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <DashboardRouteProvider defaultTitle="Test">
+          <AdminRoleManagementPage />
+        </DashboardRouteProvider>
+      </QueryClientProvider>
+    );
 
     const roleSelect = await screen.findByRole('combobox');
     fireEvent.change(roleSelect, { target: { value: 'admin' } });
@@ -72,7 +86,7 @@ describe('AdminRoleManagementPage', () => {
       expect(fetchMock).toHaveBeenCalledWith(
         expect.stringContaining('/users/user-1/role'),
         expect.objectContaining({
-          method: 'PATCH'
+          method: 'PATCH',
         })
       )
     );

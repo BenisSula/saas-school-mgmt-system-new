@@ -1,5 +1,5 @@
 import type { PoolClient } from 'pg';
-import { z } from 'zod';
+// z from zod not used in this file but may be needed for future implementations
 
 export interface PasswordPolicy {
   minLength: number;
@@ -13,9 +13,40 @@ export interface PasswordPolicy {
   lockoutDurationMinutes: number;
 }
 
+/**
+ * CONSOLIDATED: This is the canonical file for password validation.
+ *
+ * CANONICAL REASON: Policy-based approach is more flexible and supports tenant-specific policies
+ *
+ * DUPLICATE TO REMOVE:
+ * - backend/src/middleware/validation.ts:26-53 (validatePasswordStrength function)
+ *
+ * INTERFACE DIFFERENCE:
+ * - passwordPolicyService.ts: Uses 'isValid: boolean' (canonical)
+ * - validation.ts: Uses 'valid: boolean' (needs alignment - see Phase A5)
+ *
+ * STATUS: ✅ COMPLETE - Canonical file ready
+ */
 export interface PasswordValidationResult {
   isValid: boolean;
   errors: string[];
+}
+
+/**
+ * Get default password policy (synchronous, for validation without DB access)
+ */
+export function getDefaultPasswordPolicy(): PasswordPolicy {
+  return {
+    minLength: 8,
+    requireUppercase: true,
+    requireLowercase: true,
+    requireNumbers: true,
+    requireSpecialChars: true, // Match old validation.ts behavior
+    maxAgeDays: 90,
+    preventReuseCount: 5,
+    lockoutAttempts: 5,
+    lockoutDurationMinutes: 30,
+  };
 }
 
 /**
@@ -46,7 +77,7 @@ export async function getPasswordPolicy(
       maxAgeDays: 90,
       preventReuseCount: 5,
       lockoutAttempts: 5,
-      lockoutDurationMinutes: 30
+      lockoutDurationMinutes: 30,
     };
   }
 
@@ -60,7 +91,7 @@ export async function getPasswordPolicy(
     maxAgeDays: policy.max_age_days,
     preventReuseCount: policy.prevent_reuse_count,
     lockoutAttempts: policy.lockout_attempts,
-    lockoutDurationMinutes: policy.lockout_duration_minutes
+    lockoutDurationMinutes: policy.lockout_duration_minutes,
   };
 }
 
@@ -89,13 +120,13 @@ export function validatePassword(
     errors.push('Password must contain at least one number');
   }
 
-  if (policy.requireSpecialChars && !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+  if (policy.requireSpecialChars && !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) {
     errors.push('Password must contain at least one special character');
   }
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -119,7 +150,7 @@ export async function isPasswordReused(
     [userId, preventReuseCount]
   );
 
-  return result.rows.some(row => row.password_hash === passwordHash);
+  return result.rows.some((row) => row.password_hash === passwordHash);
 }
 
 /**
@@ -190,7 +221,7 @@ export async function isAccountLocked(
 
   return {
     locked: true,
-    lockedUntil: result.rows[0].locked_until
+    lockedUntil: result.rows[0].locked_until,
   };
 }
 
@@ -271,20 +302,11 @@ export async function recordFailedLoginAttempt(
 /**
  * Clear failed login attempts (on successful login)
  */
-export async function clearFailedLoginAttempts(
-  client: PoolClient,
-  userId: string
-): Promise<void> {
-  await client.query(
-    'DELETE FROM shared.failed_login_attempts WHERE user_id = $1',
-    [userId]
-  );
+export async function clearFailedLoginAttempts(client: PoolClient, userId: string): Promise<void> {
+  await client.query('DELETE FROM shared.failed_login_attempts WHERE user_id = $1', [userId]);
 
   // Remove lockout if exists
-  await client.query(
-    'DELETE FROM shared.account_lockouts WHERE user_id = $1',
-    [userId]
-  );
+  await client.query('DELETE FROM shared.account_lockouts WHERE user_id = $1', [userId]);
 }
 
 /**
@@ -366,10 +388,9 @@ export async function updatePasswordPolicy(
       policy.preventReuseCount ?? 5,
       policy.lockoutAttempts ?? 5,
       policy.lockoutDurationMinutes ?? 30,
-      ...values
+      ...values,
     ]
   );
 
   return result.rows[0];
 }
-

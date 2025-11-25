@@ -1,6 +1,11 @@
 import type { PoolClient } from 'pg';
 
-export type ResourceType = 'api_calls' | 'storage_gb' | 'users' | 'students' | 'api_requests_per_minute';
+export type ResourceType =
+  | 'api_calls'
+  | 'storage_gb'
+  | 'users'
+  | 'students'
+  | 'api_requests_per_minute';
 export type ResetPeriod = 'hourly' | 'daily' | 'monthly' | 'yearly' | 'never';
 
 export interface QuotaLimit {
@@ -11,6 +16,7 @@ export interface QuotaLimit {
   resetPeriod: ResetPeriod;
   warningThreshold?: number;
   isEnforced: boolean;
+  last_reset_at?: Date | string | null;
 }
 
 export interface CheckQuotaResult {
@@ -47,7 +53,7 @@ export async function getQuotaLimit(
     currentUsage: Number(row.current_usage),
     resetPeriod: row.reset_period,
     warningThreshold: row.warning_threshold ? Number(row.warning_threshold) : undefined,
-    isEnforced: row.is_enforced
+    isEnforced: row.is_enforced,
   };
 }
 
@@ -85,7 +91,7 @@ export async function checkQuota(
 
   // Check warning threshold
   const warning = updatedQuota.warningThreshold
-    ? updatedQuota.currentUsage >= (updatedQuota.limitValue * updatedQuota.warningThreshold / 100)
+    ? updatedQuota.currentUsage >= (updatedQuota.limitValue * updatedQuota.warningThreshold) / 100
     : false;
 
   return { allowed, remaining: Math.max(0, remaining), warning };
@@ -152,10 +158,7 @@ export async function setQuotaLimit(
 /**
  * Reset quota if period has elapsed
  */
-async function maybeResetQuota(
-  client: PoolClient,
-  quota: QuotaLimit
-): Promise<void> {
+async function maybeResetQuota(client: PoolClient, quota: QuotaLimit): Promise<void> {
   const lastReset = new Date(quota.last_reset_at || new Date());
   const now = new Date();
   let shouldReset = false;
@@ -168,7 +171,8 @@ async function maybeResetQuota(
       shouldReset = now.getTime() - lastReset.getTime() >= 24 * 60 * 60 * 1000;
       break;
     case 'monthly':
-      shouldReset = now.getMonth() !== lastReset.getMonth() || now.getFullYear() !== lastReset.getFullYear();
+      shouldReset =
+        now.getMonth() !== lastReset.getMonth() || now.getFullYear() !== lastReset.getFullYear();
       break;
     case 'yearly':
       shouldReset = now.getFullYear() !== lastReset.getFullYear();
@@ -187,13 +191,7 @@ async function maybeResetQuota(
         )
         VALUES ($1, $2, $3, $4, $5)
       `,
-      [
-        quota.tenantId,
-        quota.resourceType,
-        quota.currentUsage,
-        lastReset,
-        now
-      ]
+      [quota.tenantId, quota.resourceType, quota.currentUsage, lastReset, now]
     );
 
     // Reset quota
@@ -242,4 +240,3 @@ export async function getQuotaUsageLogs(
 
   return result.rows;
 }
-

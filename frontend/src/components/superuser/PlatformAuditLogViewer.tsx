@@ -11,7 +11,16 @@ import { formatDateTime } from '../../lib/utils/date';
 import { formatRequestId, formatUserAgent } from '../../utils/formatters';
 import { TagsCell } from './shared/TagsCell';
 import { AuditDetailsModal } from './shared/AuditDetailsModal';
-import { FileText, Download, AlertCircle, AlertTriangle, Info, XCircle, Eye, Monitor } from 'lucide-react';
+import {
+  FileText,
+  Download,
+  AlertCircle,
+  AlertTriangle,
+  Info,
+  XCircle,
+  Eye,
+  Monitor,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 export interface PlatformAuditLogViewerProps {
@@ -25,16 +34,19 @@ export interface PlatformAuditLogViewerProps {
 
 const SEVERITY_COLORS: Record<string, string> = {
   info: 'bg-[var(--brand-info)]/20 text-[var(--brand-info)] border-[var(--brand-info)]/30',
-  warning: 'bg-[var(--brand-warning)]/20 text-[var(--brand-warning)] border-[var(--brand-warning)]/30',
+  warning:
+    'bg-[var(--brand-warning)]/20 text-[var(--brand-warning)] border-[var(--brand-warning)]/30',
   error: 'bg-[var(--brand-error)]/20 text-[var(--brand-error)] border-[var(--brand-error)]/30',
-  critical: 'bg-[var(--brand-error)]/30 text-[var(--brand-error)] border-[var(--brand-error)]/50'
+  critical: 'bg-[var(--brand-error)]/30 text-[var(--brand-error)] border-[var(--brand-error)]/50',
 };
 
-const SEVERITY_ICONS: Record<string, React.ReactNode> = {
+import type { ReactNode } from 'react';
+
+const SEVERITY_ICONS: Record<string, ReactNode> = {
   info: <Info className="h-4 w-4" />,
   warning: <AlertTriangle className="h-4 w-4" />,
   error: <XCircle className="h-4 w-4" />,
-  critical: <AlertCircle className="h-4 w-4" />
+  critical: <AlertCircle className="h-4 w-4" />,
 };
 
 export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLogViewerProps) {
@@ -42,9 +54,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [quickRange, setQuickRange] = useState<'7' | '30' | '90' | 'all'>('7');
-  const [severityFilter, setSeverityFilter] = useState<string>(
-    initialFilters.severity || 'all'
-  );
+  const [severityFilter, setSeverityFilter] = useState<string>(initialFilters.severity || 'all');
   const [actionFilter, setActionFilter] = useState<string>(initialFilters.action || 'all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
@@ -62,7 +72,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
       currentPage,
       pageSize,
       initialFilters.tenantId,
-      initialFilters.userId
+      initialFilters.userId,
     ],
     queryFn: async () => {
       const filters: {
@@ -75,7 +85,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
         limit?: number;
         offset?: number;
       } = {
-        ...initialFilters
+        ...initialFilters,
       };
 
       if (startDate) filters.startDate = new Date(startDate).toISOString();
@@ -88,7 +98,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
       filters.offset = (currentPage - 1) * pageSize;
 
       return await api.superuser.getPlatformAuditLogs(filters);
-    }
+    },
   });
 
   const handleExport = async (format: 'csv' | 'json' = 'json') => {
@@ -103,7 +113,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
         format?: 'csv' | 'json';
       } = {
         ...initialFilters,
-        format
+        format,
       };
 
       if (startDate) filters.startDate = new Date(startDate).toISOString();
@@ -140,7 +150,9 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
           log.resourceType?.toLowerCase().includes(term) ||
           log.resourceId?.toLowerCase().includes(term) ||
           log.userEmail?.toLowerCase().includes(term) ||
-          JSON.stringify(log.details || {}).toLowerCase().includes(term)
+          JSON.stringify(log.details || {})
+            .toLowerCase()
+            .includes(term)
       );
     }
 
@@ -165,7 +177,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
             </span>
           );
         },
-        sortable: true
+        sortable: true,
       },
       {
         key: 'severity',
@@ -181,7 +193,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
             </span>
           );
         },
-        sortable: true
+        sortable: true,
       },
       {
         key: 'action',
@@ -194,7 +206,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
             </span>
           </div>
         ),
-        sortable: true
+        sortable: true,
       },
       {
         key: 'resourceType',
@@ -208,7 +220,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
               </div>
             )}
           </div>
-        )
+        ),
       },
       {
         key: 'userEmail',
@@ -217,7 +229,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
           <span className="text-[var(--brand-text-secondary)]">
             {log.userEmail || log.userId || 'System'}
           </span>
-        )
+        ),
       },
       {
         key: 'ipAddress',
@@ -226,7 +238,7 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
           <span className="text-[var(--brand-text-secondary)] font-mono text-sm">
             {log.ipAddress || '—'}
           </span>
-        )
+        ),
       },
       {
         key: 'userAgent',
@@ -234,11 +246,14 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
         render: (log) => (
           <div className="flex items-center gap-2">
             <Monitor className="h-4 w-4 text-[var(--brand-muted)]" />
-            <span className="text-[var(--brand-text-secondary)] text-sm truncate max-w-xs" title={log.userAgent || undefined}>
+            <span
+              className="text-[var(--brand-text-secondary)] text-sm truncate max-w-xs"
+              title={log.userAgent || undefined}
+            >
               {formatUserAgent(log.userAgent)}
             </span>
           </div>
-        )
+        ),
       },
       {
         key: 'requestId',
@@ -247,12 +262,12 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
           <span className="text-[var(--brand-text-secondary)] font-mono text-xs">
             {formatRequestId(log.requestId)}
           </span>
-        )
+        ),
       },
       {
         key: 'tags',
         header: 'Tags',
-        render: (log) => <TagsCell tags={log.tags} maxDisplay={3} />
+        render: (log) => <TagsCell tags={log.tags} maxDisplay={3} />,
       },
       {
         key: 'actions',
@@ -269,8 +284,8 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
           >
             View Details
           </Button>
-        )
-      }
+        ),
+      },
     ],
     []
   );
@@ -367,8 +382,8 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
                   { label: 'Info', value: 'info' },
                   { label: 'Warning', value: 'warning' },
                   { label: 'Error', value: 'error' },
-                  { label: 'Critical', value: 'critical' }
-                ]
+                  { label: 'Critical', value: 'critical' },
+                ],
               },
               {
                 label: 'Action',
@@ -376,9 +391,9 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
                 onChange: setActionFilter,
                 options: [
                   { label: 'All Actions', value: 'all' },
-                  ...uniqueActions.map((action) => ({ label: action, value: action }))
-                ]
-              }
+                  ...uniqueActions.map((action) => ({ label: action, value: action })),
+                ],
+              },
             ]}
             onClearFilters={handleClearFilters}
           />
@@ -432,4 +447,3 @@ export function PlatformAuditLogViewer({ initialFilters = {} }: PlatformAuditLog
     </div>
   );
 }
-

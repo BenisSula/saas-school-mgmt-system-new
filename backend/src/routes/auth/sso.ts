@@ -7,14 +7,14 @@ import {
   createSamlProvider,
   getSamlProviders,
   generateSamlAuthnRequest,
-  processSamlResponse
+  processSamlResponse,
 } from '../../services/sso/samlService';
 import {
   createOAuthProvider,
   getOAuthProviders,
   generateOAuthAuthorizationUrl,
   processOAuthCallback,
-  refreshOAuthToken
+  refreshOAuthToken,
 } from '../../services/sso/oauthService';
 import { z } from 'zod';
 import crypto from 'crypto';
@@ -31,7 +31,7 @@ const createSamlProviderSchema = z.object({
   certificate: z.string().min(1),
   jitProvisioning: z.boolean().optional(),
   jitDefaultRole: z.string().optional(),
-  attributeMapping: z.record(z.string(), z.string()).optional()
+  attributeMapping: z.record(z.string(), z.string()).optional(),
 });
 
 const createOAuthProviderSchema = z.object({
@@ -46,7 +46,7 @@ const createOAuthProviderSchema = z.object({
   scopes: z.array(z.string()).optional(),
   jitProvisioning: z.boolean().optional(),
   jitDefaultRole: z.string().optional(),
-  attributeMapping: z.record(z.string(), z.string()).optional()
+  attributeMapping: z.record(z.string(), z.string()).optional(),
 });
 
 // SAML SSO
@@ -65,29 +65,34 @@ router.get('/saml/providers', tenantResolver({ optional: true }), async (req, re
   }
 });
 
-router.post('/saml/providers', authenticate, requirePermission('tenants:manage'), async (req, res, next) => {
-  try {
-    const parsed = createSamlProviderSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ message: parsed.error.message });
-    }
-
-    const pool = getPool();
-    const client = await pool.connect();
+router.post(
+  '/saml/providers',
+  authenticate,
+  requirePermission('tenants:manage'),
+  async (req, res, next) => {
     try {
-      const provider = await createSamlProvider(client, {
-        ...parsed.data,
-        tenantId: req.tenant?.id,
-        createdBy: req.user?.id
-      });
-      res.status(201).json(provider);
-    } finally {
-      client.release();
+      const parsed = createSamlProviderSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.message });
+      }
+
+      const pool = getPool();
+      const client = await pool.connect();
+      try {
+        const provider = await createSamlProvider(client, {
+          ...parsed.data,
+          tenantId: req.tenant?.id,
+          createdBy: req.user?.id,
+        });
+        res.status(201).json(provider);
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      next(error);
     }
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 router.post('/saml/initiate', tenantResolver({ optional: true }), async (req, res, next) => {
   try {
@@ -99,8 +104,17 @@ router.post('/saml/initiate', tenantResolver({ optional: true }), async (req, re
     const pool = getPool();
     const client = await pool.connect();
     try {
-      const providers = await getSamlProviders(client, req.tenant?.id) as Array<{ id: string }>;
-      const provider = providers.find((p) => p.id === providerId);
+      const providers = await getSamlProviders(client, req.tenant?.id);
+      const provider = providers.find((p: unknown) => {
+        const typed = p as { id: string };
+        return typed.id === providerId;
+      }) as
+        | {
+            id: string;
+            entity_id: string;
+            sso_url: string;
+          }
+        | undefined;
 
       if (!provider) {
         return res.status(404).json({ message: 'SAML provider not found' });
@@ -109,8 +123,8 @@ router.post('/saml/initiate', tenantResolver({ optional: true }), async (req, re
       // Generate SAML AuthnRequest
       const acsUrl = `${req.protocol}://${req.get('host')}/api/auth/sso/saml/acs`;
       const samlRequest = generateSamlAuthnRequest(
-        (provider as { entity_id: string }).entity_id,
-        (provider as { sso_url: string }).sso_url,
+        provider.entity_id,
+        provider.sso_url,
         acsUrl,
         relayState
       );
@@ -120,8 +134,8 @@ router.post('/saml/initiate', tenantResolver({ optional: true }), async (req, re
 
       res.json({
         samlRequest,
-        ssoUrl: (provider as { sso_url: string }).sso_url,
-        relayState: state
+        ssoUrl: provider.sso_url,
+        relayState: state,
       });
     } finally {
       client.release();
@@ -139,7 +153,7 @@ router.post('/saml/acs', tenantResolver({ optional: true }), async (req, res, ne
     }
 
     // Extract provider ID from RelayState or session
-    const providerId = RelayState?.split(':')[0] || req.query.providerId as string;
+    const providerId = RelayState?.split(':')[0] || (req.query.providerId as string);
     if (!providerId) {
       return res.status(400).json({ message: 'Provider ID required' });
     }
@@ -155,7 +169,7 @@ router.post('/saml/acs', tenantResolver({ optional: true }), async (req, res, ne
         success: true,
         userId: result.userId,
         email: result.email,
-        isNewUser: result.isNewUser
+        isNewUser: result.isNewUser,
       });
     } finally {
       client.release();
@@ -181,29 +195,34 @@ router.get('/oauth/providers', tenantResolver({ optional: true }), async (req, r
   }
 });
 
-router.post('/oauth/providers', authenticate, requirePermission('tenants:manage'), async (req, res, next) => {
-  try {
-    const parsed = createOAuthProviderSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ message: parsed.error.message });
-    }
-
-    const pool = getPool();
-    const client = await pool.connect();
+router.post(
+  '/oauth/providers',
+  authenticate,
+  requirePermission('tenants:manage'),
+  async (req, res, next) => {
     try {
-      const provider = await createOAuthProvider(client, {
-        ...parsed.data,
-        tenantId: req.tenant?.id,
-        createdBy: req.user?.id
-      });
-      res.status(201).json(provider);
-    } finally {
-      client.release();
+      const parsed = createOAuthProviderSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.message });
+      }
+
+      const pool = getPool();
+      const client = await pool.connect();
+      try {
+        const provider = await createOAuthProvider(client, {
+          ...parsed.data,
+          tenantId: req.tenant?.id,
+          createdBy: req.user?.id,
+        });
+        res.status(201).json(provider);
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      next(error);
     }
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 router.get('/oauth/authorize', tenantResolver({ optional: true }), async (req, res, next) => {
   try {
@@ -215,20 +234,27 @@ router.get('/oauth/authorize', tenantResolver({ optional: true }), async (req, r
     const pool = getPool();
     const client = await pool.connect();
     try {
-      const providers = await getOAuthProviders(client, req.tenant?.id) as Array<{ id: string }>;
+      const providers = (await getOAuthProviders(client, req.tenant?.id)) as Array<{ id: string }>;
       const provider = providers.find((p) => p.id === providerId);
 
       if (!provider) {
         return res.status(404).json({ message: 'OAuth provider not found' });
       }
 
+      const typedProvider = provider as {
+        id: string;
+        scopes?: string[];
+        authorization_url: string;
+        client_id: string;
+      };
+
       const redirectUri = `${req.protocol}://${req.get('host')}/api/auth/sso/oauth/callback`;
       const state = crypto.randomBytes(16).toString('hex');
-      const scopes = (provider as { scopes: string[] }).scopes || ['openid', 'profile', 'email'];
+      const scopes = typedProvider.scopes || ['openid', 'profile', 'email'];
 
       const authUrl = generateOAuthAuthorizationUrl(
-        (provider as { authorization_url: string }).authorization_url,
-        (provider as { client_id: string }).client_id,
+        typedProvider.authorization_url,
+        typedProvider.client_id,
         redirectUri,
         scopes,
         state
@@ -237,7 +263,7 @@ router.get('/oauth/authorize', tenantResolver({ optional: true }), async (req, r
       // Store state in session or return it
       res.json({
         authorizationUrl: authUrl,
-        state
+        state,
       });
     } finally {
       client.release();
@@ -271,7 +297,7 @@ router.get('/oauth/callback', tenantResolver({ optional: true }), async (req, re
         success: true,
         userId: result.userId,
         email: result.email,
-        isNewUser: result.isNewUser
+        isNewUser: result.isNewUser,
       });
     } finally {
       client.release();
@@ -302,4 +328,3 @@ router.post('/oauth/refresh', authenticate, async (req, res, next) => {
 });
 
 export default router;
-

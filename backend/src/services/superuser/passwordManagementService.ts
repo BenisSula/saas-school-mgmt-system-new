@@ -1,6 +1,7 @@
 import argon2 from 'argon2';
-import crypto from 'crypto';
-import { Pool, PoolClient } from 'pg';
+// crypto not used in this file but may be needed for future implementations
+import type { Pool } from 'pg';
+// PoolClient type not used in this file but may be needed for future implementations
 import { requireSuperuser, isSuperuser } from '../../lib/superuserHelpers';
 import { Role } from '../../config/permissions';
 import { createAuditLog } from '../audit/enhancedAuditService';
@@ -63,11 +64,11 @@ export async function adminResetPassword(
     `SELECT id, email, role, tenant_id FROM shared.users WHERE id = $1`,
     [userId]
   );
-  
+
   if (userResult.rows.length === 0) {
     throw new Error('User not found');
   }
-  
+
   const user = userResult.rows[0];
   const tenantId = user.tenant_id || null;
 
@@ -79,27 +80,30 @@ export async function adminResetPassword(
     const lowercase = 'abcdefghijkmnopqrstuvwxyz'; // Exclude l, o
     const numbers = '23456789'; // Exclude 0, 1
     const allChars = uppercase + lowercase + numbers;
-    
+
     let password = '';
     // Ensure at least one of each type for security
     password += uppercase[Math.floor(Math.random() * uppercase.length)];
     password += lowercase[Math.floor(Math.random() * lowercase.length)];
     password += numbers[Math.floor(Math.random() * numbers.length)];
-    
+
     // Fill the rest randomly (total 12 characters)
     for (let i = password.length; i < 12; i++) {
       password += allChars[Math.floor(Math.random() * allChars.length)];
     }
-    
+
     // Shuffle the password to randomize character positions
-    return password.split('').sort(() => Math.random() - 0.5).join('');
+    return password
+      .split('')
+      .sort(() => Math.random() - 0.5)
+      .join('');
   };
-  
+
   const temporaryPassword = generateSecurePassword();
-  
+
   // Ensure password is a clean string (no whitespace issues)
   const cleanPassword = temporaryPassword.trim();
-  
+
   // Use argon2.hash with default options (argon2 stores options in hash, verify will work automatically)
   // This ensures compatibility with login verification
   const passwordHash = await argon2.hash(cleanPassword);
@@ -127,7 +131,10 @@ export async function adminResetPassword(
   try {
     const verifyTest = await argon2.verify(storedHash, cleanPassword);
     if (!verifyTest) {
-      console.error('[passwordManagementService] Password verification test failed for user:', updateResult.rows[0].email);
+      console.error(
+        '[passwordManagementService] Password verification test failed for user:',
+        updateResult.rows[0].email
+      );
       throw new Error('Password hash verification failed - password may not work for login');
     }
   } catch (verifyError) {
@@ -151,14 +158,17 @@ export async function adminResetPassword(
         adminUserId,
         ipAddress || null,
         userAgent || null,
-        JSON.stringify({ reason: reason || null, temporaryPassword: true })
+        JSON.stringify({ reason: reason || null, temporaryPassword: true }),
       ]
     );
   } catch (historyError: unknown) {
     // If table doesn't exist, log warning but don't fail the password reset
-    const errorMessage = historyError instanceof Error ? historyError.message : String(historyError);
+    const errorMessage =
+      historyError instanceof Error ? historyError.message : String(historyError);
     if (errorMessage.includes('does not exist') || errorMessage.includes('relation')) {
-      console.warn('[passwordManagementService] Password change history table not found. Please run migration 016_password_change_history.sql');
+      console.warn(
+        '[passwordManagementService] Password change history table not found. Please run migration 016_password_change_history.sql'
+      );
     } else {
       // Re-throw other errors
       throw historyError;
@@ -166,10 +176,9 @@ export async function adminResetPassword(
   }
 
   // Get user email for notification
-  const userEmailResult = await pool.query(
-    `SELECT email FROM shared.users WHERE id = $1`,
-    [userId]
-  );
+  const userEmailResult = await pool.query(`SELECT email FROM shared.users WHERE id = $1`, [
+    userId,
+  ]);
   const userEmail = userEmailResult.rows[0]?.email;
 
   // Audit log - get a client from pool
@@ -184,12 +193,12 @@ export async function adminResetPassword(
       details: {
         targetUserId: userId,
         targetUserEmail: userEmail,
-        reason: reason || undefined
+        reason: reason || undefined,
       },
       ipAddress: ipAddress || undefined,
       userAgent: userAgent || undefined,
       severity: 'critical',
-      tags: ['password_reset', 'security']
+      tags: ['password_reset', 'security'],
     });
 
     // Send email notification to affected user
@@ -203,13 +212,16 @@ export async function adminResetPassword(
             temporaryPassword: cleanPassword,
             reason: reason || 'Administrative password reset',
             resetBy: adminUserId,
-            resetAt: new Date().toISOString()
+            resetAt: new Date().toISOString(),
           },
-          priority: 1 // High priority
+          priority: 1, // High priority
         });
       } catch (emailError) {
         // Log email error but don't fail the password reset
-        console.error('[passwordManagementService] Failed to send password reset notification:', emailError);
+        console.error(
+          '[passwordManagementService] Failed to send password reset notification:',
+          emailError
+        );
       }
     }
   } finally {
@@ -250,17 +262,17 @@ export async function adminForceChangePassword(
     `SELECT id, email, role, tenant_id FROM shared.users WHERE id = $1`,
     [userId]
   );
-  
+
   if (userResult.rows.length === 0) {
     throw new Error('User not found');
   }
-  
+
   const user = userResult.rows[0];
   const tenantId = user.tenant_id || null;
 
   // Ensure password is a clean string (no whitespace issues)
   const cleanPassword = newPassword.trim();
-  
+
   // Use argon2.hash with default options (argon2 stores options in hash, verify will work automatically)
   // This ensures compatibility with login verification which uses default options
   const passwordHash = await argon2.hash(cleanPassword);
@@ -288,7 +300,10 @@ export async function adminForceChangePassword(
   try {
     const verifyTest = await argon2.verify(storedHash, cleanPassword);
     if (!verifyTest) {
-      console.error('[passwordManagementService] Password verification test failed for user:', updateResult.rows[0].email);
+      console.error(
+        '[passwordManagementService] Password verification test failed for user:',
+        updateResult.rows[0].email
+      );
       throw new Error('Password hash verification failed - password may not work for login');
     }
   } catch (verifyError) {
@@ -312,14 +327,17 @@ export async function adminForceChangePassword(
         adminUserId,
         ipAddress || null,
         userAgent || null,
-        JSON.stringify({ reason: reason || undefined })
+        JSON.stringify({ reason: reason || undefined }),
       ]
     );
   } catch (historyError: unknown) {
     // If table doesn't exist, log warning but don't fail the password change
-    const errorMessage = historyError instanceof Error ? historyError.message : String(historyError);
+    const errorMessage =
+      historyError instanceof Error ? historyError.message : String(historyError);
     if (errorMessage.includes('does not exist') || errorMessage.includes('relation')) {
-      console.warn('[passwordManagementService] Password change history table not found. Please run migration 016_password_change_history.sql');
+      console.warn(
+        '[passwordManagementService] Password change history table not found. Please run migration 016_password_change_history.sql'
+      );
     } else {
       // Re-throw other errors
       throw historyError;
@@ -327,10 +345,9 @@ export async function adminForceChangePassword(
   }
 
   // Get user email for notification
-  const userEmailResult = await pool.query(
-    `SELECT email FROM shared.users WHERE id = $1`,
-    [userId]
-  );
+  const userEmailResult = await pool.query(`SELECT email FROM shared.users WHERE id = $1`, [
+    userId,
+  ]);
   const userEmail = userEmailResult.rows[0]?.email;
 
   // Audit log - get a client from pool
@@ -345,12 +362,12 @@ export async function adminForceChangePassword(
       details: {
         targetUserId: userId,
         targetUserEmail: userEmail,
-        reason: reason || null
+        reason: reason || null,
       },
       ipAddress: ipAddress || undefined,
       userAgent: userAgent || undefined,
       severity: 'critical',
-      tags: ['password_change', 'security']
+      tags: ['password_change', 'security'],
     });
 
     // Send email notification to affected user
@@ -363,13 +380,16 @@ export async function adminForceChangePassword(
           variables: {
             reason: reason || 'Administrative password change',
             changedBy: adminUserId,
-            changedAt: new Date().toISOString()
+            changedAt: new Date().toISOString(),
           },
-          priority: 1 // High priority
+          priority: 1, // High priority
         });
       } catch (emailError) {
         // Log email error but don't fail the password change
-        console.error('[passwordManagementService] Failed to send password change notification:', emailError);
+        console.error(
+          '[passwordManagementService] Failed to send password change notification:',
+          emailError
+        );
       }
     }
   } finally {
@@ -470,10 +490,11 @@ export async function getPasswordHistory(
 
     return {
       history: historyResult.rows.map(mapRowToHistory),
-      total
+      total,
     };
   } catch (historyError: unknown) {
-    const errorMessage = historyError instanceof Error ? historyError.message : String(historyError);
+    const errorMessage =
+      historyError instanceof Error ? historyError.message : String(historyError);
     if (errorMessage.includes('does not exist') || errorMessage.includes('relation')) {
       // Table doesn't exist, return empty history
       return { history: [], total: 0 };
@@ -501,7 +522,7 @@ function mapRowToHistory(row: {
 }): PasswordChangeHistory {
   // Normalize device info from userAgent
   const deviceInfo = normalizeDeviceInfo(null, row.user_agent);
-  
+
   return {
     id: row.id,
     userId: row.user_id,
@@ -515,7 +536,6 @@ function mapRowToHistory(row: {
     userAgent: row.user_agent,
     deviceInfo,
     changedAt: row.changed_at,
-    metadata: (row.metadata as Record<string, unknown>) || {}
+    metadata: (row.metadata as Record<string, unknown>) || {},
   };
 }
-

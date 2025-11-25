@@ -90,7 +90,7 @@ export async function findTeacherByEmail(
     id: row.id,
     name: row.name,
     email: row.email,
-    subjects: parseJson<string[]>(row.subjects, [])
+    subjects: parseJson<string[]>(row.subjects, []),
   };
 }
 
@@ -127,7 +127,7 @@ export async function listTeacherAssignmentsRows(
     subjectName: row.subject_name,
     subjectCode: row.subject_code,
     isClassTeacher: row.is_class_teacher,
-    metadata: parseJson<Record<string, unknown>>(row.metadata, {})
+    metadata: parseJson<Record<string, unknown>>(row.metadata, {}),
   }));
 }
 
@@ -149,7 +149,7 @@ export async function listTeacherClasses(client: PoolClient, schema: string, tea
       id: assignment.subjectId,
       name: assignment.subjectName,
       code: assignment.subjectCode,
-      assignmentId: assignment.assignmentId
+      assignmentId: assignment.assignmentId,
     };
     if (existing) {
       existing.subjects.push(subjectEntry);
@@ -159,14 +159,14 @@ export async function listTeacherClasses(client: PoolClient, schema: string, tea
         id: assignment.classId,
         name: assignment.className,
         isClassTeacher: assignment.isClassTeacher,
-        subjects: [subjectEntry]
+        subjects: [subjectEntry],
       });
     }
   }
 
   return Array.from(grouped.values()).map((clazz) => ({
     ...clazz,
-    subjects: clazz.subjects.sort((a, b) => a.name.localeCompare(b.name))
+    subjects: clazz.subjects.sort((a, b) => a.name.localeCompare(b.name)),
   }));
 }
 
@@ -179,7 +179,7 @@ function buildAssignmentSummary(row: TeacherAssignmentRow) {
     subjectName: row.subjectName,
     subjectCode: row.subjectCode,
     isClassTeacher: row.isClassTeacher,
-    metadata: row.metadata
+    metadata: row.metadata,
   };
 }
 
@@ -200,15 +200,15 @@ export async function getTeacherOverview(
     teacher: {
       id: teacher.id,
       name: teacher.name,
-      email: teacher.email ?? null
+      email: teacher.email ?? null,
     },
     summary: {
       totalClasses,
       totalSubjects,
       classTeacherRoles,
-      pendingDropRequests
+      pendingDropRequests,
     },
-    assignments: assignments.map(buildAssignmentSummary)
+    assignments: assignments.map(buildAssignmentSummary),
   };
 }
 
@@ -247,7 +247,7 @@ export async function getTeacherClassRoster(
       last_name: row.last_name,
       admission_number: row.admission_number,
       parent_contacts: parseJson<unknown[]>(row.parent_contacts, []),
-      class_id: row.class_id
+      class_id: row.class_id,
     }));
   } catch (error) {
     console.error('getTeacherClassRoster error:', error);
@@ -284,7 +284,7 @@ export async function requestAssignmentDrop(
   const updatedMetadata = {
     ...existingMetadata,
     dropRequested: true,
-    dropRequestedAt: new Date().toISOString()
+    dropRequestedAt: new Date().toISOString(),
   };
 
   await client.query(
@@ -297,7 +297,7 @@ export async function requestAssignmentDrop(
   );
 
   const classResult = await client.query(`SELECT name FROM ${schema}.classes WHERE id = $1`, [
-    assignmentRow.class_id
+    assignmentRow.class_id,
   ]);
   const subjectResult = await client.query(
     `SELECT name, code FROM ${schema}.subjects WHERE id = $1`,
@@ -312,7 +312,7 @@ export async function requestAssignmentDrop(
     subjectName: subjectResult.rows[0]?.name ?? 'Unknown subject',
     subjectCode: subjectResult.rows[0]?.code ?? null,
     isClassTeacher: assignmentRow.is_class_teacher,
-    metadata: updatedMetadata
+    metadata: updatedMetadata,
   });
 }
 
@@ -354,7 +354,7 @@ export async function getTeacherClassReport(
   }
 
   const classResult = await client.query(`SELECT name FROM ${schema}.classes WHERE id = $1`, [
-    classId
+    classId,
   ]);
   const className = classResult.rows[0]?.name ?? 'Class';
 
@@ -404,7 +404,7 @@ export async function getTeacherClassReport(
           WHERE s.class_uuid = $1
         `,
         [classId]
-      )
+      ),
     ]);
 
     const studentCount = Number(studentResult.rows[0]?.count ?? '0');
@@ -427,7 +427,7 @@ export async function getTeacherClassReport(
     return {
       class: {
         id: classId,
-        name: className
+        name: className,
       },
       studentCount,
       attendance: {
@@ -435,19 +435,19 @@ export async function getTeacherClassReport(
         absent: attendanceCounts.absent,
         late: attendanceCounts.late,
         total: attendanceCounts.total,
-        percentage: attendancePercentage
+        percentage: attendancePercentage,
       },
       grades: gradeResult.rows.map((row) => ({
         subject: row.subject,
         entries: Number(row.entries),
-        average: Number.isFinite(row.average) ? Math.round(row.average * 10) / 10 : 0
+        average: Number.isFinite(row.average) ? Math.round(row.average * 10) / 10 : 0,
       })),
       fees: {
         billed,
         paid,
-        outstanding: billed - paid
+        outstanding: billed - paid,
       },
-      generatedAt: new Date().toISOString()
+      generatedAt: new Date().toISOString(),
     };
   } catch (error) {
     console.error('getTeacherClassReport error:', error);
@@ -532,7 +532,7 @@ export async function listTeacherMessages(
       classId: clazz.id,
       className: clazz.name,
       timestamp: now.toISOString(),
-      status: 'info'
+      status: 'info',
     }));
 
   const generalMessage = {
@@ -542,7 +542,7 @@ export async function listTeacherMessages(
     classId: null,
     className: null,
     timestamp: now.toISOString(),
-    status: 'unread'
+    status: 'unread',
   };
 
   return [generalMessage, ...classroomMessages];
@@ -563,7 +563,7 @@ export async function getTeacherProfileDetail(
       id: clazz.id,
       name: clazz.name,
       subjects: clazz.subjects.map((subject) => subject.name),
-      isClassTeacher: clazz.isClassTeacher
-    }))
+      isClassTeacher: clazz.isClassTeacher,
+    })),
   };
 }

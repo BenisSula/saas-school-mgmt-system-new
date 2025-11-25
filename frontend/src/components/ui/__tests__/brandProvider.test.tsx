@@ -8,9 +8,9 @@ vi.mock('../../../lib/api', () => ({
     getBranding: vi.fn().mockResolvedValue({
       primary_color: '#000000',
       secondary_color: '#ffffff',
-      logo_url: 'https://example.com/logo.png'
-    })
-  }
+      logo_url: 'https://example.com/logo.png',
+    }),
+  },
 }));
 
 import { api } from '../../../lib/api';

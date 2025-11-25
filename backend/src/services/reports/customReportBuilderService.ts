@@ -37,32 +37,29 @@ export interface CustomReportInput {
 /**
  * Build SQL query from custom report configuration
  */
-function buildCustomReportQuery(
-  tenantSchema: string,
-  config: CustomReportInput
-): string {
+function buildCustomReportQuery(tenantSchema: string, config: CustomReportInput): string {
   assertValidSchemaName(tenantSchema);
 
   let query = 'SELECT ';
 
   // Check if any columns have aggregations
-  const hasAggregations = config.selectedColumns.some(col => col.aggregate);
-  
+  const hasAggregations = config.selectedColumns.some((col) => col.aggregate);
+
   // Build SELECT clause
   const selectParts: string[] = [];
   const nonAggregatedColumns: string[] = [];
-  
+
   for (const col of config.selectedColumns) {
     let selectExpr = `${tenantSchema}.${col.table}.${col.column}`;
     const columnAlias = col.alias || `${col.table}_${col.column}`;
-    
+
     if (col.aggregate) {
       selectExpr = `${col.aggregate.toUpperCase()}(${selectExpr})`;
     } else {
       // Track non-aggregated columns for GROUP BY
       nonAggregatedColumns.push(`${tenantSchema}.${col.table}.${col.column}`);
     }
-    
+
     selectExpr += ` AS ${columnAlias}`;
     selectParts.push(selectExpr);
   }
@@ -89,7 +86,7 @@ function buildCustomReportQuery(
       let columnRef = filter.column;
       // If column doesn't have schema.table prefix, try to find it from selectedColumns
       if (!columnRef.includes('.')) {
-        const matchingCol = config.selectedColumns.find(c => c.column === filter.column);
+        const matchingCol = config.selectedColumns.find((c) => c.column === filter.column);
         if (matchingCol) {
           columnRef = `${tenantSchema}.${matchingCol.table}.${filter.column}`;
         } else {
@@ -97,11 +94,11 @@ function buildCustomReportQuery(
           columnRef = `${tenantSchema}.${config.dataSources[0]}.${filter.column}`;
         }
       }
-      
+
       let condition = `${columnRef} ${filter.operator}`;
       if (filter.operator === 'IN') {
         const values = Array.isArray(filter.value)
-          ? filter.value.map(v => `'${String(v).replace(/'/g, "''")}'`).join(', ')
+          ? filter.value.map((v) => `'${String(v).replace(/'/g, "''")}'`).join(', ')
           : `'${String(filter.value).replace(/'/g, "''")}'`;
         condition += ` (${values})`;
       } else if (filter.operator === 'BETWEEN') {
@@ -128,11 +125,11 @@ function buildCustomReportQuery(
   if (hasAggregations) {
     if (config.groupBy && config.groupBy.length > 0) {
       // Use provided groupBy columns, fully qualify them
-      const groupByParts = config.groupBy.map(col => {
+      const groupByParts = config.groupBy.map((col) => {
         if (col.includes('.')) {
           return col;
         }
-        const matchingCol = config.selectedColumns.find(c => c.column === col);
+        const matchingCol = config.selectedColumns.find((c) => c.column === col);
         if (matchingCol) {
           return `${tenantSchema}.${matchingCol.table}.${col}`;
         }
@@ -145,11 +142,11 @@ function buildCustomReportQuery(
     }
   } else if (config.groupBy && config.groupBy.length > 0) {
     // No aggregations but groupBy specified
-    const groupByParts = config.groupBy.map(col => {
+    const groupByParts = config.groupBy.map((col) => {
       if (col.includes('.')) {
         return col;
       }
-      const matchingCol = config.selectedColumns.find(c => c.column === col);
+      const matchingCol = config.selectedColumns.find((c) => c.column === col);
       if (matchingCol) {
         return `${tenantSchema}.${matchingCol.table}.${col}`;
       }
@@ -160,11 +157,11 @@ function buildCustomReportQuery(
 
   // Build ORDER BY clause
   if (config.orderBy && config.orderBy.length > 0) {
-    const orderParts = config.orderBy.map(order => {
+    const orderParts = config.orderBy.map((order) => {
       let orderCol = order.column;
       // Fully qualify column references
       if (!orderCol.includes('.')) {
-        const matchingCol = config.selectedColumns.find(c => c.column === order.column);
+        const matchingCol = config.selectedColumns.find((c) => c.column === order.column);
         if (matchingCol) {
           orderCol = `${tenantSchema}.${matchingCol.table}.${order.column}`;
         } else {
@@ -188,7 +185,7 @@ export async function createCustomReport(
   input: CustomReportInput
 ): Promise<unknown> {
   // Build query to validate it
-  const query = buildCustomReportQuery(tenantSchema, input);
+  buildCustomReportQuery(tenantSchema, input);
 
   // Test query (just validate syntax, don't execute)
   // In production, you might want to execute with LIMIT 1 to validate
@@ -218,13 +215,13 @@ export async function createCustomReport(
       JSON.stringify(input.orderBy || []),
       JSON.stringify(
         input.selectedColumns
-          .filter(col => col.aggregate)
-          .map(col => ({ column: col.column, aggregate: col.aggregate }))
+          .filter((col) => col.aggregate)
+          .map((col) => ({ column: col.column, aggregate: col.aggregate }))
       ),
       input.visualizationType || 'table',
       input.rolePermissions || [],
       input.isShared || false,
-      input.createdBy || null
+      input.createdBy || null,
     ]
   );
 
@@ -244,10 +241,9 @@ export async function executeCustomReport(
   rowCount: number;
 }> {
   // Get custom report
-  const reportResult = await client.query(
-    'SELECT * FROM shared.custom_reports WHERE id = $1',
-    [customReportId]
-  );
+  const reportResult = await client.query('SELECT * FROM shared.custom_reports WHERE id = $1', [
+    customReportId,
+  ]);
 
   if (reportResult.rowCount === 0) {
     throw new Error('Custom report not found');
@@ -264,7 +260,7 @@ export async function executeCustomReport(
     selectedColumns: report.selected_columns,
     filters: report.filters || [],
     groupBy: report.group_by,
-    orderBy: report.order_by || []
+    orderBy: report.order_by || [],
   };
 
   const query = buildCustomReportQuery(tenantSchema, config);
@@ -272,18 +268,22 @@ export async function executeCustomReport(
   // Execute query
   const startTime = Date.now();
   const result = await client.query(query);
-  const executionTimeMs = Date.now() - startTime;
+  // Execution time calculated but not used yet - kept for future performance tracking
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _executionTimeMs = Date.now() - startTime;
 
   // Build columns metadata from selectedColumns
-  const columns = config.selectedColumns.map(col => ({
+  const columns = config.selectedColumns.map((col) => ({
     name: col.alias || `${col.table}_${col.column}`,
-    label: col.alias || `${col.table}_${col.column}`.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+    label:
+      col.alias ||
+      `${col.table}_${col.column}`.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
   }));
 
   return {
     data: result.rows,
     columns,
-    rowCount: result.rowCount || 0
+    rowCount: result.rowCount || 0,
   };
 }
 
@@ -420,4 +420,3 @@ export async function deleteCustomReport(
     throw new Error('Custom report not found or unauthorized');
   }
 }
-

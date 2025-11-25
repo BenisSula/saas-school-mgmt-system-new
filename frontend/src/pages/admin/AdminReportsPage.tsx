@@ -15,7 +15,7 @@ export default function AdminReportsPage() {
   const [attendanceFilters, setAttendanceFilters] = useState({
     from: '',
     to: '',
-    classId: ''
+    classId: '',
   });
 
   const { data: classesData } = useClasses();
@@ -45,7 +45,7 @@ export default function AdminReportsPage() {
     return Object.entries(grouped).map(([classId, data]) => ({
       label: classId === 'unknown' ? 'Unknown' : classId,
       value: data.present,
-      color: 'var(--brand-primary)'
+      color: 'var(--brand-primary)',
     }));
   }, [attendance]);
 
@@ -54,23 +54,23 @@ export default function AdminReportsPage() {
       {
         key: 'class_id',
         header: 'Class',
-        render: (row) => row.class_id || '—'
+        render: (row) => row.class_id || '—',
       },
       {
         key: 'status',
         header: 'Status',
-        render: (row) => row.status
+        render: (row) => row.status,
       },
       {
         key: 'count',
         header: 'Count',
-        render: (row) => row.count
+        render: (row) => row.count,
       },
       {
         key: 'attendance_date',
         header: 'Date',
-        render: (row) => row.attendance_date
-      }
+        render: (row) => row.attendance_date,
+      },
     ],
     []
   );
@@ -88,7 +88,7 @@ export default function AdminReportsPage() {
     return {
       totalPresent,
       totalAbsent,
-      overallRate: Math.round(overallRate * 10) / 10
+      overallRate: Math.round(overallRate * 10) / 10,
     };
   }, [attendance]);
 
@@ -98,10 +98,15 @@ export default function AdminReportsPage() {
       Class: item.class_id || 'N/A',
       Status: item.status,
       Count: item.count,
-      Date: item.attendance_date || 'N/A'
+      Date: item.attendance_date || 'N/A',
     }));
 
-    return createExportHandlers(exportData, 'attendance-report', ['Class', 'Status', 'Count', 'Date']);
+    return createExportHandlers(exportData, 'attendance-report', [
+      'Class',
+      'Status',
+      'Count',
+      'Date',
+    ]);
   }, [attendance]);
 
   const handleExport = (type: 'attendance' | 'grades' | 'fees') => {
@@ -176,7 +181,7 @@ export default function AdminReportsPage() {
               }
               options={[
                 { label: 'All Classes', value: '' },
-                ...classes.map((c) => ({ label: c.name, value: c.id }))
+                ...classes.map((c) => ({ label: c.name, value: c.id })),
               ]}
             />
           </div>

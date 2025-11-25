@@ -18,7 +18,7 @@ export function PaginatedTable<T>({
   pageSize = 10,
   caption,
   emptyMessage = 'No records found.',
-  onRowClick
+  onRowClick,
 }: PaginatedTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(pageSize);
@@ -60,7 +60,7 @@ export function PaginatedTable<T>({
                 { label: '10', value: '10' },
                 { label: '25', value: '25' },
                 { label: '50', value: '50' },
-                { label: '100', value: '100' }
+                { label: '100', value: '100' },
               ]}
             />
           </div>

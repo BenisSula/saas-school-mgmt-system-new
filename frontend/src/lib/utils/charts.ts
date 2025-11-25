@@ -29,13 +29,13 @@ export function toPieChartData<T>(
   const chartData = data.map((item, index) => ({
     label: getLabel(item),
     value: getValue(item),
-    color: colors?.[index]
+    color: colors?.[index],
   }));
 
   const generatedColors = generateChartColors(chartData.length);
   return chartData.map((item, index) => ({
     ...item,
-    color: item.color || generatedColors[index]
+    color: item.color || generatedColors[index],
   }));
 }
 
@@ -51,7 +51,7 @@ export function toBarChartData<T>(
   return data.map((item) => ({
     label: getLabel(item),
     value: getValue(item),
-    color
+    color,
   }));
 }
 
@@ -65,7 +65,7 @@ export function toLineChartData<T>(
 ): LineChartDataPoint[] {
   return data.map((item) => ({
     label: getLabel(item),
-    value: getValue(item)
+    value: getValue(item),
   }));
 }
 
@@ -134,4 +134,3 @@ export function formatTenantName(name: string | null | undefined): string {
   if (!name) return 'Unknown Tenant';
   return name.length > 30 ? `${name.slice(0, 30)}...` : name;
 }
-

@@ -4,7 +4,7 @@ import {
   createSchemaSlug,
   createTenant,
   withTenantSearchPath,
-  assertValidSchemaName
+  assertValidSchemaName,
 } from '../db/tenantManager';
 import { recordSharedAuditLog, recordTenantAuditLog } from './auditLogService';
 import { sendNotificationToAdmins } from './platformMonitoringService';
@@ -116,7 +116,7 @@ export async function getPlatformOverview() {
       name: tenant.name,
       status: tenant.status,
       subscriptionType: tenant.subscription_type,
-      createdAt: tenant.created_at
+      createdAt: tenant.created_at,
     }));
 
   return {
@@ -125,20 +125,20 @@ export async function getPlatformOverview() {
       activeSchools,
       suspendedSchools,
       users: Number(userCounts.rows[0]?.total_users ?? 0),
-      pendingUsers: Number(userCounts.rows[0]?.pending ?? 0)
+      pendingUsers: Number(userCounts.rows[0]?.pending ?? 0),
     },
     roleDistribution: {
       admins: Number(userCounts.rows[0]?.admins ?? 0),
       hods: Number(userCounts.rows[0]?.hods ?? 0),
       teachers: Number(userCounts.rows[0]?.teachers ?? 0),
-      students: Number(userCounts.rows[0]?.students ?? 0)
+      students: Number(userCounts.rows[0]?.students ?? 0),
     },
     subscriptionBreakdown,
     revenue: {
       total: totalRevenue,
-      byTenant: revenueByTenant
+      byTenant: revenueByTenant,
     },
-    recentSchools
+    recentSchools,
   };
 }
 
@@ -201,8 +201,48 @@ export async function listSchools() {
     contactPhone: row.contact_phone,
     contactEmail: row.contact_email,
     registrationCode: row.registration_code,
-    userCount: Number(row.user_count ?? 0)
+    userCount: Number(row.user_count ?? 0),
   }));
+}
+
+export async function getSchoolById(schoolId: string) {
+  const pool = getPool();
+  const result = await pool.query(
+    `
+    SELECT 
+      t.id,
+      t.name,
+      t.domain,
+      t.schema_name,
+      t.subscription_type,
+      t.status,
+      t.created_at,
+      t.billing_email,
+      COUNT(DISTINCT u.id) as user_count
+    FROM shared.tenants t
+    LEFT JOIN shared.users u ON u.tenant_id = t.id
+    WHERE t.id = $1 AND t.status != 'deleted'
+    GROUP BY t.id, t.name, t.domain, t.schema_name, t.subscription_type, t.status, t.created_at, t.billing_email
+  `,
+    [schoolId]
+  );
+
+  if (result.rowCount === 0) {
+    return null;
+  }
+
+  const row = result.rows[0];
+  return {
+    id: row.id,
+    name: row.name,
+    domain: row.domain,
+    schemaName: row.schema_name,
+    status: row.status,
+    subscriptionType: row.subscription_type,
+    billingEmail: row.billing_email,
+    createdAt: row.created_at,
+    userCount: Number(row.user_count ?? 0),
+  };
 }
 
 export async function createSchool(input: CreateSchoolInput, actorId?: string | null) {
@@ -222,8 +262,36 @@ export async function createSchool(input: CreateSchoolInput, actorId?: string | 
     throw new Error('School registration code is required');
   }
   const pool = getPool();
+
+  // Check for duplicate registration code
+  const existingSchool = await pool.query(
+    `SELECT id FROM shared.schools WHERE registration_code = $1`,
+    [input.registrationCode.trim()]
+  );
+  if (existingSchool.rows.length > 0) {
+    throw new Error('A school with this registration code already exists');
+  }
+
+  // Check for duplicate domain if provided
+  if (input.domain?.trim()) {
+    const existingTenant = await pool.query(`SELECT id FROM shared.tenants WHERE domain = $1`, [
+      input.domain.trim(),
+    ]);
+    if (existingTenant.rows.length > 0) {
+      throw new Error('A school with this domain already exists');
+    }
+  }
+
   const schemaName = createSchemaSlug(input.name);
   assertValidSchemaName(schemaName);
+
+  // Check for duplicate schema name
+  const existingSchema = await pool.query(`SELECT id FROM shared.tenants WHERE schema_name = $1`, [
+    schemaName,
+  ]);
+  if (existingSchema.rows.length > 0) {
+    throw new Error('A school with a similar name already exists. Please use a different name.');
+  }
 
   const tenant = await createTenant(
     {
@@ -231,7 +299,7 @@ export async function createSchool(input: CreateSchoolInput, actorId?: string | 
       domain: input.domain,
       schemaName,
       subscriptionType: input.subscriptionType ?? 'trial',
-      billingEmail: input.billingEmail ?? null
+      billingEmail: input.billingEmail ?? null,
     },
     pool
   );
@@ -266,7 +334,7 @@ export async function createSchool(input: CreateSchoolInput, actorId?: string | 
       input.contactPhone.trim(),
       input.contactEmail.trim(),
       input.registrationCode.trim(),
-      JSON.stringify({})
+      JSON.stringify({}),
     ]
   );
 
@@ -279,8 +347,8 @@ export async function createSchool(input: CreateSchoolInput, actorId?: string | 
       name: input.name,
       schema: schemaName,
       subscriptionType: input.subscriptionType ?? 'trial',
-      registrationCode: input.registrationCode
-    }
+      registrationCode: input.registrationCode,
+    },
   });
 
   await recordTenantAuditLog(schemaName, {
@@ -290,14 +358,14 @@ export async function createSchool(input: CreateSchoolInput, actorId?: string | 
     entityId: tenant.id,
     details: {
       name: input.name,
-      registrationCode: input.registrationCode
-    }
+      registrationCode: input.registrationCode,
+    },
   });
 
   return {
     id: tenant.id,
     schemaName,
-    schoolId
+    schoolId,
   };
 }
 
@@ -385,7 +453,7 @@ export async function updateSchool(
         updates.address ?? null,
         updates.contactPhone ?? null,
         updates.contactEmail ?? null,
-        updates.registrationCode ?? null
+        updates.registrationCode ?? null,
       ]
     );
   }
@@ -410,7 +478,7 @@ export async function updateSchool(
       action: 'SCHOOL_UPDATED',
       entityType: 'TENANT',
       entityId: id,
-      details: { ...updates }
+      details: { ...updates },
     });
   }
 
@@ -419,7 +487,7 @@ export async function updateSchool(
     address: schoolRow.address ?? null,
     contactPhone: schoolRow.contact_phone ?? null,
     contactEmail: schoolRow.contact_email ?? null,
-    registrationCode: schoolRow.registration_code ?? null
+    registrationCode: schoolRow.registration_code ?? null,
   };
 }
 
@@ -438,7 +506,7 @@ export async function softDeleteSchool(id: string, actorId?: string | null) {
     userId: actorId ?? undefined,
     action: 'SCHOOL_SOFT_DELETED',
     entityType: 'TENANT',
-    entityId: id
+    entityId: id,
   });
 }
 
@@ -455,14 +523,14 @@ export async function createAdminForSchool(
   const normalizedUsername = input.username.toLowerCase();
 
   const duplicateCheck = await pool.query(`SELECT id FROM shared.users WHERE email = $1`, [
-    normalizedEmail
+    normalizedEmail,
   ]);
   if ((duplicateCheck.rowCount ?? 0) > 0) {
     throw new Error('Email already in use');
   }
 
   const duplicateUsername = await pool.query(`SELECT id FROM shared.users WHERE username = $1`, [
-    normalizedUsername
+    normalizedUsername,
   ]);
   if ((duplicateUsername.rowCount ?? 0) > 0) {
     throw new Error('Username already in use');
@@ -491,7 +559,7 @@ export async function createAdminForSchool(
     schoolId,
     createdBy: actorId ?? null,
     auditLogEnabled: true,
-    isTeachingStaff: false
+    isTeachingStaff: false,
   });
 
   const admin = {
@@ -501,7 +569,7 @@ export async function createAdminForSchool(
     tenant_id: createdUser.tenant_id,
     created_at: createdUser.created_at,
     username: createdUser.username,
-    full_name: createdUser.full_name
+    full_name: createdUser.full_name,
   };
 
   await pool.query(
@@ -526,8 +594,8 @@ export async function createAdminForSchool(
     entityId: admin.id,
     details: {
       tenantId,
-      email: admin.email
-    }
+      email: admin.email,
+    },
   });
 
   if (schemaName) {
@@ -537,8 +605,8 @@ export async function createAdminForSchool(
       entityType: 'USER',
       entityId: admin.id,
       details: {
-        email: admin.email
-      }
+        email: admin.email,
+      },
     });
   }
 
@@ -548,9 +616,9 @@ export async function createAdminForSchool(
     message: `A new administrator account (${admin.email}) has been provisioned for your school.`,
     metadata: {
       tenantId,
-      adminUserId: admin.id
+      adminUserId: admin.id,
     },
-    actorId: actorId ?? undefined
+    actorId: actorId ?? undefined,
   });
 
   return admin;
@@ -574,7 +642,7 @@ export async function getTenantAnalytics(tenantId: string) {
       client.query(`SELECT COUNT(*)::int AS count FROM users`),
       client.query(`SELECT COUNT(*)::int AS count FROM teachers`),
       client.query(`SELECT COUNT(*)::int AS count FROM students`),
-      client.query(`SELECT COUNT(*)::int AS count FROM classes`)
+      client.query(`SELECT COUNT(*)::int AS count FROM classes`),
     ]);
 
     const [attendanceResult, examsResult] = await Promise.all([
@@ -587,7 +655,7 @@ export async function getTenantAnalytics(tenantId: string) {
         SELECT COUNT(*)::int AS count 
         FROM exams 
         WHERE exam_date >= CURRENT_DATE - INTERVAL '90 days'
-      `)
+      `),
     ]);
 
     return {
@@ -600,8 +668,8 @@ export async function getTenantAnalytics(tenantId: string) {
       classCount: classesResult.rows[0]?.count || 0,
       recentActivity: {
         attendanceRecords: attendanceResult.rows[0]?.count || 0,
-        exams: examsResult.rows[0]?.count || 0
-      }
+        exams: examsResult.rows[0]?.count || 0,
+      },
     };
   });
 }
@@ -622,13 +690,13 @@ export async function getUsageMonitoring(): Promise<{
 }>;
 export async function getUsageMonitoring(tenantId?: string) {
   const pool = getPool();
-  
+
   if (tenantId) {
     const tenantResult = await pool.query<{ schema_name: string }>(
       `SELECT schema_name FROM shared.tenants WHERE id = $1`,
       [tenantId]
     );
-    
+
     if (tenantResult.rowCount === 0) {
       throw new Error('Tenant not found');
     }
@@ -643,15 +711,15 @@ export async function getUsageMonitoring(tenantId?: string) {
         client.query(`
           SELECT COALESCE(SUM(pg_column_size(pdf)), 0)::bigint AS size
           FROM term_reports
-        `)
+        `),
       ]);
 
       return {
         tenantId,
         activeUsers: activeUsersResult.rows[0]?.count || 0,
-        storageUsed: Math.round((storageResult.rows[0]?.size || 0) / 1024 / 1024 * 100) / 100, // MB
+        storageUsed: Math.round(((storageResult.rows[0]?.size || 0) / 1024 / 1024) * 100) / 100, // MB
         apiCalls: 0, // Would need API logging middleware to track
-        lastActivity: new Date().toISOString()
+        lastActivity: new Date().toISOString(),
       };
     });
   }
@@ -673,6 +741,6 @@ export async function getUsageMonitoring(tenantId?: string) {
   return {
     totalActiveUsers,
     totalStorage,
-    totalApiCalls: 0 // Would need API logging middleware
+    totalApiCalls: 0, // Would need API logging middleware
   };
 }

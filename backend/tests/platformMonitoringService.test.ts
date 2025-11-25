@@ -6,13 +6,13 @@ import {
   rotateSessionToken,
   recordLogoutEvent,
   sendNotificationToAdmins,
-  listAllPlatformUsers
+  listAllPlatformUsers,
 } from '../src/services/platformMonitoringService';
 import { hashTokenValue } from '../src/services/tokenService';
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -102,7 +102,7 @@ describe('platformMonitoringService', () => {
     const refreshToken = 'refresh-token-value';
     await recordLoginEvent(adminUserId, refreshToken, {
       ip: '127.0.0.1',
-      userAgent: 'jest'
+      userAgent: 'jest',
     });
 
     const loginResult = await pool.query(
@@ -117,7 +117,7 @@ describe('platformMonitoringService', () => {
 
     await recordLogoutEvent(adminUserId, refreshToken, {
       ip: '127.0.0.1',
-      userAgent: 'jest'
+      userAgent: 'jest',
     });
 
     const logoutResult = await pool.query(
@@ -149,7 +149,7 @@ describe('platformMonitoringService', () => {
       tenantId,
       title: 'System maintenance',
       message: 'Platform will be offline at midnight',
-      actorId: superUserId
+      actorId: superUserId,
     });
 
     expect(response.sentCount).toBe(1);

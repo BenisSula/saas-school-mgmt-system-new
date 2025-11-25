@@ -23,7 +23,7 @@ export async function diagnoseLoginIssue(email: string): Promise<LoginDiagnostic
     userFound: false,
     hasPasswordHash: false,
     hasStatus: false,
-    errors: []
+    errors: [],
   };
 
   try {
@@ -68,7 +68,7 @@ export async function diagnoseLoginIssue(email: string): Promise<LoginDiagnostic
           `SELECT id, email, password_hash, status FROM shared.users WHERE email = $1`,
           [email.toLowerCase()]
         );
-        
+
         if (userResult.rows.length > 0) {
           diagnostics.userFound = true;
           const user = userResult.rows[0];
@@ -85,4 +85,3 @@ export async function diagnoseLoginIssue(email: string): Promise<LoginDiagnostic
 
   return diagnostics;
 }
-

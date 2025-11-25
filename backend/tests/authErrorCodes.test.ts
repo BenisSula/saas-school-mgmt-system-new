@@ -7,7 +7,7 @@ import argon2 from 'argon2';
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -62,7 +62,7 @@ describe('Auth Error Codes - PHASE 3', () => {
       // Try login with wrong password
       const response = await request(app).post('/auth/login').send({
         email,
-        password: 'WrongPassword123!'
+        password: 'WrongPassword123!',
       });
 
       expect(response.status).toBe(401);
@@ -75,7 +75,7 @@ describe('Auth Error Codes - PHASE 3', () => {
     it('should return 401 with INVALID_CREDENTIALS code for non-existent user', async () => {
       const response = await request(app).post('/auth/login').send({
         email: 'nonexistent@example.com',
-        password: 'SomePassword123!'
+        password: 'SomePassword123!',
       });
 
       expect(response.status).toBe(401);
@@ -100,7 +100,7 @@ describe('Auth Error Codes - PHASE 3', () => {
 
       const response = await request(app).post('/auth/login').send({
         email,
-        password
+        password,
       });
 
       expect(response.status).toBe(403);
@@ -125,7 +125,7 @@ describe('Auth Error Codes - PHASE 3', () => {
 
       const response = await request(app).post('/auth/login').send({
         email,
-        password
+        password,
       });
 
       expect(response.status).toBe(403);
@@ -149,7 +149,7 @@ describe('Auth Error Codes - PHASE 3', () => {
 
       const response = await request(app).post('/auth/login').send({
         email,
-        password
+        password,
       });
 
       expect(response.status).toBe(403);
@@ -176,7 +176,7 @@ describe('Auth Error Codes - PHASE 3', () => {
 
       const response = await request(app).post('/auth/login').send({
         email,
-        password
+        password,
       });
 
       expect(response.status).toBe(403);
@@ -203,7 +203,7 @@ describe('Auth Error Codes - PHASE 3', () => {
 
       const response = await request(app).post('/auth/login').send({
         email,
-        password
+        password,
       });
 
       expect(response.status).toBe(200);

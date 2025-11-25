@@ -1,6 +1,6 @@
 import type { PoolClient } from 'pg';
 import PDFDocument from 'pdfkit';
-import { ReportExecutionResult } from './reportGenerationService';
+// ReportExecutionResult type not used in this file but may be needed for future implementations
 import { queueEmail } from '../email/emailService';
 
 /**
@@ -15,14 +15,15 @@ export function exportToCsv(
   }
 
   // Use provided columns or infer from first row
-  const headers = columns.length > 0
-    ? columns.map(col => col.label || col.name)
-    : Object.keys(data[0] as Record<string, unknown>);
+  const headers =
+    columns.length > 0
+      ? columns.map((col) => col.label || col.name)
+      : Object.keys(data[0] as Record<string, unknown>);
 
-  const rows: string[] = [headers.map(h => `"${String(h).replace(/"/g, '""')}"`).join(',')];
+  const rows: string[] = [headers.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(',')];
 
   for (const row of data) {
-    const values = headers.map(header => {
+    const values = headers.map((header) => {
       const value = (row as Record<string, unknown>)[header];
       if (value === null || value === undefined) {
         return '';
@@ -70,9 +71,10 @@ export async function exportToPdf(
   }
 
   // Table header
-  const headers = columns.length > 0
-    ? columns.map(col => col.label || col.name)
-    : Object.keys(data[0] as Record<string, unknown>);
+  const headers =
+    columns.length > 0
+      ? columns.map((col) => col.label || col.name)
+      : Object.keys(data[0] as Record<string, unknown>);
 
   doc.fontSize(12).font('Helvetica-Bold');
   const startY = doc.y;
@@ -88,16 +90,12 @@ export async function exportToPdf(
   doc.font('Helvetica');
 
   // Table rows
-  for (const row of data.slice(0, 100)) { // Limit to 100 rows for PDF
+  for (const row of data.slice(0, 100)) {
+    // Limit to 100 rows for PDF
     x = 50;
     for (const header of headers) {
       const value = (row as Record<string, unknown>)[header];
-      doc.fontSize(10).text(
-        String(value || '').substring(0, 20),
-        x,
-        doc.y,
-        { width: colWidth }
-      );
+      doc.fontSize(10).text(String(value || '').substring(0, 20), x, doc.y, { width: colWidth });
       x += colWidth;
     }
     doc.moveDown(0.5);
@@ -169,37 +167,26 @@ export async function generateExport(
   const data = execution.data || [];
 
   // Generate export based on format
-  let exportBuffer: Buffer;
-  let mimeType: string;
   let fileExtension: string;
 
   switch (format) {
     case 'csv':
-      exportBuffer = Buffer.from(exportToCsv(data, execution.columns || []));
-      mimeType = 'text/csv';
+      Buffer.from(exportToCsv(data, execution.columns || []));
       fileExtension = 'csv';
       break;
     case 'pdf':
-      exportBuffer = await exportToPdf(
-        data,
-        execution.columns || [],
-        title || execution.report_name,
-        {
-          generatedAt: execution.started_at,
-          rowCount: execution.row_count
-        }
-      );
-      mimeType = 'application/pdf';
+      await exportToPdf(data, execution.columns || [], title || execution.report_name, {
+        generatedAt: execution.started_at,
+        rowCount: execution.row_count,
+      });
       fileExtension = 'pdf';
       break;
     case 'excel':
-      exportBuffer = Buffer.from(exportToExcel(data, execution.columns || []));
-      mimeType = 'application/vnd.ms-excel';
+      Buffer.from(exportToExcel(data, execution.columns || []));
       fileExtension = 'xlsx';
       break;
     case 'json':
-      exportBuffer = Buffer.from(JSON.stringify(data, null, 2));
-      mimeType = 'application/json';
+      Buffer.from(JSON.stringify(data, null, 2));
       fileExtension = 'json';
       break;
     default:
@@ -271,9 +258,8 @@ export async function sendReportViaEmail(
         rowCount: execution.row_count || 0,
         generatedAt: new Date(execution.started_at).toLocaleString(),
         downloadUrl: url,
-        format: format.toUpperCase()
-      }
+        format: format.toUpperCase(),
+      },
     });
   }
 }
-

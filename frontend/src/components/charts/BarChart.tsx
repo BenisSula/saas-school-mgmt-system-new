@@ -21,7 +21,7 @@ export function BarChart({
   title,
   height = 200,
   showValues = true,
-  responsive = true
+  responsive = true,
 }: BarChartProps) {
   const maxValue = useMemo(() => Math.max(...data.map((d) => d.value), 1), [data]);
 
@@ -62,7 +62,7 @@ export function BarChart({
                   style={{
                     height: `${percentage}%`,
                     backgroundColor: barColor,
-                    minHeight: item.value > 0 ? '4px' : '0'
+                    minHeight: item.value > 0 ? '4px' : '0',
                   }}
                   role="img"
                   aria-label={`${item.label}: ${item.value}`}

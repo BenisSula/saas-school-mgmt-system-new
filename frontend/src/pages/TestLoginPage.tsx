@@ -28,26 +28,26 @@ export function TestLoginPage() {
       role: 'Superuser',
       email: 'owner@saas-platform.system',
       password: 'SuperOwner#2025!',
-      description: 'Platform Owner - Full access'
+      description: 'Platform Owner - Full access',
     },
     {
       role: 'Admin',
       email: 'fatou.jallow@newhorizon.edu.gm',
       password: 'NhsAdmin@2025',
-      description: 'New Horizon Admin'
+      description: 'New Horizon Admin',
     },
     {
       role: 'Teacher',
       email: 'pamodou.jagne@newhorizon.edu.gm',
       password: 'TeachNHS01@2025',
-      description: 'New Horizon Teacher'
+      description: 'New Horizon Teacher',
     },
     {
       role: 'Student',
       email: 'student@example.com',
       password: 'Student123!',
-      description: 'Test Student Account'
-    }
+      description: 'Test Student Account',
+    },
   ];
 
   const handleQuickLogin = async (testEmail: string, testPassword: string) => {

@@ -8,21 +8,20 @@ import {
   getSubscriptionByTenantId,
   cancelSubscription,
   renewSubscription,
-  getSubscriptionHistory
+  getSubscriptionHistory,
 } from '../../services/billing/subscriptionService';
 import {
   createPlatformInvoice,
   getInvoicesForTenant,
   getInvoiceById,
-  markInvoiceAsPaid,
-  generateInvoicePdf
+  generateInvoicePdf,
 } from '../../services/billing/invoiceService';
 import {
   createPaymentIntent,
   recordPlatformPayment,
   updatePaymentStatus,
   getPaymentHistory,
-  processDunning
+  processDunning,
 } from '../../services/billing/paymentService';
 import { z } from 'zod';
 
@@ -39,7 +38,7 @@ const createSubscriptionSchema = z.object({
   currency: z.string().optional(),
   trialDays: z.number().int().min(0).optional(),
   providerSubscriptionId: z.string().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional()
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const updateSubscriptionSchema = z.object({
@@ -47,7 +46,7 @@ const updateSubscriptionSchema = z.object({
   planName: z.string().optional(),
   status: z.enum(['active', 'canceled', 'past_due', 'trialing', 'unpaid']).optional(),
   cancelAtPeriodEnd: z.boolean().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional()
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 // Subscription endpoints
@@ -99,7 +98,12 @@ router.patch('/subscriptions/:subscriptionId', async (req, res, next) => {
     const pool = getPool();
     const client = await pool.connect();
     try {
-      const subscription = await updateSubscription(client, req.params.subscriptionId, parsed.data, req.user?.id);
+      const subscription = await updateSubscription(
+        client,
+        req.params.subscriptionId,
+        parsed.data,
+        req.user?.id
+      );
       res.json(subscription);
     } finally {
       client.release();
@@ -115,7 +119,12 @@ router.post('/subscriptions/:subscriptionId/cancel', async (req, res, next) => {
     const pool = getPool();
     const client = await pool.connect();
     try {
-      const subscription = await cancelSubscription(client, req.params.subscriptionId, cancelImmediately, req.user?.id);
+      const subscription = await cancelSubscription(
+        client,
+        req.params.subscriptionId,
+        cancelImmediately,
+        req.user?.id
+      );
       res.json(subscription);
     } finally {
       client.release();
@@ -163,13 +172,20 @@ router.post('/invoices', async (req, res, next) => {
       tenantId: z.string().uuid(),
       amount: z.number().positive(),
       currency: z.string().optional(),
-      dueDate: z.string().datetime().optional(),
+      dueDate: z
+        .string()
+        .refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid datetime format' })
+        .optional(),
       description: z.string().optional(),
-      lineItems: z.array(z.object({
-        description: z.string(),
-        amount: z.number().positive(),
-        quantity: z.number().int().positive().optional()
-      })).optional()
+      lineItems: z
+        .array(
+          z.object({
+            description: z.string(),
+            amount: z.number().positive(),
+            quantity: z.number().int().positive().optional(),
+          })
+        )
+        .optional(),
     });
 
     const parsed = schema.safeParse(req.body);
@@ -184,7 +200,7 @@ router.post('/invoices', async (req, res, next) => {
         client,
         {
           ...parsed.data,
-          dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : undefined
+          dueDate: parsed.data.dueDate ? new Date(parsed.data.dueDate) : undefined,
         },
         parsed.data.lineItems
       );
@@ -211,7 +227,7 @@ router.get('/invoices', async (req, res, next) => {
         status: req.query.status as string,
         subscriptionId: req.query.subscriptionId as string,
         limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
-        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined
+        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
     } finally {
@@ -290,7 +306,7 @@ router.get('/payments', async (req, res, next) => {
         invoiceId: req.query.invoiceId as string,
         status: req.query.status as string,
         limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
-        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined
+        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
     } finally {
@@ -312,7 +328,7 @@ router.post('/payments/webhook', async (req, res, next) => {
       currency: z.string().optional(),
       status: z.enum(['pending', 'succeeded', 'failed', 'refunded', 'canceled']),
       paymentMethod: z.string().optional(),
-      failureReason: z.string().optional()
+      failureReason: z.string().optional(),
     });
 
     const parsed = schema.safeParse(req.body);
@@ -331,7 +347,7 @@ router.post('/payments/webhook', async (req, res, next) => {
           currency: parsed.data.currency,
           provider: parsed.data.provider,
           providerPaymentId: parsed.data.providerPaymentId,
-          paymentMethod: parsed.data.paymentMethod
+          paymentMethod: parsed.data.paymentMethod,
         });
       }
 
@@ -369,4 +385,3 @@ router.post('/dunning/:invoiceId', async (req, res, next) => {
 });
 
 export default router;
-

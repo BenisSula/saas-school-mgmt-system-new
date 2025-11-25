@@ -5,11 +5,11 @@ import {
   createAuditLog,
   searchAuditLogs,
   AuditLogFilters,
-  AuditLogEntry
+  AuditLogEntry,
 } from '../audit/enhancedAuditService';
 import {
   normalizeDeviceInfo,
-  type NormalizedDeviceInfo
+  type NormalizedDeviceInfo,
 } from '../../lib/serializers/deviceInfoSerializer';
 
 /**
@@ -43,7 +43,7 @@ export async function logAuditEvent(
     userAgent: entry.userAgent || undefined,
     requestId: entry.requestId || undefined,
     severity: entry.severity || 'info',
-    tags: entry.tags || []
+    tags: entry.tags || [],
   });
 }
 
@@ -77,24 +77,35 @@ export async function logLoginAttempt(
     failureReason?: string | null;
   }
 ): Promise<void> {
-  await pool.query(
-    `
-      INSERT INTO shared.login_attempts (
-        email, user_id, tenant_id, ip_address, user_agent,
-        success, failure_reason, attempted_at
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-    `,
-    [
-      entry.email,
-      entry.userId || null,
-      entry.tenantId || null,
-      entry.ipAddress || null,
-      entry.userAgent || null,
-      entry.success,
-      entry.failureReason || null
-    ]
-  );
+  // Check if table exists before attempting insert
+  const exists = await tableExists(pool, 'shared', 'login_attempts');
+  if (!exists) {
+    return; // Silently skip - table doesn't exist (expected when migrations haven't run)
+  }
+
+  try {
+    await pool.query(
+      `
+        INSERT INTO shared.login_attempts (
+          email, user_id, tenant_id, ip_address, user_agent,
+          success, failure_reason, attempted_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+      `,
+      [
+        entry.email,
+        entry.userId || null,
+        entry.tenantId || null,
+        entry.ipAddress || null,
+        entry.userAgent || null,
+        entry.success,
+        entry.failureReason || null,
+      ]
+    );
+  } catch (error) {
+    // Silently fail - don't break login flow if audit logging fails
+    console.error('[auth] Failed to record login event:', error);
+  }
 
   // Also log to audit_logs for critical failures
   if (!entry.success) {
@@ -108,12 +119,12 @@ export async function logLoginAttempt(
         resourceType: 'authentication',
         details: {
           email: entry.email,
-          failureReason: entry.failureReason || 'Unknown'
+          failureReason: entry.failureReason || 'Unknown',
         },
         ipAddress: entry.ipAddress || null,
         userAgent: entry.userAgent || null,
         severity: 'warning',
-        tags: ['security', 'authentication']
+        tags: ['security', 'authentication'],
       });
     } finally {
       auditClient.release();
@@ -136,12 +147,43 @@ export interface LoginAttemptFilters {
   offset?: number;
 }
 
+/**
+ * Check if a table exists
+ */
+async function tableExists(pool: Pool, schema: string, tableName: string): Promise<boolean> {
+  try {
+    const result = await pool.query(
+      `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = $1 
+          AND table_name = $2
+        )
+      `,
+      [schema, tableName]
+    );
+    return result.rows[0]?.exists || false;
+  } catch {
+    return false;
+  }
+}
+
 export async function getLoginAttempts(
   pool: Pool,
   filters: LoginAttemptFilters,
   requesterRole: Role
 ): Promise<{ attempts: LoginAttemptRecord[]; total: number }> {
   requireSuperuser(requesterRole);
+
+  // Check if table exists first (silently skip if not)
+  const exists = await tableExists(pool, 'shared', 'login_attempts');
+  if (!exists) {
+    // Silently return empty result - table doesn't exist (expected when migrations haven't run)
+    return {
+      attempts: [],
+      total: 0,
+    };
+  }
 
   const conditions: string[] = [];
   const values: unknown[] = [];
@@ -183,35 +225,47 @@ export async function getLoginAttempts(
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-  // Get total count
-  const countResult = await pool.query(
-    `SELECT COUNT(*) as total FROM shared.login_attempts ${whereClause}`,
-    values
-  );
-  const total = parseInt(countResult.rows[0].total, 10);
+  try {
+    // Get total count
+    const countResult = await pool.query(
+      `SELECT COUNT(*) as total FROM shared.login_attempts ${whereClause}`,
+      values
+    );
+    const total = parseInt(countResult.rows[0].total, 10);
 
-  // Get attempts
-  const limit = filters.limit || 50;
-  const offset = filters.offset || 0;
-  values.push(limit, offset);
+    // Get attempts
+    const limit = filters.limit || 50;
+    const offset = filters.offset || 0;
+    values.push(limit, offset);
 
-  const attemptsResult = await pool.query(
-    `
-      SELECT 
-        id, email, user_id, tenant_id, ip_address, user_agent,
-        success, failure_reason, attempted_at
-      FROM shared.login_attempts
-      ${whereClause}
-      ORDER BY attempted_at DESC
-      LIMIT $${paramIndex++} OFFSET $${paramIndex}
-    `,
-    values
-  );
+    const attemptsResult = await pool.query(
+      `
+        SELECT 
+          id, email, user_id, tenant_id, ip_address, user_agent,
+          success, failure_reason, attempted_at
+        FROM shared.login_attempts
+        ${whereClause}
+        ORDER BY attempted_at DESC
+        LIMIT $${paramIndex++} OFFSET $${paramIndex}
+      `,
+      values
+    );
 
-  return {
-    attempts: attemptsResult.rows.map(mapLoginAttemptRow),
-    total
-  };
+    return {
+      attempts: attemptsResult.rows.map(mapLoginAttemptRow),
+      total,
+    };
+  } catch (error) {
+    // Only log actual errors, not expected missing table errors
+    if (error instanceof Error && error.message.includes('does not exist')) {
+      // Silently skip - expected when migrations haven't run
+      return {
+        attempts: [],
+        total: 0,
+      };
+    }
+    throw error;
+  }
 }
 
 /**
@@ -241,7 +295,7 @@ function mapLoginAttemptRow(row: {
     deviceInfo,
     success: row.success,
     failureReason: row.failure_reason,
-    attemptedAt: row.attempted_at
+    attemptedAt: row.attempted_at,
   };
 }
 

@@ -142,7 +142,7 @@ export async function upsertEntity<T>(
     const updateFields = updateData || insertData;
     const { query, params } = buildUpdateQuery(schema, table, existingResult.rows[0].id, {
       ...existingResult.rows[0],
-      ...updateFields
+      ...updateFields,
     });
     const result = await client.query(query, params);
     return result.rows[0] as T;
@@ -194,7 +194,7 @@ export async function resolveClassId(
     if (classResult.rows.length > 0) {
       return {
         classUuid: classResult.rows[0].id,
-        classIdName: classResult.rows[0].name
+        classIdName: classResult.rows[0].name,
       };
     }
   } else {
@@ -206,17 +206,16 @@ export async function resolveClassId(
     if (classResult.rows.length > 0) {
       return {
         classUuid: classResult.rows[0].id,
-        classIdName: classResult.rows[0].name
+        classIdName: classResult.rows[0].name,
       };
     } else {
       // Class not found, just set the name
       return {
         classIdName: classId,
-        classUuid: null
+        classUuid: null,
       };
     }
   }
 
   return { classIdName: null, classUuid: null };
 }
-

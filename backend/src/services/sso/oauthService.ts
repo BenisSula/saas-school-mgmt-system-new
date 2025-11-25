@@ -39,7 +39,7 @@ export function generateOAuthAuthorizationUrl(
     client_id: clientId,
     redirect_uri: redirectUri,
     scope: scopes.join(' '),
-    state
+    state,
   });
 
   return `${authorizationUrl}?${params.toString()}`;
@@ -66,25 +66,30 @@ export async function exchangeAuthorizationCode(
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`
+      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
     },
     body: new URLSearchParams({
       grant_type: 'authorization_code',
       code,
-      redirect_uri: redirectUri
-    })
+      redirect_uri: redirectUri,
+    }),
   });
 
   if (!response.ok) {
     throw new Error(`Token exchange failed: ${response.statusText}`);
   }
 
-  const tokens = await response.json();
+  const tokens = (await response.json()) as {
+    access_token: string;
+    refresh_token?: string;
+    id_token?: string;
+    expires_in?: number;
+  };
   return {
     accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token,
     idToken: tokens.id_token,
-    expiresIn: tokens.expires_in
+    expiresIn: tokens.expires_in,
   };
 }
 
@@ -97,15 +102,15 @@ export async function getUserInfo(
 ): Promise<Record<string, unknown>> {
   const response = await fetch(userinfoUrl, {
     headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
+      Authorization: `Bearer ${accessToken}`,
+    },
   });
 
   if (!response.ok) {
     throw new Error(`UserInfo request failed: ${response.statusText}`);
   }
 
-  return await response.json();
+  return (await response.json()) as Record<string, unknown>;
 }
 
 /**
@@ -146,7 +151,7 @@ export async function createOAuthProvider(
       input.jitProvisioning || false,
       input.jitDefaultRole || 'teacher',
       JSON.stringify(input.attributeMapping || {}),
-      input.createdBy || null
+      input.createdBy || null,
     ]
   );
 
@@ -161,7 +166,8 @@ export async function processOAuthCallback(
   providerId: string,
   code: string,
   redirectUri: string,
-  state?: string
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _state?: string
 ): Promise<{
   userId: string;
   email: string;
@@ -172,10 +178,9 @@ export async function processOAuthCallback(
   idToken?: string;
 }> {
   // Get provider
-  const providerResult = await client.query(
-    'SELECT * FROM shared.sso_providers WHERE id = $1',
-    [providerId]
-  );
+  const providerResult = await client.query('SELECT * FROM shared.sso_providers WHERE id = $1', [
+    providerId,
+  ]);
 
   if (providerResult.rowCount === 0) {
     throw new Error('OAuth provider not found');
@@ -211,15 +216,14 @@ export async function processOAuthCallback(
   // Map attributes
   const attributeMapping = provider.attribute_mapping || {};
   const email = (userInfo[attributeMapping.email || 'email'] || userInfo.email) as string;
-  const firstName = (userInfo[attributeMapping.firstName || 'given_name'] || userInfo.given_name) as string;
-  const lastName = (userInfo[attributeMapping.lastName || 'family_name'] || userInfo.family_name) as string;
+  const firstName = (userInfo[attributeMapping.firstName || 'given_name'] ||
+    userInfo.given_name) as string;
+  const lastName = (userInfo[attributeMapping.lastName || 'family_name'] ||
+    userInfo.family_name) as string;
   const externalUserId = (userInfo[attributeMapping.userId || 'sub'] || userInfo.sub) as string;
 
   // Check if user exists
-  let userResult = await client.query(
-    'SELECT id FROM shared.users WHERE email = $1',
-    [email]
-  );
+  let userResult = await client.query('SELECT id FROM shared.users WHERE email = $1', [email]);
 
   let userId: string;
   let isNewUser = false;
@@ -248,14 +252,7 @@ export async function processOAuthCallback(
           )
           VALUES ($1, $2, $3, $4, $5, $6)
         `,
-        [
-          provider.tenant_id,
-          providerId,
-          externalUserId,
-          userId,
-          email,
-          JSON.stringify(userInfo)
-        ]
+        [provider.tenant_id, providerId, externalUserId, userId, email, JSON.stringify(userInfo)]
       );
 
       isNewUser = true;
@@ -303,7 +300,7 @@ export async function processOAuthCallback(
       refreshTokenEncrypted,
       tokens.idToken || null,
       JSON.stringify(userInfo),
-      expiresAt
+      expiresAt,
     ]
   );
 
@@ -314,17 +311,14 @@ export async function processOAuthCallback(
     isNewUser,
     accessToken: tokens.accessToken,
     refreshToken: tokens.refreshToken,
-    idToken: tokens.idToken
+    idToken: tokens.idToken,
   };
 }
 
 /**
  * Get OAuth providers
  */
-export async function getOAuthProviders(
-  client: PoolClient,
-  tenantId?: string
-): Promise<unknown[]> {
+export async function getOAuthProviders(client: PoolClient, tenantId?: string): Promise<unknown[]> {
   const conditions: string[] = ["provider_type IN ('oauth2', 'oidc')"];
   const values: unknown[] = [];
   let paramIndex = 1;
@@ -361,10 +355,9 @@ export async function refreshOAuthToken(
   refreshToken?: string;
   expiresIn?: number;
 }> {
-  const providerResult = await client.query(
-    'SELECT * FROM shared.sso_providers WHERE id = $1',
-    [providerId]
-  );
+  const providerResult = await client.query('SELECT * FROM shared.sso_providers WHERE id = $1', [
+    providerId,
+  ]);
 
   if (providerResult.rowCount === 0) {
     throw new Error('OAuth provider not found');
@@ -377,23 +370,26 @@ export async function refreshOAuthToken(
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      Authorization: `Basic ${Buffer.from(`${provider.client_id}:${clientSecret}`).toString('base64')}`
+      Authorization: `Basic ${Buffer.from(`${provider.client_id}:${clientSecret}`).toString('base64')}`,
     },
     body: new URLSearchParams({
       grant_type: 'refresh_token',
-      refresh_token: refreshToken
-    })
+      refresh_token: refreshToken,
+    }),
   });
 
   if (!response.ok) {
     throw new Error(`Token refresh failed: ${response.statusText}`);
   }
 
-  const tokens = await response.json();
+  const tokens = (await response.json()) as {
+    access_token: string;
+    refresh_token?: string;
+    expires_in?: number;
+  };
   return {
     accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token,
-    expiresIn: tokens.expires_in
+    expiresIn: tokens.expires_in,
   };
 }
-

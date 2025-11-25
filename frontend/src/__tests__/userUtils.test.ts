@@ -9,7 +9,7 @@ describe('userUtils', () => {
     role: 'student',
     tenantId: 'tenant-1',
     isVerified: true,
-    status: 'active'
+    status: 'active',
   };
 
   describe('normalizeUser', () => {

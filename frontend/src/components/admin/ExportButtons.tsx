@@ -11,7 +11,7 @@ export function ExportButtons({
   onExportCSV,
   onExportPDF,
   onExportExcel,
-  disabled = false
+  disabled = false,
 }: ExportButtonsProps) {
   return (
     <div className="flex gap-2">

@@ -27,7 +27,8 @@ export function generateSamlAuthnRequest(
   entityId: string,
   ssoUrl: string,
   acsUrl: string,
-  relayState?: string
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _relayState?: string
 ): string {
   const requestId = `_${crypto.randomBytes(16).toString('hex')}`;
   const issueInstant = new Date().toISOString();
@@ -86,7 +87,7 @@ export async function createSamlProvider(
       input.jitProvisioning || false,
       input.jitDefaultRole || 'teacher',
       JSON.stringify(input.attributeMapping || {}),
-      input.createdBy || null
+      input.createdBy || null,
     ]
   );
 
@@ -127,8 +128,10 @@ export async function getSamlProvider(
 export async function processSamlResponse(
   client: PoolClient,
   providerId: string,
-  samlResponse: string,
-  relayState?: string
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _samlResponse: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _relayState?: string
 ): Promise<{
   userId: string;
   email: string;
@@ -153,7 +156,7 @@ export async function processSamlResponse(
     email: 'user@example.com',
     firstName: 'John',
     lastName: 'Doe',
-    nameId: 'user@example.com'
+    nameId: 'user@example.com',
   };
 
   const email = attributes.email as string;
@@ -161,10 +164,7 @@ export async function processSamlResponse(
   const lastName = attributes.lastName as string;
 
   // Check if user exists
-  let userResult = await client.query(
-    'SELECT id FROM shared.users WHERE email = $1',
-    [email]
-  );
+  let userResult = await client.query('SELECT id FROM shared.users WHERE email = $1', [email]);
 
   let userId: string;
   let isNewUser = false;
@@ -199,7 +199,7 @@ export async function processSamlResponse(
           attributes.nameId as string,
           userId,
           email,
-          JSON.stringify(attributes)
+          JSON.stringify(attributes),
         ]
       );
 
@@ -231,7 +231,7 @@ export async function processSamlResponse(
       providerId,
       sessionId,
       JSON.stringify(attributes),
-      expiresAt
+      expiresAt,
     ]
   );
 
@@ -239,17 +239,14 @@ export async function processSamlResponse(
     userId,
     email,
     attributes,
-    isNewUser
+    isNewUser,
   };
 }
 
 /**
  * Get SAML providers
  */
-export async function getSamlProviders(
-  client: PoolClient,
-  tenantId?: string
-): Promise<unknown[]> {
+export async function getSamlProviders(client: PoolClient, tenantId?: string): Promise<unknown[]> {
   const conditions: string[] = ["provider_type = 'saml2'"];
   const values: unknown[] = [];
   let paramIndex = 1;
@@ -270,4 +267,3 @@ export async function getSamlProviders(
 
   return result.rows;
 }
-

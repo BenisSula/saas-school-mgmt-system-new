@@ -5,7 +5,9 @@ import { ActivityHistory } from '../../components/profile/ActivityHistory';
 import { AuditLogs } from '../../components/profile/AuditLogs';
 import { FileUploads } from '../../components/profile/FileUploads';
 import { useProfileData } from '../../hooks/useProfileData';
+import { useFileUpload } from '../../hooks/useFileUpload';
 import { api, type TeacherProfileDetail, type TeacherProfile } from '../../lib/api';
+import { isHOD } from '../../lib/utils/userHelpers';
 
 interface HODProfileData extends TeacherProfileDetail {
   department?: string;
@@ -19,7 +21,7 @@ export default function HODProfilePage() {
       const [profileData, usersData, teachersData] = await Promise.allSettled([
         api.teacher.getProfile(),
         api.listUsers(),
-        api.listTeachers()
+        api.listTeachers(),
       ]);
 
       if (profileData.status === 'fulfilled') {
@@ -28,9 +30,8 @@ export default function HODProfilePage() {
         // Check if user has HOD role
         if (usersData.status === 'fulfilled') {
           const user = usersData.value.find((u) => u.email === teacherProfile.email);
-          const isHOD = user?.additional_roles?.some((r) => r.role === 'hod');
 
-          if (isHOD && user) {
+          if (user && isHOD(user)) {
             // Extract department from metadata
             const hodRole = user.additional_roles?.find((r) => r.role === 'hod');
             const department =
@@ -51,7 +52,7 @@ export default function HODProfilePage() {
             return {
               ...teacherProfile,
               department,
-              teachersUnderOversight
+              teachersUnderOversight,
             } as HODProfileData;
           }
         }
@@ -67,8 +68,16 @@ export default function HODProfilePage() {
   const { profile, loading, error, activities, auditLogs, uploads, setUploads } =
     useProfileData<HODProfileData>({
       profileLoader,
-      enabled: true
+      enabled: true,
     });
+
+  const { uploadFile: handleFileUpload, deleteFile: handleFileDelete } = useFileUpload({
+    entityType: 'hod',
+    entityId: profile?.id,
+    onUploadSuccess: (upload) => {
+      setUploads((prev) => [upload, ...prev]);
+    },
+  });
 
   const sections: ProfileSection[] = useMemo(
     () => [
@@ -100,7 +109,7 @@ export default function HODProfilePage() {
               </div>
             )}
           </Section>
-        )
+        ),
       },
       {
         id: 'department',
@@ -116,7 +125,7 @@ export default function HODProfilePage() {
               </div>
             )}
           </Section>
-        )
+        ),
       },
       {
         id: 'subjects',
@@ -140,7 +149,7 @@ export default function HODProfilePage() {
               </div>
             )}
           </Section>
-        )
+        ),
       },
       {
         id: 'classes',
@@ -179,7 +188,7 @@ export default function HODProfilePage() {
               </div>
             )}
           </Section>
-        )
+        ),
       },
       {
         id: 'teacher-oversight',
@@ -220,7 +229,7 @@ export default function HODProfilePage() {
               </div>
             )}
           </Section>
-        )
+        ),
       },
       {
         id: 'department-analytics',
@@ -233,13 +242,13 @@ export default function HODProfilePage() {
           >
             {null}
           </Section>
-        )
+        ),
       },
       {
         id: 'activity-history',
         title: 'Activity history',
         description: 'Recent actions and events',
-        content: <ActivityHistory activities={activities} />
+        content: <ActivityHistory activities={activities} />,
       },
       {
         id: 'uploads',
@@ -250,15 +259,15 @@ export default function HODProfilePage() {
             uploads={uploads}
             canUpload={true}
             canDelete={true}
-            onUpload={async (file) => {
-              // TODO: Implement upload API when available
-              console.log('Upload file:', file);
+            onUpload={async (file, description) => {
+              await handleFileUpload(file, description);
             }}
             onDelete={async (uploadId) => {
+              await handleFileDelete(uploadId);
               setUploads((prev) => prev.filter((u) => u.id !== uploadId));
             }}
           />
-        )
+        ),
       },
       {
         id: 'audit-logs',
@@ -271,9 +280,10 @@ export default function HODProfilePage() {
               window.location.reload();
             }}
           />
-        )
-      }
+        ),
+      },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [profile, activities, auditLogs, uploads, setUploads]
   );
 

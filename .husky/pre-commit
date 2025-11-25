@@ -1,7 +1,25 @@
 #!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
 
-npx lint-staged || exit 1
+echo "🔍 Running pre-commit checks..."
 
-npm run test --prefix backend || exit 1
-npm run test --prefix frontend || exit 1
+# Run lint-staged (linting and formatting)
+echo "📝 Running lint-staged..."
+npx lint-staged || {
+  echo "❌ Lint-staged failed. Please fix the issues and try again."
+  exit 1
+}
 
+# Run tests (only for staged files to speed up)
+echo "🧪 Running tests..."
+npm run test --prefix backend -- --bail --findRelatedTests || {
+  echo "❌ Backend tests failed. Please fix the issues and try again."
+  exit 1
+}
+
+npm run test --prefix frontend -- --run --bail || {
+  echo "❌ Frontend tests failed. Please fix the issues and try again."
+  exit 1
+}
+
+echo "✅ All pre-commit checks passed!"

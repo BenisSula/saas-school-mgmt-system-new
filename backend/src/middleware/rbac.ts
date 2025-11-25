@@ -4,7 +4,7 @@ import { logUnauthorizedAttempt } from '../services/auditLogService';
 import {
   FRIENDLY_FORBIDDEN_MESSAGE,
   FRIENDLY_MISSING_TARGET_ID,
-  FRIENDLY_TENANT_CONTEXT_ERROR
+  FRIENDLY_TENANT_CONTEXT_ERROR,
 } from '../lib/friendlyMessages';
 
 export interface AuthenticatedRequest extends Request {
@@ -60,7 +60,7 @@ export function requireRole(allowedRoles: Role[]) {
         path: req.originalUrl ?? req.path,
         method: req.method,
         reason: 'Role not permitted',
-        details: { allowedRoles, userRole: user.role }
+        details: { allowedRoles, userRole: user.role },
       });
 
       return res.status(403).json({ message: FRIENDLY_FORBIDDEN_MESSAGE });
@@ -128,7 +128,7 @@ export function requireSelfOrPermission(permission?: Permission, idParam = 'stud
         entityId: targetId,
         path: req.originalUrl ?? req.path,
         method: req.method,
-        reason: permission ? `Missing permission: ${permission}` : 'Self-access denied'
+        reason: permission ? `Missing permission: ${permission}` : 'Self-access denied',
       });
 
       if (!req.tenantClient || !req.tenant) {
@@ -142,6 +142,153 @@ export function requireSelfOrPermission(permission?: Permission, idParam = 'stud
   };
 }
 
+/**
+ * Requires the user to have ANY of the specified permissions.
+ * Allows access if user has at least one of the permissions.
+ */
+export function requireAnyPermission(...permissions: Permission[]) {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    // Get all user roles (primary + additional) for permission checking
+    const userRoles: string[] = [req.user.role];
+
+    // Add additional roles if available
+    const userWithRoles = req.user as { additional_roles?: Array<{ role: string }> };
+    if (userWithRoles.additional_roles && Array.isArray(userWithRoles.additional_roles)) {
+      userRoles.push(...userWithRoles.additional_roles.map((ar) => ar.role));
+    }
+
+    // Check if user has ANY of the specified permissions across all roles
+    const hasAnyPermission = permissions.some((permission) => {
+      return userRoles.some((role) => hasPermission(role as Role, permission));
+    });
+
+    if (!hasAnyPermission) {
+      return res.status(403).json({
+        message: `Forbidden. Required one of: ${permissions.join(', ')}`,
+      });
+    }
+
+    return next();
+  };
+}
+
+/**
+ * Requires the user to have ALL of the specified permissions.
+ * Allows access only if user has all permissions.
+ */
+export function requireAllPermissions(...permissions: Permission[]) {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const role = req.user?.role;
+
+    if (!role) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    // Check if user has ALL of the specified permissions
+    const hasAllPermissions = permissions.every((permission) => hasPermission(role, permission));
+
+    if (!hasAllPermissions) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    return next();
+  };
+}
+
+/**
+ * Requires the user to be a superadmin (superuser).
+ * Only superadmin role can access SuperUser endpoints.
+ */
+export function requireSuperuser() {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const user = req.user as GuardedUser | undefined;
+
+    if (!user) {
+      return res.status(401).json({ message: 'Unauthenticated' });
+    }
+
+    if (user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Superuser access required' });
+    }
+
+    return next();
+  };
+}
+
+/**
+ * Enforces role hierarchy when modifying user roles.
+ * Prevents lower-privileged users from assigning higher-privileged roles.
+ *
+ * Role hierarchy (highest to lowest):
+ * - superadmin
+ * - admin
+ * - hod
+ * - teacher
+ * - student
+ *
+ * @param targetRoleParam - Parameter name for the target role being assigned (default: 'role')
+ */
+export function enforceRoleHierarchy(targetRoleParam = 'role') {
+  return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user as GuardedUser | undefined;
+      if (!user) {
+        return res.status(401).json({ message: 'Unauthenticated' });
+      }
+
+      // Superadmin can assign any role
+      if (user.role === 'superadmin') {
+        return next();
+      }
+
+      const targetRole =
+        req.body[targetRoleParam] || req.params[targetRoleParam] || req.query[targetRoleParam];
+
+      if (!targetRole) {
+        return next(); // No role assignment, skip check
+      }
+
+      // Define role hierarchy (higher number = higher privilege)
+      const roleHierarchy: Record<Role, number> = {
+        superadmin: 5,
+        admin: 4,
+        hod: 3,
+        teacher: 2,
+        student: 1,
+      };
+
+      const userLevel = roleHierarchy[user.role] ?? 0;
+      const targetLevel = roleHierarchy[targetRole as Role] ?? 0;
+
+      // User cannot assign roles equal to or higher than their own
+      if (targetLevel >= userLevel) {
+        await logUnauthorizedAttempt(req.tenantClient, req.tenant?.schema, {
+          userId: user.id,
+          path: req.originalUrl ?? req.path,
+          method: req.method,
+          reason: 'Role hierarchy violation',
+          details: {
+            userRole: user.role,
+            attemptedRole: targetRole,
+            userLevel,
+            targetLevel,
+          },
+        });
+
+        return res.status(403).json({
+          message: 'Cannot assign role equal to or higher than your own',
+        });
+      }
+
+      return next();
+    } catch (error) {
+      return next(error);
+    }
+  };
+}
+
 export default requireRole;
-
-

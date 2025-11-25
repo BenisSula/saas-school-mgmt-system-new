@@ -34,6 +34,6 @@ export function useTheme() {
     },
     setLightTheme: () => setTheme('light'),
     setDarkTheme: () => setTheme('dark'),
-    setSystemTheme: () => setTheme('system')
+    setSystemTheme: () => setTheme('system'),
   };
 }

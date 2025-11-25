@@ -23,17 +23,17 @@ jest.mock('../src/middleware/authenticate', () => ({
       role: 'admin',
       tenantId: 'tenant_alpha',
       email: 'admin@test.com',
-      tokenId: 'token'
+      tokenId: 'token',
     };
     next();
-  }
+  },
 }));
 
 const authHeaders = { Authorization: 'Bearer fake', 'x-tenant-id': 'tenant_alpha' };
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -45,7 +45,7 @@ describe('Teacher and branding routes', () => {
     await createTenant(
       {
         name: 'Test School',
-        schemaName: 'tenant_alpha'
+        schemaName: 'tenant_alpha',
       },
       testPool.pool
     );
@@ -58,7 +58,7 @@ describe('Teacher and branding routes', () => {
       .send({
         name: 'Prof. Turing',
         email: 'turing@test.com',
-        subjects: ['Mathematics']
+        subjects: ['Mathematics'],
       });
 
     expect(create.status).toBe(201);
@@ -75,7 +75,7 @@ describe('Teacher and branding routes', () => {
       .send({
         logoUrl: 'https://example.com/logo.png',
         primaryColor: '#ff0000',
-        themeFlags: { darkMode: true }
+        themeFlags: { darkMode: true },
       });
 
     expect(update.status).toBe(200);
@@ -94,8 +94,8 @@ describe('Teacher and branding routes', () => {
         name: 'Updated Academy',
         address: {
           line1: '123 Main St',
-          city: 'Example City'
-        }
+          city: 'Example City',
+        },
       });
 
     expect(update.status).toBe(200);

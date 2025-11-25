@@ -16,7 +16,7 @@ import {
   useRecentCriticalAuditLogs,
   useTenantBreakdown,
   useDeviceBreakdown,
-  useSessionDistribution
+  useSessionDistribution,
 } from '../../../hooks/queries/useDashboardData';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../../hooks/useQuery';
@@ -34,7 +34,7 @@ import {
   CheckCircle2,
   LogIn,
   Smartphone,
-  Monitor
+  Monitor,
 } from 'lucide-react';
 import { formatNumber } from '../../../lib/utils/data';
 import { formatDate } from '../../../lib/utils/date';
@@ -42,7 +42,7 @@ import {
   toPieChartData,
   toBarChartData,
   formatDeviceType,
-  formatTenantName
+  formatTenantName,
 } from '../../../lib/utils/charts';
 
 interface AlertItem {
@@ -59,8 +59,11 @@ interface AlertItem {
 export default function SuperuserDashboardPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: overview, isLoading: overviewLoading, error: overviewError } =
-    useSuperuserOverview();
+  const {
+    data: overview,
+    isLoading: overviewLoading,
+    error: overviewError,
+  } = useSuperuserOverview();
 
   // Real-time data hooks
   const { data: activeSessionsData, isLoading: sessionsLoading } = usePlatformActiveSessions();
@@ -78,13 +81,13 @@ export default function SuperuserDashboardPage() {
       const result = await api.superuser.getPlatformAuditLogs({
         limit: 50,
         severity: 'warning', // Focus on warnings and above
-        startDate: oneHourAgo
+        startDate: oneHourAgo,
       });
       return result.logs;
     },
     enabled: true,
     staleTime: 30000,
-    refetchInterval: 60000 // Refetch every minute for real-time alerts
+    refetchInterval: 60000, // Refetch every minute for real-time alerts
   });
 
   // Calculate real active sessions count
@@ -93,14 +96,15 @@ export default function SuperuserDashboardPage() {
   // Generate alerts from real audit log data
   const alerts: AlertItem[] = useMemo(() => {
     const generatedAlerts: AlertItem[] = [];
-    
+
     if (!auditLogs || auditLogs.length === 0) {
       return [];
     }
 
     // Group audit logs by type for analysis
     const failedLoginAttempts = auditLogs.filter(
-      (log) => log.action === 'LOGIN_ATTEMPT_FAILED' || log.action?.toLowerCase().includes('login_failed')
+      (log) =>
+        log.action === 'LOGIN_ATTEMPT_FAILED' || log.action?.toLowerCase().includes('login_failed')
     );
 
     const criticalEvents = auditLogs.filter(
@@ -108,21 +112,21 @@ export default function SuperuserDashboardPage() {
     );
 
     const securityEvents = auditLogs.filter(
-      (log) => 
+      (log) =>
         log.action?.toLowerCase().includes('password') ||
         log.action?.toLowerCase().includes('session') ||
         log.action?.toLowerCase().includes('security') ||
-        (log.tags && Array.isArray(log.tags) && log.tags.some((tag: string) => tag.toLowerCase().includes('security')))
+        (log.tags &&
+          Array.isArray(log.tags) &&
+          log.tags.some((tag: string) => tag.toLowerCase().includes('security')))
     );
 
     // Alert 1: Multiple failed login attempts
     if (failedLoginAttempts.length >= 5) {
       const uniqueEmails = new Set(
-        failedLoginAttempts
-          .map((log) => log.details?.email || log.userEmail)
-          .filter(Boolean)
+        failedLoginAttempts.map((log) => log.details?.email || log.userEmail).filter(Boolean)
       );
-      
+
       generatedAlerts.push({
         id: 'alert-failed-logins',
         type: 'failed_attempts',
@@ -134,7 +138,7 @@ export default function SuperuserDashboardPage() {
           const ts = firstAttempt?.timestamp || firstAttempt?.createdAt;
           return ts ? (typeof ts === 'string' ? ts : ts.toISOString()) : new Date().toISOString();
         })(),
-        userEmail: Array.from(uniqueEmails)[0] as string | undefined
+        userEmail: Array.from(uniqueEmails)[0] as string | undefined,
       });
     }
 
@@ -148,13 +152,15 @@ export default function SuperuserDashboardPage() {
           type: 'suspicious_login',
           severity: 'critical',
           title: event.action || 'Critical Security Event',
-          description: 
-            (typeof eventDetails === 'object' && eventDetails !== null 
-              ? (eventDetails.message || eventDetails.reason || 'A critical security event has been detected')
-              : 'A critical security event has been detected') as string,
-          timestamp: typeof eventTimestamp === 'string' ? eventTimestamp : eventTimestamp.toISOString(),
+          description: (typeof eventDetails === 'object' && eventDetails !== null
+            ? eventDetails.message ||
+              eventDetails.reason ||
+              'A critical security event has been detected'
+            : 'A critical security event has been detected') as string,
+          timestamp:
+            typeof eventTimestamp === 'string' ? eventTimestamp : eventTimestamp.toISOString(),
           userId: event.userId || undefined,
-          userEmail: event.userEmail || undefined
+          userEmail: event.userEmail || undefined,
         });
       });
     }
@@ -173,14 +179,16 @@ export default function SuperuserDashboardPage() {
 
       if (recentSecurityEvents.length >= 3) {
         const firstEvent = recentSecurityEvents[0];
-        const eventTimestamp = firstEvent?.timestamp || firstEvent?.createdAt || new Date().toISOString();
+        const eventTimestamp =
+          firstEvent?.timestamp || firstEvent?.createdAt || new Date().toISOString();
         generatedAlerts.push({
           id: 'alert-security-pattern',
           type: 'session_anomaly',
           severity: 'medium',
           title: 'Unusual Security Activity',
           description: `${recentSecurityEvents.length} security-related events detected in the last hour`,
-          timestamp: typeof eventTimestamp === 'string' ? eventTimestamp : eventTimestamp.toISOString()
+          timestamp:
+            typeof eventTimestamp === 'string' ? eventTimestamp : eventTimestamp.toISOString(),
         });
       }
     }
@@ -209,7 +217,7 @@ export default function SuperuserDashboardPage() {
         { type: 'mobile', count: deviceBreakdown.mobile },
         { type: 'tablet', count: deviceBreakdown.tablet },
         { type: 'desktop', count: deviceBreakdown.desktop },
-        { type: 'unknown', count: deviceBreakdown.unknown }
+        { type: 'unknown', count: deviceBreakdown.unknown },
       ],
       (item) => formatDeviceType(item.type),
       (item) => item.count
@@ -218,9 +226,7 @@ export default function SuperuserDashboardPage() {
 
   const tenantChartData = useMemo(() => {
     if (!tenantBreakdown) return [];
-    const topTenants = [...tenantBreakdown]
-      .sort((a, b) => b.userCount - a.userCount)
-      .slice(0, 5);
+    const topTenants = [...tenantBreakdown].sort((a, b) => b.userCount - a.userCount).slice(0, 5);
     return toBarChartData(
       topTenants,
       (tenant) => formatTenantName(tenant.name),
@@ -234,29 +240,29 @@ export default function SuperuserDashboardPage() {
       label: 'Reset Password',
       icon: <Key className="h-5 w-5" />,
       onClick: () => navigate('/dashboard/superuser/users'),
-      description: 'Reset user passwords'
+      description: 'Reset user passwords',
     },
     {
       id: 'manage-sessions',
       label: 'Manage Sessions',
       icon: <Activity className="h-5 w-5" />,
       onClick: () => navigate('/dashboard/superuser/users'),
-      description: 'View and revoke user sessions'
+      description: 'View and revoke user sessions',
     },
     {
       id: 'audit-logs',
       label: 'View Audit Logs',
       icon: <FileText className="h-5 w-5" />,
       onClick: () => navigate('/dashboard/superuser/settings'),
-      description: 'Review platform audit logs'
+      description: 'Review platform audit logs',
     },
     {
       id: 'security',
       label: 'Security Center',
       icon: <Shield className="h-5 w-5" />,
       onClick: () => navigate('/dashboard/superuser/settings'),
-      description: 'Security settings and policies'
-    }
+      description: 'Security settings and policies',
+    },
   ];
 
   const getAlertIcon = (severity: AlertItem['severity']) => {
@@ -285,7 +291,13 @@ export default function SuperuserDashboardPage() {
     }
   };
 
-  const isLoading = overviewLoading || sessionsLoading || failedLoginsLoading || tenantsLoading || deviceLoading || distributionLoading;
+  const isLoading =
+    overviewLoading ||
+    sessionsLoading ||
+    failedLoginsLoading ||
+    tenantsLoading ||
+    deviceLoading ||
+    distributionLoading;
 
   if (isLoading) {
     return (
@@ -317,9 +329,7 @@ export default function SuperuserDashboardPage() {
         {/* Page Header */}
         <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-heading-2 text-[var(--brand-text-primary)]">
-              Superuser Dashboard
-            </h1>
+            <h1 className="text-heading-2 text-[var(--brand-text-primary)]">Superuser Dashboard</h1>
             <p className="mt-2 text-body-small text-[var(--brand-text-secondary)]">
               Platform-wide insights, quick actions, and security alerts
             </p>
@@ -380,8 +390,13 @@ export default function SuperuserDashboardPage() {
               value={formatNumber(deviceBreakdown?.mobile || 0)}
               description={(() => {
                 if (!deviceBreakdown) return '0% of active';
-                const total = deviceBreakdown.mobile + deviceBreakdown.tablet + deviceBreakdown.desktop + deviceBreakdown.unknown;
-                const percentage = total > 0 ? Math.round((deviceBreakdown.mobile / total) * 100) : 0;
+                const total =
+                  deviceBreakdown.mobile +
+                  deviceBreakdown.tablet +
+                  deviceBreakdown.desktop +
+                  deviceBreakdown.unknown;
+                const percentage =
+                  total > 0 ? Math.round((deviceBreakdown.mobile / total) * 100) : 0;
                 return `${percentage}% of active`;
               })()}
               icon={<Smartphone className="h-5 w-5" />}
@@ -391,8 +406,13 @@ export default function SuperuserDashboardPage() {
               value={formatNumber(deviceBreakdown?.desktop || 0)}
               description={(() => {
                 if (!deviceBreakdown) return '0% of active';
-                const total = deviceBreakdown.mobile + deviceBreakdown.tablet + deviceBreakdown.desktop + deviceBreakdown.unknown;
-                const percentage = total > 0 ? Math.round((deviceBreakdown.desktop / total) * 100) : 0;
+                const total =
+                  deviceBreakdown.mobile +
+                  deviceBreakdown.tablet +
+                  deviceBreakdown.desktop +
+                  deviceBreakdown.unknown;
+                const percentage =
+                  total > 0 ? Math.round((deviceBreakdown.desktop / total) * 100) : 0;
                 return `${percentage}% of active`;
               })()}
               icon={<Monitor className="h-5 w-5" />}
@@ -468,7 +488,8 @@ export default function SuperuserDashboardPage() {
                             const dateValue = log.createdAt || log.timestamp;
                             if (!dateValue) return formatDate(new Date().toISOString());
                             if (typeof dateValue === 'string') return formatDate(dateValue);
-                            if (dateValue instanceof Date) return formatDate(dateValue.toISOString());
+                            if (dateValue instanceof Date)
+                              return formatDate(dateValue.toISOString());
                             return formatDate(new Date().toISOString());
                           })()}
                         </p>
@@ -514,9 +535,7 @@ export default function SuperuserDashboardPage() {
                       {action.label}
                     </h3>
                   </div>
-                  <p className="text-sm text-[var(--brand-text-secondary)]">
-                    {action.description}
-                  </p>
+                  <p className="text-sm text-[var(--brand-text-secondary)]">{action.description}</p>
                 </div>
               </Card>
             ))}
@@ -540,9 +559,7 @@ export default function SuperuserDashboardPage() {
             <Card padding="md">
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <CheckCircle2 className="mb-3 h-12 w-12 text-[var(--brand-success)]" />
-                <p className="font-medium text-[var(--brand-surface-contrast)]">
-                  No Active Alerts
-                </p>
+                <p className="font-medium text-[var(--brand-surface-contrast)]">No Active Alerts</p>
                 <p className="mt-1 text-sm text-[var(--brand-text-secondary)]">
                   All systems operating normally
                 </p>
@@ -557,41 +574,41 @@ export default function SuperuserDashboardPage() {
                     : alert.severity === 'medium'
                       ? 'border-l-[var(--brand-warning)]'
                       : 'border-l-[var(--brand-info)]';
-                
+
                 return (
                   <div
                     key={alert.id}
                     className={`card-enterprise border-l-4 p-6 sm:p-8 transition-all hover:shadow-sm ${borderColorClass}`}
                   >
-                  <div className="flex items-start gap-4">
-                    <div className="mt-0.5">{getAlertIcon(alert.severity)}</div>
-                    <div className="flex-1">
-                      <div className="mb-2 flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-[var(--brand-surface-contrast)]">
-                            {alert.title}
-                          </h3>
-                          <p className="mt-1 text-sm text-[var(--brand-text-secondary)]">
-                            {alert.description}
-                          </p>
-                        </div>
-                        <span
-                          className={`rounded-full border px-2 py-1 text-xs font-medium ${getAlertBadgeColor(alert.severity)}`}
-                        >
-                          {alert.severity}
-                        </span>
-                      </div>
-                      <div className="mt-2 flex items-center gap-4 text-xs text-[var(--brand-muted)]">
-                        <span>{formatDate(alert.timestamp)}</span>
-                        {alert.userEmail && (
-                          <span className="flex items-center gap-1">
-                            <Users className="h-3 w-3" />
-                            {alert.userEmail}
+                    <div className="flex items-start gap-4">
+                      <div className="mt-0.5">{getAlertIcon(alert.severity)}</div>
+                      <div className="flex-1">
+                        <div className="mb-2 flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-[var(--brand-surface-contrast)]">
+                              {alert.title}
+                            </h3>
+                            <p className="mt-1 text-sm text-[var(--brand-text-secondary)]">
+                              {alert.description}
+                            </p>
+                          </div>
+                          <span
+                            className={`rounded-full border px-2 py-1 text-xs font-medium ${getAlertBadgeColor(alert.severity)}`}
+                          >
+                            {alert.severity}
                           </span>
-                        )}
+                        </div>
+                        <div className="mt-2 flex items-center gap-4 text-xs text-[var(--brand-muted)]">
+                          <span>{formatDate(alert.timestamp)}</span>
+                          {alert.userEmail && (
+                            <span className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              {alert.userEmail}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
                   </div>
                 );
               })}
@@ -602,4 +619,3 @@ export default function SuperuserDashboardPage() {
     </RouteMeta>
   );
 }
-

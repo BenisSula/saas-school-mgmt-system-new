@@ -45,13 +45,13 @@ router.get('/', requirePermission('fees:view'), async (req, res, next) => {
             req.tenantClient!.query(
               `SELECT amount, status, received_at FROM ${tenantSchema}.payments WHERE invoice_id = $1`,
               [invoice.id]
-            )
+            ),
           ]);
 
           return {
             ...invoice,
             items: items.rows,
-            payments: payments.rows
+            payments: payments.rows,
           };
         })
       );

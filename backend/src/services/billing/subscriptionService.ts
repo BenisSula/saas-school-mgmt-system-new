@@ -1,8 +1,14 @@
 import crypto from 'crypto';
-import type { Pool, PoolClient } from 'pg';
+import type { PoolClient } from 'pg';
 import { z } from 'zod';
 
-export const subscriptionStatusSchema = z.enum(['active', 'canceled', 'past_due', 'trialing', 'unpaid']);
+export const subscriptionStatusSchema = z.enum([
+  'active',
+  'canceled',
+  'past_due',
+  'trialing',
+  'unpaid',
+]);
 export const billingCycleSchema = z.enum(['monthly', 'yearly']);
 
 export type SubscriptionStatus = z.infer<typeof subscriptionStatusSchema>;
@@ -48,7 +54,7 @@ export async function createSubscription(
   const subscriptionId = crypto.randomUUID();
   const currency = input.currency || 'USD';
   const now = new Date();
-  
+
   // Calculate period dates
   const periodStart = now;
   let periodEnd: Date;
@@ -95,7 +101,7 @@ export async function createSubscription(
         trialStart,
         trialEnd,
         input.providerSubscriptionId || null,
-        JSON.stringify(input.metadata || {})
+        JSON.stringify(input.metadata || {}),
       ]
     );
 
@@ -107,19 +113,14 @@ export async function createSubscription(
         )
         VALUES ($1, $2, 'created', $3, $4)
       `,
-      [
-        subscriptionId,
-        input.tenantId,
-        JSON.stringify(subscriptionResult.rows[0]),
-        actorId || null
-      ]
+      [subscriptionId, input.tenantId, JSON.stringify(subscriptionResult.rows[0]), actorId || null]
     );
 
     await client.query('COMMIT');
 
     return {
       id: subscriptionId,
-      subscription: subscriptionResult.rows[0]
+      subscription: subscriptionResult.rows[0],
     };
   } catch (error) {
     await client.query('ROLLBACK');
@@ -175,10 +176,9 @@ export async function updateSubscription(
   await client.query('BEGIN');
   try {
     // Get old value for history
-    const oldResult = await client.query(
-      'SELECT * FROM shared.subscriptions WHERE id = $1',
-      [subscriptionId]
-    );
+    const oldResult = await client.query('SELECT * FROM shared.subscriptions WHERE id = $1', [
+      subscriptionId,
+    ]);
     if (oldResult.rowCount === 0) {
       throw new Error('Subscription not found');
     }
@@ -210,7 +210,7 @@ export async function updateSubscription(
         newValue.tenant_id,
         JSON.stringify(oldValue),
         JSON.stringify(newValue),
-        actorId || null
+        actorId || null,
       ]
     );
 
@@ -249,10 +249,9 @@ export async function getSubscriptionById(
   client: PoolClient,
   subscriptionId: string
 ): Promise<unknown | null> {
-  const result = await client.query(
-    'SELECT * FROM shared.subscriptions WHERE id = $1',
-    [subscriptionId]
-  );
+  const result = await client.query('SELECT * FROM shared.subscriptions WHERE id = $1', [
+    subscriptionId,
+  ]);
 
   return result.rows[0] || null;
 }
@@ -318,7 +317,7 @@ export async function renewSubscription(
         subscriptionId,
         subscription.tenant_id,
         JSON.stringify(updateResult.rows[0]),
-        actorId || null
+        actorId || null,
       ]
     );
 
@@ -394,7 +393,7 @@ export async function cancelSubscription(
         subscription.tenant_id,
         JSON.stringify(subscription),
         JSON.stringify(updateResult.rows[0]),
-        actorId || null
+        actorId || null,
       ]
     );
 
@@ -426,4 +425,3 @@ export async function getSubscriptionHistory(
 
   return result.rows;
 }
-

@@ -40,7 +40,7 @@ export function useAsyncFeedback(initialStatus: FeedbackStatus = 'info'): AsyncF
     setInfo,
     setSuccess,
     setError,
-    clear
+    clear,
   };
 }
 

@@ -19,14 +19,14 @@ router.post('/', authenticate, requirePermission('tenants:manage'), async (req, 
     const tenant = await createTenant({
       name,
       domain,
-      schemaName: normalizedSchema
+      schemaName: normalizedSchema,
     });
 
     return res.status(201).json({
       id: tenant.id,
       name,
       domain: domain ?? null,
-      schemaName: normalizedSchema
+      schemaName: normalizedSchema,
     });
   } catch (error) {
     return res.status(400).json({ message: (error as Error).message });
@@ -44,7 +44,7 @@ router.get('/current/branding', authenticate, tenantResolver(), async (req, res)
 
   return res.status(200).json({
     tenant: req.tenant,
-    branding: result.rows[0] ?? null
+    branding: result.rows[0] ?? null,
   });
 });
 

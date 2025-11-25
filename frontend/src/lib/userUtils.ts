@@ -13,7 +13,7 @@ const ACTIVE_STATUS: UserStatus = 'active';
 export function normalizeUser(user: AuthUser): AuthUser {
   return {
     ...user,
-    status: user.status ?? ACTIVE_STATUS
+    status: user.status ?? ACTIVE_STATUS,
   };
 }
 

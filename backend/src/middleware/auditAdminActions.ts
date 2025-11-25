@@ -1,5 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { recordAuditLog, recordSharedAuditLog, type AuditEntityType } from '../services/auditLogService';
+import {
+  recordAuditLog,
+  recordSharedAuditLog,
+  type AuditEntityType,
+} from '../services/auditLogService';
 import { logger } from '../lib/logger';
 
 /**
@@ -9,7 +13,7 @@ export function auditAdminActions(req: Request, res: Response, next: NextFunctio
   const originalSend = res.send;
   const user = req.user;
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
-  
+
   // Only audit admin/superuser actions
   if (!isAdmin || !user) {
     return next();
@@ -32,7 +36,7 @@ export function auditAdminActions(req: Request, res: Response, next: NextFunctio
         const action = `${req.method} ${req.path}`;
         const entityType = determineEntityType(req.path);
         const entityId = extractEntityId(req.params, req.body);
-        
+
         const auditDetails = {
           method: req.method,
           path: req.path,
@@ -42,7 +46,7 @@ export function auditAdminActions(req: Request, res: Response, next: NextFunctio
           params: req.params,
           query: req.query,
           ip: req.ip || req.socket.remoteAddress,
-          userAgent: req.headers['user-agent']
+          userAgent: req.headers['user-agent'],
         };
 
         if (user.role === 'superadmin') {
@@ -52,7 +56,7 @@ export function auditAdminActions(req: Request, res: Response, next: NextFunctio
             entityType,
             entityId,
             details: auditDetails,
-            actorRole: user.role
+            actorRole: user.role,
           });
         } else {
           if (req.tenantClient && req.tenant) {
@@ -62,7 +66,7 @@ export function auditAdminActions(req: Request, res: Response, next: NextFunctio
               entityType,
               entityId,
               details: auditDetails,
-              actorRole: user.role
+              actorRole: user.role,
             });
           }
         }
@@ -84,7 +88,7 @@ export function auditAdminActions(req: Request, res: Response, next: NextFunctio
 function determineEntityType(path: string): AuditEntityType {
   const segments = path.split('/').filter(Boolean);
   if (segments.length === 0) return 'ACCESS';
-  
+
   const resource = segments[segments.length - 1];
   const entityMap: Record<string, AuditEntityType> = {
     users: 'USER',
@@ -99,24 +103,36 @@ function determineEntityType(path: string): AuditEntityType {
     invoices: 'INVOICE',
     payments: 'INVOICE',
     configuration: 'TENANT',
-    branding: 'TENANT'
+    branding: 'TENANT',
   };
-  
+
   return entityMap[resource] ?? 'ACCESS';
 }
 
 /**
  * Extract entity ID from params or body
  */
-function extractEntityId(params: Record<string, string>, body: Record<string, unknown>): string | null {
+function extractEntityId(
+  params: Record<string, string>,
+  body: Record<string, unknown>
+): string | null {
   // Try common ID parameter names
-  const idParams = ['id', 'userId', 'studentId', 'teacherId', 'schoolId', 'tenantId', 'classId', 'subjectId'];
-  
+  const idParams = [
+    'id',
+    'userId',
+    'studentId',
+    'teacherId',
+    'schoolId',
+    'tenantId',
+    'classId',
+    'subjectId',
+  ];
+
   for (const param of idParams) {
     if (params[param]) return params[param];
     if (body[param] && typeof body[param] === 'string') return body[param] as string;
   }
-  
+
   return null;
 }
 
@@ -126,13 +142,12 @@ function extractEntityId(params: Record<string, string>, body: Record<string, un
 function sanitizeAuditBody(body: Record<string, unknown>): Record<string, unknown> {
   const sanitized = { ...body };
   const sensitiveFields = ['password', 'token', 'secret', 'apiKey', 'accessToken', 'refreshToken'];
-  
+
   for (const field of sensitiveFields) {
     if (sanitized[field]) {
       sanitized[field] = '[REDACTED]';
     }
   }
-  
+
   return sanitized;
 }
-

@@ -1,6 +1,5 @@
 import crypto from 'crypto';
-import type { PoolClient, Pool } from 'pg';
-import { createTenant, runTenantMigrations, seedTenant } from '../../db/tenantManager';
+import type { PoolClient } from 'pg';
 import { createUser } from '../userService';
 import { queueEmail } from '../email/emailService';
 import { recordSharedAuditLog } from '../auditLogService';
@@ -60,7 +59,7 @@ export async function createInvitation(
       tokenHash,
       input.invitedBy,
       expiresAt,
-      JSON.stringify(input.metadata || {})
+      JSON.stringify(input.metadata || {}),
     ]
   );
 
@@ -78,26 +77,27 @@ export async function createInvitation(
     variables: {
       invitationUrl,
       role: input.role,
-      expiresInHours
-    }
+      expiresInHours,
+    },
   });
 
   // Record audit log
-  await recordSharedAuditLog(client, {
-    tenantId: input.tenantId,
+  await recordSharedAuditLog({
     userId: input.invitedBy,
     action: 'invitation_created',
+    entityType: 'USER',
+    entityId: invitationId,
     details: {
       invitationId,
       email: input.email,
-      role: input.role
-    }
+      role: input.role,
+    },
   });
 
   return {
     id: invitationId,
     token,
-    invitationUrl
+    invitationUrl,
   };
 }
 
@@ -137,14 +137,13 @@ export async function acceptInvitation(
       role: invitation.role,
       tenantId: invitation.tenant_id,
       isVerified: true,
-      status: 'active'
+      status: 'active',
     });
 
     // Mark invitation as accepted
-    await client.query(
-      'UPDATE shared.tenant_invitations SET accepted_at = NOW() WHERE id = $1',
-      [invitationId]
-    );
+    await client.query('UPDATE shared.tenant_invitations SET accepted_at = NOW() WHERE id = $1', [
+      invitationId,
+    ]);
 
     // Update onboarding progress
     await updateOnboardingProgress(client, invitation.tenant_id, 'admin_created', 'completed');
@@ -156,15 +155,15 @@ export async function acceptInvitation(
       recipientEmail: invitation.email,
       variables: {
         name: invitation.email.split('@')[0],
-        role: invitation.role
-      }
+        role: invitation.role,
+      },
     });
 
     await client.query('COMMIT');
 
     return {
       userId: user.id,
-      tenantId: invitation.tenant_id
+      tenantId: invitation.tenant_id,
     };
   } catch (error) {
     await client.query('ROLLBACK');
@@ -228,7 +227,7 @@ export async function updateOnboardingProgress(
       status === 'in_progress' || status === 'completed' ? now : null,
       status === 'completed' ? now : null,
       errorMessage || null,
-      ...values
+      ...values,
     ]
   );
 }
@@ -249,18 +248,18 @@ export async function getOnboardingProgress(
     [tenantId]
   );
 
-  const steps: OnboardingStep[] = result.rows.map(row => ({
+  const steps: OnboardingStep[] = result.rows.map((row) => ({
     step: row.step,
     status: row.status,
     progressPercentage: row.progress_percentage,
     startedAt: row.started_at,
     completedAt: row.completed_at,
-    errorMessage: row.error_message
+    errorMessage: row.error_message,
   }));
 
   // Calculate overall progress
   const totalSteps = steps.length;
-  const completedSteps = steps.filter(s => s.status === 'completed').length;
+  const completedSteps = steps.filter((s) => s.status === 'completed').length;
   const overallProgress = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
 
   return { steps, overallProgress };
@@ -363,7 +362,8 @@ export async function updateOnboardingWizard(
 export async function completeTenantOnboarding(
   client: PoolClient,
   tenantId: string,
-  schoolData: {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _schoolData: {
     name: string;
     address?: string;
     contactPhone?: string;
@@ -373,16 +373,13 @@ export async function completeTenantOnboarding(
   await client.query('BEGIN');
   try {
     // Get tenant
-    const tenantResult = await client.query(
-      'SELECT * FROM shared.tenants WHERE id = $1',
-      [tenantId]
-    );
+    const tenantResult = await client.query('SELECT * FROM shared.tenants WHERE id = $1', [
+      tenantId,
+    ]);
 
     if (tenantResult.rowCount === 0) {
       throw new Error('Tenant not found');
     }
-
-    const tenant = tenantResult.rows[0];
 
     // Update onboarding progress
     await updateOnboardingProgress(client, tenantId, 'schema_created', 'in_progress');
@@ -404,7 +401,7 @@ export async function completeTenantOnboarding(
     // Mark onboarding as completed
     await updateOnboardingWizard(client, tenantId, {
       isCompleted: true,
-      currentStep: 999 // Final step
+      currentStep: 999, // Final step
     });
 
     await updateOnboardingProgress(client, tenantId, 'completed', 'completed');
@@ -417,4 +414,3 @@ export async function completeTenantOnboarding(
     throw error;
   }
 }
-

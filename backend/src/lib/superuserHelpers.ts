@@ -19,25 +19,6 @@ export function requireSuperuser(role: Role | string | undefined): void {
 }
 
 /**
- * Extract IP address from request
- * Handles proxy headers (x-forwarded-for, x-real-ip)
- */
-export function extractIpAddress(req: Request): string | null {
-  const forwardedFor = req.headers['x-forwarded-for'];
-  if (forwardedFor) {
-    const ips = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor.split(',')[0];
-    return ips.trim();
-  }
-
-  const realIp = req.headers['x-real-ip'];
-  if (realIp) {
-    return Array.isArray(realIp) ? realIp[0] : realIp;
-  }
-
-  return req.ip || req.socket.remoteAddress || null;
-}
-
-/**
  * Extract user agent from request
  */
 export function extractUserAgent(req: Request): string | null {
@@ -90,4 +71,3 @@ export function parseDeviceInfo(userAgent: string | null): Record<string, unknow
 
   return info;
 }
-

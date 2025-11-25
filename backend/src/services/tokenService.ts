@@ -32,7 +32,7 @@ export function generateAccessToken(payload: TokenPayload): string {
       tenantId: payload.tenantId || '',
       email: payload.email,
       role: payload.role,
-      tokenId
+      tokenId,
     },
     secret,
     options
@@ -54,7 +54,7 @@ export function generateRefreshToken(payload: TokenPayload): {
       tenantId: payload.tenantId || '',
       email: payload.email,
       role: payload.role,
-      tokenId
+      tokenId,
     },
     secret,
     options
@@ -116,7 +116,7 @@ export async function verifyRefreshToken(
     userId: row.user_id,
     tenantId: row.tenant_id || '',
     email: row.email,
-    role: row.role as Role
+    role: row.role as Role,
   };
 }
 

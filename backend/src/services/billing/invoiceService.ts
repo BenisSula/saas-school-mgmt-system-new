@@ -82,8 +82,8 @@ export async function createPlatformInvoice(
         JSON.stringify({
           ...input.metadata,
           description: input.description,
-          lineItems: lineItems || []
-        })
+          lineItems: lineItems || [],
+        }),
       ]
     );
 
@@ -102,10 +102,7 @@ export async function getInvoiceById(
   client: PoolClient,
   invoiceId: string
 ): Promise<unknown | null> {
-  const result = await client.query(
-    'SELECT * FROM shared.invoices WHERE id = $1',
-    [invoiceId]
-  );
+  const result = await client.query('SELECT * FROM shared.invoices WHERE id = $1', [invoiceId]);
 
   return result.rows[0] || null;
 }
@@ -162,7 +159,7 @@ export async function getInvoicesForTenant(
 
   return {
     invoices: invoicesResult.rows,
-    total
+    total,
   };
 }
 
@@ -237,10 +234,7 @@ export async function markInvoiceAsPaid(
 /**
  * Generate invoice PDF URL (placeholder - integrate with PDF service)
  */
-export async function generateInvoicePdf(
-  client: PoolClient,
-  invoiceId: string
-): Promise<string> {
+export async function generateInvoicePdf(client: PoolClient, invoiceId: string): Promise<string> {
   const invoice = await getInvoiceById(client, invoiceId);
   if (!invoice) {
     throw new Error('Invoice not found');
@@ -262,4 +256,3 @@ export async function generateInvoicePdf(
 
   return pdfUrl;
 }
-

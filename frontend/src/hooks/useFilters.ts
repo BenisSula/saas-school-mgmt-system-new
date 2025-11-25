@@ -39,6 +39,6 @@ export function useFilters<T extends BaseFilters>(
     updateFilter,
     resetFilters,
     hasActiveFilters,
-    setFilters
+    setFilters,
   };
 }

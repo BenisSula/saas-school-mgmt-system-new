@@ -73,12 +73,9 @@ export function SuperuserLayout({ children }: SuperuserLayoutProps) {
 
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto page-content">
-          <div className="mx-auto page-container">
-            {children}
-          </div>
+          <div className="mx-auto page-container">{children}</div>
         </main>
       </div>
     </div>
   );
 }
-

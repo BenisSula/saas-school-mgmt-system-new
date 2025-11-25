@@ -22,7 +22,7 @@ const currentUser: NonNullable<MockAuthRequest['user']> = {
   role: 'teacher',
   tenantId: 'tenant_test',
   email: 'teacher@test.com',
-  tokenId: 'token'
+  tokenId: 'token',
 };
 
 jest.mock('../src/middleware/authenticate', () => ({
@@ -30,7 +30,7 @@ jest.mock('../src/middleware/authenticate', () => ({
   default: (req: MockAuthRequest, _res: Response, next: NextFunction) => {
     req.user = { ...currentUser };
     next();
-  }
+  },
 }));
 
 jest.mock('../src/middleware/tenantResolver', () => {
@@ -40,7 +40,7 @@ jest.mock('../src/middleware/tenantResolver', () => {
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -190,7 +190,7 @@ describe('Teacher Assignment Verification', () => {
       id: teacherUserId,
       role: 'teacher',
       tenantId,
-      email: 'teacher@test.com'
+      email: 'teacher@test.com',
     });
   });
 
@@ -276,7 +276,7 @@ describe('Teacher Assignment Verification', () => {
     it('allows teacher to mark attendance for assigned class', async () => {
       const headers = {
         Authorization: 'Bearer fake',
-        'x-tenant-id': tenantId
+        'x-tenant-id': tenantId,
       };
 
       const res = await request(app)
@@ -289,9 +289,9 @@ describe('Teacher Assignment Verification', () => {
               classId: classId,
               status: 'present',
               markedBy: teacherUserId,
-              date: '2025-01-15'
-            }
-          ]
+              date: '2025-01-15',
+            },
+          ],
         });
 
       // Should succeed (204) or fail with validation/data issues, but not 403 (forbidden)
@@ -315,7 +315,7 @@ describe('Teacher Assignment Verification', () => {
     it('forbids teacher from marking attendance for non-assigned class', async () => {
       const headers = {
         Authorization: 'Bearer fake',
-        'x-tenant-id': tenantId
+        'x-tenant-id': tenantId,
       };
 
       const res = await request(app)
@@ -328,9 +328,9 @@ describe('Teacher Assignment Verification', () => {
               classId: otherClassId, // Not assigned
               status: 'present',
               markedBy: teacherUserId,
-              date: '2025-01-15'
-            }
-          ]
+              date: '2025-01-15',
+            },
+          ],
         });
 
       expect(res.status).toBe(403);
@@ -341,7 +341,7 @@ describe('Teacher Assignment Verification', () => {
     it('allows teacher to view class report for assigned class', async () => {
       const headers = {
         Authorization: 'Bearer fake',
-        'x-tenant-id': tenantId
+        'x-tenant-id': tenantId,
       };
 
       const res = await request(app)
@@ -369,7 +369,7 @@ describe('Teacher Assignment Verification', () => {
     it('forbids teacher from viewing class report for non-assigned class', async () => {
       const headers = {
         Authorization: 'Bearer fake',
-        'x-tenant-id': tenantId
+        'x-tenant-id': tenantId,
       };
 
       const res = await request(app)
@@ -405,7 +405,7 @@ describe('Teacher Assignment Verification', () => {
     it('allows teacher to view roster for assigned class', async () => {
       const headers = {
         Authorization: 'Bearer fake',
-        'x-tenant-id': tenantId
+        'x-tenant-id': tenantId,
       };
 
       const res = await request(app).get(`/teacher/classes/${classId}/roster`).set(headers);
@@ -418,7 +418,7 @@ describe('Teacher Assignment Verification', () => {
     it('forbids teacher from viewing roster for non-assigned class', async () => {
       const headers = {
         Authorization: 'Bearer fake',
-        'x-tenant-id': tenantId
+        'x-tenant-id': tenantId,
       };
 
       const res = await request(app).get(`/teacher/classes/${otherClassId}/roster`).set(headers);
@@ -438,12 +438,12 @@ describe('Teacher Assignment Verification', () => {
         id: crypto.randomUUID(),
         role: 'admin',
         tenantId,
-        email: 'admin@test.com'
+        email: 'admin@test.com',
       });
 
       const headers = {
         Authorization: 'Bearer fake',
-        'x-tenant-id': tenantId
+        'x-tenant-id': tenantId,
       };
 
       const res = await request(app)

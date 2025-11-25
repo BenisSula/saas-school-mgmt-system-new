@@ -11,16 +11,16 @@ import {
   resetPassword,
   signUp,
   verifyEmail,
-  logout
+  logout,
 } from '../services/authService';
 import { ValidationError } from '../middleware/validation';
-import { createErrorResponse } from '../lib/apiErrors';
+import { createErrorResponse } from '../lib/responseHelpers';
 import {
   findTenantByRegistrationCode,
   findTenantByName,
   lookupTenant,
   listActiveTenants,
-  getRecentSchools
+  getRecentSchools,
 } from '../services/tenantLookupService';
 
 type ErrorWithCode = Error & { code?: string };
@@ -34,7 +34,7 @@ const authLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 20,
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 
 router.use(authLimiter);
@@ -50,21 +50,21 @@ router.get('/health', async (_req, res) => {
       pool.query('SELECT 1'),
       new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Database query timeout')), 5000)
-      )
+      ),
     ])) as { rows: unknown[] };
 
     if (result && result.rows) {
       res.status(200).json({
         status: 'ok',
         db: 'ok',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     } else {
       res.status(503).json({
         status: 'error',
         db: 'error',
         message: 'Database query returned unexpected result',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
   } catch (error) {
@@ -75,7 +75,7 @@ router.get('/health', async (_req, res) => {
       db: 'error',
       message: 'Database connection failed',
       error: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 });
@@ -176,7 +176,7 @@ router.post('/login', suspiciousLoginLimiter, async (req, res) => {
     console.error('[auth] Login route error:', {
       message: errorObj.message,
       stack: errorObj.stack,
-      name: errorObj.name
+      name: errorObj.name,
     });
 
     const errorMessage = errorObj.message;
@@ -193,7 +193,7 @@ router.post('/login', suspiciousLoginLimiter, async (req, res) => {
         userAgent: req.get('user-agent') || null,
         userId: null,
         tenantId: null,
-        failureReason: errorMessage
+        failureReason: errorMessage,
       });
 
       // Track failed login attempt metrics
@@ -234,7 +234,7 @@ router.post('/refresh', async (req, res) => {
 
     const response = await refreshToken(token, {
       ip: req.ip,
-      userAgent: req.get('user-agent') ?? null
+      userAgent: req.get('user-agent') ?? null,
     });
     return res.status(200).json(response);
   } catch (error) {
@@ -274,7 +274,8 @@ router.post('/change-password', authenticate, async (req, res) => {
     }
 
     const { changeOwnPassword } = await import('../services/userPasswordService');
-    const { extractIpAddress, extractUserAgent } = await import('../lib/superuserHelpers');
+    const { extractIpAddress } = await import('../lib/requestUtils');
+    const { extractUserAgent } = await import('../lib/superuserHelpers');
 
     const { getPool: getPoolFn } = await import('../db/connection');
     await changeOwnPassword(
@@ -355,7 +356,7 @@ router.get('/list-schools', async (req, res) => {
       return res.status(200).json({
         schools: recentSchools,
         count: recentSchools.length,
-        type: 'recent'
+        type: 'recent',
       });
     } else {
       // Return paginated list of all active schools
@@ -364,7 +365,7 @@ router.get('/list-schools', async (req, res) => {
         schools: result.tenants,
         count: result.tenants.length,
         total: result.total,
-        type: 'all'
+        type: 'all',
       });
     }
   } catch (error) {
@@ -381,7 +382,7 @@ router.get('/lookup-tenant', async (req, res) => {
 
     if (!code && !name && !domain) {
       return res.status(400).json({
-        message: 'Either code, name, or domain query parameter is required'
+        message: 'Either code, name, or domain query parameter is required',
       });
     }
 
@@ -435,7 +436,7 @@ router.post('/logout', authenticate, async (req, res) => {
     }
     await logout(req.user!.id, token, {
       ip: req.ip,
-      userAgent: req.get('user-agent') ?? null
+      userAgent: req.get('user-agent') ?? null,
     });
     return res.status(200).json({ message: 'Logged out successfully' });
   } catch (error) {

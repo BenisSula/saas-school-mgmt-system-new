@@ -9,7 +9,7 @@ import {
   hasAnyPermission,
   hasAllPermissions,
   canAccessResource,
-  canAccessWithPermission
+  canAccessWithPermission,
 } from './permissions';
 import { hasPermission as baseHasPermission } from '../../config/permissions';
 
@@ -126,7 +126,13 @@ export function useRBAC(_options?: UseRBACOptions): UseRBACReturn {
   const isSuperAdmin = useMemo(() => role === 'superadmin', [role]);
   const isAdmin = useMemo(() => role === 'admin', [role]);
   const isTeacher = useMemo(() => role === 'teacher', [role]);
-  const isHOD = useMemo(() => role === 'hod', [role]);
+  // HODs have role='teacher' with additional_roles containing 'hod'
+  // Use helper function to check HOD status
+  const isHOD = useMemo(() => {
+    if (!user || role !== 'teacher') return false;
+    // Check if user has 'hod' in additional_roles
+    return user.additional_roles?.some((r) => r.role === 'hod') ?? false;
+  }, [user, role]);
   const isStudent = useMemo(() => role === 'student', [role]);
 
   return {
@@ -143,6 +149,6 @@ export function useRBAC(_options?: UseRBACOptions): UseRBACReturn {
     isAdmin,
     isTeacher,
     isHOD,
-    isStudent
+    isStudent,
   };
 }

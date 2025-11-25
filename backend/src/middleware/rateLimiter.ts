@@ -13,7 +13,7 @@ export const apiLimiter = rateLimit({
   skip: (req: Request) => {
     // Skip rate limiting for health checks
     return req.path === '/health';
-  }
+  },
 });
 
 /**
@@ -25,7 +25,7 @@ export const strictLimiter = rateLimit({
   message: 'Too many authentication attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: true // Don't count successful requests
+  skipSuccessfulRequests: true, // Don't count successful requests
 });
 
 /**
@@ -36,7 +36,7 @@ export const adminActionLimiter = rateLimit({
   max: 50,
   message: 'Too many admin actions, please slow down.',
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 
 /**
@@ -49,7 +49,7 @@ export const superuserStrictLimiter = rateLimit({
   message: 'Too many superuser actions, please slow down.',
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: false // Count all requests
+  skipSuccessfulRequests: false, // Count all requests
 });
 
 /**
@@ -67,10 +67,12 @@ export const suspiciousLoginLimiter = rateLimit({
     // Use IP address for tracking
     const forwarded = req.headers['x-forwarded-for'];
     const ip = forwarded
-      ? (typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : forwarded[0])
+      ? typeof forwarded === 'string'
+        ? forwarded.split(',')[0].trim()
+        : forwarded[0]
       : req.socket.remoteAddress || 'unknown';
     return `suspicious-login:${ip}`;
-  }
+  },
 });
 
 /**
@@ -81,24 +83,5 @@ export const writeLimiter = rateLimit({
   max: 20,
   message: 'Too many write operations, please slow down.',
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
-
-/**
- * Get client identifier for rate limiting
- */
-export function getClientIdentifier(req: Request): string {
-  // Use user ID if authenticated, otherwise use IP
-  if (req.user?.id) {
-    return `user:${req.user.id}`;
-  }
-  
-  // Get IP from various headers (for proxy/load balancer scenarios)
-  const forwarded = req.headers['x-forwarded-for'];
-  const ip = forwarded
-    ? (typeof forwarded === 'string' ? forwarded.split(',')[0] : forwarded[0])
-    : req.socket.remoteAddress || 'unknown';
-  
-  return `ip:${ip}`;
-}
-

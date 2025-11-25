@@ -22,8 +22,8 @@ async function createSchoolRecord() {
             JSON.stringify({
               city: 'Banjul',
               country: 'GM',
-              address: 'New Horizon Senior Secondary School, Banjul, The Gambia'
-            })
+              address: 'New Horizon Senior Secondary School, Banjul, The Gambia',
+            }),
           ]
         );
         console.log(`[seed] Created school record: ${schoolName}`);

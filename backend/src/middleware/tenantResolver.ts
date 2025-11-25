@@ -91,7 +91,7 @@ export function tenantResolver(options: TenantResolverOptions = {}) {
       // For non-superadmin users, tenant context is required
       if (req.user && !isSuperadmin) {
         return res.status(403).json({
-          message: 'Tenant context required. Please ensure you are assigned to a tenant.'
+          message: 'Tenant context required. Please ensure you are assigned to a tenant.',
         });
       }
       return res.status(400).json({ message: 'Tenant context missing' });
@@ -122,7 +122,7 @@ export function tenantResolver(options: TenantResolverOptions = {}) {
     req.tenant = {
       id: tenant.id,
       schema: tenant.schema_name,
-      name: tenant.name
+      name: tenant.name,
     };
     req.tenantClient = client;
 

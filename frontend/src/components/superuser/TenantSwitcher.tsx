@@ -14,21 +14,21 @@ export function TenantSwitcher({
   selectedTenantId,
   onTenantChange,
   showAllOption = true,
-  className = ''
+  className = '',
 }: TenantSwitcherProps) {
   const { data: schools, isLoading } = useQuery({
     queryKey: ['superuser', 'schools'],
     queryFn: async () => {
       return await api.superuser.listSchools();
-    }
+    },
   });
 
   const options = [
     ...(showAllOption ? [{ label: 'All Tenants', value: 'all' }] : []),
     ...(schools || []).map((school) => ({
       label: school.name,
-      value: school.id
-    }))
+      value: school.id,
+    })),
   ];
 
   const handleChange = (value: string) => {
@@ -55,4 +55,3 @@ export function TenantSwitcher({
     </div>
   );
 }
-

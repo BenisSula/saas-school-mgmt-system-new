@@ -9,7 +9,7 @@ import {
   markAnnouncementAsViewed,
   getAllAnnouncements,
   updateAnnouncement,
-  deleteAnnouncement
+  deleteAnnouncement,
 } from '../../services/support/announcementsService';
 import { z } from 'zod';
 
@@ -27,7 +27,7 @@ const createAnnouncementSchema = z.object({
   isPinned: z.boolean().optional(),
   targetRoles: z.array(z.string()).optional(),
   startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional()
+  endDate: z.string().datetime().optional(),
 });
 
 const updateAnnouncementSchema = z.object({
@@ -40,7 +40,7 @@ const updateAnnouncementSchema = z.object({
   isActive: z.boolean().optional(),
   targetRoles: z.array(z.string()).optional(),
   startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional()
+  endDate: z.string().datetime().optional(),
 });
 
 // Get announcements for current user
@@ -88,9 +88,10 @@ router.get('/', requirePermission('announcements:manage'), async (req, res, next
     try {
       const result = await getAllAnnouncements(client, req.tenant?.id, {
         type: req.query.type as string,
-        isActive: req.query.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined,
+        isActive:
+          req.query.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined,
         limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
-        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined
+        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
     } finally {
@@ -117,7 +118,7 @@ router.post('/', requirePermission('announcements:manage'), async (req, res, nex
         tenantId: req.tenant?.id,
         startDate: parsed.data.startDate ? new Date(parsed.data.startDate) : undefined,
         endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : undefined,
-        createdBy: req.user?.id
+        createdBy: req.user?.id,
       });
       res.status(201).json(announcement);
     } finally {
@@ -142,7 +143,7 @@ router.patch('/:id', requirePermission('announcements:manage'), async (req, res,
       const announcement = await updateAnnouncement(client, req.params.id, {
         ...parsed.data,
         startDate: parsed.data.startDate ? new Date(parsed.data.startDate) : undefined,
-        endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : undefined
+        endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : undefined,
       });
       res.json(announcement);
     } finally {
@@ -170,4 +171,3 @@ router.delete('/:id', requirePermission('announcements:manage'), async (req, res
 });
 
 export default router;
-

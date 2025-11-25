@@ -21,7 +21,7 @@ export function ModalWithCloseControl({
   children,
   footer,
   initialFocusRef,
-  showCloseButton = true
+  showCloseButton = true,
 }: ModalWithCloseControlProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const lastActiveElement = useRef<HTMLElement | null>(null);
@@ -74,7 +74,7 @@ export function ModalWithCloseControl({
           className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 backdrop-blur-sm sm:px-6"
           style={{
             backgroundColor: 'var(--modal-backdrop)',
-            backdropFilter: 'var(--modal-backdrop-blur)'
+            backdropFilter: 'var(--modal-backdrop-blur)',
           }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -94,7 +94,7 @@ export function ModalWithCloseControl({
             className="w-full max-w-lg rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)] shadow-2xl focus-visible-ring"
             style={{
               borderRadius: 'var(--modal-radius)',
-              padding: 'var(--modal-padding)'
+              padding: 'var(--modal-padding)',
             }}
             variants={modalAnimation}
             initial="hidden"
@@ -102,10 +102,7 @@ export function ModalWithCloseControl({
             exit="exit"
           >
             <header className="mb-6 flex items-center justify-between border-b border-[var(--brand-border)] pb-4">
-              <h2
-                id="modal-title"
-                className="text-heading-4 text-[var(--brand-text-primary)]"
-              >
+              <h2 id="modal-title" className="text-heading-4 text-[var(--brand-text-primary)]">
                 {title}
               </h2>
               {showCloseButton && (
@@ -120,9 +117,7 @@ export function ModalWithCloseControl({
                 </Button>
               )}
             </header>
-            <div className="text-body text-[var(--brand-text-primary)]">
-              {children}
-            </div>
+            <div className="text-body text-[var(--brand-text-primary)]">{children}</div>
             {footer ? (
               <footer className="mt-6 flex flex-col items-stretch gap-3 border-t border-[var(--brand-border)] pt-4 sm:flex-row sm:items-center sm:justify-end">
                 {footer}
@@ -137,4 +132,3 @@ export function ModalWithCloseControl({
 }
 
 export default ModalWithCloseControl;
-

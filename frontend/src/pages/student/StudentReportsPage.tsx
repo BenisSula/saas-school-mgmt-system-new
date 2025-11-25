@@ -23,7 +23,7 @@ export default function StudentReportsPage() {
       try {
         const [termList, reportList] = await Promise.all([
           api.student.listTerms(),
-          api.student.listReports()
+          api.student.listReports(),
         ]);
         if (cancelled) return;
         setTerms(termList);
@@ -50,15 +50,15 @@ export default function StudentReportsPage() {
   const tableColumns: TableColumn<StudentTermReportRecord>[] = [
     {
       header: 'Report ID',
-      key: 'id'
+      key: 'id',
     },
     {
       header: 'Term',
-      render: (row) => terms.find((term) => term.id === row.termId)?.name ?? 'Archived term'
+      render: (row) => terms.find((term) => term.id === row.termId)?.name ?? 'Archived term',
     },
     {
       header: 'Generated on',
-      render: (row) => new Date(row.generatedAt).toLocaleString()
+      render: (row) => new Date(row.generatedAt).toLocaleString(),
     },
     {
       header: 'Actions',
@@ -66,8 +66,8 @@ export default function StudentReportsPage() {
         <Button variant="ghost" size="sm" onClick={() => void downloadReport(row.id)}>
           Download PDF
         </Button>
-      )
-    }
+      ),
+    },
   ];
 
   const generateReport = async () => {
@@ -131,7 +131,7 @@ export default function StudentReportsPage() {
               onChange={(event) => setSelectedTermId(event.target.value)}
               options={terms.map((term) => ({
                 value: term.id,
-                label: term.name
+                label: term.name,
               }))}
               disabled={terms.length === 0}
             />

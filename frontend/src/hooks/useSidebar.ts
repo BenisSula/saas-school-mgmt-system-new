@@ -31,7 +31,7 @@ export function useSidebar(options: UseSidebarOptions = {}): UseSidebarReturn {
     toggleSidebarCollapsed,
     mobileSidebarOpen,
     setMobileSidebarOpen,
-    toggleMobileSidebar
+    toggleMobileSidebar,
   } = useUIStore();
   const prevStorageKeyRef = useRef<string | undefined>(storageKey);
   const prevCollapsedRef = useRef(sidebarCollapsed);
@@ -155,6 +155,6 @@ export function useSidebar(options: UseSidebarOptions = {}): UseSidebarReturn {
     closeMobile,
     toggleCollapsed,
     setCollapsed,
-    shouldShowOverlay
+    shouldShowOverlay,
   };
 }

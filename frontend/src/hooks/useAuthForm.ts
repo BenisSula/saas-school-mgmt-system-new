@@ -157,6 +157,6 @@ export function useAuthForm<T extends Record<string, unknown>>(
     setGeneralError,
     submitting,
     handleSubmit,
-    reset
+    reset,
   };
 }

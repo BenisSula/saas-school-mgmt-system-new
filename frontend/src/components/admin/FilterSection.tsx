@@ -14,7 +14,7 @@ export function FilterSection({
   resultCount,
   totalCount,
   hasActiveFilters,
-  onClearFilters
+  onClearFilters,
 }: FilterSectionProps) {
   return (
     <section

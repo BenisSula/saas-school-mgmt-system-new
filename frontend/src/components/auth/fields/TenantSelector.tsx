@@ -18,7 +18,7 @@ export function TenantSelector({
   error,
   helperText,
   required = true,
-  containerClassName = ''
+  containerClassName = '',
 }: TenantSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState<'code' | 'name' | 'dropdown'>('dropdown');

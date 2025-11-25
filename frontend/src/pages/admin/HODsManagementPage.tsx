@@ -1,9 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { RouteMeta } from '../../components/layout/RouteMeta';
 import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Modal } from '../../components/ui/Modal';
 import { StatusBanner } from '../../components/ui/StatusBanner';
@@ -11,8 +9,27 @@ import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton';
 import { PaginatedTable } from '../../components/admin/PaginatedTable';
 import { ExportButtons } from '../../components/admin/ExportButtons';
 import { createExportHandlers } from '../../hooks/useExport';
-import { api, type TeacherProfile, type TenantUser, type Subject } from '../../lib/api';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  useHODs,
+  useAssignHODDepartment,
+  useBulkRemoveHODRoles,
+} from '../../hooks/queries/useHODs';
+import { useTeachers } from '../../hooks/queries/useTeachers';
+import { useDebounce } from '../../hooks/useDebounce';
+import { useQuery } from '../../hooks/useQuery';
+import { queryKeys } from '../../hooks/useQuery';
+import { api, type TeacherProfile } from '../../lib/api';
 import type { TableColumn } from '../../components/ui/Table';
+import { CreateHODModal } from '../../components/admin/CreateHODModal';
+import { EmptyState } from '../../components/admin/EmptyState';
+import { CSVImportModal } from '../../components/admin/CSVImportModal';
+import { AdvancedFilters, type AdvancedFilterField } from '../../components/admin/AdvancedFilters';
+import { ActivityLog } from '../../components/admin/ActivityLog';
+import { HODDetailView } from '../../components/admin/HODDetailView';
+import { useCSVImport } from '../../hooks/useCSVImport';
+import { ViewButton, ActionButtonGroup } from '../../components/table-actions';
+import { Plus, Upload, Eye } from 'lucide-react';
 
 interface HODFilters {
   search: string;
@@ -21,7 +38,7 @@ interface HODFilters {
 
 const defaultFilters: HODFilters = {
   search: '',
-  department: 'all'
+  department: 'all',
 };
 
 interface HODRecord extends TeacherProfile {
@@ -31,123 +48,97 @@ interface HODRecord extends TeacherProfile {
 
 export function HODsManagementPage() {
   const navigate = useNavigate();
-  const [users, setUsers] = useState<TenantUser[]>([]);
-  const [teachers, setTeachers] = useState<TeacherProfile[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState<HODFilters>(defaultFilters);
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [showDepartmentModal, setShowDepartmentModal] = useState<boolean>(false);
   const [showAnalyticsModal, setShowAnalyticsModal] = useState<boolean>(false);
+  const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [showImportModal, setShowImportModal] = useState<boolean>(false);
+  const [showActivityLog, setShowActivityLog] = useState<boolean>(false);
+  const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
   const [selectedHOD, setSelectedHOD] = useState<HODRecord | null>(null);
+  const [selectedHODId, setSelectedHODId] = useState<string | null>(null);
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [usersResult, teachersResult, subjectsResult] = await Promise.allSettled([
-        api.listUsers(),
-        api.listTeachers(),
-        api.admin.listSubjects()
-      ]);
+  // CSV Import
+  const csvImportMutation = useCSVImport({
+    entityType: 'hods',
+    invalidateQueries: [
+      [...queryKeys.admin.hods()],
+      [...queryKeys.admin.teachers()],
+    ] as unknown as unknown[][],
+  });
 
-      if (usersResult.status === 'fulfilled') {
-        setUsers(usersResult.value);
-      }
+  // Debounce search filter to prevent excessive API calls
+  const debouncedSearch = useDebounce(filters.search, 500);
 
-      if (teachersResult.status === 'fulfilled') {
-        setTeachers(teachersResult.value);
-      }
-
-      if (subjectsResult.status === 'fulfilled') {
-        setSubjects(subjectsResult.value);
-      }
-    } catch (err) {
-      const message = (err as Error).message;
-      setError(message);
-      toast.error(message);
-    } finally {
-      setLoading(false);
+  // Build API filters
+  const apiFilters = useMemo(() => {
+    const result: { search?: string; department?: string } = {};
+    if (debouncedSearch) {
+      result.search = debouncedSearch;
     }
-  }, []);
+    if (filters.department && filters.department !== 'all') {
+      result.department = filters.department;
+    }
+    return Object.keys(result).length > 0 ? result : undefined;
+  }, [debouncedSearch, filters.department]);
 
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
-
-  // Filter HODs: teachers with additional_roles containing 'hod'
-  const hodUsers = useMemo(
-    () =>
-      users.filter(
-        (u) => u.role === 'teacher' && u.additional_roles?.some((r) => r.role === 'hod')
-      ),
-    [users]
+  // Fetch data using React Query hooks
+  const { data: filteredHODs = [], isLoading: hodsLoading, error: hodsError } = useHODs(apiFilters);
+  const { data: subjects = [], isLoading: subjectsLoading } = useQuery(
+    queryKeys.admin.subjects(),
+    () => api.admin.listSubjects(),
+    { staleTime: 60000 }
   );
+  const { data: teachersData = [] } = useTeachers();
+  const teachers = useMemo(() => teachersData || [], [teachersData]);
 
-  const hods = useMemo(() => {
-    return hodUsers
-      .map((user) => {
-        const teacher = teachers.find((t) => t.email === user.email);
-        if (!teacher) return null;
+  // Mutations
+  const assignDepartmentMutation = useAssignHODDepartment();
+  const bulkRemoveMutation = useBulkRemoveHODRoles();
 
-        // Count teachers under oversight (teachers with same subjects)
-        const hodSubjects = teacher.subjects;
-        const teachersUnderOversight = teachers.filter(
-          (t) => t.id !== teacher.id && t.subjects.some((subject) => hodSubjects.includes(subject))
-        ).length;
+  const loading = hodsLoading || subjectsLoading;
+  const error = hodsError ? (hodsError as Error).message : null;
 
-        // Extract department from metadata or use first subject as department
-        const department =
-          (
-            user.additional_roles?.find((r) => r.role === 'hod')?.metadata as {
-              department?: string;
-            }
-          )?.department ||
-          teacher.subjects[0] ||
-          'General';
-
-        return {
-          ...teacher,
-          department,
-          teachersUnderOversight
-        } as HODRecord;
-      })
-      .filter((hod): hod is HODRecord => hod !== null);
-  }, [hodUsers, teachers]);
-
-  const filteredHODs = useMemo(() => {
-    return hods.filter((hod) => {
-      // Search filter
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        const matchesSearch =
-          hod.name.toLowerCase().includes(searchLower) ||
-          hod.email.toLowerCase().includes(searchLower) ||
-          hod.department?.toLowerCase().includes(searchLower) ||
-          hod.subjects.some((s) => s.toLowerCase().includes(searchLower));
-        if (!matchesSearch) return false;
-      }
-
-      // Department filter
-      if (filters.department !== 'all') {
-        if (hod.department !== filters.department) return false;
-      }
-
-      return true;
-    });
-  }, [hods, filters]);
-
+  // Optimize: Use reduce instead of map().filter() for better performance
   const uniqueDepartments = useMemo(() => {
-    const depts = new Set(hods.map((hod) => hod.department).filter((d): d is string => !!d));
+    const depts = new Set<string>();
+    for (const hod of filteredHODs) {
+      if (hod.department) {
+        depts.add(hod.department);
+      }
+    }
     return Array.from(depts);
-  }, [hods]);
+  }, [filteredHODs]);
+
+  // Advanced filter fields (defined after uniqueDepartments)
+  const advancedFilterFields: AdvancedFilterField[] = useMemo(
+    () => [
+      {
+        key: 'department',
+        label: 'Department',
+        type: 'select',
+        options: [
+          { label: 'All departments', value: 'all' },
+          ...uniqueDepartments.map((d) => ({ label: d, value: d })),
+        ],
+      },
+    ],
+    [uniqueDepartments]
+  );
 
   const handleViewProfile = (hod: HODRecord) => {
     setSelectedHOD(hod);
+    setSelectedHODId(hod.id);
     setShowProfileModal(true);
+  };
+
+  const handleViewDetails = (hod: HODRecord) => {
+    setSelectedHODId(hod.id);
+    setShowDetailModal(true);
   };
 
   const handleAssignDepartment = (hod: HODRecord) => {
@@ -157,19 +148,23 @@ export function HODsManagementPage() {
   };
 
   const handleSaveDepartment = async () => {
-    if (!selectedHOD) {
+    if (!selectedHOD || !selectedDepartment) {
       return;
     }
 
-    try {
-      // TODO: Implement department assignment API when available
-      // This would update the user's additional_roles metadata
-      toast.success('Department assigned successfully');
-      setShowDepartmentModal(false);
-      await loadData();
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
+    assignDepartmentMutation.mutate(
+      {
+        userId: selectedHOD.id,
+        department: selectedDepartment,
+      },
+      {
+        onSuccess: () => {
+          setShowDepartmentModal(false);
+          setSelectedHOD(null);
+          setSelectedDepartment('');
+        },
+      }
+    );
   };
 
   const handleViewAnalytics = (hod: HODRecord) => {
@@ -179,22 +174,22 @@ export function HODsManagementPage() {
 
   const handleBulkDelete = async () => {
     if (selectedRows.size === 0) {
-      toast.error('Please select HODs to remove');
       return;
     }
 
-    if (!window.confirm(`Remove HOD role from ${selectedRows.size} teacher(s)?`)) {
+    if (
+      !window.confirm(
+        `Remove HOD role from ${selectedRows.size} teacher(s)? This action cannot be undone.`
+      )
+    ) {
       return;
     }
 
-    try {
-      // TODO: Implement bulk HOD role removal API when available
-      toast.success(`${selectedRows.size} HOD role(s) removed`);
-      setSelectedRows(new Set());
-      await loadData();
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
+    bulkRemoveMutation.mutate(Array.from(selectedRows), {
+      onSuccess: () => {
+        setSelectedRows(new Set());
+      },
+    });
   };
 
   // Consolidated export handlers using DRY principle
@@ -204,17 +199,32 @@ export function HODsManagementPage() {
       Email: hod.email,
       Department: hod.department || 'N/A',
       Subjects: hod.subjects.join('; '),
-      'Teachers Under Oversight': hod.teachersUnderOversight || 0
+      'Teachers Under Oversight': hod.teachersUnderOversight || 0,
     }));
 
-    return createExportHandlers(exportData, 'hods', [
+    const handlers = createExportHandlers(exportData, 'hods', [
       'Name',
       'Email',
       'Department',
       'Subjects',
-      'Teachers Under Oversight'
+      'Teachers Under Oversight',
     ]);
-  }, [filteredHODs]);
+
+    // For PDF/Excel, use backend endpoint with filters
+    const exportPayload = {
+      type: 'hods' as const,
+      title: 'HODs Export',
+      filters: {
+        search: filters.search || undefined,
+      },
+    };
+
+    return {
+      ...handlers,
+      exportPDF: () => handlers.exportPDF('/reports/export', exportPayload),
+      exportExcel: () => handlers.exportExcel('/reports/export', exportPayload),
+    };
+  }, [filteredHODs, filters]);
 
   const handleExportCSV = exportHandlers.exportCSV;
   const handleExportPDF = exportHandlers.exportPDF;
@@ -248,6 +258,7 @@ export function HODsManagementPage() {
           checked={selectedRows.size === filteredHODs.length && filteredHODs.length > 0}
           onChange={toggleAllSelection}
           className="rounded border-[var(--brand-border)]"
+          aria-label="Select all HODs"
         />
       ),
       render: (row) => (
@@ -257,9 +268,10 @@ export function HODsManagementPage() {
           onChange={() => toggleRowSelection(row.id)}
           className="rounded border-[var(--brand-border)]"
           onClick={(e) => e.stopPropagation()}
+          aria-label={`Select ${row.name}`}
         />
       ),
-      align: 'center'
+      align: 'center',
     },
     {
       header: 'Name',
@@ -268,7 +280,7 @@ export function HODsManagementPage() {
           <p className="font-semibold text-[var(--brand-surface-contrast)]">{row.name}</p>
           <p className="text-xs text-[var(--brand-muted)]">{row.email}</p>
         </div>
-      )
+      ),
     },
     {
       header: 'Department',
@@ -276,7 +288,7 @@ export function HODsManagementPage() {
         <span className="rounded-full bg-[var(--brand-primary)]/20 px-2 py-1 text-xs font-semibold text-[var(--brand-primary)]">
           {row.department || 'General'}
         </span>
-      )
+      ),
     },
     {
       header: 'Subjects',
@@ -300,7 +312,7 @@ export function HODsManagementPage() {
             </span>
           )}
         </div>
-      )
+      ),
     },
     {
       header: 'Teachers',
@@ -309,31 +321,31 @@ export function HODsManagementPage() {
           {row.teachersUnderOversight || 0} teachers
         </span>
       ),
-      align: 'center'
+      align: 'center',
     },
     {
       header: 'Actions',
       render: (row) => (
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => handleViewProfile(row)}>
-            View
+        <ActionButtonGroup>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleViewDetails(row)}
+            className="gap-1"
+          >
+            <Eye className="h-3 w-3" />
+            Details
           </Button>
+          <ViewButton onClick={() => handleViewProfile(row)} />
           <Button size="sm" variant="ghost" onClick={() => handleAssignDepartment(row)}>
             Department
           </Button>
           <Button size="sm" variant="ghost" onClick={() => handleViewAnalytics(row)}>
             Analytics
           </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => navigate(`/dashboard/teacher/profile?teacherId=${row.id}`)}
-          >
-            Profile
-          </Button>
-        </div>
-      )
-    }
+        </ActionButtonGroup>
+      ),
+    },
   ];
 
   if (loading) {
@@ -347,9 +359,9 @@ export function HODsManagementPage() {
   // Get teachers under oversight for selected HOD
   const teachersUnderOversight = selectedHOD
     ? teachers.filter(
-        (t) =>
+        (t: TeacherProfile) =>
           t.id !== selectedHOD.id &&
-          t.subjects.some((subject) => selectedHOD.subjects.includes(subject))
+          t.subjects.some((subject: string) => selectedHOD.subjects.includes(subject))
       )
     : [];
 
@@ -366,7 +378,22 @@ export function HODsManagementPage() {
               department-level analytics.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => setShowCreateModal(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Create HOD
+            </Button>
+            <Button variant="outline" onClick={() => setShowImportModal(true)} className="gap-2">
+              <Upload className="h-4 w-4" />
+              Import CSV
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowActivityLog(!showActivityLog)}
+              className="gap-2"
+            >
+              Activity Log
+            </Button>
             <ExportButtons
               onExportCSV={handleExportCSV}
               onExportPDF={handleExportPDF}
@@ -382,45 +409,56 @@ export function HODsManagementPage() {
 
         {error ? <StatusBanner status="error" message={error} /> : null}
 
+        {/* Advanced Filters */}
         <section
           className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-4 shadow-sm"
           aria-label="Filters"
         >
-          <div className="grid gap-4 md:grid-cols-2">
-            <Input
-              label="Search"
-              placeholder="Search by name, email, department..."
-              value={filters.search}
-              onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
-            />
-            <Select
-              label="Department"
-              value={filters.department}
-              onChange={(e) => setFilters((f) => ({ ...f, department: e.target.value }))}
-              options={[
-                { label: 'All departments', value: 'all' },
-                ...uniqueDepartments.map((d) => ({ label: d, value: d }))
-              ]}
-            />
-          </div>
+          <AdvancedFilters
+            fields={advancedFilterFields}
+            filters={{
+              search: filters.search,
+              department: filters.department,
+            }}
+            onFiltersChange={(newFilters) => {
+              setFilters({
+                search: newFilters.search || '',
+                department: newFilters.department || 'all',
+              });
+            }}
+            onReset={() => setFilters(defaultFilters)}
+            searchPlaceholder="Search by name, email, department..."
+          />
           <div className="mt-4 flex items-center justify-between text-sm text-[var(--brand-muted)]">
-            <span>
-              Showing {filteredHODs.length} of {hods.length} HODs
-            </span>
-            {(filters.search || filters.department !== 'all') && (
-              <Button size="sm" variant="ghost" onClick={() => setFilters(defaultFilters)}>
-                Clear filters
-              </Button>
-            )}
+            <span>Showing {filteredHODs.length} HODs</span>
           </div>
         </section>
 
-        <PaginatedTable
-          columns={hodColumns}
-          data={filteredHODs}
-          caption="Heads of Department"
-          emptyMessage="No HODs found matching the current filters."
-        />
+        {/* Activity Log */}
+        {showActivityLog && (
+          <section className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-4 shadow-sm">
+            <ActivityLog entityType="hod" limit={10} />
+          </section>
+        )}
+
+        {filteredHODs.length === 0 && !hodsLoading ? (
+          <EmptyState type="hods" onAction={() => setShowCreateModal(true)} />
+        ) : filteredHODs.length === 0 ? (
+          <EmptyState
+            type="generic"
+            title="No HODs found"
+            description="No HODs match your current filters. Try adjusting your search or filter criteria."
+            onAction={() => setFilters(defaultFilters)}
+            actionLabel="Clear Filters"
+          />
+        ) : (
+          <PaginatedTable
+            columns={hodColumns}
+            data={filteredHODs}
+            caption="Heads of Department"
+            emptyMessage="No HODs found matching the current filters."
+          />
+        )}
 
         {showProfileModal && selectedHOD && (
           <Modal
@@ -507,7 +545,7 @@ export function HODsManagementPage() {
                 options={[
                   { label: 'Select a department', value: '' },
                   ...subjects.map((s) => ({ label: s.name, value: s.name })),
-                  ...uniqueDepartments.map((d) => ({ label: d, value: d }))
+                  ...uniqueDepartments.map((d) => ({ label: d, value: d })),
                 ]}
               />
               <div className="flex justify-end gap-3 pt-2">
@@ -575,6 +613,62 @@ export function HODsManagementPage() {
                   Close
                 </Button>
               </div>
+            </div>
+          </Modal>
+        )}
+
+        {showCreateModal && (
+          <CreateHODModal
+            onClose={() => setShowCreateModal(false)}
+            onSuccess={() => {
+              setShowCreateModal(false);
+              // Invalidate HODs, teachers, and users queries to refresh the lists
+              queryClient.invalidateQueries({ queryKey: queryKeys.admin.hods() });
+              queryClient.invalidateQueries({ queryKey: queryKeys.admin.teachers() });
+              // Also invalidate users list to refresh role information
+              queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+            }}
+          />
+        )}
+
+        {showImportModal && (
+          <CSVImportModal
+            isOpen={showImportModal}
+            onClose={() => setShowImportModal(false)}
+            onImport={async (file) => {
+              const result = await csvImportMutation.mutateAsync(file);
+              return result;
+            }}
+            entityType="hods"
+            acceptedColumns={[
+              'email',
+              'fullName',
+              'password',
+              'phone',
+              'qualifications',
+              'subjects',
+              'department',
+            ]}
+          />
+        )}
+
+        {showDetailModal && selectedHODId && (
+          <Modal
+            title="HOD Details"
+            isOpen={showDetailModal}
+            onClose={() => {
+              setShowDetailModal(false);
+              setSelectedHODId(null);
+            }}
+          >
+            <div className="max-h-[80vh] overflow-y-auto">
+              <HODDetailView
+                hodId={selectedHODId}
+                onClose={() => {
+                  setShowDetailModal(false);
+                  setSelectedHODId(null);
+                }}
+              />
             </div>
           </Modal>
         )}

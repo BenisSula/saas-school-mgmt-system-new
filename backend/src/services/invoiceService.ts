@@ -29,7 +29,7 @@ export async function createInvoice(
         input.studentId,
         total,
         input.dueDate ? new Date(input.dueDate) : null,
-        JSON.stringify(input.metadata ?? {})
+        JSON.stringify(input.metadata ?? {}),
       ]
     );
 
@@ -44,7 +44,7 @@ export async function createInvoice(
           id,
           item.description,
           item.amount,
-          JSON.stringify(item.metadata ?? {})
+          JSON.stringify(item.metadata ?? {}),
         ]
       );
     }
@@ -56,7 +56,7 @@ export async function createInvoice(
       invoiceId: id,
       studentId: input.studentId,
       amount: total,
-      actorId: actorId ?? null
+      actorId: actorId ?? null,
     });
 
     return invoiceResult.rows[0];
@@ -100,7 +100,7 @@ export async function getInvoicesForStudent(client: PoolClient, schema: string, 
     invoices.push({
       ...invoice,
       items: items.rows,
-      payments: payments.rows
+      payments: payments.rows,
     });
   }
 

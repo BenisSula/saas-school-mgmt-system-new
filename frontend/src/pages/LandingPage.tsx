@@ -9,7 +9,7 @@ const SECTION_IDS = {
   features: 'features-section',
   pricing: 'pricing-section',
   topSchools: 'top-schools-section',
-  contact: 'contact-section'
+  contact: 'contact-section',
 } as const;
 
 export interface LandingPageProps {
@@ -80,27 +80,27 @@ export function LandingPage({ onShowAuth, children }: LandingPageProps) {
           {[
             {
               title: 'Attendance intelligence',
-              description: 'Live roll calls, teacher snapshots, and AI-assisted anomaly detection.'
+              description: 'Live roll calls, teacher snapshots, and AI-assisted anomaly detection.',
             },
             {
               title: 'Exam lifecycle',
               description:
-                'Schedule, invigilate, and analyse results with automated grading workflows.'
+                'Schedule, invigilate, and analyse results with automated grading workflows.',
             },
             {
               title: 'Fee transparency',
               description:
-                'Invoices, payments, and ledger reconciliation with guardian notifications.'
+                'Invoices, payments, and ledger reconciliation with guardian notifications.',
             },
             {
               title: 'Reporting suite',
               description:
-                'Multi-tenant dashboards with export-ready analytics for your leadership team.'
+                'Multi-tenant dashboards with export-ready analytics for your leadership team.',
             },
             {
               title: 'Branding control',
-              description: 'Tenant-specific typography, colour palettes, and navigation tokens.'
-            }
+              description: 'Tenant-specific typography, colour palettes, and navigation tokens.',
+            },
           ].map((feature) => (
             <article
               key={feature.title}
@@ -122,18 +122,18 @@ export function LandingPage({ onShowAuth, children }: LandingPageProps) {
             {
               name: 'Starter',
               price: '$299/mo',
-              perks: ['Up to 2 schools', 'Core attendance + exams', 'Email support']
+              perks: ['Up to 2 schools', 'Core attendance + exams', 'Email support'],
             },
             {
               name: 'Growth',
               price: '$699/mo',
-              perks: ['Up to 10 schools', 'Advanced reporting', 'Priority onboarding']
+              perks: ['Up to 10 schools', 'Advanced reporting', 'Priority onboarding'],
             },
             {
               name: 'Enterprise',
               price: 'Custom',
-              perks: ['Unlimited tenants', 'Dedicated success', 'SLA-backed uptime']
-            }
+              perks: ['Unlimited tenants', 'Dedicated success', 'SLA-backed uptime'],
+            },
           ].map((tier) => (
             <article
               key={tier.name}

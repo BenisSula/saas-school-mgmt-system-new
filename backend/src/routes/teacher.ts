@@ -13,7 +13,7 @@ import {
   listTeacherClasses,
   listTeacherMessages,
   requestAssignmentDrop,
-  type TeacherRecord
+  type TeacherRecord,
 } from '../services/teacherDashboardService';
 import { logUnauthorizedAttempt } from '../services/auditLogService';
 import { respondTeacherContextMissing, respondTenantContextMissing } from '../lib/friendlyMessages';
@@ -46,11 +46,11 @@ router.use(async (req, res, next) => {
         userId: req.user?.id ?? null,
         path: req.originalUrl ?? req.path,
         method: req.method,
-        reason: 'Teacher profile missing'
+        reason: 'Teacher profile missing',
       });
       return res.status(403).json({
         message:
-          'Access restricted to teacher accounts. Please contact an administrator for assistance.'
+          'Access restricted to teacher accounts. Please contact an administrator for assistance.',
       });
     }
 
@@ -106,10 +106,10 @@ router.get(
           path: req.originalUrl ?? req.path,
           method: req.method,
           reason: 'Teacher not assigned to class',
-          details: { teacherId: req.teacherRecord?.id, classId: req.params.classId }
+          details: { teacherId: req.teacherRecord?.id, classId: req.params.classId },
         });
         return res.status(403).json({
-          message: 'You are not assigned to this class. Thank you for your understanding.'
+          message: 'You are not assigned to this class. Thank you for your understanding.',
         });
       }
       console.error('Error in /classes/:classId/roster:', error);
@@ -117,7 +117,7 @@ router.get(
       if (!res.headersSent) {
         res.status(500).json({
           message: 'Failed to retrieve class roster',
-          error: (error as Error).message
+          error: (error as Error).message,
         });
       }
     }
@@ -167,10 +167,10 @@ router.get(
           path: req.originalUrl ?? req.path,
           method: req.method,
           reason: 'Teacher not assigned to class report',
-          details: { teacherId: teacher.id, classId: req.params.classId }
+          details: { teacherId: teacher.id, classId: req.params.classId },
         });
         return res.status(403).json({
-          message: 'You are not assigned to this class. Thank you for your understanding.'
+          message: 'You are not assigned to this class. Thank you for your understanding.',
         });
       }
       res.json(report);
@@ -180,7 +180,7 @@ router.get(
       if (!res.headersSent) {
         res.status(500).json({
           message: 'Failed to generate class report',
-          error: (error as Error).message
+          error: (error as Error).message,
         });
       }
     }
@@ -205,10 +205,10 @@ router.get(
           path: req.originalUrl ?? req.path,
           method: req.method,
           reason: 'Teacher not assigned to class report PDF',
-          details: { teacherId: teacher.id, classId: req.params.classId }
+          details: { teacherId: teacher.id, classId: req.params.classId },
         });
         return res.status(403).json({
-          message: 'You are not assigned to this class. Thank you for your understanding.'
+          message: 'You are not assigned to this class. Thank you for your understanding.',
         });
       }
 

@@ -1,5 +1,4 @@
 import type { PoolClient } from 'pg';
-import { z } from 'zod';
 import { assertValidSchemaName } from '../../db/tenantManager';
 
 export interface ReportDefinition {
@@ -65,7 +64,7 @@ export async function getReportDefinition(
     parameters: row.parameters || {},
     columns: row.columns || [],
     filters: row.filters || {},
-    rolePermissions: row.role_permissions || []
+    rolePermissions: row.role_permissions || [],
   };
 }
 
@@ -124,7 +123,7 @@ export async function executeReport(
       reportDefinition.tenantId || null,
       reportDefinition.id,
       userId || null,
-      JSON.stringify(parameters)
+      JSON.stringify(parameters),
     ]
   );
 
@@ -132,11 +131,7 @@ export async function executeReport(
 
   try {
     // Replace variables in query template
-    const query = replaceQueryVariables(
-      reportDefinition.queryTemplate,
-      parameters,
-      tenantSchema
-    );
+    const query = replaceQueryVariables(reportDefinition.queryTemplate, parameters, tenantSchema);
 
     // Execute query
     const dataResult = await client.query(query);
@@ -169,15 +164,16 @@ export async function executeReport(
     return {
       executionId,
       data: dataResult.rows,
-      rowCount: dataResult.rowCount,
+      rowCount: dataResult.rowCount ?? 0,
       executionTimeMs,
-      columns: reportDefinition.columns.length > 0
-        ? reportDefinition.columns
-        : dataResult.fields.map(field => ({
-            name: field.name,
-            type: field.dataTypeID.toString(),
-            label: field.name
-          }))
+      columns:
+        reportDefinition.columns.length > 0
+          ? reportDefinition.columns
+          : dataResult.fields.map((field) => ({
+              name: field.name,
+              type: field.dataTypeID.toString(),
+              label: field.name,
+            })),
     };
   } catch (error) {
     const executionTimeMs = Date.now() - startTime;
@@ -214,7 +210,7 @@ async function createReportSnapshot(
   // Calculate summary metrics
   const summaryMetrics: Record<string, unknown> = {
     rowCount: data.length,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 
   // If data has numeric columns, calculate aggregates
@@ -222,12 +218,12 @@ async function createReportSnapshot(
     const firstRow = data[0] as Record<string, unknown>;
     for (const [key, value] of Object.entries(firstRow)) {
       if (typeof value === 'number') {
-        const values = data.map(row => (row as Record<string, unknown>)[key] as number);
+        const values = data.map((row) => (row as Record<string, unknown>)[key] as number);
         summaryMetrics[key] = {
           sum: values.reduce((a, b) => a + b, 0),
           avg: values.reduce((a, b) => a + b, 0) / values.length,
           min: Math.min(...values),
-          max: Math.max(...values)
+          max: Math.max(...values),
         };
       }
     }
@@ -251,7 +247,7 @@ async function createReportSnapshot(
       executionId,
       today,
       JSON.stringify(data),
-      JSON.stringify(summaryMetrics)
+      JSON.stringify(summaryMetrics),
     ]
   );
 }
@@ -280,10 +276,10 @@ export async function getHistoricalTrend(
     [tenantId, reportDefinitionId, cutoffDate.toISOString().split('T')[0]]
   );
 
-  return result.rows.map(row => ({
+  return result.rows.map((row) => ({
     date: row.snapshot_date,
     metrics: row.summary_metrics || {},
-    data: row.data || []
+    data: row.data || [],
   }));
 }
 
@@ -307,14 +303,14 @@ export async function compareWithHistory(
     return {
       current: { rowCount: currentData.length },
       previous: { rowCount: 0 },
-      change: {}
+      change: {},
     };
   }
 
   const previousSnapshot = trend[trend.length - 1];
   const currentMetrics: Record<string, unknown> = {
     rowCount: currentData.length,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 
   // Calculate current metrics
@@ -322,12 +318,12 @@ export async function compareWithHistory(
     const firstRow = currentData[0] as Record<string, unknown>;
     for (const [key, value] of Object.entries(firstRow)) {
       if (typeof value === 'number') {
-        const values = currentData.map(row => (row as Record<string, unknown>)[key] as number);
+        const values = currentData.map((row) => (row as Record<string, unknown>)[key] as number);
         currentMetrics[key] = {
           sum: values.reduce((a, b) => a + b, 0),
           avg: values.reduce((a, b) => a + b, 0) / values.length,
           min: Math.min(...values),
-          max: Math.max(...values)
+          max: Math.max(...values),
         };
       }
     }
@@ -358,7 +354,6 @@ export async function compareWithHistory(
   return {
     current: currentMetrics,
     previous: previousMetrics,
-    change
+    change,
   };
 }
-

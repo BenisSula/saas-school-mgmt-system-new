@@ -1,5 +1,4 @@
 import type { PoolClient } from 'pg';
-import { z } from 'zod';
 
 export interface FeatureFlag {
   id: string;
@@ -31,10 +30,9 @@ export async function isFeatureEnabled(
   tenantId?: string
 ): Promise<boolean> {
   // Get feature flag
-  const flagResult = await client.query(
-    'SELECT * FROM shared.feature_flags WHERE flag_key = $1',
-    [flagKey]
-  );
+  const flagResult = await client.query('SELECT * FROM shared.feature_flags WHERE flag_key = $1', [
+    flagKey,
+  ]);
 
   if (flagResult.rowCount === 0) {
     return false; // Flag doesn't exist = disabled
@@ -50,7 +48,7 @@ export async function isFeatureEnabled(
       [tenantId, flagKey]
     );
 
-    if (tenantOverrideResult.rowCount > 0) {
+    if ((tenantOverrideResult.rowCount ?? 0) > 0) {
       return tenantOverrideResult.rows[0].is_enabled;
     }
 
@@ -119,7 +117,7 @@ export async function createFeatureFlag(
         input.description || null,
         input.isEnabledGlobally || false,
         input.rolloutPercentage || 0,
-        JSON.stringify(input.metadata || {})
+        JSON.stringify(input.metadata || {}),
       ]
     );
 
@@ -162,10 +160,9 @@ export async function updateFeatureFlag(
   await client.query('BEGIN');
   try {
     // Get old value
-    const oldResult = await client.query(
-      'SELECT * FROM shared.feature_flags WHERE flag_key = $1',
-      [flagKey]
-    );
+    const oldResult = await client.query('SELECT * FROM shared.feature_flags WHERE flag_key = $1', [
+      flagKey,
+    ]);
 
     if (oldResult.rowCount === 0) {
       throw new Error('Feature flag not found');
@@ -224,11 +221,14 @@ export async function updateFeatureFlag(
     const newValue = updateResult.rows[0];
 
     // Record history
-    const action = updates.isEnabledGlobally !== undefined
-      ? (updates.isEnabledGlobally ? 'enabled' : 'disabled')
-      : updates.rolloutPercentage !== undefined
-        ? 'rollout_changed'
-        : 'updated';
+    const action =
+      updates.isEnabledGlobally !== undefined
+        ? updates.isEnabledGlobally
+          ? 'enabled'
+          : 'disabled'
+        : updates.rolloutPercentage !== undefined
+          ? 'rollout_changed'
+          : 'updated';
 
     await client.query(
       `
@@ -237,13 +237,7 @@ export async function updateFeatureFlag(
         )
         VALUES ($1, $2, $3, $4, $5)
       `,
-      [
-        newValue.id,
-        action,
-        JSON.stringify(oldValue),
-        JSON.stringify(newValue),
-        actorId || null
-      ]
+      [newValue.id, action, JSON.stringify(oldValue), JSON.stringify(newValue), actorId || null]
     );
 
     await client.query('COMMIT');
@@ -293,13 +287,7 @@ export async function setTenantFeatureFlag(
           updated_at = NOW()
         RETURNING *
       `,
-      [
-        tenantId,
-        flagKey,
-        enabled,
-        enabled ? new Date() : null,
-        enabled ? null : new Date()
-      ]
+      [tenantId, flagKey, enabled, enabled ? new Date() : null, enabled ? null : new Date()]
     );
 
     // Record history
@@ -315,7 +303,7 @@ export async function setTenantFeatureFlag(
         tenantId,
         enabled ? 'tenant_added' : 'tenant_removed',
         JSON.stringify({ enabled, tenantId }),
-        actorId || null
+        actorId || null,
       ]
     );
 
@@ -330,14 +318,10 @@ export async function setTenantFeatureFlag(
 /**
  * Get all feature flags
  */
-export async function getAllFeatureFlags(
-  client: PoolClient
-): Promise<FeatureFlag[]> {
-  const result = await client.query(
-    'SELECT * FROM shared.feature_flags ORDER BY created_at DESC'
-  );
+export async function getAllFeatureFlags(client: PoolClient): Promise<FeatureFlag[]> {
+  const result = await client.query('SELECT * FROM shared.feature_flags ORDER BY created_at DESC');
 
-  return result.rows.map(row => ({
+  return result.rows.map((row) => ({
     id: row.id,
     flagKey: row.flag_key,
     flagName: row.flag_name,
@@ -346,7 +330,7 @@ export async function getAllFeatureFlags(
     rolloutPercentage: row.rollout_percentage,
     enabledTenantIds: row.enabled_tenant_ids || [],
     disabledTenantIds: row.disabled_tenant_ids || [],
-    metadata: row.metadata || {}
+    metadata: row.metadata || {},
   }));
 }
 
@@ -357,10 +341,9 @@ export async function getFeatureFlag(
   client: PoolClient,
   flagKey: string
 ): Promise<FeatureFlag | null> {
-  const result = await client.query(
-    'SELECT * FROM shared.feature_flags WHERE flag_key = $1',
-    [flagKey]
-  );
+  const result = await client.query('SELECT * FROM shared.feature_flags WHERE flag_key = $1', [
+    flagKey,
+  ]);
 
   if (result.rowCount === 0) {
     return null;
@@ -376,7 +359,6 @@ export async function getFeatureFlag(
     rolloutPercentage: row.rollout_percentage,
     enabledTenantIds: row.enabled_tenant_ids || [],
     disabledTenantIds: row.disabled_tenant_ids || [],
-    metadata: row.metadata || {}
+    metadata: row.metadata || {},
   };
 }
-

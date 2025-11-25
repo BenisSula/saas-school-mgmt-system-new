@@ -10,7 +10,7 @@ describe('Email Format Validation', () => {
       'user+tag@example.co.uk',
       'user_name@example-domain.com',
       '123@example.com',
-      'user@subdomain.example.com'
+      'user@subdomain.example.com',
     ];
 
     for (const email of validEmails) {
@@ -29,7 +29,7 @@ describe('Email Format Validation', () => {
       'user@exam ple.com',
       '',
       '   ',
-      'user@@example.com'
+      'user@@example.com',
     ];
 
     for (const email of invalidEmails) {

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import RouteMeta from '../../components/layout/RouteMeta';
 import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton';
 import { StatusBanner } from '../../components/ui/StatusBanner';
@@ -9,6 +10,8 @@ import { StatCard } from '../../components/charts/StatCard';
 import { useTeacherDashboard } from '../../hooks/queries/useDashboardQueries';
 import { Users, BookOpen, GraduationCap, AlertCircle } from 'lucide-react';
 import type { TeacherAssignmentSummary } from '../../lib/api';
+import { Button } from '../../components/ui/Button';
+import { TeacherQuickActions } from '../../components/teacher/TeacherQuickActions';
 
 export default function TeacherDashboardPage() {
   const { overview, loading, error } = useTeacherDashboard();
@@ -20,26 +23,26 @@ export default function TeacherDashboardPage() {
         title: 'Classes',
         value: overview.summary.totalClasses,
         description: 'Active teaching groups',
-        icon: <BookOpen className="h-5 w-5" />
+        icon: <BookOpen className="h-5 w-5" />,
       },
       {
         title: 'Subjects',
         value: overview.summary.totalSubjects,
         description: 'Current assignments',
-        icon: <GraduationCap className="h-5 w-5" />
+        icon: <GraduationCap className="h-5 w-5" />,
       },
       {
         title: 'Class teacher roles',
         value: overview.summary.classTeacherRoles,
         description: 'Homeroom responsibilities',
-        icon: <Users className="h-5 w-5" />
+        icon: <Users className="h-5 w-5" />,
       },
       {
         title: 'Drop requests',
         value: overview.summary.pendingDropRequests,
         description: 'Assignments awaiting admin review',
-        icon: <AlertCircle className="h-5 w-5" />
-      }
+        icon: <AlertCircle className="h-5 w-5" />,
+      },
     ];
   }, [overview]);
 
@@ -54,7 +57,7 @@ export default function TeacherDashboardPage() {
     return Array.from(classCounts.entries()).map(([label, value]) => ({
       label,
       value,
-      color: 'var(--brand-primary)'
+      color: 'var(--brand-primary)',
     }));
   }, [overview]);
 
@@ -68,7 +71,7 @@ export default function TeacherDashboardPage() {
     });
     return Array.from(subjectCounts.entries()).map(([label, value]) => ({
       label,
-      value
+      value,
     }));
   }, [overview]);
 
@@ -79,7 +82,7 @@ export default function TeacherDashboardPage() {
     const subjectTeacherCount = overview.assignments.length - classTeacherCount;
     return [
       { label: 'Class Teacher', value: classTeacherCount },
-      { label: 'Subject Teacher', value: subjectTeacherCount }
+      { label: 'Subject Teacher', value: subjectTeacherCount },
     ];
   }, [overview]);
 
@@ -89,13 +92,13 @@ export default function TeacherDashboardPage() {
         key: 'subjectName',
         header: 'Subject',
         render: (row) => row.subjectName,
-        sortable: true
+        sortable: true,
       },
       {
         key: 'className',
         header: 'Class',
         render: (row) => row.className,
-        sortable: true
+        sortable: true,
       },
       {
         key: 'role',
@@ -109,7 +112,7 @@ export default function TeacherDashboardPage() {
             <span className="text-xs uppercase tracking-wide text-[var(--brand-muted)]">
               Subject teacher
             </span>
-          )
+          ),
       },
       {
         key: 'status',
@@ -121,8 +124,8 @@ export default function TeacherDashboardPage() {
             </span>
           ) : (
             <span className="text-xs text-[var(--brand-muted)]">Active</span>
-          )
-      }
+          ),
+      },
     ],
     []
   );
@@ -157,14 +160,44 @@ export default function TeacherDashboardPage() {
     <RouteMeta title="Teacher dashboard">
       <div className="space-y-8">
         <header className="space-y-2">
-          <h1 className="text-2xl font-semibold text-[var(--brand-surface-contrast)]">
-            Welcome back, {greetingName}
-          </h1>
-          <p className="text-sm text-[var(--brand-muted)]">
-            Monitor your classes, track assessments, and stay on top of homeroom duties from one
-            dashboard.
-          </p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-[var(--brand-surface-contrast)]">
+                Welcome back, {greetingName}
+              </h1>
+              <p className="text-sm text-[var(--brand-muted)]">
+                Monitor your classes, track assessments, and stay on top of homeroom duties from one
+                dashboard.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Link to="/dashboard/teacher/students">
+                <Button variant="outline" size="sm">
+                  <Users className="h-4 w-4 mr-2" />
+                  View Students
+                </Button>
+              </Link>
+              <Link to="/dashboard/teacher/attendance">
+                <Button variant="outline" size="sm">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Mark Attendance
+                </Button>
+              </Link>
+              <Link to="/dashboard/teacher/grades">
+                <Button variant="outline" size="sm">
+                  <GraduationCap className="h-4 w-4 mr-2" />
+                  Enter Grades
+                </Button>
+              </Link>
+            </div>
+          </div>
         </header>
+
+        {/* Quick Actions */}
+        <section className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
+          <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+          <TeacherQuickActions />
+        </section>
 
         {/* Stats Cards */}
         <section

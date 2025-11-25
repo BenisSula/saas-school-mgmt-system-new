@@ -1,6 +1,7 @@
 import { useQuery } from '../useQuery';
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import { isHOD, hasAdditionalRole } from '../../lib/utils/userHelpers';
 
 // Student Dashboard Queries
 export function useStudentDashboard() {
@@ -67,7 +68,7 @@ export function useStudentDashboard() {
       profileQuery.error ||
       latestExamQuery.error ||
       resultQuery.error ||
-      rosterQuery.error
+      rosterQuery.error,
   };
 }
 
@@ -95,7 +96,7 @@ export function useTeacherDashboard() {
     overview: overviewQuery.data,
     classes: classesQuery.data || [],
     loading: overviewQuery.isLoading || classesQuery.isLoading,
-    error: overviewQuery.error || classesQuery.error
+    error: overviewQuery.error || classesQuery.error,
   };
 }
 
@@ -111,9 +112,15 @@ export function useHODDashboard() {
       const teacherProfile = await api.teacher.getProfile();
       const users = await api.listUsers();
       const currentUser = users.find((u) => u.id === user?.id);
-      const hodRole = currentUser?.additional_roles?.find((r) => r.role === 'hod');
+      const isUserHOD = currentUser && isHOD(currentUser);
       const department =
-        (hodRole?.metadata as { department?: string })?.department ||
+        (isUserHOD && hasAdditionalRole(currentUser, 'hod')
+          ? (
+              currentUser.additional_roles?.find((r) => r.role === 'hod')?.metadata as {
+                department?: string;
+              }
+            )?.department
+          : undefined) ||
         teacherProfile.subjects[0] ||
         'General';
 
@@ -132,7 +139,7 @@ export function useHODDashboard() {
         teachers: departmentTeachers,
         totalTeachers: departmentTeachers.length,
         totalStudents: students.length, // Approximate - can be enhanced
-        classes: classes.length
+        classes: classes.length,
       };
     },
     { enabled: !!user?.id }
@@ -141,6 +148,6 @@ export function useHODDashboard() {
   return {
     department: departmentQuery.data,
     loading: departmentQuery.isLoading,
-    error: departmentQuery.error
+    error: departmentQuery.error,
   };
 }

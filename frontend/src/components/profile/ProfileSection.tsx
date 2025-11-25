@@ -16,7 +16,7 @@ export function ProfileSection({
   description,
   children,
   emptyMessage = 'No data available',
-  isEmpty = false
+  isEmpty = false,
 }: ProfileSectionProps) {
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible">

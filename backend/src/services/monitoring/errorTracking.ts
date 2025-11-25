@@ -20,7 +20,7 @@ class ErrorTracker {
   /**
    * Initialize error tracking (Sentry)
    */
-  init(dsn?: string, environment?: string) {
+  init(dsn?: string) {
     if (!dsn) {
       console.warn('[ErrorTracking] DSN not provided, error tracking disabled');
       return;
@@ -58,7 +58,11 @@ class ErrorTracker {
   /**
    * Capture message
    */
-  captureMessage(message: string, level: 'info' | 'warning' | 'error' = 'info', context?: ErrorContext) {
+  captureMessage(
+    message: string,
+    level: 'info' | 'warning' | 'error' = 'info',
+    context?: ErrorContext
+  ) {
     if (!this.initialized) {
       console.log(`[ErrorTracking] ${level}:`, message, context);
       return;
@@ -76,43 +80,36 @@ class ErrorTracker {
   /**
    * Set user context
    */
-  setUser(userId: string, email?: string, tenantId?: string) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  setUser(_userId: string, _email?: string, _tenantId?: string) {
     if (!this.initialized) return;
-
-    try {
-      // In production, use Sentry
-      // Sentry.setUser({ id: userId, email, tenantId });
-    } catch (err) {
-      console.error('[ErrorTracking] Failed to set user:', err);
-    }
+    // In production, use Sentry
+    // Sentry.setUser({ id: userId, email, tenantId });
   }
 
   /**
    * Add breadcrumb
    */
-  addBreadcrumb(message: string, category: string, level: 'info' | 'warning' | 'error' = 'info', data?: Record<string, unknown>) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  addBreadcrumb(
+    _message: string,
+    _category: string,
+    _level: 'info' | 'warning' | 'error' = 'info',
+    _data?: Record<string, unknown>
+  ) {
     if (!this.initialized) return;
-
-    try {
-      // In production, use Sentry
-      // Sentry.addBreadcrumb({ message, category, level, data });
-    } catch (err) {
-      console.error('[ErrorTracking] Failed to add breadcrumb:', err);
-    }
+    // In production, use Sentry
+    // Sentry.addBreadcrumb({ message, category, level, data });
   }
 
   /**
    * Set context
    */
-  setContext(name: string, context: Record<string, unknown>) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  setContext(_name: string, _context: Record<string, unknown>) {
     if (!this.initialized) return;
-
-    try {
-      // In production, use Sentry
-      // Sentry.setContext(name, context);
-    } catch (err) {
-      console.error('[ErrorTracking] Failed to set context:', err);
-    }
+    // In production, use Sentry
+    // Sentry.setContext(name, context);
   }
 }
 
@@ -124,6 +121,7 @@ export const errorTracker = new ErrorTracker();
 export function initializeErrorTracking() {
   const dsn = process.env.SENTRY_DSN;
   const environment = process.env.NODE_ENV || 'development';
-  errorTracker.init(dsn, environment);
+  if (dsn) {
+    errorTracker.init(dsn);
+  }
 }
-

@@ -20,7 +20,7 @@ export function SearchBar({
   onSearch,
   onClear,
   className = '',
-  autoFocus = false
+  autoFocus = false,
 }: SearchBarProps) {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);

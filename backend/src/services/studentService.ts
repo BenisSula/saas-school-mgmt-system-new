@@ -1,19 +1,88 @@
 import type { PoolClient } from 'pg';
 import { StudentInput } from '../validators/studentValidator';
 import { getTableName, serializeJsonField } from '../lib/serviceUtils';
-import { resolveClassId, listEntities, getEntityById, deleteEntityById } from '../lib/crudHelpers';
+import { resolveClassId, getEntityById, deleteEntityById } from '../lib/crudHelpers';
+// listEntities not used in this file but may be needed for future implementations
+import { createAuditLog } from './audit/enhancedAuditService';
 
 const table = 'students';
 
-export async function listStudents(client: PoolClient, schema: string) {
-  return listEntities(client, schema, table);
+export async function listStudents(
+  client: PoolClient,
+  schema: string,
+  filters?: {
+    enrollmentStatus?: string;
+    classId?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }
+) {
+  const tableName = getTableName(schema, table);
+  let query = `SELECT * FROM ${tableName}`;
+  const params: unknown[] = [];
+  const conditions: string[] = [];
+  let paramIndex = 1;
+
+  if (filters) {
+    if (filters.enrollmentStatus) {
+      conditions.push(`enrollment_status = $${paramIndex}`);
+      params.push(filters.enrollmentStatus);
+      paramIndex++;
+    }
+    if (filters.classId) {
+      conditions.push(`(class_id = $${paramIndex} OR class_uuid = $${paramIndex})`);
+      params.push(filters.classId);
+      paramIndex++;
+    }
+    if (filters.search) {
+      conditions.push(`(
+        LOWER(first_name || ' ' || last_name) LIKE $${paramIndex}
+        OR LOWER(admission_number) LIKE $${paramIndex}
+        OR LOWER(class_id) LIKE $${paramIndex}
+      )`);
+      params.push(`%${filters.search.toLowerCase()}%`);
+      paramIndex++;
+    }
+  }
+
+  if (conditions.length > 0) {
+    query += ` WHERE ${conditions.join(' AND ')}`;
+  }
+
+  query += ` ORDER BY last_name, first_name`;
+
+  // Add pagination support
+  if (filters?.limit) {
+    query += ` LIMIT $${paramIndex}`;
+    params.push(filters.limit);
+    paramIndex++;
+  }
+
+  if (filters?.offset) {
+    query += ` OFFSET $${paramIndex}`;
+    params.push(filters.offset);
+  }
+
+  const result = await client.query(query, params);
+  return result.rows;
 }
 
-export async function getStudent(client: PoolClient, schema: string, id: string) {
-  return getEntityById(client, schema, table, id);
+export async function getStudent<T = Record<string, unknown>>(
+  client: PoolClient,
+  schema: string,
+  id: string
+): Promise<T | null> {
+  return getEntityById<T>(client, schema, table, id);
 }
 
-export async function createStudent(client: PoolClient, schema: string, payload: StudentInput) {
+export async function createStudent(
+  client: PoolClient,
+  schema: string,
+  payload: StudentInput,
+  actorId?: string,
+  tenantId?: string
+) {
   // Resolve classId to both class_id (name) and class_uuid (UUID)
   const { classIdName, classUuid } = await resolveClassId(client, schema, payload.classId);
 
@@ -31,9 +100,35 @@ export async function createStudent(client: PoolClient, schema: string, payload:
       classIdName,
       classUuid,
       payload.admissionNumber ?? null,
-      serializeJsonField(payload.parentContacts ?? [])
+      serializeJsonField(payload.parentContacts ?? []),
     ]
   );
+
+  const studentId = result.rows[0].id;
+
+  // Create audit log for student creation
+  if (actorId && tenantId) {
+    try {
+      await createAuditLog(client, {
+        tenantId: tenantId,
+        userId: actorId,
+        action: 'STUDENT_CREATED',
+        resourceType: 'student',
+        resourceId: studentId,
+        details: {
+          studentEmail: (payload as { email?: string }).email,
+          classId: classIdName,
+          classUuid: classUuid,
+        },
+        severity: 'info',
+      });
+    } catch (auditError) {
+      console.error(
+        '[studentService] Failed to create audit log for student creation:',
+        auditError
+      );
+    }
+  }
 
   return result.rows[0];
 }
@@ -69,7 +164,7 @@ export async function updateStudent(
     class_id: classIdName,
     class_uuid: classUuid,
     admission_number: payload.admissionNumber ?? existing.admission_number,
-    parent_contacts: serializeJsonField(payload.parentContacts ?? existing.parent_contacts)
+    parent_contacts: serializeJsonField(payload.parentContacts ?? existing.parent_contacts),
   };
 
   const tableName = getTableName(schema, table);
@@ -95,7 +190,7 @@ export async function updateStudent(
       next.class_uuid,
       next.admission_number,
       next.parent_contacts,
-      id
+      id,
     ]
   );
 
@@ -139,7 +234,7 @@ export async function moveStudentToClass(
   return {
     previousClassId: existing.class_id as string | null,
     previousClassUuid: existing.class_uuid as string | null,
-    student: result.rows[0]
+    student: result.rows[0],
   };
 }
 
@@ -178,6 +273,6 @@ export async function getStudentClassRoster(client: PoolClient, schema: string, 
     first_name: row.first_name,
     last_name: row.last_name,
     admission_number: row.admission_number,
-    class_id: row.class_id
+    class_id: row.class_id,
   }));
 }

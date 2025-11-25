@@ -53,7 +53,7 @@ export function useRegisterForm(options: UseRegisterFormOptions = {}) {
     defaultTenantId,
     initialValues = {},
     onSuccess,
-    onPending
+    onPending,
   } = options;
 
   const [selectedTenant, setSelectedTenant] = useState<TenantLookupResult | null>(null);
@@ -101,7 +101,7 @@ export function useRegisterForm(options: UseRegisterFormOptions = {}) {
               parentGuardianContact: values.parentGuardianContact,
               studentId: values.studentId || undefined,
               classId: values.classId || undefined,
-              address: values.address
+              address: values.address,
             };
             schema = studentRegistrationSchema;
           } else if (isTeacher) {
@@ -120,12 +120,12 @@ export function useRegisterForm(options: UseRegisterFormOptions = {}) {
                 : 0,
               subjects: values.subjects,
               teacherId: values.teacherId || undefined,
-              address: values.address
+              address: values.address,
             };
             schema = teacherRegistrationSchema;
           } else {
             return {
-              role: 'Invalid role for registration. Only student and teacher can self-register.'
+              role: 'Invalid role for registration. Only student and teacher can self-register.',
             };
           }
 
@@ -165,7 +165,7 @@ export function useRegisterForm(options: UseRegisterFormOptions = {}) {
     const profileData: Record<string, unknown> = {
       fullName: values.fullName,
       gender: values.gender || undefined,
-      address: values.address || undefined
+      address: values.address || undefined,
     };
 
     if (isStudent) {
@@ -189,7 +189,7 @@ export function useRegisterForm(options: UseRegisterFormOptions = {}) {
       password: values.password,
       role: validatedRole,
       ...(resolvedTenantId ? { tenantId: resolvedTenantId } : {}),
-      profile: Object.keys(profileData).length > 0 ? profileData : undefined
+      profile: Object.keys(profileData).length > 0 ? profileData : undefined,
     };
 
     const auth = await register(payload);
@@ -226,10 +226,10 @@ export function useRegisterForm(options: UseRegisterFormOptions = {}) {
       qualifications: '',
       yearsOfExperience: '',
       subjects: [],
-      teacherId: ''
+      teacherId: '',
     },
     onSubmit: handleSubmit,
-    validate
+    validate,
   });
 
   return {
@@ -241,6 +241,6 @@ export function useRegisterForm(options: UseRegisterFormOptions = {}) {
     selectedTenant,
     tenantId,
     setTenantId,
-    handleTenantSelect
+    handleTenantSelect,
   };
 }

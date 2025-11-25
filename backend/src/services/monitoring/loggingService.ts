@@ -17,7 +17,7 @@ export enum LogLevel {
   DEBUG = 'debug',
   INFO = 'info',
   WARN = 'warn',
-  ERROR = 'error'
+  ERROR = 'error',
 }
 
 export interface LogContext {
@@ -39,15 +39,19 @@ class Logger {
       message,
       service: 'backend',
       environment: process.env.NODE_ENV || 'development',
-      ...context
+      ...context,
     };
 
     // In production, send to OpenSearch/ELK
     // For now, use structured console logging
-    const logMethod = level === LogLevel.ERROR ? console.error :
-                      level === LogLevel.WARN ? console.warn :
-                      level === LogLevel.DEBUG ? console.debug :
-                      console.log;
+    const logMethod =
+      level === LogLevel.ERROR
+        ? console.error
+        : level === LogLevel.WARN
+          ? console.warn
+          : level === LogLevel.DEBUG
+            ? console.debug
+            : console.log;
 
     logMethod(JSON.stringify(logEntry));
   }
@@ -70,8 +74,8 @@ class Logger {
       error: {
         message: error?.message,
         stack: error?.stack,
-        name: error?.name
-      }
+        name: error?.name,
+      },
     });
   }
 }
@@ -82,7 +86,7 @@ export const logger = new Logger();
  * Express middleware for request logging
  */
 export function requestLogger(req: Request, res: Response, next: NextFunction) {
-  const requestId = req.headers['x-request-id'] as string || crypto.randomUUID();
+  const requestId = (req.headers['x-request-id'] as string) || crypto.randomUUID();
   const start = Date.now();
 
   // Add request ID to request object
@@ -94,7 +98,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
     method: req.method,
     url: req.url,
     ip: req.ip,
-    userAgent: req.get('user-agent')
+    userAgent: req.get('user-agent'),
   });
 
   // Log response
@@ -105,10 +109,9 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
       method: req.method,
       url: req.url,
       statusCode: res.statusCode,
-      duration
+      duration,
     });
   });
 
   next();
 }
-

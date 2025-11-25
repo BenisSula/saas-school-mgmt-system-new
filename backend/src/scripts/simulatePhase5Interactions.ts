@@ -12,7 +12,7 @@ import {
   computeStudentResult,
   createExam,
   createExamSession,
-  generateExamExport
+  generateExamExport,
 } from '../services/examService';
 
 type SharedUserRow = {
@@ -144,7 +144,7 @@ async function fetchSchools(pool: Pool): Promise<SchoolContext[]> {
             AND school_id = $1
         `,
         [school.id]
-      )
+      ),
     ]);
 
     contexts.push({
@@ -155,7 +155,7 @@ async function fetchSchools(pool: Pool): Promise<SchoolContext[]> {
       schemaName: school.schema_name,
       admins: admins.rows,
       teachers: teachers.rows,
-      students: students.rows
+      students: students.rows,
     });
   }
 
@@ -175,7 +175,7 @@ async function ensureGradeScales(client: PoolClient, schemaName: string): Promis
     { min: 80, max: 89, grade: 'B', remark: 'Very Good' },
     { min: 70, max: 79, grade: 'C', remark: 'Good' },
     { min: 60, max: 69, grade: 'D', remark: 'Satisfactory' },
-    { min: 0, max: 59, grade: 'E', remark: 'Needs Improvement' }
+    { min: 0, max: 59, grade: 'E', remark: 'Needs Improvement' },
   ];
 
   for (const scale of defaultScales) {
@@ -203,9 +203,9 @@ async function createSuperUserBroadcast(
     targetRoles: ['admin'],
     metadata: {
       simulationPhase: SIMULATION_PHASE,
-      severity: 'info'
+      severity: 'info',
     },
-    actorId: superUser.id
+    actorId: superUser.id,
   });
 
   notificationCount = response.sentCount ?? 0;
@@ -222,8 +222,8 @@ async function createSuperUserBroadcast(
         response.notificationIds,
         JSON.stringify({
           simulationPhase: SIMULATION_PHASE,
-          senderRole: 'superadmin'
-        })
+          senderRole: 'superadmin',
+        }),
       ]
     );
 
@@ -238,8 +238,8 @@ async function createSuperUserBroadcast(
         simulationPhase: SIMULATION_PHASE,
         message: MAINTENANCE_MESSAGE,
         recipients: notificationCount,
-        ipAddress: '127.0.0.1'
-      }
+        ipAddress: '127.0.0.1',
+      },
     });
   }
 
@@ -252,8 +252,8 @@ async function createSuperUserBroadcast(
     successCount: notificationCount,
     failureCount: 0,
     details: {
-      notificationIds: response.notificationIds
-    }
+      notificationIds: response.notificationIds,
+    },
   };
 }
 
@@ -269,7 +269,7 @@ async function createAdminAnnouncements(
     for (const admin of school.admins) {
       const recipients = [
         ...school.teachers.map((teacher) => ({ userId: teacher.id, role: 'teacher' })),
-        ...school.students.map((student) => ({ userId: student.id, role: 'student' }))
+        ...school.students.map((student) => ({ userId: student.id, role: 'student' })),
       ];
 
       for (const recipient of recipients) {
@@ -301,8 +301,8 @@ async function createAdminAnnouncements(
               simulationPhase: SIMULATION_PHASE,
               senderRole: 'admin',
               schoolId: school.schoolId,
-              registrationCode: school.registrationCode
-            })
+              registrationCode: school.registrationCode,
+            }),
           ]
         );
         totalNotifications += 1;
@@ -318,8 +318,8 @@ async function createAdminAnnouncements(
           simulationPhase: SIMULATION_PHASE,
           message: ADMIN_BROADCAST_MESSAGE,
           teacherRecipients: school.teachers.length,
-          studentRecipients: school.students.length
-        }
+          studentRecipients: school.students.length,
+        },
       });
     }
   }
@@ -330,7 +330,7 @@ async function createAdminAnnouncements(
     label: 'Admin broadcasts to staff & students',
     durationMs: end - start,
     successCount: totalNotifications,
-    failureCount: 0
+    failureCount: 0,
   };
 }
 
@@ -397,8 +397,8 @@ async function simulateTeacherAttendance(
             metadata: {
               simulationPhase: SIMULATION_PHASE,
               className: assignment.class_name,
-              subjectName: assignment.subject_name
-            }
+              subjectName: assignment.subject_name,
+            },
           };
         });
 
@@ -419,8 +419,8 @@ async function simulateTeacherAttendance(
           details: {
             simulationPhase: SIMULATION_PHASE,
             entries: attendanceMarks.length,
-            date: today
-          }
+            date: today,
+          },
         });
 
         await recordSharedAuditLog({
@@ -434,8 +434,8 @@ async function simulateTeacherAttendance(
             simulationPhase: SIMULATION_PHASE,
             schoolId: school.schoolId,
             registrationCode: school.registrationCode,
-            entries: attendanceMarks.length
-          }
+            entries: attendanceMarks.length,
+          },
         });
       }
     });
@@ -450,8 +450,8 @@ async function simulateTeacherAttendance(
     successCount: attendanceCount,
     failureCount: 0,
     details: {
-      teachers: teacherCount
-    }
+      teachers: teacherCount,
+    },
   };
 }
 
@@ -497,7 +497,7 @@ async function simulateTeacherResults(
           const examRecord = (await createExam(client, school.schemaName, {
             name: `Midterm Assessment - ${assignment.class_name}`,
             description: 'Auto-generated exam for Phase 5 simulation',
-            metadata: { simulationPhase: SIMULATION_PHASE }
+            metadata: { simulationPhase: SIMULATION_PHASE },
           })) as { id: string };
           if (!examRecord?.id) {
             throw new Error(`Failed to create exam for class ${assignment.class_id}`);
@@ -515,7 +515,7 @@ async function simulateTeacherResults(
             classId: assignment.class_id,
             subject: assignment.subject_name,
             scheduledAt: new Date().toISOString(),
-            invigilator: 'Simulation Bot'
+            invigilator: 'Simulation Bot',
           },
           assignment.teacher_id
         );
@@ -536,7 +536,7 @@ async function simulateTeacherResults(
           subject: assignment.subject_name,
           score: 55 + Math.round(Math.random() * 40),
           remarks: `Simulated term result #${index + 1}`,
-          classId: assignment.class_id
+          classId: assignment.class_id,
         }));
 
         const inserted = await bulkUpsertGrades(
@@ -559,8 +559,8 @@ async function simulateTeacherResults(
           details: {
             simulationPhase: SIMULATION_PHASE,
             entries: inserted.length,
-            subject: assignment.subject_name
-          }
+            subject: assignment.subject_name,
+          },
         });
 
         await recordSharedAuditLog({
@@ -574,8 +574,8 @@ async function simulateTeacherResults(
             simulationPhase: SIMULATION_PHASE,
             schoolId: school.schoolId,
             subject: assignment.subject_name,
-            entries: inserted.length
-          }
+            entries: inserted.length,
+          },
         });
       }
     });
@@ -593,8 +593,8 @@ async function simulateTeacherResults(
     failureCount: 0,
     details: {
       examsCreated,
-      sessionsCreated
-    }
+      sessionsCreated,
+    },
   };
 }
 
@@ -640,8 +640,8 @@ async function simulateStudentActivities(
           details: {
             simulationPhase: SIMULATION_PHASE,
             totalScore: result.summary.total,
-            average: result.summary.average
-          }
+            average: result.summary.average,
+          },
         });
 
         await recordSharedAuditLog({
@@ -653,8 +653,8 @@ async function simulateStudentActivities(
           details: {
             simulationPhase: SIMULATION_PHASE,
             schoolId: school.schoolId,
-            percentage: result.summary.percentage
-          }
+            percentage: result.summary.percentage,
+          },
         });
 
         const exportResult = await generateExamExport(client, school.schemaName, examId, 'pdf');
@@ -696,8 +696,8 @@ async function simulateStudentActivities(
             simulationPhase: SIMULATION_PHASE,
             present: attendance.rows[0]?.present ?? 0,
             total: attendance.rows[0]?.total ?? 0,
-            percentage: attendance.rows[0]?.percentage ?? 0
-          }
+            percentage: attendance.rows[0]?.percentage ?? 0,
+          },
         });
       }
     });
@@ -714,8 +714,8 @@ async function simulateStudentActivities(
     failureCount: 0,
     details: {
       reportsGenerated,
-      attendanceSummaries
-    }
+      attendanceSummaries,
+    },
   };
 }
 
@@ -769,7 +769,7 @@ async function buildAuditSummary(
     label: 'Audit logging verification',
     durationMs: end - start,
     successCount: totalRecords,
-    failureCount: 0
+    failureCount: 0,
   };
 }
 
@@ -779,24 +779,25 @@ function validateSynchronization(summary: SimulationSummary): StepResult {
     {
       id: 'attendance-sync',
       description: 'Teacher attendance updates reflected in summary counts',
-      passed: summary.attendance.recordsInserted > 0
+      passed: summary.attendance.recordsInserted > 0,
     },
     {
       id: 'results-sync',
       description: 'Teacher grade entries available for student reports',
-      passed: summary.results.gradeEntries > 0 && summary.studentActivity.resultsViewed > 0
+      passed: summary.results.gradeEntries > 0 && summary.studentActivity.resultsViewed > 0,
     },
     {
       id: 'notifications-admin',
       description: 'Superuser/admin notifications delivered to recipients',
       passed:
-        summary.notifications.superuserBroadcast > 0 && summary.notifications.adminAnnouncements > 0
+        summary.notifications.superuserBroadcast > 0 &&
+        summary.notifications.adminAnnouncements > 0,
     },
     {
       id: 'reports-export',
       description: 'Students able to export report cards',
-      passed: summary.studentActivity.reportsExported > 0
-    }
+      passed: summary.studentActivity.reportsExported > 0,
+    },
   ];
 
   const passed = checks.filter((check) => check.passed).length;
@@ -812,8 +813,8 @@ function validateSynchronization(summary: SimulationSummary): StepResult {
     successCount: passed,
     failureCount: failed.length,
     details: {
-      checks
-    }
+      checks,
+    },
   };
 }
 
@@ -828,9 +829,9 @@ export async function runPhase5Simulation(): Promise<SimulationSummary> {
     studentActivity: {
       resultsViewed: 0,
       reportsExported: 0,
-      attendanceSummariesFetched: 0
+      attendanceSummariesFetched: 0,
     },
-    failures: []
+    failures: [],
   };
 
   try {

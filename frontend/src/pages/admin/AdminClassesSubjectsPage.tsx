@@ -1,14 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import type { FormEvent } from 'react';
 import RouteMeta from '../../components/layout/RouteMeta';
 import { DashboardSkeleton } from '../../components/ui/DashboardSkeleton';
 import { Button } from '../../components/ui/Button';
+import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Table, type TableColumn } from '../../components/ui/Table';
 import { StatusBanner } from '../../components/ui/StatusBanner';
 import { useAsyncFeedback } from '../../hooks/useAsyncFeedback';
+import { ClassDetailView } from '../../components/admin/ClassDetailView';
 import {
   api,
   type ClassSubject,
@@ -18,8 +20,9 @@ import {
   type Subject,
   type SubjectPayload,
   type AdminTeacherAssignment,
-  type TeacherProfile
+  type TeacherProfile,
 } from '../../lib/api';
+import { Eye } from 'lucide-react';
 
 interface SubjectFormState {
   id?: string | null;
@@ -49,17 +52,19 @@ export default function AdminClassesSubjectsPage() {
     name: '',
     code: '',
     description: '',
-    id: null
+    id: null,
   });
   const [teacherForm, setTeacherForm] = useState<TeacherAssignmentForm>({
     teacherId: '',
     classId: '',
     subjectId: '',
-    isClassTeacher: false
+    isClassTeacher: false,
   });
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
   const [studentSubjects, setStudentSubjects] = useState<string[]>([]);
   const [promotionClassId, setPromotionClassId] = useState<string>('');
+  const [showClassDetailModal, setShowClassDetailModal] = useState<boolean>(false);
+  const [selectedClassIdForDetail, setSelectedClassIdForDetail] = useState<string>('');
   const { status, message, setSuccess, setError: setFeedbackError, clear } = useAsyncFeedback();
 
   const loadInitialData = useCallback(async () => {
@@ -71,14 +76,14 @@ export default function AdminClassesSubjectsPage() {
         api.admin.listSubjects(),
         api.listTeachers(),
         api.listStudents(),
-        api.admin.listTeacherAssignments()
+        api.admin.listTeacherAssignments(),
       ]);
       setClasses(classList);
       setSubjects(subjectList);
       setTeachers(
-        teacherList.map((teacher) => ({
+        teacherList.map((teacher: TeacherProfile) => ({
           ...teacher,
-          subjects: Array.isArray(teacher.subjects) ? teacher.subjects : []
+          subjects: Array.isArray(teacher.subjects) ? teacher.subjects : [],
         }))
       );
       setStudents(studentList);
@@ -95,7 +100,7 @@ export default function AdminClassesSubjectsPage() {
           ...state,
           teacherId: state.teacherId || teacherList[0].id,
           classId: state.classId || (classList[0]?.id ?? ''),
-          subjectId: state.subjectId || (subjectList[0]?.id ?? '')
+          subjectId: state.subjectId || (subjectList[0]?.id ?? ''),
         }));
       }
     } catch (err) {
@@ -159,7 +164,7 @@ export default function AdminClassesSubjectsPage() {
       const payload: SubjectPayload = {
         name: subjectForm.name.trim(),
         code: subjectForm.code.trim() || undefined,
-        description: subjectForm.description.trim() || undefined
+        description: subjectForm.description.trim() || undefined,
       };
       let subject: Subject;
       if (subjectForm.id) {
@@ -210,7 +215,7 @@ export default function AdminClassesSubjectsPage() {
     () => [
       { header: 'Name', key: 'name' },
       { header: 'Code', key: 'code' },
-      { header: 'Description', key: 'description' }
+      { header: 'Description', key: 'description' },
     ],
     []
   );
@@ -222,7 +227,7 @@ export default function AdminClassesSubjectsPage() {
       await api.admin.assignTeacher(teacherForm.teacherId, {
         classId: teacherForm.classId,
         subjectId: teacherForm.subjectId,
-        isClassTeacher: teacherForm.isClassTeacher
+        isClassTeacher: teacherForm.isClassTeacher,
       });
       toast.success('Teacher assignment saved.');
       const updated = await api.admin.listTeacherAssignments();
@@ -323,18 +328,24 @@ export default function AdminClassesSubjectsPage() {
                 label="Name"
                 required
                 value={subjectForm.name}
-                onChange={(event) => handleSubjectFormChange({ name: event.target.value })}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  handleSubjectFormChange({ name: event.target.value })
+                }
               />
               <Input
                 label="Code"
                 value={subjectForm.code}
                 placeholder="e.g. MATH"
-                onChange={(event) => handleSubjectFormChange({ code: event.target.value })}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  handleSubjectFormChange({ code: event.target.value })
+                }
               />
               <Input
                 label="Description"
                 value={subjectForm.description}
-                onChange={(event) => handleSubjectFormChange({ description: event.target.value })}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  handleSubjectFormChange({ description: event.target.value })
+                }
               />
             </div>
             <Button type="submit">{subjectForm.id ? 'Update subject' : 'Add subject'}</Button>
@@ -355,7 +366,7 @@ export default function AdminClassesSubjectsPage() {
                         id: subject.id,
                         name: subject.name,
                         code: subject.code ?? '',
-                        description: subject.description ?? ''
+                        description: subject.description ?? '',
                       })
                     }
                   >
@@ -377,23 +388,40 @@ export default function AdminClassesSubjectsPage() {
         </section>
 
         <section className="rounded-xl border border-[var(--brand-border)] bg-[var(--brand-surface)]/80 p-6 shadow-sm">
-          <header className="mb-4">
-            <h2 className="text-xl font-semibold text-[var(--brand-surface-contrast)]">
-              Class subject mapping
-            </h2>
-            <p className="text-sm text-[var(--brand-muted)]">
-              Choose a class and toggle the subjects it offers. These drive timetable and grading
-              flows.
-            </p>
+          <header className="mb-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-[var(--brand-surface-contrast)]">
+                Class subject mapping
+              </h2>
+              <p className="text-sm text-[var(--brand-muted)]">
+                Choose a class and toggle the subjects it offers. These drive timetable and grading
+                flows.
+              </p>
+            </div>
+            {selectedClassId && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSelectedClassIdForDetail(selectedClassId);
+                  setShowClassDetailModal(true);
+                }}
+                className="gap-2"
+              >
+                <Eye className="h-4 w-4" />
+                View Class Details
+              </Button>
+            )}
           </header>
           <div className="flex flex-col gap-4 lg:flex-row">
             <Select
               label="Class"
               value={selectedClassId}
-              onChange={(event) => setSelectedClassId(event.target.value)}
+              onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+                setSelectedClassId(event.target.value)
+              }
               options={classes.map((clazz) => ({
                 value: clazz.id,
-                label: clazz.name
+                label: clazz.name,
               }))}
             />
             <div className="grid flex-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
@@ -410,7 +438,7 @@ export default function AdminClassesSubjectsPage() {
                     <input
                       type="checkbox"
                       checked={selectedClassSubjects.includes(subject.id)}
-                      onChange={(event) => {
+                      onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                         if (event.target.checked) {
                           setSelectedClassSubjects((list) => [...list, subject.id]);
                         } else {
@@ -452,41 +480,41 @@ export default function AdminClassesSubjectsPage() {
             <Select
               label="Teacher"
               value={teacherForm.teacherId}
-              onChange={(event) =>
+              onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
                 setTeacherForm((state) => ({ ...state, teacherId: event.target.value }))
               }
-              options={teachers.map((teacher) => ({
+              options={teachers.map((teacher: TeacherProfile) => ({
                 value: teacher.id,
-                label: teacher.name
+                label: teacher.name,
               }))}
             />
             <Select
               label="Class"
               value={teacherForm.classId}
-              onChange={(event) =>
+              onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
                 setTeacherForm((state) => ({ ...state, classId: event.target.value }))
               }
-              options={classes.map((clazz) => ({
+              options={classes.map((clazz: SchoolClass) => ({
                 value: clazz.id,
-                label: clazz.name
+                label: clazz.name,
               }))}
             />
             <Select
               label="Subject"
               value={teacherForm.subjectId}
-              onChange={(event) =>
+              onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
                 setTeacherForm((state) => ({ ...state, subjectId: event.target.value }))
               }
               options={subjects.map((subject) => ({
                 value: subject.id,
-                label: subject.name
+                label: subject.name,
               }))}
             />
             <label className="flex items-center gap-2 text-sm text-[var(--brand-surface-contrast)]">
               <input
                 type="checkbox"
                 checked={teacherForm.isClassTeacher}
-                onChange={(event) =>
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                   setTeacherForm((state) => ({ ...state, isClassTeacher: event.target.checked }))
                 }
               />
@@ -548,20 +576,24 @@ export default function AdminClassesSubjectsPage() {
             <Select
               label="Student"
               value={selectedStudentId}
-              onChange={(event) => setSelectedStudentId(event.target.value)}
-              options={students.map((student) => ({
+              onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+                setSelectedStudentId(event.target.value)
+              }
+              options={students.map((student: StudentRecord) => ({
                 value: student.id,
-                label: `${student.first_name} ${student.last_name}`
+                label: `${student.first_name} ${student.last_name}`,
               }))}
             />
             <div className="grid gap-3 md:grid-cols-2">
               <Select
                 label="Promote / transfer to class"
                 value={promotionClassId}
-                onChange={(event) => setPromotionClassId(event.target.value)}
-                options={classes.map((clazz) => ({
+                onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+                  setPromotionClassId(event.target.value)
+                }
+                options={classes.map((clazz: SchoolClass) => ({
                   value: clazz.id,
-                  label: clazz.name
+                  label: clazz.name,
                 }))}
               />
               <Button
@@ -610,6 +642,27 @@ export default function AdminClassesSubjectsPage() {
             </div>
           </div>
         </section>
+
+        {showClassDetailModal && selectedClassIdForDetail && (
+          <Modal
+            title="Class Details"
+            isOpen={showClassDetailModal}
+            onClose={() => {
+              setShowClassDetailModal(false);
+              setSelectedClassIdForDetail('');
+            }}
+          >
+            <div className="max-h-[80vh] overflow-y-auto">
+              <ClassDetailView
+                classId={selectedClassIdForDetail}
+                onClose={() => {
+                  setShowClassDetailModal(false);
+                  setSelectedClassIdForDetail('');
+                }}
+              />
+            </div>
+          </Modal>
+        )}
       </div>
     </RouteMeta>
   );

@@ -10,7 +10,7 @@ import {
   LoginHistoryViewer,
   SessionManager,
   PasswordHistoryViewer,
-  UserActivityTimeline
+  UserActivityTimeline,
 } from '../../../../../components/superuser';
 import { SessionMap } from '../../../../../components/superuser/SessionMap';
 import { useWebSocket } from '../../../../../hooks/useWebSocket';
@@ -25,35 +25,31 @@ export default function UserActivityPage() {
     'timeline' | 'sessions' | 'login-history' | 'password-history'
   >('timeline');
 
-  if (!userId) {
-    return (
-      <RouteMeta title="User Activity">
-        <StatusBanner status="error" message="User ID is required" />
-      </RouteMeta>
-    );
-  }
-
-  // Fetch user details
-  const { data: userData, isLoading: userLoading, error: userError } = useQuery({
+  // Fetch user details - hooks must be called unconditionally
+  const {
+    data: userData,
+    isLoading: userLoading,
+    error: userError,
+  } = useQuery({
     queryKey: ['superuser', 'user', userId],
     queryFn: async () => {
       const users = await api.superuser.listUsers();
       return users.find((u) => u.id === userId);
     },
-    enabled: !!userId
+    enabled: !!userId,
   });
 
-  // Fetch user sessions
+  // Fetch user sessions - hooks must be called unconditionally
   const { data: sessionsData, isLoading: sessionsLoading } = useQuery({
     queryKey: ['superuser', 'sessions', userId],
     queryFn: async () => {
       return await api.superuser.getSessions(userId);
     },
     enabled: !!userId,
-    refetchInterval: 30000 // Poll every 30 seconds
+    refetchInterval: 30000, // Poll every 30 seconds
   });
 
-  // WebSocket for real-time updates
+  // WebSocket for real-time updates - hooks must be called unconditionally
   const { connected: wsConnected } = useWebSocket('/ws', {
     enabled: !!userId,
     onMessage: (message) => {
@@ -63,14 +59,22 @@ export default function UserActivityPage() {
       ) {
         toast.success('New activity detected', { duration: 2000 });
       }
-    }
+    },
   });
+
+  if (!userId) {
+    return (
+      <RouteMeta title="User Activity">
+        <StatusBanner status="error" message="User ID is required" />
+      </RouteMeta>
+    );
+  }
 
   const tabs = [
     { id: 'timeline', label: 'Activity Timeline' },
     { id: 'sessions', label: 'Sessions' },
     { id: 'login-history', label: 'Login History' },
-    { id: 'password-history', label: 'Password History' }
+    { id: 'password-history', label: 'Password History' },
   ];
 
   if (userLoading) {
@@ -210,5 +214,3 @@ export default function UserActivityPage() {
     </RouteMeta>
   );
 }
-
-

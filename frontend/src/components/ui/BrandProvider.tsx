@@ -36,14 +36,14 @@ const DEFAULT_SURFACE_TOKENS: Record<
     surface: '#f8fafc',
     surfaceContrast: '#0f172a',
     border: '#cbd5f5',
-    muted: '#475569'
+    muted: '#475569',
   },
   dark: {
     surface: '#0f172a',
     surfaceContrast: '#f1f5f9',
     border: '#1f2937',
-    muted: '#64748b'
-  }
+    muted: '#64748b',
+  },
 };
 
 const DEFAULT_TOKENS: BrandTokens = {
@@ -53,7 +53,7 @@ const DEFAULT_TOKENS: BrandTokens = {
   secondaryContrast: '#e2e8f0',
   accent: '#22d3ee',
   accentContrast: '#0f172a',
-  ...DEFAULT_SURFACE_TOKENS.dark
+  ...DEFAULT_SURFACE_TOKENS.dark,
 };
 
 const BrandContext = createContext<BrandContextValue>({
@@ -63,7 +63,7 @@ const BrandContext = createContext<BrandContextValue>({
   toggleTheme: () => {},
   loading: false,
   error: null,
-  refresh: async () => {}
+  refresh: async () => {},
 });
 
 function normalizeHex(color?: string | null, fallback: string = '#000000'): string {
@@ -83,7 +83,7 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   return {
     r: (bigint >> 16) & 255,
     g: (bigint >> 8) & 255,
-    b: bigint & 255
+    b: bigint & 255,
   };
 }
 
@@ -115,7 +115,7 @@ function deriveTokens(branding: BrandingConfig | null, theme: ThemeMode): BrandT
     secondaryContrast,
     accent: '#22d3ee',
     accentContrast: contrastColor('#22d3ee'),
-    ...surfaceTokens
+    ...surfaceTokens,
   };
 }
 
@@ -131,7 +131,7 @@ function applyCssVariables(tokens: BrandTokens) {
     ['--brand-surface', tokens.surface],
     ['--brand-surface-contrast', tokens.surfaceContrast],
     ['--brand-border', tokens.border],
-    ['--brand-muted', tokens.muted]
+    ['--brand-muted', tokens.muted],
   ];
   entries.forEach(([key, value]) => root.style.setProperty(key, value));
 }
@@ -233,7 +233,7 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
       toggleTheme,
       loading,
       error,
-      refresh: fetchBranding
+      refresh: fetchBranding,
     }),
     [tokens, theme, handleSetTheme, toggleTheme, loading, error, fetchBranding]
   );

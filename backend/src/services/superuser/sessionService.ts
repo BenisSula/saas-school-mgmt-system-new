@@ -4,7 +4,7 @@ import { isSuperuser } from '../../lib/superuserHelpers';
 import { Role } from '../../config/permissions';
 import {
   normalizeDeviceInfo,
-  type NormalizedDeviceInfo
+  type NormalizedDeviceInfo,
 } from '../../lib/serializers/deviceInfoSerializer';
 
 export interface CreateSessionInput {
@@ -57,24 +57,99 @@ export async function createSession(
   const expiresAt = new Date();
   expiresAt.setSeconds(expiresAt.getSeconds() + expiresInSeconds);
 
-  await pool.query(
-    `
-      INSERT INTO shared.user_sessions (
-        id, user_id, tenant_id, ip_address, user_agent,
-        device_info, login_at, expires_at, is_active
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7, TRUE)
-    `,
-    [
-      sessionId,
-      input.userId,
-      input.tenantId || null,
-      input.ipAddress || null,
-      input.userAgent || null,
-      JSON.stringify(input.deviceInfo || {}),
-      expiresAt
-    ]
-  );
+  // Check if table exists and has required columns
+  try {
+    const columnCheck = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_schema = 'shared' 
+        AND table_name = 'user_sessions'
+        AND column_name IN ('is_active', 'expires_at', 'tenant_id', 'ip_address', 'user_agent', 'device_info')
+    `);
+
+    const hasIsActive = columnCheck.rows.some(
+      (row: { column_name: string }) => row.column_name === 'is_active'
+    );
+    const hasExpiresAt = columnCheck.rows.some(
+      (row: { column_name: string }) => row.column_name === 'expires_at'
+    );
+    const hasTenantId = columnCheck.rows.some(
+      (row: { column_name: string }) => row.column_name === 'tenant_id'
+    );
+    const hasIpAddress = columnCheck.rows.some(
+      (row: { column_name: string }) => row.column_name === 'ip_address'
+    );
+    const hasUserAgent = columnCheck.rows.some(
+      (row: { column_name: string }) => row.column_name === 'user_agent'
+    );
+    const hasDeviceInfo = columnCheck.rows.some(
+      (row: { column_name: string }) => row.column_name === 'device_info'
+    );
+
+    // Build INSERT query based on available columns
+    const columns: string[] = ['id', 'user_id', 'login_at'];
+    const values: unknown[] = [sessionId, input.userId];
+    // placeholderIndex was used for tracking but query building uses phIndex instead
+    // let placeholderIndex = 3;
+
+    if (hasTenantId) {
+      columns.push('tenant_id');
+      values.push(input.tenantId || null);
+      // placeholderIndex++; // Not used after this point
+    }
+    if (hasIpAddress) {
+      columns.push('ip_address');
+      values.push(input.ipAddress || null);
+      // placeholderIndex++; // Not used after this point
+    }
+    if (hasUserAgent) {
+      columns.push('user_agent');
+      values.push(input.userAgent || null);
+      // placeholderIndex++; // Not used after this point
+    }
+    if (hasDeviceInfo) {
+      columns.push('device_info');
+      values.push(JSON.stringify(input.deviceInfo || {}));
+      // placeholderIndex++; // Not used after this point
+    }
+    if (hasExpiresAt) {
+      columns.push('expires_at');
+      values.push(expiresAt);
+      // placeholderIndex++; // Not used after this point
+    }
+    if (hasIsActive) {
+      columns.push('is_active');
+      values.push(true);
+      // placeholderIndex not needed after this
+    }
+
+    // Build placeholders - login_at should use NOW()
+    const placeholders: string[] = [];
+    let phIndex = 1;
+    for (const col of columns) {
+      if (col === 'login_at') {
+        placeholders.push('NOW()');
+      } else {
+        placeholders.push(`$${phIndex++}`);
+      }
+    }
+
+    await pool.query(
+      `
+        INSERT INTO shared.user_sessions (${columns.join(', ')})
+        VALUES (${placeholders.join(', ')})
+      `,
+      values
+    );
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    // If table doesn't exist, silently fail (sessions tracking is optional)
+    if (errorMessage.includes('does not exist') || errorMessage.includes('42703')) {
+      // Return sessionId anyway - session creation is optional
+      return { sessionId };
+    }
+    throw error;
+  }
 
   return { sessionId };
 }
@@ -83,16 +158,51 @@ export async function createSession(
  * End a user session (logout)
  */
 export async function endSession(pool: Pool, sessionId: string): Promise<void> {
-  await pool.query(
-    `
-      UPDATE shared.user_sessions
-      SET logout_at = NOW(),
-          is_active = FALSE,
-          updated_at = NOW()
-      WHERE id = $1 AND is_active = TRUE
-    `,
-    [sessionId]
-  );
+  try {
+    // Check if required columns exist
+    const columnCheck = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_schema = 'shared' 
+        AND table_name = 'user_sessions'
+        AND column_name IN ('is_active', 'updated_at', 'logout_at')
+    `);
+
+    const hasIsActive = columnCheck.rows.some(
+      (row: { column_name: string }) => row.column_name === 'is_active'
+    );
+    const hasUpdatedAt = columnCheck.rows.some(
+      (row: { column_name: string }) => row.column_name === 'updated_at'
+    );
+
+    if (!hasIsActive) {
+      // If is_active doesn't exist, just set logout_at
+      await pool.query(`UPDATE shared.user_sessions SET logout_at = NOW() WHERE id = $1`, [
+        sessionId,
+      ]);
+      return;
+    }
+
+    const updateClause = hasUpdatedAt
+      ? 'SET logout_at = NOW(), is_active = FALSE, updated_at = NOW()'
+      : 'SET logout_at = NOW(), is_active = FALSE';
+
+    await pool.query(
+      `
+        UPDATE shared.user_sessions
+        ${updateClause}
+        WHERE id = $1 AND is_active = TRUE
+      `,
+      [sessionId]
+    );
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    // If table/columns don't exist, silently fail (session tracking is optional)
+    if (errorMessage.includes('does not exist') || errorMessage.includes('42703')) {
+      return;
+    }
+    throw error;
+  }
 }
 
 /**
@@ -145,6 +255,27 @@ export async function getPlatformActiveSessions(
     throw new Error('Unauthorized: Superuser access required');
   }
 
+  // Check if required columns exist
+  const columnCheck = await pool.query(`
+    SELECT column_name 
+    FROM information_schema.columns 
+    WHERE table_schema = 'shared' 
+      AND table_name = 'user_sessions'
+      AND column_name IN ('is_active', 'expires_at')
+  `);
+
+  const hasIsActive = columnCheck.rows.some(
+    (row: { column_name: string }) => row.column_name === 'is_active'
+  );
+  const hasExpiresAt = columnCheck.rows.some(
+    (row: { column_name: string }) => row.column_name === 'expires_at'
+  );
+
+  // If required columns don't exist, return empty result
+  if (!hasIsActive || !hasExpiresAt) {
+    return { sessions: [], total: 0 };
+  }
+
   const conditions: string[] = ['is_active = TRUE', 'expires_at > NOW()'];
   const values: unknown[] = [];
   let paramIndex = 1;
@@ -172,16 +303,44 @@ export async function getPlatformActiveSessions(
   );
   const total = parseInt(countResult.rows[0].total, 10);
 
-  // Get sessions
+  // Get sessions - build SELECT based on available columns
   const limit = filters.limit || 100;
   const offset = filters.offset || 0;
   const limitValues = [...values, limit, offset];
 
+  // Check which columns exist for SELECT
+  const selectColumnsCheck = await pool.query(`
+    SELECT column_name 
+    FROM information_schema.columns 
+    WHERE table_schema = 'shared' 
+      AND table_name = 'user_sessions'
+      AND column_name IN ('id', 'user_id', 'tenant_id', 'ip_address', 'user_agent', 'device_info', 'login_at', 'logout_at', 'expires_at', 'is_active', 'created_at', 'updated_at')
+  `);
+
+  const availableColumns = selectColumnsCheck.rows.map(
+    (row: { column_name: string }) => row.column_name
+  );
+  const baseColumns = ['id', 'user_id', 'login_at'];
+  const optionalColumns = [
+    'tenant_id',
+    'ip_address',
+    'user_agent',
+    'device_info',
+    'logout_at',
+    'expires_at',
+    'is_active',
+    'created_at',
+    'updated_at',
+  ];
+
+  const selectColumns = [
+    ...baseColumns,
+    ...optionalColumns.filter((col) => availableColumns.includes(col)),
+  ].join(', ');
+
   const sessionsResult = await pool.query(
     `
-      SELECT 
-        id, user_id, tenant_id, ip_address, user_agent, device_info,
-        login_at, logout_at, expires_at, is_active, created_at, updated_at
+      SELECT ${selectColumns}
       FROM shared.user_sessions
       ${whereClause}
       ORDER BY login_at DESC
@@ -192,7 +351,7 @@ export async function getPlatformActiveSessions(
 
   return {
     sessions: sessionsResult.rows.map(mapRowToSession),
-    total
+    total,
   };
 }
 
@@ -211,6 +370,23 @@ export async function getLoginHistory(
     throw new Error('Unauthorized: You can only view your own login history');
   }
 
+  // Check if table exists
+  try {
+    const tableCheck = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'shared' 
+        AND table_name = 'user_sessions'
+      )
+    `);
+
+    if (!tableCheck.rows[0]?.exists) {
+      return { sessions: [], total: 0 };
+    }
+  } catch {
+    return { sessions: [], total: 0 };
+  }
+
   const conditions: string[] = [];
   const values: unknown[] = [];
   let paramIndex = 1;
@@ -220,13 +396,27 @@ export async function getLoginHistory(
     values.push(filters.userId);
   }
 
-  if (filters.tenantId !== undefined) {
-    if (filters.tenantId === null) {
-      conditions.push(`tenant_id IS NULL`);
-    } else {
-      conditions.push(`tenant_id = $${paramIndex++}`);
-      values.push(filters.tenantId);
+  // Check if tenant_id column exists before using it
+  try {
+    const tenantIdCheck = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.columns 
+        WHERE table_schema = 'shared' 
+        AND table_name = 'user_sessions'
+        AND column_name = 'tenant_id'
+      )
+    `);
+
+    if (tenantIdCheck.rows[0]?.exists && filters.tenantId !== undefined) {
+      if (filters.tenantId === null) {
+        conditions.push(`tenant_id IS NULL`);
+      } else {
+        conditions.push(`tenant_id = $${paramIndex++}`);
+        values.push(filters.tenantId);
+      }
     }
+  } catch {
+    // Column doesn't exist, skip tenant filter
   }
 
   if (filters.startDate) {
@@ -239,9 +429,23 @@ export async function getLoginHistory(
     values.push(filters.endDate);
   }
 
-  if (filters.isActive !== undefined) {
-    conditions.push(`is_active = $${paramIndex++}`);
-    values.push(filters.isActive);
+  // Check if is_active column exists before using it
+  try {
+    const isActiveCheck = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.columns 
+        WHERE table_schema = 'shared' 
+        AND table_name = 'user_sessions'
+        AND column_name = 'is_active'
+      )
+    `);
+
+    if (isActiveCheck.rows[0]?.exists && filters.isActive !== undefined) {
+      conditions.push(`is_active = $${paramIndex++}`);
+      values.push(filters.isActive);
+    }
+  } catch {
+    // Column doesn't exist, skip is_active filter
   }
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -273,7 +477,7 @@ export async function getLoginHistory(
 
   return {
     sessions: sessionsResult.rows.map(mapRowToSession),
-    total
+    total,
   };
 }
 
@@ -293,28 +497,66 @@ export async function revokeAllUserSessions(
     throw new Error('Unauthorized: You can only revoke your own sessions');
   }
 
-  const conditions: string[] = ['user_id = $1', 'is_active = TRUE'];
-  const values: unknown[] = [userId];
-  let paramIndex = 2;
+  try {
+    // Check if required columns exist
+    const columnCheck = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_schema = 'shared' 
+        AND table_name = 'user_sessions'
+        AND column_name IN ('is_active', 'updated_at', 'logout_at')
+    `);
 
-  if (exceptSessionId) {
-    conditions.push(`id != $${paramIndex++}`);
-    values.push(exceptSessionId);
+    const hasIsActive = columnCheck.rows.some(
+      (row: { column_name: string }) => row.column_name === 'is_active'
+    );
+    const hasUpdatedAt = columnCheck.rows.some(
+      (row: { column_name: string }) => row.column_name === 'updated_at'
+    );
+    const hasLogoutAt = columnCheck.rows.some(
+      (row: { column_name: string }) => row.column_name === 'logout_at'
+    );
+
+    if (!hasIsActive) {
+      return 0; // Can't revoke if is_active doesn't exist
+    }
+
+    const conditions: string[] = ['user_id = $1', 'is_active = TRUE'];
+    const values: unknown[] = [userId];
+    let paramIndex = 2;
+
+    if (exceptSessionId) {
+      conditions.push(`id != $${paramIndex++}`);
+      values.push(exceptSessionId);
+    }
+
+    const updateParts: string[] = ['is_active = FALSE'];
+    if (hasLogoutAt) {
+      updateParts.push('logout_at = NOW()');
+    }
+    if (hasUpdatedAt) {
+      updateParts.push('updated_at = NOW()');
+    }
+
+    const result = await pool.query(
+      `
+        UPDATE shared.user_sessions
+        SET ${updateParts.join(', ')}
+        WHERE ${conditions.join(' AND ')}
+        RETURNING id
+      `,
+      values
+    );
+
+    return result.rowCount || 0;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    // If table/columns don't exist, return 0 (no sessions revoked)
+    if (errorMessage.includes('does not exist') || errorMessage.includes('42703')) {
+      return 0;
+    }
+    throw error;
   }
-
-  const result = await pool.query(
-    `
-      UPDATE shared.user_sessions
-      SET is_active = FALSE,
-          logout_at = NOW(),
-          updated_at = NOW()
-      WHERE ${conditions.join(' AND ')}
-      RETURNING id
-    `,
-    values
-  );
-
-  return result.rowCount || 0;
 }
 
 /**
@@ -322,17 +564,48 @@ export async function revokeAllUserSessions(
  * This should be run periodically via a cron job
  */
 export async function autoExpireStaleSessions(pool: Pool): Promise<number> {
-  const result = await pool.query(
-    `
-      UPDATE shared.user_sessions
-      SET is_active = FALSE,
-          updated_at = NOW()
-      WHERE is_active = TRUE
-        AND expires_at < NOW()
-    `
-  );
+  // Check if table exists and has required columns
+  try {
+    const columnCheck = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_schema = 'shared' 
+        AND table_name = 'user_sessions'
+        AND column_name IN ('is_active', 'expires_at', 'updated_at')
+    `);
 
-  return result.rowCount || 0;
+    const hasRequiredColumns = columnCheck.rows.length >= 2; // At least is_active and expires_at
+
+    if (!hasRequiredColumns) {
+      return 0; // Table exists but missing required columns
+    }
+
+    // Build UPDATE query based on available columns
+    const hasUpdatedAt = columnCheck.rows.some(
+      (row: { column_name: string }) => row.column_name === 'updated_at'
+    );
+    const updateClause = hasUpdatedAt
+      ? 'SET is_active = FALSE, updated_at = NOW()'
+      : 'SET is_active = FALSE';
+
+    const result = await pool.query(
+      `
+        UPDATE shared.user_sessions
+        ${updateClause}
+        WHERE is_active = TRUE
+          AND expires_at < NOW()
+      `
+    );
+
+    return result.rowCount || 0;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    // If table doesn't exist, return 0 (no error)
+    if (errorMessage.includes('does not exist') || errorMessage.includes('42703')) {
+      return 0;
+    }
+    throw error;
+  }
 }
 
 /**
@@ -370,6 +643,6 @@ function mapRowToSession(row: {
     expiresAt: row.expires_at,
     isActive: row.is_active,
     createdAt: row.created_at,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
   };
 }

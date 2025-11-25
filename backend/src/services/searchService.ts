@@ -45,7 +45,7 @@ export async function search(
         id: row.id,
         title: row.full_name,
         subtitle: `Student ID: ${row.student_id}`,
-        metadata: { classId: row.class_id }
+        metadata: { classId: row.class_id },
       });
     }
   }
@@ -67,7 +67,7 @@ export async function search(
         id: row.id,
         title: row.full_name,
         subtitle: `Teacher ID: ${row.teacher_id}`,
-        metadata: { phone: row.phone }
+        metadata: { phone: row.phone },
       });
     }
   }
@@ -88,7 +88,7 @@ export async function search(
         id: row.id,
         title: row.name,
         subtitle: `Level: ${row.level}`,
-        metadata: { level: row.level }
+        metadata: { level: row.level },
       });
     }
   }
@@ -109,11 +109,10 @@ export async function search(
         id: row.id,
         title: row.name,
         subtitle: `Code: ${row.code}`,
-        metadata: { code: row.code }
+        metadata: { code: row.code },
       });
     }
   }
 
   return results.slice(0, limit);
 }
-

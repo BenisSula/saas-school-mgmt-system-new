@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useDepartmentAnalytics } from '../../hooks/queries/useAdminQueries';
 import { useTeachers, useStudents, useClasses } from '../../hooks/queries/useAdminQueries';
 import { BarChart, type BarChartData } from '../../components/charts/BarChart';
@@ -8,6 +8,7 @@ import { LineChart, type LineChartDataPoint } from '../../components/charts/Line
 import { Select } from '../../components/ui/Select';
 import RouteMeta from '../../components/layout/RouteMeta';
 import { Users, GraduationCap, BookOpen, TrendingUp } from 'lucide-react';
+import type { TeacherProfile, StudentRecord, SchoolClass } from '../../lib/api';
 
 export default function AdminDepartmentAnalyticsPage() {
   const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
@@ -26,8 +27,8 @@ export default function AdminDepartmentAnalyticsPage() {
   // Extract departments from teachers' subjects
   const departments = useMemo(() => {
     const deptSet = new Set<string>();
-    teachers.forEach((teacher) => {
-      teacher.subjects.forEach((subject) => {
+    teachers.forEach((teacher: TeacherProfile) => {
+      teacher.subjects.forEach((subject: string) => {
         // Use subject as department (can be enhanced with actual department field)
         deptSet.add(subject);
       });
@@ -39,30 +40,32 @@ export default function AdminDepartmentAnalyticsPage() {
   const teacherDistribution: BarChartData[] = useMemo(() => {
     return departments.map((dept) => ({
       label: dept,
-      value: teachers.filter((t) => t.subjects.includes(dept)).length,
-      color: 'var(--brand-primary)'
+      value: teachers.filter((t: TeacherProfile) => t.subjects.includes(dept)).length,
+      color: 'var(--brand-primary)',
     }));
   }, [departments, teachers]);
 
   // Student distribution by class
   const studentDistribution: PieChartData[] = useMemo(() => {
     const classCounts = new Map<string, number>();
-    students.forEach((student) => {
+    students.forEach((student: StudentRecord) => {
       const className = student.class_id || 'Unassigned';
       classCounts.set(className, (classCounts.get(className) || 0) + 1);
     });
     return Array.from(classCounts.entries()).map(([label, value]) => ({
       label,
       value,
-      color: undefined // Will use default colors
+      color: undefined, // Will use default colors
     }));
   }, [students]);
 
   // Class size trend based on actual class assignments
   const classSizeTrend: LineChartDataPoint[] = useMemo(() => {
-    return classes.map((clazz) => ({
+    return classes.map((clazz: SchoolClass) => ({
       label: clazz.name,
-      value: students.filter((s) => s.class_uuid === clazz.id || s.class_id === clazz.id).length
+      value: students.filter(
+        (s: StudentRecord) => s.class_uuid === clazz.id || s.class_id === clazz.id
+      ).length,
     }));
   }, [classes, students]);
 
@@ -73,7 +76,7 @@ export default function AdminDepartmentAnalyticsPage() {
         totalTeachers: analyticsData.totalTeachers,
         totalStudents: analyticsData.totalStudents,
         totalClasses: classes.length,
-        avgClassSize: analyticsData.averageClassSize
+        avgClassSize: analyticsData.averageClassSize,
       };
     }
 
@@ -87,7 +90,7 @@ export default function AdminDepartmentAnalyticsPage() {
       totalTeachers,
       totalStudents,
       totalClasses,
-      avgClassSize: Math.round(avgClassSize * 10) / 10
+      avgClassSize: Math.round(avgClassSize * 10) / 10,
     };
   }, [teachers, students, classes, analyticsData, selectedDepartment]);
 
@@ -107,10 +110,12 @@ export default function AdminDepartmentAnalyticsPage() {
             <Select
               label="Department"
               value={selectedDepartment}
-              onChange={(e) => setSelectedDepartment(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                setSelectedDepartment(e.target.value)
+              }
               options={[
                 { label: 'All Departments', value: 'all' },
-                ...departments.map((dept) => ({ label: dept, value: dept }))
+                ...departments.map((dept) => ({ label: dept, value: dept })),
               ]}
             />
           </div>

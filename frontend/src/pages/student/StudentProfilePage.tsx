@@ -8,6 +8,7 @@ import { AuditLogs } from '../../components/profile/AuditLogs';
 import { FileUploads } from '../../components/profile/FileUploads';
 import { PasswordChangeSection } from '../../components/profile/PasswordChangeSection';
 import { useProfileData } from '../../hooks/useProfileData';
+import { useFileUpload } from '../../hooks/useFileUpload';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
@@ -15,7 +16,7 @@ import {
   api,
   type StudentProfileDetail,
   type StudentSubjectSummary,
-  type SchoolClass
+  type SchoolClass,
 } from '../../lib/api';
 import { deriveContacts } from '../../lib/utils/data';
 import { formatDateTime } from '../../lib/utils/date';
@@ -77,10 +78,10 @@ export default function StudentProfilePage() {
               className: s.class_id,
               admissionNumber: s.admission_number,
               parentContacts: Array.isArray(s.parent_contacts) ? s.parent_contacts : [],
-              subjects: []
+              subjects: [],
             }))
           : api.student.getProfile(),
-        api.listClasses()
+        api.listClasses(),
       ]);
 
       // Set classes and contacts
@@ -98,8 +99,16 @@ export default function StudentProfilePage() {
     useProfileData<StudentProfileDetail>({
       userId: studentId || undefined,
       profileLoader,
-      enabled: true
+      enabled: true,
     });
+
+  const { uploadFile: handleFileUpload, deleteFile: handleFileDelete } = useFileUpload({
+    entityType: 'student',
+    entityId: profile?.id,
+    onUploadSuccess: (upload) => {
+      setUploads((prev) => [upload, ...prev]);
+    },
+  });
 
   // Sync profile to local state for editing
   useEffect(() => {
@@ -119,7 +128,7 @@ export default function StudentProfilePage() {
         const updated = await api.student.updateProfile({
           firstName: localProfile.firstName,
           lastName: localProfile.lastName,
-          parentContacts: contacts.map((entry) => entry.value)
+          parentContacts: contacts.map((entry) => entry.value),
         });
         setLocalProfile(updated);
         setIsEditing(false);
@@ -144,7 +153,7 @@ export default function StudentProfilePage() {
       try {
         await api.student.requestPromotion({
           targetClassId: promotionClassId,
-          notes: promotionNotes || undefined
+          notes: promotionNotes || undefined,
         });
         toast.success('Promotion/class-change request submitted for review.');
         setPromotionClassId('');
@@ -259,7 +268,7 @@ export default function StudentProfilePage() {
               </form>
             )}
           </Section>
-        )
+        ),
       },
       {
         id: 'class-assignment',
@@ -289,7 +298,7 @@ export default function StudentProfilePage() {
                       onChange={(event) => setPromotionClassId(event.target.value)}
                       options={classes.map((clazz) => ({
                         value: clazz.id,
-                        label: clazz.name
+                        label: clazz.name,
                       }))}
                       required
                       disabled={classes.length === 0}
@@ -314,7 +323,7 @@ export default function StudentProfilePage() {
               </div>
             )}
           </Section>
-        )
+        ),
       },
       {
         id: 'subjects',
@@ -334,7 +343,7 @@ export default function StudentProfilePage() {
               </div>
             )}
           </Section>
-        )
+        ),
       },
       {
         id: 'academic-history',
@@ -347,13 +356,13 @@ export default function StudentProfilePage() {
           >
             {null}
           </Section>
-        )
+        ),
       },
       {
         id: 'activity-history',
         title: 'Activity history',
         description: 'Recent actions and events',
-        content: <ActivityHistory activities={activities} />
+        content: <ActivityHistory activities={activities} />,
       },
       {
         id: 'uploads',
@@ -364,15 +373,15 @@ export default function StudentProfilePage() {
             uploads={uploads}
             canUpload={true}
             canDelete={true}
-            onUpload={async (file) => {
-              // TODO: Implement upload API when available
-              console.log('Upload file:', file);
+            onUpload={async (file, description) => {
+              await handleFileUpload(file, description);
             }}
             onDelete={async (uploadId) => {
+              await handleFileDelete(uploadId);
               setUploads((prev) => prev.filter((u) => u.id !== uploadId));
             }}
           />
-        )
+        ),
       },
       {
         id: 'audit-logs',
@@ -385,15 +394,16 @@ export default function StudentProfilePage() {
               window.location.reload();
             }}
           />
-        )
+        ),
       },
       {
         id: 'password-change',
         title: 'Security',
         description: 'Change your account password',
-        content: <PasswordChangeSection />
-      }
+        content: <PasswordChangeSection />,
+      },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       displayProfile,
       contacts,
@@ -408,7 +418,7 @@ export default function StudentProfilePage() {
       uploads,
       setUploads,
       handleProfileSubmit,
-      handlePromotionSubmit
+      handlePromotionSubmit,
     ]
   );
 

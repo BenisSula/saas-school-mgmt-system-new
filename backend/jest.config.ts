@@ -10,6 +10,8 @@ const config: Config = {
   testPathIgnorePatterns: ['/node_modules/', '\\.js$'],
   clearMocks: true,
   changedFilesWithAncestor: false,
+  // Disable source maps to avoid compatibility issues
+  collectCoverage: false,
   transform: {
     '^.+\\.ts$': [
       'ts-jest',
@@ -18,20 +20,28 @@ const config: Config = {
         useESM: false,
         diagnostics: {
           ignoreCodes: [151001]
-        }
+        },
+        isolatedModules: true
       }
     ]
   },
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
     // Map node: specifiers to bare built-ins for Jest
-    '^node:(.*)$': '$1'
+    '^node:(.*)$': '$1',
+    // Map built-in modules to their dummy .js files to prevent ENOENT errors
+    // These dummy files re-export the actual Node.js built-ins
+    '^util$': '<rootDir>/util.js',
+    '^constants$': '<rootDir>/constants.js',
+    // Mock formidable to avoid module resolution issues
+    '^formidable$': '<rootDir>/tests/mocks/formidable.js'
   },
-  // Don't transform formidable - it's ESM and causes issues with Node built-ins
-  // Instead, let Node handle it natively
+  // Transform superagent and supertest, but not formidable
+  // formidable is CommonJS and should work as-is, but we need to handle its fs import
   transformIgnorePatterns: [
     '/node_modules/(?!(superagent|@jest|supertest)/)',
-    '/node_modules/formidable/'
+    '/node_modules/formidable/',
+    '/node_modules/.pnpm/'
   ],
   // Setup file to handle Node built-in module resolution
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
@@ -45,4 +55,3 @@ const config: Config = {
 };
 
 export default config;
-

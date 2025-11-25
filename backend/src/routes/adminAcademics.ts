@@ -8,7 +8,7 @@ import {
   studentSubjectSchema,
   subjectSchema,
   teacherAssignmentSchema,
-  termReportSchema
+  termReportSchema,
 } from '../validators/subjectValidator';
 import {
   createSubject,
@@ -22,7 +22,7 @@ import {
   replaceClassSubjects,
   replaceStudentSubjects,
   updateSubject,
-  upsertTeacherAssignment
+  upsertTeacherAssignment,
 } from '../services/subjectService';
 import { generateTermReport, fetchReportPdf } from '../services/reportService';
 import { moveStudentToClass } from '../services/studentService';

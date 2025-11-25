@@ -9,4 +9,3 @@ export type { InvestigationDetailsPanelProps } from './InvestigationDetailsPanel
 export type { InvestigationTimelineProps } from './InvestigationTimeline';
 export type { InvestigationResolutionPanelProps } from './InvestigationResolutionPanel';
 export type { InvestigationCaseMetadataProps } from './InvestigationCaseMetadata';
-

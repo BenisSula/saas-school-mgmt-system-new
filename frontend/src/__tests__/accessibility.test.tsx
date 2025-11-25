@@ -11,8 +11,8 @@ vi.mock('../context/AuthContext', () => ({
     isLoading: false,
     login: vi.fn(),
     register: vi.fn(),
-    logout: vi.fn()
-  })
+    logout: vi.fn(),
+  }),
 }));
 
 afterEach(() => {
@@ -22,7 +22,7 @@ afterEach(() => {
 beforeAll(() => {
   Object.defineProperty(window.HTMLCanvasElement.prototype, 'getContext', {
     value: () => null,
-    configurable: true
+    configurable: true,
   });
 });
 
@@ -39,8 +39,8 @@ describe('Accessibility smoke suite', () => {
     );
     const results = await axe(container, {
       rules: {
-        'definition-list': { enabled: false }
-      }
+        'definition-list': { enabled: false },
+      },
     });
     expect(results.violations).toHaveLength(0);
   });

@@ -6,7 +6,7 @@ import { getPool } from '../src/db/connection';
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -47,7 +47,7 @@ describe('Authentication & RBAC', () => {
       email,
       password,
       role: 'admin',
-      tenantId
+      tenantId,
     });
 
     // Admin signup may return 201 (success) or 422 (validation error if tenant requirements not met)
@@ -65,7 +65,7 @@ describe('Authentication & RBAC', () => {
 
     const loginResponse = await request(app).post('/auth/login').send({
       email,
-      password
+      password,
     });
 
     expect(loginResponse.status).toBe(200);
@@ -83,7 +83,7 @@ describe('Authentication & RBAC', () => {
     expect(protectedResponse.body.message).toContain('Welcome');
 
     const refreshResponse = await request(app).post('/auth/refresh').send({
-      refreshToken
+      refreshToken,
     });
 
     expect(refreshResponse.status).toBe(200);
@@ -99,7 +99,7 @@ describe('Authentication & RBAC', () => {
       email,
       password,
       role: 'admin',
-      tenantId
+      tenantId,
     });
 
     expect(signupResponse.status).toBe(201);
@@ -108,7 +108,7 @@ describe('Authentication & RBAC', () => {
     expect(loginResponse.status).toBe(200);
 
     const refreshResponse = await request(app).post('/auth/refresh').send({
-      refreshToken: loginResponse.body.refreshToken
+      refreshToken: loginResponse.body.refreshToken,
     });
 
     expect(refreshResponse.status).toBe(200);
@@ -123,14 +123,14 @@ describe('Authentication & RBAC', () => {
       email,
       password,
       role: 'student',
-      tenantId
+      tenantId,
     });
 
     expect(signupResponse.status).toBe(201);
 
     const loginResponse = await request(app).post('/auth/login').send({
       email,
-      password
+      password,
     });
 
     expect(loginResponse.status).toBe(200);
@@ -152,14 +152,14 @@ describe('Authentication & RBAC', () => {
       email,
       password,
       role: 'admin',
-      tenantId
+      tenantId,
     });
 
     expect(signupResponse.status).toBe(201);
 
     await pool.query('ALTER TABLE shared.users ALTER COLUMN status DROP NOT NULL');
     await pool.query('UPDATE shared.users SET status = NULL WHERE email = $1', [
-      email.toLowerCase()
+      email.toLowerCase(),
     ]);
 
     try {

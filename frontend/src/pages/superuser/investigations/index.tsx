@@ -25,7 +25,7 @@ const defaultFilters: Filters = {
   status: 'all',
   priority: 'all',
   caseType: 'all',
-  search: ''
+  search: '',
 };
 
 export function InvestigationListPage() {
@@ -37,7 +37,7 @@ export function InvestigationListPage() {
   const apiFilters = useMemo(() => {
     const result: Parameters<typeof useInvestigationCases>[0] = {
       limit,
-      offset: (page - 1) * limit
+      offset: (page - 1) * limit,
     };
 
     if (filters.status !== 'all') result.status = filters.status;
@@ -71,7 +71,9 @@ export function InvestigationListPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[var(--brand-text-primary)]">Investigation Cases</h1>
+            <h1 className="text-2xl font-bold text-[var(--brand-text-primary)]">
+              Investigation Cases
+            </h1>
             <p className="mt-1 text-sm text-[var(--brand-text-secondary)]">
               Manage and track security investigations across the platform
             </p>
@@ -101,7 +103,7 @@ export function InvestigationListPage() {
                 { label: 'Open', value: 'open' },
                 { label: 'Investigating', value: 'investigating' },
                 { label: 'Resolved', value: 'resolved' },
-                { label: 'Closed', value: 'closed' }
+                { label: 'Closed', value: 'closed' },
               ]}
             />
             <Select
@@ -115,7 +117,7 @@ export function InvestigationListPage() {
                 { label: 'Low', value: 'low' },
                 { label: 'Medium', value: 'medium' },
                 { label: 'High', value: 'high' },
-                { label: 'Critical', value: 'critical' }
+                { label: 'Critical', value: 'critical' },
               ]}
             />
             <Select
@@ -130,7 +132,7 @@ export function InvestigationListPage() {
                 { label: 'Security', value: 'security' },
                 { label: 'Compliance', value: 'compliance' },
                 { label: 'Abuse', value: 'abuse' },
-                { label: 'Other', value: 'other' }
+                { label: 'Other', value: 'other' },
               ]}
             />
           </div>
@@ -153,7 +155,8 @@ export function InvestigationListPage() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between">
                 <p className="text-sm text-[var(--brand-text-secondary)]">
-                  Showing {(page - 1) * limit + 1} to {Math.min(page * limit, data?.total || 0)} of {data?.total || 0} cases
+                  Showing {(page - 1) * limit + 1} to {Math.min(page * limit, data?.total || 0)} of{' '}
+                  {data?.total || 0} cases
                 </p>
                 <div className="flex gap-2">
                   <Button
@@ -181,4 +184,3 @@ export function InvestigationListPage() {
 }
 
 export default InvestigationListPage;
-

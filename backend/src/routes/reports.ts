@@ -6,7 +6,7 @@ import {
   getAttendanceSummary,
   getDepartmentAnalytics,
   getGradeDistribution,
-  getFeeOutstanding
+  getFeeOutstanding,
 } from '../services/reportService';
 
 const router = Router();
@@ -22,7 +22,7 @@ router.get('/attendance', requirePermission('attendance:manage'), async (req, re
     const summary = await getAttendanceSummary(req.tenantClient, req.tenant.schema, {
       from,
       to,
-      classId
+      classId,
     });
     res.json(summary);
   } catch (error) {
@@ -59,17 +59,25 @@ router.get('/fees', requirePermission('fees:manage'), async (req, res, next) => 
   }
 });
 
-router.get('/department-analytics', requirePermission('department-analytics'), async (req, res, next) => {
-  try {
-    if (!req.tenant || !req.tenantClient) {
-      return res.status(500).json({ message: 'Tenant context missing' });
+router.get(
+  '/department-analytics',
+  requirePermission('department-analytics'),
+  async (req, res, next) => {
+    try {
+      if (!req.tenant || !req.tenantClient) {
+        return res.status(500).json({ message: 'Tenant context missing' });
+      }
+      const { department_id: departmentId } = req.query as Record<string, string | undefined>;
+      const analytics = await getDepartmentAnalytics(
+        req.tenantClient,
+        req.tenant.schema,
+        departmentId
+      );
+      res.json(analytics);
+    } catch (error) {
+      next(error);
     }
-    const { department_id: departmentId } = req.query as Record<string, string | undefined>;
-    const analytics = await getDepartmentAnalytics(req.tenantClient, req.tenant.schema, departmentId);
-    res.json(analytics);
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 export default router;

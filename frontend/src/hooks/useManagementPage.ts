@@ -28,7 +28,7 @@ export function useManagementPage<T extends BaseFilters, TData, TRecord extends 
     filterFn,
     deleteFn,
     onDataLoaded,
-    onDeleteSuccess
+    onDeleteSuccess,
   } = options;
 
   const [data, setData] = useState<TData[]>([]);
@@ -42,7 +42,7 @@ export function useManagementPage<T extends BaseFilters, TData, TRecord extends 
     try {
       const [mainResult, additionalResult] = await Promise.allSettled([
         loadDataFn(),
-        loadAdditionalData ? loadAdditionalData() : Promise.resolve([])
+        loadAdditionalData ? loadAdditionalData() : Promise.resolve([]),
       ]);
 
       if (mainResult.status === 'fulfilled') {
@@ -96,7 +96,7 @@ export function useManagementPage<T extends BaseFilters, TData, TRecord extends 
       void loadData();
     },
     confirmMessage: (count) => `Delete ${count} item(s)?`,
-    successMessage: (count) => `${count} item(s) deleted successfully`
+    successMessage: (count) => `${count} item(s) deleted successfully`,
   });
 
   return {
@@ -111,6 +111,6 @@ export function useManagementPage<T extends BaseFilters, TData, TRecord extends 
     hasActiveFilters,
     setFilters,
     loadData,
-    ...bulkOps
+    ...bulkOps,
   };
 }

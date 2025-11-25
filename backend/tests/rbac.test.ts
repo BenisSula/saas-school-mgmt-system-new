@@ -8,7 +8,7 @@ import { AuthenticatedRequest } from '../src/middleware/rbac';
 
 jest.mock('../src/db/connection', () => ({
   getPool: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const mockedGetPool = jest.mocked(getPool);
@@ -46,25 +46,25 @@ describe('RBAC Middleware Unit Tests', () => {
         role: 'teacher',
         tenantId: crypto.randomUUID(),
         email: 'test@example.com',
-        tokenId: 'token123'
+        tokenId: 'token123',
       },
       tenantClient,
       tenant: {
         id: crypto.randomUUID(),
         name: 'Test Tenant',
-        schema: 'tenant_test'
+        schema: 'tenant_test',
       },
       originalUrl: '/test',
       path: '/test',
       method: 'GET',
       params: {},
       body: {},
-      query: {}
+      query: {},
     };
 
     mockRes = {
       status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis()
+      json: jest.fn().mockReturnThis(),
     };
 
     mockNext = jest.fn();

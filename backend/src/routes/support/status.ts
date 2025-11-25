@@ -13,7 +13,7 @@ import {
   updateMaintenanceStatus,
   recordUptimeCheck,
   getUptimeStatistics,
-  getStatusPageSummary
+  getStatusPageSummary,
 } from '../../services/support/statusPageService';
 import { z } from 'zod';
 
@@ -44,12 +44,12 @@ const createIncidentSchema = z.object({
   description: z.string().min(1),
   status: z.enum(['investigating', 'identified', 'monitoring', 'resolved']),
   severity: z.enum(['minor', 'major', 'critical']),
-  affectedServices: z.array(z.string()).optional()
+  affectedServices: z.array(z.string()).optional(),
 });
 
 const createIncidentUpdateSchema = z.object({
   status: z.enum(['investigating', 'identified', 'monitoring', 'resolved']),
-  message: z.string().min(1)
+  message: z.string().min(1),
 });
 
 const createMaintenanceSchema = z.object({
@@ -58,7 +58,7 @@ const createMaintenanceSchema = z.object({
   description: z.string().min(1),
   affectedServices: z.array(z.string()).optional(),
   scheduledStart: z.string().datetime(),
-  scheduledEnd: z.string().datetime()
+  scheduledEnd: z.string().datetime(),
 });
 
 // Get incidents
@@ -72,7 +72,7 @@ router.get('/incidents', requirePermission('status:view'), async (req, res, next
         status: req.query.status as string,
         severity: req.query.severity as string,
         limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
-        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined
+        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
     } finally {
@@ -116,7 +116,7 @@ router.post('/incidents', requirePermission('status:manage'), async (req, res, n
       const incident = await createIncident(client, {
         ...parsed.data,
         tenantId: req.tenant?.id,
-        createdBy: req.user?.id
+        createdBy: req.user?.id,
       });
       res.status(201).json(incident);
     } finally {
@@ -128,29 +128,33 @@ router.post('/incidents', requirePermission('status:manage'), async (req, res, n
 });
 
 // Add incident update
-router.post('/incidents/:id/updates', requirePermission('status:manage'), async (req, res, next) => {
-  try {
-    const parsed = createIncidentUpdateSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ message: parsed.error.message });
-    }
-
-    const pool = getPool();
-    const client = await pool.connect();
+router.post(
+  '/incidents/:id/updates',
+  requirePermission('status:manage'),
+  async (req, res, next) => {
     try {
-      const update = await addIncidentUpdate(client, {
-        incidentId: req.params.id,
-        ...parsed.data,
-        createdBy: req.user?.id
-      });
-      res.status(201).json(update);
-    } finally {
-      client.release();
+      const parsed = createIncidentUpdateSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.message });
+      }
+
+      const pool = getPool();
+      const client = await pool.connect();
+      try {
+        const update = await addIncidentUpdate(client, {
+          incidentId: req.params.id,
+          ...parsed.data,
+          createdBy: req.user?.id,
+        });
+        res.status(201).json(update);
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      next(error);
     }
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 // Get scheduled maintenance
 router.get('/maintenance', requirePermission('status:view'), async (req, res, next) => {
@@ -163,7 +167,7 @@ router.get('/maintenance', requirePermission('status:view'), async (req, res, ne
         status: req.query.status as string,
         upcomingOnly: req.query.upcomingOnly === 'true',
         limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
-        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined
+        offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
     } finally {
@@ -190,7 +194,7 @@ router.post('/maintenance', requirePermission('status:manage'), async (req, res,
         tenantId: req.tenant?.id,
         scheduledStart: new Date(parsed.data.scheduledStart),
         scheduledEnd: new Date(parsed.data.scheduledEnd),
-        createdBy: req.user?.id
+        createdBy: req.user?.id,
       });
       res.status(201).json(maintenance);
     } finally {
@@ -207,7 +211,7 @@ router.patch('/maintenance/:id', requirePermission('status:manage'), async (req,
     const schema = z.object({
       status: z.enum(['scheduled', 'in_progress', 'completed', 'cancelled']),
       actualStart: z.string().datetime().optional(),
-      actualEnd: z.string().datetime().optional()
+      actualEnd: z.string().datetime().optional(),
     });
 
     const parsed = schema.safeParse(req.body);
@@ -242,7 +246,7 @@ router.post('/uptime', requirePermission('status:manage'), async (req, res, next
       serviceName: z.string(),
       status: z.enum(['up', 'down', 'degraded']),
       responseTimeMs: z.number().int().optional(),
-      metadata: z.record(z.string(), z.unknown()).optional()
+      metadata: z.record(z.string(), z.unknown()).optional(),
     });
 
     const parsed = schema.safeParse(req.body);
@@ -255,7 +259,7 @@ router.post('/uptime', requirePermission('status:manage'), async (req, res, next
     try {
       await recordUptimeCheck(client, {
         ...parsed.data,
-        tenantId: req.tenant?.id
+        tenantId: req.tenant?.id,
       });
       res.json({ success: true });
     } finally {
@@ -275,7 +279,7 @@ router.get('/uptime', requirePermission('status:view'), async (req, res, next) =
       const stats = await getUptimeStatistics(client, {
         tenantId: req.tenant?.id,
         serviceName: req.query.serviceName as string,
-        days: req.query.days ? parseInt(req.query.days as string, 10) : undefined
+        days: req.query.days ? parseInt(req.query.days as string, 10) : undefined,
       });
       res.json({ statistics: stats });
     } finally {
@@ -287,4 +291,3 @@ router.get('/uptime', requirePermission('status:view'), async (req, res, next) =
 });
 
 export default router;
-

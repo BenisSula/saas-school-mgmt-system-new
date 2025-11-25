@@ -17,10 +17,10 @@ export function useNotifications(limit?: number) {
         message: n.message,
         timestamp: new Date(n.createdAt),
         read: n.read,
-        type: n.type
+        type: n.type,
       }));
     },
-    refetchInterval: 30000 // Refetch every 30 seconds
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 }
 
@@ -30,7 +30,7 @@ export function useMarkNotificationAsRead() {
     mutationFn: (notificationId: string) => api.notifications.markAsRead(notificationId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    }
+    },
   });
 }
 
@@ -41,6 +41,6 @@ export function useMarkAllNotificationsAsRead() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success(`${data.marked} notification(s) marked as read`);
-    }
+    },
   });
 }

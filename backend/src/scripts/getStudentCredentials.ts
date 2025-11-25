@@ -55,7 +55,7 @@ async function getStudentCredentials(): Promise<void> {
       fullName,
       school: student.school_name || 'Unknown',
       passwordPattern,
-      estimatedPassword
+      estimatedPassword,
     });
   }
 

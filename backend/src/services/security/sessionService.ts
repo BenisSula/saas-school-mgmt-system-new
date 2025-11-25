@@ -20,7 +20,7 @@ export async function createSession(
   const sessionId = crypto.randomUUID();
   const token = crypto.randomBytes(32).toString('hex');
   const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-  
+
   const expiresInSeconds = input.expiresInSeconds || 7 * 24 * 60 * 60; // Default 7 days
   const expiresAt = new Date();
   expiresAt.setSeconds(expiresAt.getSeconds() + expiresInSeconds);
@@ -41,7 +41,7 @@ export async function createSession(
       input.userAgent || null,
       JSON.stringify(input.deviceInfo || {}),
       input.mfaVerified || false,
-      expiresAt
+      expiresAt,
     ]
   );
 
@@ -77,10 +77,7 @@ export async function getSessionByToken(
 /**
  * Update session last activity
  */
-export async function updateSessionActivity(
-  client: PoolClient,
-  sessionId: string
-): Promise<void> {
+export async function updateSessionActivity(client: PoolClient, sessionId: string): Promise<void> {
   await client.query(
     `
       UPDATE shared.sessions
@@ -148,10 +145,7 @@ export async function revokeAllUserSessions(
 /**
  * Get all active sessions for a user
  */
-export async function getUserSessions(
-  client: PoolClient,
-  userId: string
-): Promise<unknown[]> {
+export async function getUserSessions(client: PoolClient, userId: string): Promise<unknown[]> {
   const result = await client.query(
     `
       SELECT id, ip_address, user_agent, device_info, mfa_verified,
@@ -171,9 +165,7 @@ export async function getUserSessions(
 /**
  * Clean up expired sessions
  */
-export async function cleanupExpiredSessions(
-  client: PoolClient
-): Promise<number> {
+export async function cleanupExpiredSessions(client: PoolClient): Promise<number> {
   const result = await client.query(
     `
       DELETE FROM shared.sessions
@@ -184,4 +176,3 @@ export async function cleanupExpiredSessions(
 
   return result.rowCount || 0;
 }
-

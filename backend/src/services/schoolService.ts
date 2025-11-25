@@ -39,7 +39,7 @@ export async function upsertSchool(client: PoolClient, schema: string, payload: 
     [
       payload.name ?? existing.name,
       serializeJsonField(payload.address ?? existing.address ?? {}),
-      existing.id
+      existing.id,
     ]
   );
 

@@ -70,7 +70,9 @@ export const StatusPage: React.FC = () => {
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-2">System Status</h1>
         <div className="flex items-center gap-2">
-          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(summary.overallStatus)}`}>
+          <span
+            className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(summary.overallStatus)}`}
+          >
             {summary.overallStatus.toUpperCase()}
           </span>
         </div>
@@ -83,7 +85,9 @@ export const StatusPage: React.FC = () => {
             <div key={service.name} className="border rounded p-4">
               <div className="flex justify-between items-center mb-2">
                 <h3 className="font-semibold">{service.name}</h3>
-                <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(service.status)}`}>
+                <span
+                  className={`px-2 py-1 text-xs rounded-full ${getStatusColor(service.status)}`}
+                >
                   {service.status}
                 </span>
               </div>
@@ -103,7 +107,9 @@ export const StatusPage: React.FC = () => {
               <div key={incident.id} className="border-l-4 border-red-500 bg-red-50 p-4 rounded">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-semibold">{incident.title}</h3>
-                  <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(incident.severity)}`}>
+                  <span
+                    className={`px-2 py-1 text-xs rounded-full ${getStatusColor(incident.severity)}`}
+                  >
                     {incident.severity}
                   </span>
                 </div>
@@ -121,7 +127,10 @@ export const StatusPage: React.FC = () => {
           <h2 className="text-xl font-semibold mb-4">Scheduled Maintenance</h2>
           <div className="space-y-4">
             {summary.upcomingMaintenance.map((maintenance) => (
-              <div key={maintenance.id} className="border-l-4 border-yellow-500 bg-yellow-50 p-4 rounded">
+              <div
+                key={maintenance.id}
+                className="border-l-4 border-yellow-500 bg-yellow-50 p-4 rounded"
+              >
                 <h3 className="font-semibold mb-2">{maintenance.title}</h3>
                 <p className="text-sm text-gray-600">
                   Scheduled: {new Date(maintenance.scheduled_start).toLocaleString()} -{' '}
@@ -135,4 +144,3 @@ export const StatusPage: React.FC = () => {
     </div>
   );
 };
-

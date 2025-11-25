@@ -45,7 +45,7 @@ export const themeColors = {
     // Interactive elements
     interactive: '#234E70',
     interactiveHover: '#1a3d57',
-    interactiveActive: '#0f2a3f'
+    interactiveActive: '#0f2a3f',
   },
   dark: {
     // Surface colors
@@ -81,8 +81,8 @@ export const themeColors = {
     // Interactive elements
     interactive: '#3b82f6',
     interactiveHover: '#60a5fa',
-    interactiveActive: '#2563eb'
-  }
+    interactiveActive: '#2563eb',
+  },
 };
 
 /**
@@ -110,7 +110,7 @@ export const cssVariables = {
   '--brand-info': 'var(--brand-info)',
   '--brand-interactive': 'var(--brand-interactive)',
   '--brand-interactive-hover': 'var(--brand-interactive-hover)',
-  '--brand-interactive-active': 'var(--brand-interactive-active)'
+  '--brand-interactive-active': 'var(--brand-interactive-active)',
 } as const;
 
 /**

@@ -9,27 +9,27 @@ const DEMO_SCHOOL_NAME = process.env.DEMO_SCHOOL_NAME ?? 'Demo Academy';
 const ADMIN_USER = {
   email: process.env.DEMO_ADMIN_EMAIL ?? 'admin.demo@academy.test',
   password: process.env.DEMO_ADMIN_PASSWORD ?? 'AdminDemo#2025',
-  role: 'admin' as const
+  role: 'admin' as const,
 };
 
 const TEACHER_USER = {
   email: process.env.DEMO_TEACHER_EMAIL ?? 'teacher.demo@academy.test',
   password: process.env.DEMO_TEACHER_PASSWORD ?? 'TeacherDemo#2025',
   role: 'teacher' as const,
-  name: process.env.DEMO_TEACHER_NAME ?? 'Aisha Bello'
+  name: process.env.DEMO_TEACHER_NAME ?? 'Aisha Bello',
 };
 
 const SUPERUSER = {
   email: process.env.DEMO_SUPER_EMAIL ?? 'owner.demo@platform.test',
   password: process.env.DEMO_SUPER_PASSWORD ?? 'OwnerDemo#2025',
-  role: 'superadmin' as const
+  role: 'superadmin' as const,
 };
 
 const STUDENT_USER = {
   email: process.env.DEMO_STUDENT_EMAIL ?? 'student.demo@academy.test',
   password: process.env.DEMO_STUDENT_PASSWORD ?? 'StudentDemo#2025',
   role: 'student' as const,
-  name: process.env.DEMO_STUDENT_NAME ?? 'Tolu Adeyemi'
+  name: process.env.DEMO_STUDENT_NAME ?? 'Tolu Adeyemi',
 };
 
 async function ensureTenant(pool: Pool): Promise<{ id: string }> {
@@ -50,7 +50,7 @@ async function ensureTenant(pool: Pool): Promise<{ id: string }> {
       schemaName: DEMO_SCHEMA,
       subscriptionType: 'trial',
       status: 'active',
-      billingEmail: ADMIN_USER.email
+      billingEmail: ADMIN_USER.email,
     },
     pool
   );
@@ -62,7 +62,7 @@ async function ensureUser(
     email,
     password,
     role,
-    preferredId
+    preferredId,
   }: {
     email: string;
     password: string;
@@ -127,7 +127,7 @@ async function ensureUser(
       role,
       tenantId,
       role === 'teacher',
-      JSON.stringify({ source: 'demo-seed' })
+      JSON.stringify({ source: 'demo-seed' }),
     ]
   );
   return userId;
@@ -157,7 +157,7 @@ async function seedTenantData(
           [
             crypto.randomUUID(),
             DEMO_SCHOOL_NAME,
-            JSON.stringify({ city: 'Demo City', country: 'NG' })
+            JSON.stringify({ city: 'Demo City', country: 'NG' }),
           ]
         );
       }
@@ -178,7 +178,7 @@ async function seedTenantData(
           TEACHER_USER.name,
           TEACHER_USER.email,
           JSON.stringify(['Mathematics', 'Science']),
-          JSON.stringify(['Grade 8 Emerald'])
+          JSON.stringify(['Grade 8 Emerald']),
         ]
       );
       const teacherId = teacherResult.rows[0].id;
@@ -247,7 +247,7 @@ async function seedTenantData(
           teacherId,
           classId,
           subjectId,
-          JSON.stringify({ seeded: 'demo', dropRequested: false })
+          JSON.stringify({ seeded: 'demo', dropRequested: false }),
         ]
       );
 
@@ -259,7 +259,7 @@ async function seedTenantData(
       const studentSeed = [
         { id: studentSeedId, admission: 'DEM-001', first: primaryFirstName, last: primaryLastName },
         { id: crypto.randomUUID(), admission: 'DEM-002', first: 'Chidera', last: 'Okafor' },
-        { id: crypto.randomUUID(), admission: 'DEM-003', first: 'Zara', last: 'Mensah' }
+        { id: crypto.randomUUID(), admission: 'DEM-003', first: 'Zara', last: 'Mensah' },
       ];
 
       const studentIds: string[] = [];
@@ -296,8 +296,8 @@ async function seedTenantData(
               classId,
               student.admission,
               JSON.stringify([
-                { type: 'guardian', name: 'Parent/Guardian', phone: '+2348000000000' }
-              ])
+                { type: 'guardian', name: 'Parent/Guardian', phone: '+2348000000000' },
+              ]),
             ]
           );
           studentIds.push(inserted.rows[0].id);
@@ -349,7 +349,7 @@ export async function seedDemoTenant(pool: Pool): Promise<void> {
       teacher: TEACHER_USER.email,
       student: STUDENT_USER.email,
       tenantId: tenant.id,
-      userIds: { superUserId, adminUserId, teacherUserId, studentUserId }
+      userIds: { superUserId, adminUserId, teacherUserId, studentUserId },
     });
   }
 }
@@ -376,6 +376,6 @@ export function getDemoSeedContext(): DemoSeedContext {
     teacherPassword: TEACHER_USER.password,
     studentEmail: STUDENT_USER.email,
     studentPassword: STUDENT_USER.password,
-    tenantSchema: DEMO_SCHEMA
+    tenantSchema: DEMO_SCHEMA,
   };
 }

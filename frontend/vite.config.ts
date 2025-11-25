@@ -4,9 +4,33 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    // Enable code splitting for faster builds and smaller bundles
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunks
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'query-vendor': ['@tanstack/react-query'],
+          'ui-vendor': ['framer-motion', 'lucide-react', 'sonner'],
+          'utils-vendor': ['zod', 'zustand', 'clsx', 'tailwind-merge']
+        }
+      }
+    },
+    // Optimize chunk size
+    chunkSizeWarningLimit: 1000,
+    // Enable source maps for better debugging
+    sourcemap: true,
+    // Minify for production
+    minify: 'esbuild'
+  },
   server: {
     port: 5173,
     host: '0.0.0.0',
+    // Enable error overlay in development
+    hmr: {
+      overlay: true
+    },
     proxy: {
       // Proxy API calls during dev to avoid CORS/DNS issues
       '/api': {

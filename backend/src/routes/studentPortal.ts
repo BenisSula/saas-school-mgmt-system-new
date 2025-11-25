@@ -14,7 +14,7 @@ import {
   listAcademicTermsForStudent,
   listStudentTermReports,
   generateStudentTermReport,
-  fetchStudentReportPdf
+  fetchStudentReportPdf,
 } from '../services/studentPortalService';
 import { getStudentClassRoster } from '../services/studentService';
 
@@ -106,7 +106,7 @@ router.patch('/profile', async (req, res, next) => {
     const profile = await updateStudentProfile(req.tenantClient, req.tenant.schema, req.user.id, {
       firstName: typeof req.body?.firstName === 'string' ? req.body.firstName : undefined,
       lastName: typeof req.body?.lastName === 'string' ? req.body.lastName : undefined,
-      parentContacts: Array.isArray(req.body?.parentContacts) ? req.body.parentContacts : undefined
+      parentContacts: Array.isArray(req.body?.parentContacts) ? req.body.parentContacts : undefined,
     });
     res.json(profile);
   } catch (error) {
