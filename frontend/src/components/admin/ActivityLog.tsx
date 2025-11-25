@@ -1,4 +1,3 @@
-import React from 'react';
 import { Activity, Clock, User } from 'lucide-react';
 import { useActivityLogs, type ActivityLogFilters } from '../../hooks/queries/useActivityLogs';
 import { DashboardSkeleton } from '../ui/DashboardSkeleton';

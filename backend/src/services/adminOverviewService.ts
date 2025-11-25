@@ -162,28 +162,28 @@ export async function getAdminOverview(
       ),
     ]);
 
-    const recentUsers = recentUsersResult.rows.map((u) => ({
+    const recentUsers = recentUsersResult.rows.map((u: { id: string; email: string; role: string; status: string | null; created_at: Date }) => ({
       id: u.id,
       email: u.email,
       role: u.role,
       status: u.status,
-      createdAt: u.created_at,
+      createdAt: u.created_at.toISOString(),
     }));
 
-    const recentTeachers = recentTeachersResult.rows.map((t) => ({
+    const recentTeachers = recentTeachersResult.rows.map((t: { id: string; name: string | null; email: string | null; created_at: Date | null }) => ({
       id: t.id,
       name: t.name || '',
       email: t.email || '',
-      createdAt: t.created_at || new Date().toISOString(),
+      createdAt: t.created_at ? t.created_at.toISOString() : new Date().toISOString(),
     }));
 
-    const recentStudents = recentStudentsResult.rows.map((s) => ({
+    const recentStudents = recentStudentsResult.rows.map((s: { id: string; first_name: string | null; last_name: string | null; admission_number: string | null; class_id: string | null; created_at: Date | null }) => ({
       id: s.id,
       firstName: s.first_name || '',
       lastName: s.last_name || '',
       admissionNumber: s.admission_number || '',
       classId: s.class_id || null,
-      createdAt: s.created_at || new Date().toISOString(),
+      createdAt: s.created_at ? s.created_at.toISOString() : new Date().toISOString(),
     }));
 
     // Classes with student counts

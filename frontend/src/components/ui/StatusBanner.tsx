@@ -4,7 +4,7 @@ export type StatusBannerStatus = 'info' | 'success' | 'error';
 
 export interface StatusBannerProps {
   status: StatusBannerStatus;
-  message: string;
+  message: string | React.ReactNode;
   onDismiss?: () => void;
 }
 

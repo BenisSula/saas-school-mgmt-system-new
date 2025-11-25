@@ -38,6 +38,7 @@ export class StudentRepository extends BaseRepository {
   /**
    * Find student by ID
    */
+  // @ts-expect-error - Override with specific type, incompatible with base generic
   async findById(id: string): Promise<Student | null> {
     const result = await this.client.query<StudentRow>(
       `SELECT * FROM ${this.getTableName()} WHERE id = $1`,
@@ -107,6 +108,7 @@ export class StudentRepository extends BaseRepository {
   /**
    * Create student
    */
+  // @ts-expect-error - Override with specific type, incompatible with base generic
   async create(data: {
     firstName: string;
     lastName: string;

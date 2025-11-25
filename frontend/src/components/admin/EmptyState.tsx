@@ -1,4 +1,4 @@
-import React, { memo, type ReactNode } from 'react';
+import { memo, type ReactNode } from 'react';
 import { Inbox, Users, GraduationCap, Shield } from 'lucide-react';
 import { Button } from '../ui/Button';
 

@@ -4,6 +4,7 @@
  * Phase 8.1 - Billing & Stripe Integration
  */
 
+import { useCallback } from 'react';
 import { useSubscription, useCancelSubscription } from '../../hooks/queries/useBilling';
 import { Button } from '../ui/Button';
 import { StatusBanner } from '../ui/StatusBanner';

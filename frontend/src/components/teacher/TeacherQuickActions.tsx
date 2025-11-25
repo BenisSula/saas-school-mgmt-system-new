@@ -12,7 +12,7 @@ interface QuickAction {
   label: string;
   path: string;
   icon: ReactNode;
-  variant?: 'default' | 'outline' | 'ghost';
+  variant?: 'solid' | 'outline' | 'ghost';
 }
 
 const quickActions: QuickAction[] = [
@@ -20,13 +20,13 @@ const quickActions: QuickAction[] = [
     label: 'Mark Attendance',
     path: '/dashboard/teacher/attendance',
     icon: <ClipboardList className="h-4 w-4" />,
-    variant: 'default',
+    variant: 'solid',
   },
   {
     label: 'Enter Grades',
     path: '/dashboard/teacher/grades',
     icon: <BookOpen className="h-4 w-4" />,
-    variant: 'default',
+    variant: 'solid',
   },
   {
     label: 'View Students',

@@ -42,3 +42,31 @@ export async function closePool(): Promise<void> {
     pool = undefined;
   }
 }
+
+/**
+ * Get a tenant-specific client with schema search_path set
+ * @param tenantId - Tenant ID
+ * @returns PoolClient with tenant schema in search_path
+ */
+export async function getTenantClient(tenantId: string): Promise<import('pg').PoolClient> {
+  const pool = getPool();
+  const client = await pool.connect();
+  
+  // Get tenant schema
+  const result = await client.query<{ schema_name: string }>(
+    'SELECT schema_name FROM shared.tenants WHERE id = $1',
+    [tenantId]
+  );
+  
+  if (result.rows.length === 0) {
+    client.release();
+    throw new Error(`Tenant not found: ${tenantId}`);
+  }
+  
+  const schemaName = result.rows[0].schema_name;
+  
+  // Set search_path to tenant schema
+  await client.query(`SET search_path TO ${schemaName}, public`);
+  
+  return client;
+}

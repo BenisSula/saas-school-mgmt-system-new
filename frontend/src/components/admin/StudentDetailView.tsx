@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Phone, Calendar, GraduationCap, Users } from 'lucide-react';
 import { DetailCard, type DetailField } from './DetailCard';
 import { api } from '../../lib/api';

@@ -1,14 +1,16 @@
 import React, { useId } from 'react';
 import { cn } from '../../lib/utils/cn';
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'rows'> {
   label?: string;
   helperText?: string;
   error?: string;
+  multiline?: boolean;
+  rows?: number;
 }
 
-export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ label, helperText, error, className = '', id, ...props }, ref) => {
+export const Input = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, InputProps>(
+  ({ label, helperText, error, className = '', id, multiline, rows = 4, ...props }, ref) => {
     const generatedId = useId();
     const inputId = id ?? generatedId;
     const helperId = `${inputId}-helper`;
@@ -31,14 +33,26 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             {label}
           </label>
         ) : null}
-        <input
-          ref={ref}
-          id={inputId}
-          aria-describedby={describedBy.join(' ') || undefined}
-          aria-invalid={Boolean(error)}
-          className={cn(baseClasses, fieldClasses)}
-          {...props}
-        />
+        {multiline ? (
+          <textarea
+            ref={ref as React.ForwardedRef<HTMLTextAreaElement>}
+            id={inputId}
+            rows={rows}
+            aria-describedby={describedBy.join(' ') || undefined}
+            aria-invalid={Boolean(error)}
+            className={cn(baseClasses, fieldClasses, 'resize-y min-h-[80px]')}
+            {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
+          />
+        ) : (
+          <input
+            ref={ref as React.ForwardedRef<HTMLInputElement>}
+            id={inputId}
+            aria-describedby={describedBy.join(' ') || undefined}
+            aria-invalid={Boolean(error)}
+            className={cn(baseClasses, fieldClasses)}
+            {...props}
+          />
+        )}
         {helperText ? (
           <p id={helperId} className="text-xs text-[var(--brand-muted)]">
             {helperText}

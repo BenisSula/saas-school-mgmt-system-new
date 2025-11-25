@@ -134,8 +134,9 @@ export abstract class BaseRepository {
 
   /**
    * Create entity
+   * Subclasses can override with specific parameter types
    */
-  async create<T extends BaseEntity>(data: Partial<T>): Promise<T> {
+  async create<T extends BaseEntity = BaseEntity>(data: Partial<T>): Promise<T> {
     const fields = Object.keys(data).filter(
       (key) => key !== 'id' && key !== 'created_at' && key !== 'updated_at'
     );
@@ -191,7 +192,10 @@ export abstract class BaseRepository {
   /**
    * Execute raw query (use sparingly, prefer typed methods)
    */
-  protected async query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]> {
+  protected async query<T extends Record<string, unknown> = Record<string, unknown>>(
+    sql: string,
+    params?: unknown[]
+  ): Promise<T[]> {
     const result = await this.client.query<T>(sql, params);
     return result.rows;
   }
@@ -199,7 +203,10 @@ export abstract class BaseRepository {
   /**
    * Execute raw query returning single row
    */
-  protected async queryOne<T = unknown>(sql: string, params?: unknown[]): Promise<T | null> {
+  protected async queryOne<T extends Record<string, unknown> = Record<string, unknown>>(
+    sql: string,
+    params?: unknown[]
+  ): Promise<T | null> {
     const result = await this.client.query<T>(sql, params);
     return result.rows[0] || null;
   }

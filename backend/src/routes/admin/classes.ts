@@ -9,6 +9,7 @@ import tenantResolver from '../../middleware/tenantResolver';
 import ensureTenantContext from '../../middleware/ensureTenantContext';
 import { requirePermission } from '../../middleware/rbac';
 import { validateInput } from '../../middleware/validateInput';
+import { validateUuidParam } from '../../middleware/validateParams';
 import { z } from 'zod';
 import {
   createClass,

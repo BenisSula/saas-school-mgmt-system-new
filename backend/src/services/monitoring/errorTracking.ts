@@ -121,5 +121,7 @@ export const errorTracker = new ErrorTracker();
 export function initializeErrorTracking() {
   const dsn = process.env.SENTRY_DSN;
   const environment = process.env.NODE_ENV || 'development';
-  errorTracker.init(dsn, environment);
+  if (dsn) {
+    errorTracker.init(dsn);
+  }
 }

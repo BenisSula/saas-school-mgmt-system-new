@@ -2,10 +2,13 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "types": ["node"],
-    "rootDir": "src",
-    "outDir": "dist"
+    "rootDir": "../",
+    "outDir": "dist",
+    "skipLibCheck": true,
+    "declaration": false,
+    "declarationMap": false
   },
-  "include": ["src/**/*"],
-  "exclude": ["tests", "tests/**/*", "dist", "node_modules"]
+  "include": ["src/**/*", "../shared/**/*"],
+  "exclude": ["tests", "tests/**/*", "dist", "node_modules", "../shared/components", "../shared/constants", "../shared/types", "../shared/utils", "../shared/validators", "../shared/domain/validators"]
 }
 

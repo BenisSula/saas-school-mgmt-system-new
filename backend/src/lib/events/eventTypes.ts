@@ -8,7 +8,7 @@
 /**
  * Student Events
  */
-export interface StudentCreatedEvent {
+export interface StudentCreatedEvent extends Record<string, unknown> {
   studentId: string;
   student: {
     id: string;
@@ -21,7 +21,7 @@ export interface StudentCreatedEvent {
   timestamp: Date;
 }
 
-export interface StudentUpdatedEvent {
+export interface StudentUpdatedEvent extends Record<string, unknown> {
   studentId: string;
   changes: Record<string, unknown>;
   actorId: string;
@@ -29,7 +29,7 @@ export interface StudentUpdatedEvent {
   timestamp: Date;
 }
 
-export interface StudentDeletedEvent {
+export interface StudentDeletedEvent extends Record<string, unknown> {
   studentId: string;
   actorId: string;
   tenantId: string;

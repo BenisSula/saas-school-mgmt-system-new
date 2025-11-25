@@ -80,11 +80,11 @@ export function HODDetailView({ hodId }: HODDetailViewProps) {
     },
     {
       label: 'Department',
-      value: hodRecord.department ? (
+      value: (hod as HODRecord).department ? (
         <div className="flex items-center gap-2">
           <Building2 className="h-4 w-4 text-[var(--brand-muted)]" />
           <span className="inline-flex items-center rounded-full bg-[var(--brand-primary)]/20 px-3 py-1 text-xs font-semibold text-[var(--brand-primary)]">
-            {hodRecord.department}
+            {(hod as HODRecord).department}
           </span>
         </div>
       ) : (

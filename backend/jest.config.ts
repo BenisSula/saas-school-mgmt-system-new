@@ -10,6 +10,8 @@ const config: Config = {
   testPathIgnorePatterns: ['/node_modules/', '\\.js$'],
   clearMocks: true,
   changedFilesWithAncestor: false,
+  // Disable source maps to avoid compatibility issues
+  collectCoverage: false,
   transform: {
     '^.+\\.ts$': [
       'ts-jest',
@@ -18,7 +20,8 @@ const config: Config = {
         useESM: false,
         diagnostics: {
           ignoreCodes: [151001]
-        }
+        },
+        isolatedModules: true
       }
     ]
   },

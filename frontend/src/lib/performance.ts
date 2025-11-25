@@ -15,7 +15,7 @@ class PerformanceMonitor {
   private metrics: PerformanceMetric[] = [];
   private readonly maxMetrics = 100;
   private readonly flushInterval = 30000; // 30 seconds
-  private flushTimer: NodeJS.Timeout | null = null;
+  private flushTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     this.startMonitoring();
