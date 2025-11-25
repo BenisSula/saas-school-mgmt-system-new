@@ -80,8 +80,10 @@ export function createPasswordResetHandler(options: {
         message: 'Password reset successfully',
         temporaryPassword: result.temporaryPassword,
       });
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   };
 }
@@ -137,8 +139,10 @@ export function createPasswordChangeHandler(options: {
       );
 
       res.json({ message: 'Password changed successfully' });
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   };
 }

@@ -61,8 +61,10 @@ export function createGetHandler<T>(options: {
       }
 
       res.json(createSuccessResponse(resource, `${options.resourceName} retrieved successfully`));
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   });
 }
@@ -114,8 +116,10 @@ export function createPostHandler<TInput, TOutput>(options: {
       res
         .status(201)
         .json(createSuccessResponse(resource, `${options.resourceName} created successfully`));
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   });
 }
@@ -173,8 +177,10 @@ export function createPutHandler<TInput, TOutput>(options: {
       }
 
       res.json(createSuccessResponse(resource, `${options.resourceName} updated successfully`));
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   });
 }
@@ -235,8 +241,10 @@ export function createUpsertHandlers<TInput, TOutput>(options: {
     try {
       const resource = await options.getResource(context.tenantClient, context.tenant.schema);
       res.json(resource ?? {});
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   });
 
@@ -284,10 +292,11 @@ export function createUpsertHandlers<TInput, TOutput>(options: {
  * Validates request body with Zod schema
  */
 export function validateBody<T>(schema: z.ZodSchema<T>) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json(createErrorResponse(parsed.error.message));
+      res.status(400).json(createErrorResponse(parsed.error.message));
+      return;
     }
     req.body = parsed.data;
     next();

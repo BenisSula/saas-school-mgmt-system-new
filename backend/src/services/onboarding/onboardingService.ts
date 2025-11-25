@@ -362,7 +362,7 @@ export async function updateOnboardingWizard(
 export async function completeTenantOnboarding(
   client: PoolClient,
   tenantId: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   _schoolData: {
     name: string;
     address?: string;

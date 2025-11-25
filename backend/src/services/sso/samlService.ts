@@ -27,7 +27,7 @@ export function generateSamlAuthnRequest(
   entityId: string,
   ssoUrl: string,
   acsUrl: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   _relayState?: string
 ): string {
   const requestId = `_${crypto.randomBytes(16).toString('hex')}`;
@@ -128,9 +128,9 @@ export async function getSamlProvider(
 export async function processSamlResponse(
   client: PoolClient,
   providerId: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   _samlResponse: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   _relayState?: string
 ): Promise<{
   userId: string;

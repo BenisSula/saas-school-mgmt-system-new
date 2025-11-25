@@ -15,14 +15,16 @@ export function validateRequest<T extends z.ZodTypeAny>(
     const result = schema.safeParse(data);
 
     if (!result.success) {
-      return res.status(400).json({
+      res.status(400).json({
         message: formatValidationErrors(result.error),
         errors: result.error.issues,
       });
+      return;
     }
 
     // Attach parsed data to request
     (req as { validated?: z.infer<T> }).validated = result.data;
     next();
+    return;
   };
 }

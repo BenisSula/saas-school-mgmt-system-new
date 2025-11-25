@@ -78,7 +78,7 @@ export async function createStudent(
         resourceId: student.id,
         details: {
           studentEmail: (payload as { email?: string }).email,
-          classId: student.classId ?? undefined,
+          classId: student.classId,
           classUuid: student.classUuid,
         },
         severity: 'info',
@@ -99,7 +99,7 @@ export async function createStudent(
         id: student.id,
         firstName: student.firstName,
         lastName: student.lastName,
-        classId: student.classId ?? undefined,
+        classId: student.classId || undefined,
       },
       actorId,
       tenantId,

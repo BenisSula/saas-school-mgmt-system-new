@@ -54,7 +54,11 @@ export type Permission =
   | 'attendance:view_own_class'
   | 'grades:view_own_class'
   | 'billing:view'
-  | 'billing:manage';
+  | 'billing:manage'
+  | 'class-resources:read'
+  | 'class-resources:create'
+  | 'class-resources:update'
+  | 'class-resources:delete';
 
 export const rolePermissions: Record<Role, Permission[]> = {
   student: [

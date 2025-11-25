@@ -21,7 +21,7 @@ import { createErrorResponse } from '../lib/responseHelpers';
 async function verifyTeacherAssignment(
   userId: string,
   classId: string,
-  tenantId: string,
+  _tenantId: string,
   schema: string
 ): Promise<boolean> {
   const pool = getPool();

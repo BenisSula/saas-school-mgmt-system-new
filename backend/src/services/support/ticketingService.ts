@@ -293,7 +293,7 @@ export async function getTicketComments(
   client: PoolClient,
   ticketId: string,
   includeInternal: boolean = false,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   _userId?: string
 ): Promise<unknown[]> {
   const conditions: string[] = ['ticket_id = $1'];

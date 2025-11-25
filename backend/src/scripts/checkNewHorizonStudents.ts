@@ -71,11 +71,21 @@ async function checkNewHorizonStudents() {
 
       if (studentsList.rows.length > 0) {
         console.log(`\n📝 Sample Students (first 5):`);
-        studentsList.rows.forEach((s: { first_name: string | null; last_name: string | null; admission_number: string | null; enrollment_status: string | null }, i: number) => {
-          console.log(
-            `   ${i + 1}. ${s.first_name || ''} ${s.last_name || ''} (${s.admission_number || 'N/A'}) - ${s.enrollment_status || 'N/A'}`
-          );
-        });
+        studentsList.rows.forEach(
+          (
+            s: {
+              first_name?: string;
+              last_name?: string;
+              admission_number?: string;
+              enrollment_status?: string;
+            },
+            i: number
+          ) => {
+            console.log(
+              `   ${i + 1}. ${s.first_name || ''} ${s.last_name || ''} (${s.admission_number || 'N/A'}) - ${s.enrollment_status || 'N/A'}`
+            );
+          }
+        );
       } else {
         console.log('\n⚠️  No students found in students table');
       }

@@ -166,7 +166,7 @@ export async function processOAuthCallback(
   providerId: string,
   code: string,
   redirectUri: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   _state?: string
 ): Promise<{
   userId: string;

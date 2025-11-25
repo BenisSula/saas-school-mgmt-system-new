@@ -6,10 +6,11 @@
  */
 
 import type { PoolClient } from 'pg';
-import { BaseRepository, type FindOptions, type FilterConditions } from '../base/baseRepository';
+import { BaseRepository } from '../base/baseRepository';
+// Shared types are outside rootDir, but this is intentional for monorepo structure
 import type { Student, StudentFilters } from '../../../../shared/domain/types/student.types';
 import { resolveClassId } from '../../lib/crudHelpers';
-import { getTableName, serializeJsonField } from '../../lib/serviceUtils';
+import { serializeJsonField } from '../../lib/serviceUtils';
 
 interface StudentRow {
   id: string;
@@ -37,9 +38,10 @@ export class StudentRepository extends BaseRepository {
 
   /**
    * Find student by ID
+   * @override
    */
-  // @ts-expect-error - Override with specific type, incompatible with base generic
-  async findById(id: string): Promise<Student | null> {
+  // @ts-expect-error - Intentional override with more specific return type
+  override async findById(id: string): Promise<Student | null> {
     const result = await this.client.query<StudentRow>(
       `SELECT * FROM ${this.getTableName()} WHERE id = $1`,
       [id]
@@ -107,9 +109,10 @@ export class StudentRepository extends BaseRepository {
 
   /**
    * Create student
+   * @override
    */
-  // @ts-expect-error - Override with specific type, incompatible with base generic
-  async create(data: {
+  // @ts-expect-error - Intentional override with more specific parameter type
+  override async create(data: {
     firstName: string;
     lastName: string;
     dateOfBirth?: string | null;

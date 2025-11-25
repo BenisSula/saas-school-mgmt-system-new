@@ -13,11 +13,11 @@
     "types": ["node", "jest"],
     "verbatimModuleSyntax": false,
     "isolatedModules": true,
-    "paths": {
-      "@shared/*": ["../shared/*"]
-    }
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
   },
   "include": ["src", "tests"],
   "exclude": ["dist", "node_modules"]
 }
-

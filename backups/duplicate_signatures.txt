@@ -1,0 +1,144 @@
+12 occurrences: main
+  - src\scripts\cleanupEmptyAssignments.ts:72
+  - src\scripts\exportCredentials.ts:683
+  - src\scripts\exportUserCredentials.ts:235
+  - src\scripts\fixHodRoles.ts:43
+  - src\scripts\fixTeacherAssignments.ts:147
+  - src\scripts\getStudentCredentials.ts:98
+  - src\scripts\seedDemo.ts:5
+  - src\scripts\seedSuperUserSetup.ts:2681
+  - src\scripts\simulatePhase6Validation.ts:680
+  - src\scripts\verifyAndFixUsers.ts:175
+  - src\scripts\verifyClassAccess.ts:371
+  - src\scripts\verifyTeacherRosters.ts:134
+
+3 occurrences: tableExists
+  - src\lib\dbHelpers.ts:31
+  - src\services\monitoring\platformMetricsService.ts:22
+  - src\services\superuser\platformAuditService.ts:153
+
+3 occurrences: getUsageMonitoring
+  - src\services\superuserService.ts:679
+  - src\services\superuserService.ts:686
+  - src\services\superuserService.ts:691
+
+2 occurrences: createTenant
+  - src\db\tenantManager.ts:357
+  - src\services\authService.ts:649
+
+2 occurrences: getUserWithAdditionalRoles
+  - src\lib\roleUtils.ts:79
+  - src\services\userService.ts:296
+
+2 occurrences: requireSuperuser
+  - src\lib\superuserHelpers.ts:15
+  - src\middleware\rbac.ts:206
+
+2 occurrences: verifyTeacherAssignment
+  - src\middleware\verifyTeacherAssignment.ts:41
+  - src\middleware\verifyTeacherOrAdminAccess.ts:21
+
+2 occurrences: fetchTenants
+  - src\scripts\exportCredentials.ts:266
+  - src\scripts\simulatePhase6Validation.ts:170
+
+2 occurrences: fetchSchools
+  - src\scripts\exportCredentials.ts:279
+  - src\scripts\simulatePhase5Interactions.ts:96
+
+2 occurrences: resetPassword
+  - src\scripts\reset-postgres-password.ts:23
+  - src\services\authService.ts:572
+
+2 occurrences: verifyTeacherAssignmentInService
+  - src\services\attendanceService.ts:19
+  - src\services\examService.ts:195
+
+2 occurrences: getAttendanceSummary
+  - src\services\attendanceService.ts:190
+  - src\services\reportService.ts:16
+
+2 occurrences: uploadClassResource
+  - src\services\classResourcesService.ts:51
+  - src\services\classResources\unifiedClassResourcesService.ts:225
+
+2 occurrences: getClassResources
+  - src\services\classResourcesService.ts:87
+  - src\services\classResources\unifiedClassResourcesService.ts:125
+
+2 occurrences: deleteClassResource
+  - src\services\classResourcesService.ts:114
+  - src\services\classResources\unifiedClassResourcesService.ts:397
+
+2 occurrences: updateInvoiceStatus
+  - src\services\invoiceService.ts:110
+  - src\services\billing\invoiceService.ts:169
+
+2 occurrences: listStudents
+  - src\services\studentService.ts:10
+  - src\services\students\studentService.ts:27
+
+2 occurrences: createStudent
+  - src\services\studentService.ts:79
+  - src\services\students\studentService.ts:51
+
+2 occurrences: updateStudent
+  - src\services\studentService.ts:136
+  - src\services\students\studentService.ts:116
+
+2 occurrences: deleteStudent
+  - src\services\studentService.ts:200
+  - src\services\students\studentService.ts:175
+
+2 occurrences: moveStudentToClass
+  - src\services\studentService.ts:204
+  - src\services\students\studentService.ts:209
+
+2 occurrences: getStudentClassRoster
+  - src\services\studentService.ts:241
+  - src\services\students\studentService.ts:244
+
+2 occurrences: deleteClass
+  - src\services\termService.ts:98
+  - src\services\admin\classService.ts:387
+
+2 occurrences: listClasses
+  - src\services\termService.ts:111
+  - src\services\admin\classService.ts:123
+
+2 occurrences: processGdprErasure
+  - src\services\audit\enhancedAuditService.ts:450
+  - src\services\dataManagement\gdprService.ts:80
+
+2 occurrences: createSubscription
+  - src\services\billing\subscriptionService.ts:49
+  - src\services\superuser\subscriptionService.ts:46
+
+2 occurrences: updateSubscription
+  - src\services\billing\subscriptionService.ts:134
+  - src\services\superuser\subscriptionService.ts:153
+
+2 occurrences: getSubscriptionByTenantId
+  - src\services\billing\subscriptionService.ts:228
+  - src\services\superuser\subscriptionService.ts:125
+
+2 occurrences: getSubscriptionById
+  - src\services\billing\subscriptionService.ts:248
+  - src\services\superuser\subscriptionService.ts:139
+
+2 occurrences: cancelSubscription
+  - src\services\billing\subscriptionService.ts:335
+  - src\services\superuser\subscriptionService.ts:262
+
+2 occurrences: getSubscriptionHistory
+  - src\services\billing\subscriptionService.ts:411
+  - src\services\superuser\subscriptionService.ts:313
+
+2 occurrences: createSession
+  - src\services\security\sessionService.ts:16
+  - src\services\superuser\sessionService.ts:51
+
+2 occurrences: revokeAllUserSessions
+  - src\services\security\sessionService.ts:121
+  - src\services\superuser\sessionService.ts:488
+

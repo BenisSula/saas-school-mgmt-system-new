@@ -32,11 +32,12 @@ export function validateInput<T extends z.ZodTypeAny>(
           code: err.code,
         }));
 
-        return res.status(400).json({
+        res.status(400).json({
           message: 'Validation failed',
           errors,
           code: 'VALIDATION_ERROR',
         });
+        return;
       }
 
       // Replace the original data with validated data
@@ -49,6 +50,7 @@ export function validateInput<T extends z.ZodTypeAny>(
       }
 
       next();
+      return;
     } catch (error) {
       // Fallback error handling
       console.error('[validateInput] Unexpected error:', error);

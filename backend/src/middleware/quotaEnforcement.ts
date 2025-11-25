@@ -42,11 +42,13 @@ export function enforceQuota(resourceType: ResourceType, amount: number = 1) {
         }
 
         next();
+        return;
       } finally {
         client.release();
       }
     } catch (error) {
       next(error);
+      return;
     }
   };
 }

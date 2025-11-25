@@ -11,6 +11,7 @@ import {
   normalizeDeviceInfo,
   type NormalizedDeviceInfo,
 } from '../../lib/serializers/deviceInfoSerializer';
+import { tableExists } from '../../lib/dbHelpers';
 
 /**
  * Log a platform-level audit event
@@ -145,27 +146,6 @@ export interface LoginAttemptFilters {
   endDate?: Date;
   limit?: number;
   offset?: number;
-}
-
-/**
- * Check if a table exists
- */
-async function tableExists(pool: Pool, schema: string, tableName: string): Promise<boolean> {
-  try {
-    const result = await pool.query(
-      `
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = $1 
-          AND table_name = $2
-        )
-      `,
-      [schema, tableName]
-    );
-    return result.rows[0]?.exists || false;
-  } catch {
-    return false;
-  }
 }
 
 export async function getLoginAttempts(

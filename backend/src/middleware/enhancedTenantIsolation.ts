@@ -52,12 +52,13 @@ export function enhancedTenantIsolation(req: Request, res: Response, next: NextF
 /**
  * Middleware to ensure tenant context is set before proceeding
  */
-export function requireTenantContext(req: Request, res: Response, next: NextFunction) {
+export function requireTenantContext(req: Request, res: Response, next: NextFunction): void {
   if (!req.tenant || !req.tenantClient) {
-    return res.status(400).json({
+    res.status(400).json({
       message: 'Tenant context is required for this operation',
       code: 'TENANT_CONTEXT_MISSING',
     });
+    return;
   }
   next();
 }

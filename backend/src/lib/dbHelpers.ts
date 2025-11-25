@@ -3,7 +3,7 @@
  * DRY principle: Centralized database connection and table existence checks
  */
 
-import type { PoolClient } from 'pg';
+import type { Pool, PoolClient } from 'pg';
 import { getPool } from '../db/connection';
 
 /**
@@ -23,16 +23,29 @@ export async function withDbClient<T>(operation: (client: PoolClient) => Promise
 /**
  * Check if a table exists in a schema.
  * Cached result to avoid repeated queries for the same table.
+ * Supports both Pool and PoolClient for flexibility.
  */
 const tableExistenceCache = new Map<string, boolean>();
 const tableExistenceCacheTime = new Map<string, number>();
 const TABLE_EXISTENCE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
+// Function overloads for tableExists (PoolClient and Pool support)
+/* eslint-disable no-redeclare */
+// Overload for PoolClient
 export async function tableExists(
   client: PoolClient,
   schema: string,
   tableName: string
+): Promise<boolean>;
+// Overload for Pool
+export async function tableExists(pool: Pool, schema: string, tableName: string): Promise<boolean>;
+// Implementation
+export async function tableExists(
+  clientOrPool: PoolClient | Pool,
+  schema: string,
+  tableName: string
 ): Promise<boolean> {
+  /* eslint-enable no-redeclare */
   const cacheKey = `${schema}.${tableName}`;
   const now = Date.now();
 
@@ -46,7 +59,7 @@ export async function tableExists(
 
   // Query database
   try {
-    const result = await client.query(
+    const result = await clientOrPool.query(
       `
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
