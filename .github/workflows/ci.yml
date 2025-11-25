@@ -77,8 +77,28 @@ jobs:
         run: npm run build
       
       - name: Security audit
-        run: npm audit --audit-level=moderate
-        continue-on-error: true
+        run: |
+          npm audit --json > npm_audit.json || true
+          npm audit --audit-level=high
+        continue-on-error: false
+      
+      - name: Upload audit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-npm-audit
+          path: backend/npm_audit.json
+          retention-days: 30
+      
+      - name: Secret scanning
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          config-path: .gitleaks.toml
+          exit-code: 1
+          no-banner: false
+          verbose: true
 
   # Frontend CI
   frontend:
@@ -115,8 +135,28 @@ jobs:
         run: npm run build
       
       - name: Security audit
-        run: npm audit --audit-level=moderate
-        continue-on-error: true
+        run: |
+          npm audit --json > npm_audit.json || true
+          npm audit --audit-level=high
+        continue-on-error: false
+      
+      - name: Upload audit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-npm-audit
+          path: frontend/npm_audit.json
+          retention-days: 30
+      
+      - name: Secret scanning
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          config-path: .gitleaks.toml
+          exit-code: 1
+          no-banner: false
+          verbose: true
 
   # Generate API Types
   generate-api-types:

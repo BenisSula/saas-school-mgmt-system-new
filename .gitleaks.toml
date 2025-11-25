@@ -1,0 +1,65 @@
+# Gitleaks configuration for secret scanning
+# This file configures what patterns to scan for and what to ignore
+
+title = "SaaS School Management System Secret Scanning"
+
+[extend]
+# Use default gitleaks patterns
+useDefault = true
+
+# Additional custom patterns
+[[rules]]
+id = "custom-jwt-secret"
+description = "JWT Secret Key"
+regex = '''(?i)(jwt[_-]?secret|jwt[_-]?key)\s*[=:]\s*['"]?[a-zA-Z0-9+/=]{32,}['"]?'''
+
+[[rules]]
+id = "custom-database-url"
+description = "Database URL with credentials"
+regex = '''(?i)(database[_-]?url|db[_-]?url|postgres[_-]?url)\s*[=:]\s*['"]?[a-z]+://[^:]+:[^@]+@'''
+
+[[rules]]
+id = "custom-stripe-key"
+description = "Stripe API Key"
+regex = '''(?i)(stripe[_-]?(secret|private)[_-]?key|sk_(live|test)_[a-zA-Z0-9]{24,})'''
+
+[[rules]]
+id = "custom-aws-key"
+description = "AWS Access Key"
+regex = '''(?i)(aws[_-]?(access[_-]?key[_-]?id|secret[_-]?access[_-]?key))\s*[=:]\s*['"]?[a-zA-Z0-9+/=]{20,}['"]?'''
+
+# Ignore patterns (false positives)
+[[allowlist]]
+description = "Test files with example patterns"
+paths = [
+  '''\.test\.ts$''',
+  '''\.spec\.ts$''',
+  '''__tests__/''',
+  '''\.example$''',
+  '''\.sample$''',
+]
+
+[[allowlist]]
+description = "Documentation files"
+paths = [
+  '''\.md$''',
+  '''docs/''',
+  '''README''',
+]
+
+[[allowlist]]
+description = "Example/template files"
+paths = [
+  '''\.example$''',
+  '''\.template$''',
+  '''\.env\.example$''',
+]
+
+[[allowlist]]
+description = "Package lock files (contain dependency URLs)"
+paths = [
+  '''package-lock\.json$''',
+  '''yarn\.lock$''',
+  '''pnpm-lock\.yaml$''',
+]
+

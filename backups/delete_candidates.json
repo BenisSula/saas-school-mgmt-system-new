@@ -1,0 +1,141 @@
+{
+  "generated_at": "2025-11-25T15:30:00Z",
+  "branch": "cleanup/backend/step-1-backup-20251125145155",
+  "criteria": {
+    "definitely_safe_to_delete": [
+      "Files consolidated into src/lib with re-export shims and backup exists",
+      "Build artifacts (compiled dist/) or generated files (not source)",
+      "Orphan modules confirmed by madge with zero references and manual inspection"
+    ]
+  },
+  "candidates": {
+    "build_artifacts": {
+      "category": "Build artifacts (compiled files)",
+      "status": "safe_to_delete",
+      "reason": "Compiled JavaScript files generated from TypeScript source. Should not be in source control.",
+      "location": "backend/dist/",
+      "file_count": 840,
+      "size_mb": 4.91,
+      "git_status": "ignored_by_gitignore",
+      "action": "verify_not_committed",
+      "verification": "confirmed_not_tracked_by_git",
+      "files": [
+        {
+          "path": "backend/dist/",
+          "type": "directory",
+          "note": "Entire dist/ directory contains compiled output. Already in .gitignore, but verify it's not accidentally committed."
+        }
+      ]
+    },
+    "consolidated_files": {
+      "category": "Consolidated duplicate code",
+      "status": "consolidation_complete",
+      "reason": "tableExists consolidation completed: duplicate code removed, imports added, backup files created.",
+      "files": [
+        {
+          "path": "backend/src/services/monitoring/platformMetricsService.ts",
+          "status": "consolidated",
+          "reason": "Duplicate tableExists function removed, now imports from dbHelpers. File still contains other functions and is imported by server.ts.",
+          "backup_location": "backups/consolidation_backups/tableExists_platformMetricsService.backup.ts",
+          "action_required": "File cannot be deleted - it's actively used for other functions"
+        },
+        {
+          "path": "backend/src/services/superuser/platformAuditService.ts",
+          "status": "consolidated",
+          "reason": "Duplicate tableExists function removed, now imports from dbHelpers. File still contains other functions and is imported by multiple files.",
+          "backup_location": "backups/consolidation_backups/tableExists_platformAuditService.backup.ts",
+          "action_required": "File cannot be deleted - it's actively used for other functions"
+        }
+      ]
+    },
+    "orphan_modules": {
+      "category": "Orphan modules (unused)",
+      "status": "none_found",
+      "reason": "Madge analysis returned empty array - no orphan modules detected. All modules are properly connected.",
+      "files": []
+    },
+    "unused_exports": {
+      "category": "Unused exports (potential cleanup)",
+      "status": "requires_manual_review",
+      "reason": "419+ unused exports identified in unused_exports.json, but these are exports that may be used in the future or are part of public APIs. Not safe to delete without careful review.",
+      "action_required": "Manual review of each unused export to determine if it's truly unused or part of a public API",
+      "report_location": "backups/unused_exports.json"
+    }
+  },
+  "recommendations": {
+    "immediate_actions": [
+      {
+        "action": "verify_dist_not_committed",
+        "command": "git ls-files backend/dist/",
+        "expected_result": "No output (dist/ should be empty or not tracked)"
+      },
+      {
+        "action": "ensure_gitignore_has_dist",
+        "check": "Verify backend/dist/ is in .gitignore (already confirmed)"
+      }
+    ],
+    "future_consolidations": [
+      {
+        "note": "For future consolidations, follow the complete process:",
+        "steps": [
+          "1. Create canonical implementation in src/lib/",
+          "2. Replace original file with re-export shim",
+          "3. Rename original to .backup.ts",
+          "4. Update all imports",
+          "5. Verify build and tests pass",
+          "6. Then file can be marked as safe to delete"
+        ]
+      }
+    ]
+  },
+  "safe_to_delete_now": [
+    {
+      "path": "backend/src/utils/errorUtils.ts",
+      "type": "export_removal",
+      "export": "getErrorMessageWithFallback",
+      "reason": "Simple wrapper around getErrorMessage. Not imported anywhere. Use getErrorMessage(error) || fallback instead.",
+      "confidence": "high",
+      "backup_required": false,
+      "note": "Only remove the export, keep the file (it has other exports)"
+    },
+    {
+      "path": "backend/src/utils/loginDiagnostics.ts",
+      "type": "file_removal",
+      "reason": "Diagnostic utility not imported anywhere. Appears to be debugging-only code.",
+      "confidence": "medium",
+      "backup_required": true,
+      "note": "Entire file can be removed if not needed for production debugging"
+    }
+  ],
+  "requires_manual_review": [
+    {
+      "category": "Unused exports",
+      "count": 419,
+      "location": "backups/unused_exports.json",
+      "note": "Review each export to determine if it's truly unused or part of a public API"
+    }
+  ],
+  "consolidation_status": {
+    "tableExists": {
+      "status": "completed",
+      "canonical_location": "backend/src/lib/dbHelpers.ts",
+      "backup_files_created": true,
+      "backup_locations": [
+        "backups/consolidation_backups/tableExists_platformMetricsService.backup.ts",
+        "backups/consolidation_backups/tableExists_platformAuditService.backup.ts"
+      ],
+      "files_updated": [
+        "backend/src/services/monitoring/platformMetricsService.ts",
+        "backend/src/services/superuser/platformAuditService.ts"
+      ],
+      "note": "Duplicate functions removed, imports added. Original files still contain other functions and cannot be deleted."
+    }
+  },
+  "notes": [
+    "tableExists consolidation completed with backup files created",
+    "Build artifacts (dist/) are already properly ignored by .gitignore",
+    "No orphan modules found - all modules are connected",
+    "Unused exports identified: getErrorMessageWithFallback (high confidence), diagnoseLoginIssue (medium confidence)"
+  ]
+}
+

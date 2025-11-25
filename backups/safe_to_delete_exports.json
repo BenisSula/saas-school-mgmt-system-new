@@ -1,0 +1,40 @@
+{
+  "generated_at": "2025-11-25T16:00:00Z",
+  "analysis_date": "2025-11-25",
+  "reviewed_by": "automated_analysis",
+  "safe_to_remove": [
+    {
+      "file": "backend/src/utils/errorUtils.ts",
+      "export": "getErrorMessageWithFallback",
+      "line": 29,
+      "reason": "Simple wrapper around getErrorMessage. Not imported anywhere. getErrorMessage provides same functionality with || operator.",
+      "confidence": "high",
+      "replacement": "Use getErrorMessage(error) || fallback instead",
+      "backup_created": false
+    },
+    {
+      "file": "backend/src/utils/loginDiagnostics.ts",
+      "export": "diagnoseLoginIssue",
+      "line": 18,
+      "reason": "Diagnostic utility not imported anywhere. Appears to be debugging-only code.",
+      "confidence": "medium",
+      "replacement": "None - remove if not needed for production debugging",
+      "backup_created": false
+    }
+  ],
+  "requires_review": [
+    {
+      "file": "backend/src/db/runMigrationsWithTracking.ts",
+      "exports": ["getExecutedMigrations", "runMigrationsWithTracking"],
+      "reason": "Alternative migration system. May be intentionally unused (documentation suggests it should replace runMigrations). Review if this is meant to be used or removed.",
+      "confidence": "low",
+      "action": "Manual review required - may be future feature"
+    }
+  ],
+  "notes": [
+    "Most unused exports in lib/index.ts are re-exports that may be used directly from source files",
+    "Type definitions and error classes should be kept as they're part of public API",
+    "Middleware exports marked as 'used in module' are correctly internal"
+  ]
+}
+
