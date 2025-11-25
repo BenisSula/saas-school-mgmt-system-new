@@ -280,8 +280,10 @@ export function createUpsertHandlers<TInput, TOutput>(options: {
       );
 
       res.json(resource);
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   });
 

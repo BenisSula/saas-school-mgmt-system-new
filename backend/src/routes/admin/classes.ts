@@ -67,11 +67,13 @@ router.post('/', validateInput(classSchema, 'body'), async (req, res, next) => {
     const classRecord = await createClass(tenantClient, tenant.schema, req.body, user.id);
 
     res.status(201).json(createSuccessResponse(classRecord, 'Class created successfully'));
+    return;
   } catch (error) {
     if (error instanceof Error && error.message.includes('already exists')) {
       return res.status(400).json(createErrorResponse(error.message));
     }
     next(error);
+    return;
   } finally {
     client.release();
   }
@@ -92,8 +94,10 @@ router.get('/', async (req, res, next) => {
     const classes = await listClasses(req.tenantClient, req.tenant.schema, includeCounts);
 
     res.json(createSuccessResponse(classes));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -113,8 +117,10 @@ router.get('/:id', validateUuidParam('id'), async (req, res, next) => {
     }
 
     res.json(createSuccessResponse(classRecord));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -147,11 +153,13 @@ router.patch(
       );
 
       res.json(createSuccessResponse(classRecord, 'Class updated successfully'));
+      return;
     } catch (error) {
       if (error instanceof Error && error.message.includes('already exists')) {
         return res.status(400).json(createErrorResponse(error.message));
       }
       next(error);
+      return;
     }
   }
 );
@@ -175,11 +183,13 @@ router.delete('/:id', validateUuidParam('id'), async (req, res, next) => {
     await deleteClass(tenantClient, tenant.schema, req.params.id, user.id);
 
     res.json(createSuccessResponse(null, 'Class deleted successfully'));
+    return;
   } catch (error) {
     if (error instanceof Error && error.message.includes('Cannot delete')) {
       return res.status(400).json(createErrorResponse(error.message));
     }
     next(error);
+    return;
   }
 });
 
@@ -217,8 +227,10 @@ router.patch(
       );
 
       res.json(createSuccessResponse(null, 'Class teacher assigned successfully'));
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 );
@@ -262,8 +274,10 @@ router.post(
           `Assigned ${result.assigned} student(s), ${result.failed} failed`
         )
       );
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 );

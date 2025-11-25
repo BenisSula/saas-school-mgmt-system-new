@@ -288,11 +288,13 @@ router.post('/change-password', authenticate, async (req, res) => {
     );
 
     res.json({ message: 'Password changed successfully' });
+    return;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
     const statusCode =
       errorMessage.includes('not found') || errorMessage.includes('incorrect') ? 400 : 500;
     res.status(statusCode).json(createErrorResponse(errorMessage));
+    return;
   }
 });
 

@@ -4,7 +4,7 @@
  */
 
 import { Card } from '../ui/Card';
-import { LucideIcon } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface StudentStatCardProps {
   title: string;

@@ -15,6 +15,25 @@ import type { BillingInvoice } from '../../lib/api';
 export function InvoiceList() {
   const { data, isLoading, error } = useInvoices({ limit: 50 });
 
+  // Memoize formatters to avoid recreating on every render
+  // Must be called before early returns per React Hooks rules
+  const formatAmount = useCallback((cents?: number, currency = 'USD') => {
+    if (!cents) return 'N/A';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+    }).format(cents / 100);
+  }, []);
+
+  const formatDate = useCallback((dateString?: string) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  }, []);
+
   if (isLoading) {
     return <DashboardSkeleton />;
   }
@@ -41,24 +60,6 @@ export function InvoiceList() {
       </div>
     );
   }
-
-  // Memoize formatters to avoid recreating on every render
-  const formatAmount = useCallback((cents?: number, currency = 'USD') => {
-    if (!cents) return 'N/A';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-    }).format(cents / 100);
-  }, []);
-
-  const formatDate = useCallback((dateString?: string) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {

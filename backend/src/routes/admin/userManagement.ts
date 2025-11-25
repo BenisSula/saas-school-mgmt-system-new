@@ -63,11 +63,13 @@ router.post('/hod/create', validateInput(createHODSchema, 'body'), async (req, r
     );
 
     res.status(201).json(createSuccessResponse(result, 'HOD created successfully'));
+    return;
   } catch (error) {
     if (error instanceof Error && error.message.includes('already in use')) {
       return res.status(400).json(createErrorResponse(error.message));
     }
     next(error);
+    return;
   }
 });
 
@@ -102,11 +104,13 @@ router.post(
       );
 
       res.status(201).json(createSuccessResponse(result, 'Teacher created successfully'));
+      return;
     } catch (error) {
       if (error instanceof Error && error.message.includes('already in use')) {
         return res.status(400).json(createErrorResponse(error.message));
       }
       next(error);
+      return;
     }
   }
 );
@@ -142,11 +146,13 @@ router.post(
       );
 
       res.status(201).json(createSuccessResponse(result, 'Student created successfully'));
+      return;
     } catch (error) {
       if (error instanceof Error && error.message.includes('already in use')) {
         return res.status(400).json(createErrorResponse(error.message));
       }
       next(error);
+      return;
     }
   }
 );
@@ -176,8 +182,10 @@ router.get('/', async (req, res, next) => {
     const users = await listTenantUsers(tenant.id, filters);
 
     res.json(createSuccessResponse(users));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -230,8 +238,10 @@ router.patch('/:id/disable', async (req, res, next) => {
     });
 
     res.json(createSuccessResponse(null, 'User disabled successfully'));
+    return;
   } catch (error) {
     next(error);
+    return;
   } finally {
     client.release();
   }
@@ -286,8 +296,10 @@ router.patch('/:id/enable', async (req, res, next) => {
     });
 
     res.json(createSuccessResponse(null, 'User enabled successfully'));
+    return;
   } catch (error) {
     next(error);
+    return;
   } finally {
     client.release();
   }

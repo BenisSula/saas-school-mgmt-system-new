@@ -46,6 +46,7 @@ router.post('/send', requirePermission('notifications:send'), async (req, res, n
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -63,6 +64,7 @@ router.post('/process-queue', requirePermission('tenants:manage'), async (req, r
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -83,6 +85,7 @@ router.get('/templates/:templateKey', async (req, res, next) => {
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -114,6 +117,7 @@ router.post('/templates', requirePermission('tenants:manage'), async (req, res, 
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 

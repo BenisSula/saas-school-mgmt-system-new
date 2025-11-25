@@ -70,8 +70,10 @@ router.post('/', validateInput(departmentSchema, 'body'), async (req, res, next)
     const department = await createDepartment(client, tenantId, schoolId, req.body, userId);
 
     res.status(201).json(createSuccessResponse(department, 'Department created successfully'));
+    return;
   } catch (error) {
     next(error);
+    return;
   } finally {
     client.release();
   }
@@ -97,8 +99,10 @@ router.get('/', async (req, res, next) => {
     const departments = await listDepartments(schoolId, includeCounts);
 
     res.json(createSuccessResponse(departments));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -124,8 +128,10 @@ router.get('/:id', async (req, res, next) => {
     }
 
     res.json(createSuccessResponse(department));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -154,8 +160,10 @@ router.patch('/:id', validateInput(updateDepartmentSchema, 'body'), async (req, 
     const department = await updateDepartment(client, req.params.id, schoolId, req.body, userId);
 
     res.json(createSuccessResponse(department, 'Department updated successfully'));
+    return;
   } catch (error) {
     next(error);
+    return;
   } finally {
     client.release();
   }
@@ -186,11 +194,13 @@ router.delete('/:id', async (req, res, next) => {
     await deleteDepartment(client, req.params.id, schoolId, userId);
 
     res.json(createSuccessResponse(null, 'Department deleted successfully'));
+    return;
   } catch (error) {
     if (error instanceof Error && error.message.includes('Cannot delete')) {
       return res.status(400).json(createErrorResponse(error.message));
     }
     next(error);
+    return;
   } finally {
     client.release();
   }
@@ -229,8 +239,10 @@ router.patch(
       await assignHODToDepartment(client, req.params.id, schoolId, req.body.userId, userId);
 
       res.json(createSuccessResponse(null, 'HOD assigned to department successfully'));
+      return;
     } catch (error) {
       next(error);
+      return;
     } finally {
       client.release();
     }

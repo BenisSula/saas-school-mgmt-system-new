@@ -55,7 +55,7 @@ router.post('/', async (req, res, next) => {
 });
 
 // Get all feature flags
-router.get('/', async (req, res, next) => {
+router.get('/', async (_req, res, next) => {
   try {
     const pool = getPool();
     const client = await pool.connect();

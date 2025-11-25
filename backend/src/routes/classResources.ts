@@ -54,6 +54,7 @@ router.get('/', requirePermission('class-resources:read'), async (req, res, next
     return res.json(createPaginatedResponse(items, items.length, pagination));
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -76,6 +77,7 @@ router.get('/:id', requirePermission('class-resources:read'), async (req, res, n
     return res.json(createSuccessResponse(item));
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -104,6 +106,7 @@ router.post(
       return res.status(201).json(createSuccessResponse(item));
     } catch (error) {
       next(error);
+      return;
     }
   }
 );
@@ -137,6 +140,7 @@ router.put(
       return res.json(createSuccessResponse(item));
     } catch (error) {
       next(error);
+      return;
     }
   }
 );
@@ -166,6 +170,7 @@ router.delete('/:id', requirePermission('class-resources:delete'), async (req, r
     return res.json(createSuccessResponse({ deleted: true }));
   } catch (error) {
     next(error);
+    return;
   }
 });
 

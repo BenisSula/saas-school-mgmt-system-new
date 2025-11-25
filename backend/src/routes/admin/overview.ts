@@ -37,8 +37,10 @@ router.get(
       });
 
       res.json(createSuccessResponse(overview, 'Overview data retrieved successfully'));
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 );

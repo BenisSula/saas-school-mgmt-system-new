@@ -35,6 +35,18 @@ export function HODDetailView({ hodId }: HODDetailViewProps) {
     { staleTime: 60000 }
   );
 
+  // Calculate teachers under oversight (teachers with same subjects/department)
+  // Memoized to avoid recalculating on every render
+  // Must be called before early returns per React Hooks rules
+  const teachersUnderOversight = useMemo(() => {
+    if (!hod || !allTeachers.length) return [];
+    return allTeachers.filter((teacher) => {
+      if (teacher.id === hod.id) return false;
+      // Teachers with overlapping subjects are under HOD oversight
+      return teacher.subjects.some((subject) => hod.subjects.includes(subject));
+    });
+  }, [allTeachers, hod?.id, hod?.subjects]);
+
   if (isLoading) {
     return <DashboardSkeleton />;
   }
@@ -51,16 +63,6 @@ export function HODDetailView({ hodId }: HODDetailViewProps) {
   if (!hod) {
     return <StatusBanner status="error" message="HOD not found" />;
   }
-
-  // Calculate teachers under oversight (teachers with same subjects/department)
-  // Memoized to avoid recalculating on every render
-  const teachersUnderOversight = useMemo(() => {
-    return allTeachers.filter((teacher) => {
-      if (teacher.id === hod.id) return false;
-      // Teachers with overlapping subjects are under HOD oversight
-      return teacher.subjects.some((subject) => hod.subjects.includes(subject));
-    });
-  }, [allTeachers, hod.id, hod.subjects]);
 
   const fields: DetailField[] = [
     {

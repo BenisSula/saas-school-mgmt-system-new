@@ -38,6 +38,7 @@ const verifyHOD = async (req: Request, res: Response, next: NextFunction) => {
   // Attach user with roles to request
   (req as Request & { hodUser: typeof user }).hodUser = user;
   next();
+  return;
 };
 
 router.use(verifyHOD);
@@ -64,6 +65,7 @@ router.get(
       const overview = await getHodOverview(tenantClient, tenant.id, tenant.schema, user.id);
 
       res.json(createSuccessResponse(overview, 'HOD dashboard retrieved successfully'));
+      return;
     } catch (error) {
       if (error instanceof Error) {
         if (error.message.includes('not found') || error.message.includes('not assigned')) {
@@ -71,6 +73,7 @@ router.get(
         }
       }
       next(error);
+      return;
     }
   }
 );
@@ -106,6 +109,7 @@ router.get(
       });
 
       res.json(createSuccessResponse(teachers, 'Teachers retrieved successfully'));
+      return;
     } catch (error) {
       if (error instanceof Error) {
         if (error.message.includes('not found') || error.message.includes('not assigned')) {
@@ -113,6 +117,7 @@ router.get(
         }
       }
       next(error);
+      return;
     }
   }
 );
@@ -150,6 +155,7 @@ router.get(
       });
 
       res.json(createSuccessResponse(report, 'Department report retrieved successfully'));
+      return;
     } catch (error) {
       if (error instanceof Error) {
         if (error.message.includes('not found') || error.message.includes('not assigned')) {
@@ -157,6 +163,7 @@ router.get(
         }
       }
       next(error);
+      return;
     }
   }
 );

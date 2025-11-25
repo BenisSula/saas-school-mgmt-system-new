@@ -22,7 +22,7 @@ const router = Router();
 router.use(authenticate, tenantResolver(), ensureTenantContext());
 
 // Middleware to extract classId from request body for teacher assignment verification
-const extractClassIdForVerification = (req: Request, res: Response, next: NextFunction) => {
+const extractClassIdForVerification = (req: Request, _res: Response, next: NextFunction) => {
   const payload = req.body?.records;
   if (Array.isArray(payload) && payload.length > 0 && payload[0]?.classId) {
     // Attach classId to request for middleware to use
@@ -60,8 +60,10 @@ router.post(
 
       await markAttendance(req.tenantClient!, req.tenant!.schema, payload, req.user?.id);
       res.status(204).send();
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 );
@@ -86,8 +88,10 @@ router.get(
       );
 
       res.json({ history, summary });
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 );
@@ -110,8 +114,10 @@ router.get(
         date as string
       );
       res.json(report);
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 );

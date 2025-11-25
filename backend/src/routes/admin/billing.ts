@@ -106,11 +106,13 @@ router.post(
         res
           .status(201)
           .json(createSuccessResponse(subscription, 'Subscription created successfully'));
+        return;
       } finally {
         client.release();
       }
     } catch (error) {
       next(error);
+      return;
     }
   }
 );
@@ -155,11 +157,13 @@ router.post('/subscription/cancel', requirePermission('billing:manage'), async (
       );
 
       res.json(createSuccessResponse(canceledSubscription, 'Subscription canceled successfully'));
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -208,11 +212,13 @@ router.post(
         );
 
         res.json(createSuccessResponse(updatedSubscription, 'Subscription updated successfully'));
+        return;
       } finally {
         client.release();
       }
     } catch (error) {
       next(error);
+      return;
     }
   }
 );
@@ -236,11 +242,13 @@ router.get('/invoices', async (req, res, next) => {
         offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(createSuccessResponse(result, 'Invoices retrieved successfully'));
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -268,11 +276,13 @@ router.get('/invoices/:invoiceId', async (req, res, next) => {
       }
 
       res.json(createSuccessResponse(invoice, 'Invoice retrieved successfully'));
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 

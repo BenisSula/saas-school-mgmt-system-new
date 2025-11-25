@@ -47,8 +47,10 @@ router.get('/logs', async (req, res, next) => {
     }));
 
     res.json(transformedLogs);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -80,8 +82,10 @@ router.get('/activity', async (req, res, next) => {
     }));
 
     res.json(activities);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 

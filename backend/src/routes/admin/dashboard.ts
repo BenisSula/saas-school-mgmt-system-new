@@ -129,8 +129,10 @@ router.get('/', async (req, res, next) => {
     };
 
     res.json(createSuccessResponse(stats));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 

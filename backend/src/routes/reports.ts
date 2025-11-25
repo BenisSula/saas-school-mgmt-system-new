@@ -27,6 +27,7 @@ router.get('/attendance', requirePermission('attendance:manage'), async (req, re
     res.json(summary);
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -43,6 +44,7 @@ router.get('/grades', requirePermission('exams:view'), async (req, res, next) =>
     res.json(distribution);
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -56,6 +58,7 @@ router.get('/fees', requirePermission('fees:manage'), async (req, res, next) => 
     res.json(fees);
   } catch (error) {
     next(error);
+    return;
   }
 });
 

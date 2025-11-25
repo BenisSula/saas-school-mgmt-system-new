@@ -16,6 +16,16 @@ export function SubscriptionCard() {
   const { data: subscription, isLoading, error } = useSubscription();
   const cancelMutation = useCancelSubscription();
 
+  // Memoize formatter to avoid recreating on every render
+  // Must be called before early returns per React Hooks rules
+  const formatAmount = useCallback((cents?: number, currency = 'USD') => {
+    if (!cents) return 'N/A';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+    }).format(cents / 100);
+  }, []);
+
   if (isLoading) {
     return <DashboardSkeleton />;
   }
@@ -60,15 +70,6 @@ export function SubscriptionCard() {
 
   const StatusIcon = statusIcons[subscription.status] || AlertCircle;
   const statusColor = statusColors[subscription.status] || 'text-gray-500';
-
-  // Memoize formatter to avoid recreating on every render
-  const formatAmount = useCallback((cents?: number, currency = 'USD') => {
-    if (!cents) return 'N/A';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-    }).format(cents / 100);
-  }, []);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';

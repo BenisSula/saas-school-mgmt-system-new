@@ -20,7 +20,7 @@ const rolePermissionsUpdateSchema = z.object({
  * GET /superuser/roles/permissions
  * Get role permissions matrix
  */
-router.get('/permissions', async (req, res, next) => {
+router.get('/permissions', async (_req, res, next) => {
   try {
     res.json(rolePermissions);
   } catch (error) {
@@ -32,7 +32,7 @@ router.get('/permissions', async (req, res, next) => {
  * GET /superuser/roles/permissions/propagation
  * Get permission propagation hierarchy
  */
-router.get('/permissions/propagation', async (req, res, next) => {
+router.get('/permissions/propagation', async (_req, res, next) => {
   try {
     const hierarchy: Array<{ role: Role; level: number }> = [
       { role: 'superadmin', level: 5 },

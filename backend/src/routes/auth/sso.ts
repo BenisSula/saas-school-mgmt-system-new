@@ -85,11 +85,13 @@ router.post(
           createdBy: req.user?.id,
         });
         res.status(201).json(provider);
+        return;
       } finally {
         client.release();
       }
     } catch (error) {
       next(error);
+      return;
     }
   }
 );
@@ -137,11 +139,13 @@ router.post('/saml/initiate', tenantResolver({ optional: true }), async (req, re
         ssoUrl: provider.sso_url,
         relayState: state,
       });
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -171,11 +175,13 @@ router.post('/saml/acs', tenantResolver({ optional: true }), async (req, res, ne
         email: result.email,
         isNewUser: result.isNewUser,
       });
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -187,11 +193,13 @@ router.get('/oauth/providers', tenantResolver({ optional: true }), async (req, r
     try {
       const providers = await getOAuthProviders(client, req.tenant?.id);
       res.json({ providers });
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -215,11 +223,13 @@ router.post(
           createdBy: req.user?.id,
         });
         res.status(201).json(provider);
+        return;
       } finally {
         client.release();
       }
     } catch (error) {
       next(error);
+      return;
     }
   }
 );
@@ -265,11 +275,13 @@ router.get('/oauth/authorize', tenantResolver({ optional: true }), async (req, r
         authorizationUrl: authUrl,
         state,
       });
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -299,11 +311,13 @@ router.get('/oauth/callback', tenantResolver({ optional: true }), async (req, re
         email: result.email,
         isNewUser: result.isNewUser,
       });
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -319,11 +333,13 @@ router.post('/oauth/refresh', authenticate, async (req, res, next) => {
     try {
       const tokens = await refreshOAuthToken(client, providerId, refreshToken);
       res.json(tokens);
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 

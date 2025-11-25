@@ -29,6 +29,36 @@ export function StudentDetailView({ studentId }: StudentDetailViewProps) {
     { enabled: !!studentId, staleTime: 60000 }
   );
 
+  // Memoize expensive computations
+  // Must be called before early returns per React Hooks rules
+  const fullName = useMemo(
+    () => (student ? `${student.first_name} ${student.last_name}` : ''),
+    [student?.first_name, student?.last_name]
+  );
+
+  const age = useMemo(() => {
+    if (!student?.date_of_birth) return null;
+    return Math.floor(
+      (new Date().getTime() - new Date(student.date_of_birth).getTime()) /
+        (365.25 * 24 * 60 * 60 * 1000)
+    );
+  }, [student?.date_of_birth]);
+
+  const parentContacts = useMemo(() => {
+    if (!student) return [];
+    if (Array.isArray(student.parent_contacts)) {
+      return student.parent_contacts;
+    }
+    if (typeof student.parent_contacts === 'string') {
+      try {
+        return JSON.parse(student.parent_contacts || '[]');
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  }, [student?.parent_contacts]);
+
   if (isLoading) {
     return <DashboardSkeleton />;
   }
@@ -45,34 +75,6 @@ export function StudentDetailView({ studentId }: StudentDetailViewProps) {
   if (!student) {
     return <StatusBanner status="error" message="Student not found" />;
   }
-
-  // Memoize expensive computations
-  const fullName = useMemo(
-    () => `${student.first_name} ${student.last_name}`,
-    [student.first_name, student.last_name]
-  );
-
-  const age = useMemo(() => {
-    if (!student.date_of_birth) return null;
-    return Math.floor(
-      (new Date().getTime() - new Date(student.date_of_birth).getTime()) /
-        (365.25 * 24 * 60 * 60 * 1000)
-    );
-  }, [student.date_of_birth]);
-
-  const parentContacts = useMemo(() => {
-    if (Array.isArray(student.parent_contacts)) {
-      return student.parent_contacts;
-    }
-    if (typeof student.parent_contacts === 'string') {
-      try {
-        return JSON.parse(student.parent_contacts || '[]');
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  }, [student.parent_contacts]);
 
   const fields: DetailField[] = [
     {

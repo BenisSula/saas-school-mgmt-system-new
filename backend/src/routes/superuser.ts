@@ -43,7 +43,7 @@ const router = Router();
 // Apply superuser middleware to all routes
 router.use(authenticate, requireSuperuser());
 
-router.get('/overview', async (req, res, next) => {
+router.get('/overview', async (_req, res, next) => {
   try {
     const overview = await getPlatformOverview();
     res.json(overview);
@@ -52,7 +52,7 @@ router.get('/overview', async (req, res, next) => {
   }
 });
 
-router.get('/schools', async (req, res, next) => {
+router.get('/schools', async (_req, res, next) => {
   try {
     const schools = await listSchools();
     res.json(schools);

@@ -409,7 +409,7 @@ router.delete('/scheduled/:id', requirePermission('reports:manage'), async (req,
 });
 
 // Process scheduled reports (cron endpoint)
-router.post('/scheduled/process', requirePermission('tenants:manage'), async (req, res, next) => {
+router.post('/scheduled/process', requirePermission('tenants:manage'), async (_req, res, next) => {
   try {
     const pool = getPool();
     const client = await pool.connect();

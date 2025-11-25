@@ -42,6 +42,7 @@ router.get('/', async (req, res, next) => {
     res.json({ notifications });
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -65,6 +66,7 @@ router.post('/:id/read', async (req, res, next) => {
     res.status(204).send();
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -82,6 +84,7 @@ router.post('/read-all', async (req, res, next) => {
     res.json({ marked: count });
   } catch (error) {
     next(error);
+    return;
   }
 });
 

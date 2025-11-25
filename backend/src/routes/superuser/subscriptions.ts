@@ -212,7 +212,7 @@ router.get('/:id/history', async (req, res, next) => {
 });
 
 // Get subscription tier configurations
-router.get('/tiers/config', async (req, res, next) => {
+router.get('/tiers/config', async (_req, res, next) => {
   try {
     const configs = await getSubscriptionTierConfigs();
     res.json(configs);

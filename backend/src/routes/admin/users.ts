@@ -40,6 +40,7 @@ router.put(
           'Department assigned successfully'
         )
       );
+      return;
     } catch (error) {
       if (error instanceof Error) {
         if (error.message.includes('does not have HOD role')) {
@@ -50,6 +51,7 @@ router.put(
         }
       }
       next(error);
+      return;
     }
   }
 );
@@ -82,11 +84,13 @@ router.delete(
           `${removed} HOD role(s) removed successfully${failed > 0 ? `, ${failed} failed` : ''}`
         )
       );
+      return;
     } catch (error) {
       if (error instanceof Error && error.message.includes('does not exist')) {
         return res.status(500).json(createErrorResponse(error.message));
       }
       next(error);
+      return;
     }
   }
 );

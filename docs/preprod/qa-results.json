@@ -1,0 +1,75 @@
+{
+  "timestamp": "2025-11-24T12:06:59.644Z",
+  "totalChecks": 10,
+  "passed": 0,
+  "failed": 4,
+  "warnings": 6,
+  "criticalIssues": [
+    "Backend Jest Tests",
+    "Frontend Vitest Tests",
+    "Backend TypeScript Build",
+    "Frontend Production Build"
+  ],
+  "checks": {
+    "Backend Jest Tests": {
+      "status": "FAIL",
+      "error": "Command failed: npm run test --prefix backend",
+      "output": "No output",
+      "timestamp": "2025-11-24T12:07:34.298Z"
+    },
+    "Frontend Vitest Tests": {
+      "status": "FAIL",
+      "error": "Command failed: npm run test --prefix frontend",
+      "output": "No output",
+      "timestamp": "2025-11-24T12:10:36.490Z"
+    },
+    "Playwright E2E Tests": {
+      "status": "WARN",
+      "error": "Command failed: npm run test:e2e --prefix frontend",
+      "output": "No output",
+      "timestamp": "2025-11-24T12:10:45.003Z"
+    },
+    "NPM Audit": {
+      "status": "WARN",
+      "error": "Command failed: npm audit --json",
+      "output": "{\n  \"auditReportVersion\": 2,\n  \"vulnerabilities\": {\n    \"js-yaml\": {\n      \"name\": \"js-yaml\",\n      \"severity\": \"moderate\",\n      \"isDirect\": false,\n      \"via\": [\n        {\n          \"source\": 1109802,\n          \"name\": \"js-yaml\",\n          \"dependency\": \"js-yaml\",\n          \"title\": \"js-yaml has prototype pollution in merge (<<)\",\n          \"url\": \"https://github.com/advisories/GHSA-mh29-5h37-fv8m\",\n          \"severity\": \"moderate\",\n          \"cwe\": [\n            \"CWE-1321\"\n          ],\n          \"cvss\": {\n            \"score\": 5.3,\n            \"vectorString\": \"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N\"\n          },\n          \"range\": \">=4.0.0 <4.1.1\"\n        }\n      ],\n      \"effects\": [],\n      \"range\": \"4.0.0 - 4.1.0\",\n      \"nodes\": [\n        \"node_modules/js-yaml\"\n      ],\n      \"fixAvailable\": true\n    }\n  },\n  \"metadata\": {\n    \"vulnerabilities\": {\n      \"info\": 0,\n      \"low\": 0,\n      \"moderate\": 1,\n      \"high\": 0,\n      \"critical\": 0,\n      \"total\": 1\n    },\n    \"dependencies\": {\n      \"prod\": 1,\n      \"dev\": 322,\n      \"optional\": 0,\n      \"peer\": 4,\n      \"peerOptional\": 0,\n      \"total\": 322\n    }\n  }\n}\n",
+      "timestamp": "2025-11-24T12:10:49.646Z"
+    },
+    "Backend TypeScript Build": {
+      "status": "FAIL",
+      "error": "Command failed: npm run build --prefix backend",
+      "output": "No output",
+      "timestamp": "2025-11-24T12:11:30.274Z"
+    },
+    "Frontend Production Build": {
+      "status": "FAIL",
+      "error": "Command failed: npm run build --prefix frontend",
+      "output": "No output",
+      "timestamp": "2025-11-24T12:12:03.296Z"
+    },
+    "Backend Type Check": {
+      "status": "WARN",
+      "error": "Command failed: npx tsc --noEmit --project backend/tsconfig.json",
+      "output": "No output",
+      "timestamp": "2025-11-24T12:12:36.766Z"
+    },
+    "Frontend Type Check": {
+      "status": "WARN",
+      "error": "Command failed: npx tsc --noEmit --project frontend/tsconfig.json",
+      "output": "No output",
+      "timestamp": "2025-11-24T12:13:11.133Z"
+    },
+    "Backend Lint": {
+      "status": "WARN",
+      "error": "Command failed: npm run lint --prefix backend",
+      "output": "No output",
+      "timestamp": "2025-11-24T12:13:32.751Z"
+    },
+    "Frontend Lint": {
+      "status": "WARN",
+      "error": "Command failed: npm run lint --prefix frontend",
+      "output": "No output",
+      "timestamp": "2025-11-24T12:13:58.606Z"
+    }
+  }
+}

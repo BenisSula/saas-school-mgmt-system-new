@@ -13,7 +13,7 @@ const router = Router();
 router.use(authenticate, tenantResolver(), ensureTenantContext());
 
 // Middleware to extract classId from request body for teacher assignment verification
-const extractClassIdForVerification = (req: Request, res: Response, next: NextFunction) => {
+const extractClassIdForVerification = (req: Request, _res: Response, next: NextFunction) => {
   const parsed = gradeBulkSchema.safeParse(req.body);
   if (parsed.success && parsed.data.entries.length > 0 && parsed.data.entries[0]?.classId) {
     // Attach classId to request for middleware to use
@@ -67,8 +67,10 @@ router.post(
         req.tenant!.id
       );
       res.status(200).json({ saved: grades?.length ?? 0 });
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 );

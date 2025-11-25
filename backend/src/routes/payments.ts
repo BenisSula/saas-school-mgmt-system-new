@@ -17,6 +17,7 @@ router.post('/', tenantResolver(), async (req, res, next) => {
     res.status(200).json({ received: true });
   } catch (error) {
     next(error);
+    return;
   }
 });
 

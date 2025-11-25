@@ -55,8 +55,10 @@ router.get('/activity', validateInput(activityReportSchema, 'query'), async (req
     const result = await searchAuditLogs(req.tenantClient, filters);
 
     res.json(createSuccessResponse(result));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -134,8 +136,10 @@ router.get(
       }
 
       res.json(createSuccessResponse({ logins, total }));
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 );
@@ -217,8 +221,10 @@ router.get(
           topStudents: studentPerformanceResult.rows,
         })
       );
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 );

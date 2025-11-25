@@ -132,6 +132,7 @@ router.post('/', requirePermission('reports:view'), exportLimiter, async (req, r
     });
   } catch (error) {
     next(error);
+    return;
   }
 });
 

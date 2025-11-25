@@ -49,8 +49,10 @@ router.put('/branding', requirePermission('settings:branding'), async (req, res,
     }
     const branding = await upsertBranding(context.tenantClient, context.tenant.schema, parsed.data);
     res.json(branding);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -64,8 +66,10 @@ router.post('/terms', requirePermission('settings:terms'), async (req, res, next
     }
     const term = await createOrUpdateTerm(req.tenantClient!, req.tenant!.schema, parsed.data);
     res.status(201).json(term);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -75,8 +79,10 @@ router.get('/terms', requirePermission('settings:terms'), async (req, res, next)
   try {
     const terms = await listTerms(req.tenantClient!, req.tenant!.schema);
     res.json(terms);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -94,8 +100,10 @@ router.put('/terms/:termId', requirePermission('settings:terms'), async (req, re
     }
     const term = await createOrUpdateTerm(req.tenantClient!, req.tenant!.schema, parsed.data);
     res.json(term);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -109,8 +117,10 @@ router.delete('/terms/:termId', requirePermission('settings:terms'), async (req,
     }
     await deleteTerm(req.tenantClient!, req.tenant!.schema, params.data.termId);
     res.status(204).send();
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -124,8 +134,10 @@ router.post('/classes', requirePermission('settings:classes'), async (req, res, 
     }
     const classRow = await createOrUpdateClass(req.tenantClient!, req.tenant!.schema, parsed.data);
     res.status(201).json(classRow);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -135,8 +147,10 @@ router.get('/classes', requirePermission('settings:classes'), async (req, res, n
   try {
     const classes = await listClasses(req.tenantClient!, req.tenant!.schema);
     res.json(classes);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -154,8 +168,10 @@ router.put('/classes/:classId', requirePermission('settings:classes'), async (re
     }
     const classRow = await createOrUpdateClass(req.tenantClient!, req.tenant!.schema, parsed.data);
     res.json(classRow);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -172,8 +188,10 @@ router.delete(
       }
       await deleteClass(req.tenantClient!, req.tenant!.schema, params.data.classId);
       res.status(204).send();
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 );

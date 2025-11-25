@@ -50,8 +50,10 @@ router.post('/', requirePermission('exams:manage'), mutationRateLimiter, async (
     );
 
     res.status(201).json(exam);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -64,8 +66,10 @@ router.get('/', requirePermission('exams:view'), async (req, res, next) => {
   try {
     const exams = await listExams(req.tenantClient, tenant.schema);
     res.json(exams);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -78,8 +82,10 @@ router.get('/grade-scales', requirePermission('exams:view'), async (req, res, ne
   try {
     const scales = await getGradeScales(req.tenantClient, tenant.schema);
     res.json(scales);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 

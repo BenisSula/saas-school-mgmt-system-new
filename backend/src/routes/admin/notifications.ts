@@ -115,8 +115,10 @@ router.post('/announcements', validateInput(announcementSchema, 'body'), async (
     res
       .status(201)
       .json(createSuccessResponse({ id: announcementId }, 'Announcement created successfully'));
+    return;
   } catch (error) {
     next(error);
+    return;
   } finally {
     client.release();
   }
@@ -223,8 +225,10 @@ router.get(
       }
 
       res.json(createSuccessResponse({ announcements, total }));
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 );
