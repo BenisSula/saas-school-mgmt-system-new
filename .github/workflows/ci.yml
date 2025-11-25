@@ -84,7 +84,7 @@ jobs:
       
       - name: Upload audit results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: backend-npm-audit
           path: backend/npm_audit.json
@@ -142,7 +142,7 @@ jobs:
       
       - name: Upload audit results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: frontend-npm-audit
           path: frontend/npm_audit.json
