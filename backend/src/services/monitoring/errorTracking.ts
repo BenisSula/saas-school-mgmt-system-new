@@ -80,7 +80,7 @@ class ErrorTracker {
   /**
    * Set user context
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   setUser(_userId: string, _email?: string, _tenantId?: string) {
     if (!this.initialized) return;
     // In production, use Sentry
@@ -90,7 +90,7 @@ class ErrorTracker {
   /**
    * Add breadcrumb
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   addBreadcrumb(
     _message: string,
     _category: string,
@@ -105,7 +105,7 @@ class ErrorTracker {
   /**
    * Set context
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   setContext(_name: string, _context: Record<string, unknown>) {
     if (!this.initialized) return;
     // In production, use Sentry
@@ -120,8 +120,5 @@ export const errorTracker = new ErrorTracker();
  */
 export function initializeErrorTracking() {
   const dsn = process.env.SENTRY_DSN;
-  const environment = process.env.NODE_ENV || 'development';
-  if (dsn) {
-    errorTracker.init(dsn);
-  }
+  errorTracker.init(dsn);
 }

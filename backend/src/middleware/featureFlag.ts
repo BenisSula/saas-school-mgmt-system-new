@@ -37,7 +37,7 @@ export function requireFeatureFlag(flagKey: string) {
  */
 export async function addFeatureFlags(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): Promise<void> {
   try {

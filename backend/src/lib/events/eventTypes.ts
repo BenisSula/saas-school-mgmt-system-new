@@ -5,10 +5,12 @@
  * Each domain should define its events here.
  */
 
+import type { EventPayload } from './eventEmitter';
+
 /**
  * Student Events
  */
-export interface StudentCreatedEvent extends Record<string, unknown> {
+export interface StudentCreatedEvent extends EventPayload {
   studentId: string;
   student: {
     id: string;
@@ -21,7 +23,7 @@ export interface StudentCreatedEvent extends Record<string, unknown> {
   timestamp: Date;
 }
 
-export interface StudentUpdatedEvent extends Record<string, unknown> {
+export interface StudentUpdatedEvent extends EventPayload {
   studentId: string;
   changes: Record<string, unknown>;
   actorId: string;
@@ -29,7 +31,7 @@ export interface StudentUpdatedEvent extends Record<string, unknown> {
   timestamp: Date;
 }
 
-export interface StudentDeletedEvent extends Record<string, unknown> {
+export interface StudentDeletedEvent extends EventPayload {
   studentId: string;
   actorId: string;
   tenantId: string;

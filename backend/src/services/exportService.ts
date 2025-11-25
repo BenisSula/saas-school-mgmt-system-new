@@ -48,7 +48,7 @@ export async function generateAttendancePDF(
     `SELECT name FROM ${schema}.classes WHERE id::text = $1 OR name = $1 LIMIT 1`,
     [options.classId]
   );
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   const className = classResult.rows[0]?.name || options.classId;
 
   // Get attendance data
@@ -291,7 +291,7 @@ export async function generateGradesPDF(
     `SELECT name FROM ${schema}.classes WHERE id::text = $1 OR name = $1 LIMIT 1`,
     [options.classId]
   );
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   const className = classResult.rows[0]?.name || options.classId;
 
   // Get grades data

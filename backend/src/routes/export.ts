@@ -126,12 +126,10 @@ router.post('/', requirePermission('reports:view'), exportLimiter, async (req, r
     // TODO: Implement export functions in exportService
     // For now, return error for PDF/Excel/CSV exports
     // Note: data variable is prepared but not used yet (will be used when export is implemented)
-    return res
-      .status(501)
-      .json({
-        message:
-          'Export functionality not yet implemented. Use teacher-specific export endpoints instead.',
-      });
+    return res.status(501).json({
+      message:
+        'Export functionality not yet implemented. Use teacher-specific export endpoints instead.',
+    });
   } catch (error) {
     next(error);
   }

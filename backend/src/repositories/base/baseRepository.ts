@@ -5,7 +5,7 @@
  * Implements the Repository pattern for data access abstraction.
  */
 
-import type { PoolClient } from 'pg';
+import type { PoolClient, QueryResultRow } from 'pg';
 
 export interface BaseEntity {
   id: string;
@@ -134,9 +134,8 @@ export abstract class BaseRepository {
 
   /**
    * Create entity
-   * Subclasses can override with specific parameter types
    */
-  async create<T extends BaseEntity = BaseEntity>(data: Partial<T>): Promise<T> {
+  async create<T extends BaseEntity>(data: Partial<T>): Promise<T> {
     const fields = Object.keys(data).filter(
       (key) => key !== 'id' && key !== 'created_at' && key !== 'updated_at'
     );
@@ -192,7 +191,7 @@ export abstract class BaseRepository {
   /**
    * Execute raw query (use sparingly, prefer typed methods)
    */
-  protected async query<T extends Record<string, unknown> = Record<string, unknown>>(
+  protected async query<T extends QueryResultRow = QueryResultRow>(
     sql: string,
     params?: unknown[]
   ): Promise<T[]> {
@@ -203,7 +202,7 @@ export abstract class BaseRepository {
   /**
    * Execute raw query returning single row
    */
-  protected async queryOne<T extends Record<string, unknown> = Record<string, unknown>>(
+  protected async queryOne<T extends QueryResultRow = QueryResultRow>(
     sql: string,
     params?: unknown[]
   ): Promise<T | null> {
