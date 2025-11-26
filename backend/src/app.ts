@@ -48,6 +48,7 @@ import { auditAdminActions } from './middleware/auditAdminActions';
 import { enhancedTenantIsolation } from './middleware/enhancedTenantIsolation';
 import { parsePagination } from './middleware/pagination';
 import { cachePolicies } from './middleware/cache';
+import { setupSwagger } from './config/swagger';
 
 // Initialize error tracking
 initializeErrorTracking();
@@ -507,6 +508,12 @@ app.use('/reports/export', exportRouter);
 import path from 'path';
 const uploadsDir = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
 app.use('/uploads', express.static(uploadsDir));
+
+// Swagger UI for API documentation and auditing
+// Only enable in development or if explicitly enabled
+if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'true') {
+  setupSwagger(app);
+}
 
 app.use(errorHandler);
 
