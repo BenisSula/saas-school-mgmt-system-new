@@ -79,19 +79,52 @@ export async function runTenantMigrations(pool: Pool, schemaName: string): Promi
   try {
     assertValidSchemaName(schemaName);
     await client.query(`SET search_path TO ${schemaName}, public`);
+    
+    if (files.length === 0) {
+      console.log(`  ℹ️  No tenant migration files found for schema: ${schemaName}`);
+      return;
+    }
+    
+    console.log(`  📋 Found ${files.length} tenant migration file(s) for ${schemaName}`);
+    
     for (const file of files) {
+      console.log(`  🔄 Running tenant migration: ${file}...`);
       const sql = await fs.promises.readFile(path.join(migrationsDir, file), 'utf-8');
       const renderedSql = sql.replace(/{{schema}}/g, schemaName);
+
+      // If file contains DO blocks, execute as single statement to avoid parsing issues
+      // This is safer for complex nested DO blocks
+      // Check for DO blocks (case-insensitive, handle various whitespace)
+      const hasDoBlock = /DO\s+\$\$?/i.test(renderedSql);
+      if (hasDoBlock) {
+        try {
+          // Execute the entire file as a single statement
+          // PostgreSQL can handle the entire DO block as one statement
+          await client.query(renderedSql);
+          console.log(`  ✅ Tenant migration ${file} completed successfully`);
+          continue;
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          console.error(`  ❌ [Migration Error] Failed to execute ${file}:`);
+          console.error(`  ❌ [Migration Error] Error: ${errorMsg}`);
+          // Log first 1000 chars of SQL for debugging (shows DO block start)
+          const sqlPreview = renderedSql.substring(0, 1000).replace(/\n/g, '\\n');
+          console.error(`  ❌ [Migration Error] SQL preview (first 1000 chars): ${sqlPreview}...`);
+          throw new Error(`Migration failed in ${file}: ${errorMsg}`);
+        }
+      }
 
       // Split SQL statements properly, handling:
       // - Comments (-- style)
       // - String literals (single quotes)
+      // - Dollar-quoted strings ($$ ... $$, including nested)
       // - Parentheses (for CHECK constraints, function calls, etc.)
       // - Semicolons that are actual statement terminators
       const statements: string[] = [];
       let currentStatement = '';
       let inString = false;
       let inComment = false;
+      const dollarQuoteStack: string[] = []; // Stack to handle nested dollar quotes
       let parenDepth = 0;
 
       for (let i = 0; i < renderedSql.length; i++) {
@@ -100,7 +133,7 @@ export async function runTenantMigrations(pool: Pool, schemaName: string): Promi
         const prevChar = renderedSql[i - 1] || '';
 
         // Handle comments
-        if (!inString && char === '-' && nextChar === '-') {
+        if (!inString && dollarQuoteStack.length === 0 && char === '-' && nextChar === '-') {
           inComment = true;
           currentStatement += char;
           continue;
@@ -114,7 +147,41 @@ export async function runTenantMigrations(pool: Pool, schemaName: string): Promi
           continue;
         }
 
-        // Handle string literals
+        // Handle dollar-quoted strings ($$ ... $$, $tag$ ... $tag$, etc.)
+        // Use a stack to handle nested dollar quotes
+        if (!inString && char === '$') {
+          // Check if this could be a dollar quote tag
+          let tagEnd = i + 1;
+          while (tagEnd < renderedSql.length && renderedSql[tagEnd] !== '$') {
+            tagEnd++;
+          }
+          if (tagEnd < renderedSql.length) {
+            const potentialTag = renderedSql.substring(i, tagEnd + 1);
+            
+            // Check if this matches the current top-of-stack tag (closing)
+            if (dollarQuoteStack.length > 0 && dollarQuoteStack[dollarQuoteStack.length - 1] === potentialTag) {
+              // This is a closing tag
+              currentStatement += potentialTag;
+              i = tagEnd; // Skip the tag
+              dollarQuoteStack.pop(); // Remove from stack
+              continue;
+            } else {
+              // This is an opening tag
+              currentStatement += potentialTag;
+              i = tagEnd; // Skip the tag
+              dollarQuoteStack.push(potentialTag); // Add to stack
+              continue;
+            }
+          }
+        }
+
+        // If we're inside a dollar quote, just add the character
+        if (dollarQuoteStack.length > 0) {
+          currentStatement += char;
+          continue;
+        }
+
+        // Handle string literals (only if not in dollar quote)
         if (char === "'" && prevChar !== '\\') {
           inString = !inString;
           currentStatement += char;
@@ -139,8 +206,8 @@ export async function runTenantMigrations(pool: Pool, schemaName: string): Promi
           continue;
         }
 
-        // Only split on semicolon if we're not in a string, comment, or nested parentheses
-        if (char === ';' && parenDepth === 0 && !inString && !inComment) {
+        // Only split on semicolon if we're not in a string, comment, dollar quote, or nested parentheses
+        if (char === ';' && parenDepth === 0 && !inString && !inComment && dollarQuoteStack.length === 0) {
           currentStatement += char;
           const trimmed = currentStatement.trim();
           // Filter out empty statements and comments-only statements
@@ -165,25 +232,48 @@ export async function runTenantMigrations(pool: Pool, schemaName: string): Promi
       }
 
       for (let idx = 0; idx < statements.length; idx++) {
-        const statement = statements[idx];
+        let statement = statements[idx];
         if (statement.trim()) {
-          try {
-            await client.query(statement);
-          } catch (error) {
-            const errorMsg = error instanceof Error ? error.message : String(error);
-            console.error(
-              `[Migration Error] Failed to execute statement ${idx + 1}/${statements.length} in file ${file}:`
-            );
-            console.error(
-              `[Migration Error] Statement: ${statement.substring(0, 200)}${statement.length > 200 ? '...' : ''}`
-            );
-            console.error(`[Migration Error] Error: ${errorMsg}`);
-            throw new Error(
-              `Migration failed in ${file} at statement ${idx + 1}: ${errorMsg}\nStatement: ${statement.substring(0, 100)}...`
-            );
+          // Safety check: If statement starts with DECLARE but doesn't have DO $$, 
+          // it means the splitter broke a DO block. Try to fix it by checking previous statements.
+          if (statement.trim().toUpperCase().startsWith('DECLARE') && !statement.toUpperCase().includes('DO $$')) {
+            // This is a broken DO block - try to reconstruct it
+            // Look for DO $$ in previous statements or combine with previous
+            if (idx > 0 && statements[idx - 1].toUpperCase().includes('DO $$')) {
+              // Combine with previous statement
+              statement = statements[idx - 1] + '\n' + statement;
+              // Remove the previous statement from execution (it's now part of this one)
+              statements[idx - 1] = '';
+            } else {
+              // Can't fix automatically - this is a parsing error
+              console.error(
+                `[Migration Error] Statement ${idx + 1} appears to be a broken DO block (starts with DECLARE but missing DO $$)`
+              );
+            }
+          }
+          
+          if (statement.trim()) {
+            try {
+              await client.query(statement);
+            } catch (error) {
+              const errorMsg = error instanceof Error ? error.message : String(error);
+              console.error(
+                `[Migration Error] Failed to execute statement ${idx + 1}/${statements.length} in file ${file}:`
+              );
+              console.error(
+                `[Migration Error] Statement: ${statement.substring(0, 200)}${statement.length > 200 ? '...' : ''}`
+              );
+              console.error(`[Migration Error] Error: ${errorMsg}`);
+              throw new Error(
+                `Migration failed in ${file} at statement ${idx + 1}: ${errorMsg}\nStatement: ${statement.substring(0, 100)}...`
+              );
+            }
           }
         }
       }
+      
+      // Log completion for files that went through statement splitting (non-DO blocks)
+      console.log(`  ✅ Tenant migration ${file} completed successfully`);
     }
   } finally {
     await client.query('SET search_path TO public');
