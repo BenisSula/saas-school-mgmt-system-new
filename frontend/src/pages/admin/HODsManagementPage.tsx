@@ -21,7 +21,7 @@ import { useQuery } from '../../hooks/useQuery';
 import { queryKeys } from '../../hooks/useQuery';
 import { api, type TeacherProfile } from '../../lib/api';
 import type { TableColumn } from '../../components/ui/Table';
-import { CreateHODModal } from '../../components/admin/CreateHODModal';
+import { AdminUserRegistrationModal } from '../../components/admin/AdminUserRegistrationModal';
 import { EmptyState } from '../../components/admin/EmptyState';
 import { CSVImportModal } from '../../components/admin/CSVImportModal';
 import { AdvancedFilters, type AdvancedFilterField } from '../../components/admin/AdvancedFilters';

@@ -13,10 +13,13 @@ import {
   teacherRegistrationSchema,
 } from '../../lib/validators/authSchema';
 import type { ZodError } from 'zod';
+import { useDepartments } from '../../hooks/queries/admin/useDepartments';
+import { toast } from 'sonner';
 
 export interface AdminUserRegistrationModalProps {
   onClose: () => void;
   onSuccess: () => void;
+  defaultRole?: 'student' | 'teacher' | 'hod';
 }
 
 const SUBJECT_OPTIONS = [
@@ -33,8 +36,9 @@ const SUBJECT_OPTIONS = [
 export function AdminUserRegistrationModal({
   onClose,
   onSuccess,
+  defaultRole = 'student',
 }: AdminUserRegistrationModalProps) {
-  const [role, setRole] = useState<'student' | 'teacher'>('student');
+  const [role, setRole] = useState<'student' | 'teacher' | 'hod'>(defaultRole);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -49,18 +53,35 @@ export function AdminUserRegistrationModal({
   const [studentId, setStudentId] = useState('');
   const [classId, setClassId] = useState('');
 
-  // Teacher fields
+  // Teacher/HOD fields
   const [phone, setPhone] = useState('');
   const [qualifications, setQualifications] = useState('');
   const [yearsOfExperience, setYearsOfExperience] = useState<string>('');
   const [subjects, setSubjects] = useState<string[]>([]);
   const [teacherId, setTeacherId] = useState('');
+  
+  // HOD-specific field
+  const [departmentId, setDepartmentId] = useState<string>('');
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
+  // Fetch departments for HOD role
+  const { data: departmentsData = [] } = useDepartments(false);
+
+  const departmentOptions = useMemo(() => {
+    return [
+      { label: 'Select department', value: '' },
+      ...departmentsData.map((dept) => ({
+        label: dept.name,
+        value: dept.id,
+      })),
+    ];
+  }, [departmentsData]);
+
   const isStudent = role === 'student';
+  const isHOD = role === 'hod';
   const normalizedEmail = useMemo(() => sanitizeText(email).toLowerCase(), [email]);
 
   const clearFieldError = (field: string) => {
@@ -93,6 +114,7 @@ export function AdminUserRegistrationModal({
         };
         schema = studentRegistrationSchema;
       } else {
+        // Teacher or HOD (both use teacher schema)
         formData = {
           email: normalizedEmail,
           password,
@@ -108,6 +130,12 @@ export function AdminUserRegistrationModal({
           address: address || undefined,
         };
         schema = teacherRegistrationSchema;
+        
+        // Additional validation for HOD: department is required
+        if (isHOD && !departmentId) {
+          setFieldErrors((prev) => ({ ...prev, departmentId: 'Department is required for HOD' }));
+          return false;
+        }
       }
 
       schema.parse(formData);
@@ -142,48 +170,86 @@ export function AdminUserRegistrationModal({
     setSubmitting(true);
 
     try {
-      const payload: {
-        email: string;
-        password: string;
-        role: 'student' | 'teacher';
-        fullName: string;
-        gender?: 'male' | 'female' | 'other';
-        address?: string;
-        dateOfBirth?: string;
-        parentGuardianName?: string;
-        parentGuardianContact?: string;
-        studentId?: string;
-        classId?: string;
-        phone?: string;
-        qualifications?: string;
-        yearsOfExperience?: number;
-        subjects?: string[];
-        teacherId?: string;
-      } = {
-        email: normalizedEmail,
-        password,
-        role,
-        fullName,
-        ...(gender ? { gender: gender as 'male' | 'female' | 'other' } : {}),
-        ...(address ? { address } : {}),
-      };
-
-      if (isStudent) {
-        if (dateOfBirth) payload.dateOfBirth = dateOfBirth;
-        if (parentGuardianName) payload.parentGuardianName = parentGuardianName;
-        if (parentGuardianContact) payload.parentGuardianContact = parentGuardianContact;
-        if (studentId) payload.studentId = studentId;
-        if (classId) payload.classId = classId;
+      if (isHOD) {
+        // Use dedicated HOD creation API
+        const hodPayload = {
+          email: normalizedEmail,
+          password,
+          fullName,
+          ...(phone ? { phone } : {}),
+          ...(departmentId ? { departmentId } : {}),
+          ...(qualifications ? { qualifications } : {}),
+          ...(yearsOfExperience ? { yearsOfExperience: parseInt(yearsOfExperience, 10) } : {}),
+          ...(subjects.length > 0 ? { subjects } : {}),
+        };
+        
+        await api.admin.createHOD(hodPayload);
+        toast.success('HOD created successfully');
+      } else if (isStudent) {
+        // Student creation
+        const studentPayload: {
+          email: string;
+          password: string;
+          role: 'student';
+          fullName: string;
+          gender?: 'male' | 'female' | 'other';
+          address?: string;
+          dateOfBirth?: string;
+          parentGuardianName?: string;
+          parentGuardianContact?: string;
+          studentId?: string;
+          classId?: string;
+        } = {
+          email: normalizedEmail,
+          password,
+          role: 'student',
+          fullName,
+          ...(gender ? { gender: gender as 'male' | 'female' | 'other' } : {}),
+          ...(address ? { address } : {}),
+        };
+        
+        if (dateOfBirth) studentPayload.dateOfBirth = dateOfBirth;
+        if (parentGuardianName) studentPayload.parentGuardianName = parentGuardianName;
+        if (parentGuardianContact) studentPayload.parentGuardianContact = parentGuardianContact;
+        if (studentId) studentPayload.studentId = studentId;
+        if (classId) studentPayload.classId = classId;
+        
+        await api.registerUser(studentPayload);
+        toast.success('Student created successfully');
       } else {
-        if (phone) payload.phone = phone;
-        if (qualifications) payload.qualifications = qualifications;
-        if (yearsOfExperience) payload.yearsOfExperience = parseInt(yearsOfExperience, 10);
-        if (subjects.length > 0) payload.subjects = subjects;
-        if (teacherId) payload.teacherId = teacherId;
+        // Teacher creation
+        const teacherPayload: {
+          email: string;
+          password: string;
+          role: 'teacher';
+          fullName: string;
+          gender?: 'male' | 'female' | 'other';
+          address?: string;
+          phone?: string;
+          qualifications?: string;
+          yearsOfExperience?: number;
+          subjects?: string[];
+          teacherId?: string;
+        } = {
+          email: normalizedEmail,
+          password,
+          role: 'teacher',
+          fullName,
+          ...(gender ? { gender: gender as 'male' | 'female' | 'other' } : {}),
+          ...(address ? { address } : {}),
+        };
+        
+        if (phone) teacherPayload.phone = phone;
+        if (qualifications) teacherPayload.qualifications = qualifications;
+        if (yearsOfExperience) teacherPayload.yearsOfExperience = parseInt(yearsOfExperience, 10);
+        if (subjects.length > 0) teacherPayload.subjects = subjects;
+        if (teacherId) teacherPayload.teacherId = teacherId;
+        
+        await api.registerUser(teacherPayload);
+        toast.success('Teacher created successfully');
       }
-
-      await api.registerUser(payload);
-      // Success notification will be shown by onSuccess callback
+      
+      // Success notification already shown via toast
       onSuccess();
     } catch (err) {
       let message = 'Failed to register user. Please try again.';
@@ -229,13 +295,18 @@ export function AdminUserRegistrationModal({
             <Select
               value={role}
               onChange={(e) => {
-                setRole(e.target.value as 'student' | 'teacher');
+                setRole(e.target.value as 'student' | 'teacher' | 'hod');
                 setFieldErrors({});
                 setError(null);
+                // Clear department when switching away from HOD
+                if (e.target.value !== 'hod') {
+                  setDepartmentId('');
+                }
               }}
               options={[
                 { label: 'Student', value: 'student' },
                 { label: 'Teacher', value: 'teacher' },
+                { label: 'Head of Department (HOD)', value: 'hod' },
               ]}
             />
           </div>
@@ -471,6 +542,30 @@ export function AdminUserRegistrationModal({
                   error={fieldErrors.subjects}
                 />
               </div>
+              
+              {/* HOD-Specific: Department Selection */}
+              {isHOD && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-[var(--brand-surface-contrast)]">
+                    Department <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    value={departmentId}
+                    onChange={(e) => {
+                      setDepartmentId(e.target.value);
+                      clearFieldError('departmentId');
+                    }}
+                    options={departmentOptions}
+                    required
+                  />
+                  {fieldErrors.departmentId && (
+                    <p className="text-xs text-red-500">{fieldErrors.departmentId}</p>
+                  )}
+                  <p className="text-xs text-[var(--brand-muted)]">
+                    The department this HOD will oversee
+                  </p>
+                </div>
+              )}
             </>
           )}
 

@@ -1,0 +1,39 @@
+warning: in the working copy of 'frontend/src/hooks/queries/admin/useDepartments.ts', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/frontend/src/hooks/queries/admin/useDepartments.ts b/frontend/src/hooks/queries/admin/useDepartments.ts[m
+[1mindex 85b71b8..5382754 100644[m
+[1m--- a/frontend/src/hooks/queries/admin/useDepartments.ts[m
+[1m+++ b/frontend/src/hooks/queries/admin/useDepartments.ts[m
+[36m@@ -3,9 +3,8 @@[m
+  */[m
+ [m
+ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';[m
+[31m-import { api } from '../../../lib/api';[m
+[32m+[m[32mimport { api, extractApiData } from '../../../lib/api';[m
+ import { toast } from 'sonner';[m
+[31m-import { unwrapApiResponse } from '../../../lib/apiResponseUtils';[m
+ [m
+ export interface Department {[m
+   id: string;[m
+[36m@@ -30,7 +29,12 @@[m [mexport interface CreateDepartmentInput {[m
+ export function useDepartments(includeCounts: boolean = true) {[m
+   return useQuery({[m
+     queryKey: ['admin', 'departments', includeCounts],[m
+[31m-    queryFn: () => api.admin.listDepartments(includeCounts),[m
+[32m+[m[32m    queryFn: async () => {[m
+[32m+[m[32m      const response = await api.admin.listDepartments(includeCounts);[m
+[32m+[m[32m      // Backend returns { success: true, data: [...] }[m
+[32m+[m[32m      const data = extractApiData(response);[m
+[32m+[m[32m      return Array.isArray(data) ? data : [];[m
+[32m+[m[32m    },[m
+     staleTime: 60000, // 1 minute[m
+   });[m
+ }[m
+[36m@@ -41,7 +45,7 @@[m [mexport function useDepartment(id: string | undefined) {[m
+     queryFn: async () => {[m
+       if (!id) return null;[m
+       const response = await api.admin.getDepartment(id);[m
+[31m-      return unwrapApiResponse(response);[m
+[32m+[m[32m      return extractApiData(response);[m
+     },[m
+     enabled: !!id,[m
+     staleTime: 60000,[m
