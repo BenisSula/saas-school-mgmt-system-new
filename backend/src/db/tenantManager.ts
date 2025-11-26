@@ -271,6 +271,9 @@ export async function runTenantMigrations(pool: Pool, schemaName: string): Promi
           }
         }
       }
+      
+      // Log completion for files that went through statement splitting (non-DO blocks)
+      console.log(`  ✅ Tenant migration ${file} completed successfully`);
     }
   } finally {
     await client.query('SET search_path TO public');
