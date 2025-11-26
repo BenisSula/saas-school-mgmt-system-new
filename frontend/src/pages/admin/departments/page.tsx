@@ -20,6 +20,7 @@ import {
   useDeleteDepartment,
 } from '../../../hooks/queries/admin/useDepartments';
 import { usePermission } from '../../../hooks/usePermission';
+import { AssignHODModal } from '../../../components/admin/AssignHODModal';
 
 interface Department {
   id: string;
@@ -263,22 +264,14 @@ export default function AdminDepartmentsPage() {
         </Modal>
 
         {/* Assign HOD Modal */}
-        <Modal
-          isOpen={isAssignHODModalOpen}
-          onClose={() => setIsAssignHODModalOpen(false)}
-          title={`Assign HOD to ${selectedDepartment?.name}`}
-        >
-          <div className="space-y-4">
-            <p className="text-sm text-[var(--brand-muted)]">
-              HOD assignment functionality - to be implemented with user selection
-            </p>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setIsAssignHODModalOpen(false)}>
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </Modal>
+        <AssignHODModal
+          open={isAssignHODModalOpen}
+          department={selectedDepartment}
+          onClose={() => {
+            setIsAssignHODModalOpen(false);
+            setSelectedDepartment(null);
+          }}
+        />
       </div>
     </RouteMeta>
   );
