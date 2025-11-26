@@ -13,3 +13,7 @@ backend/dist/
 frontend/dist/
 .husky/_/
 
+
+# Node.js built-in polyfills
+backend/_*
+backend/_*.js
