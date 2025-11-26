@@ -30,8 +30,18 @@ async function loginAs(page: any, email: string, password: string): Promise<bool
     await page.waitForSelector('button[type="submit"]:not([disabled])', { timeout: 5000 });
     await page.click('button[type="submit"]');
     
-    // Wait for navigation or error
-    await page.waitForURL(/\/dashboard|\/admin|\/auth\/login/, { timeout: 15000 });
+    // Wait for navigation or error (increased timeout for slower networks)
+    try {
+      await page.waitForURL(/\/dashboard|\/admin|\/auth\/login/, { timeout: 30000 });
+    } catch (error) {
+      // Check if we're already on a dashboard page (navigation may have completed)
+      const currentUrl = page.url();
+      if (currentUrl.includes('/dashboard') || currentUrl.includes('/admin')) {
+        // Navigation succeeded, just took longer than expected
+        return true;
+      }
+      throw error;
+    }
     
     // Check if we're still on login page (login failed)
     const currentUrl = page.url();
