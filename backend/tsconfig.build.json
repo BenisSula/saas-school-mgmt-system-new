@@ -9,6 +9,6 @@
     "declarationMap": false
   },
   "include": ["src/**/*", "../shared/**/*"],
-  "exclude": ["tests", "tests/**/*", "dist", "node_modules", "../shared/components", "../shared/constants", "../shared/types", "../shared/utils", "../shared/validators", "../shared/domain/validators"]
+  "exclude": ["tests", "tests/**/*", "**/__tests__/**", "**/*.test.ts", "**/*.spec.ts", "dist", "node_modules", "../shared/components", "../shared/constants", "../shared/types", "../shared/utils", "../shared/validators", "../shared/domain/validators"]
 }
 

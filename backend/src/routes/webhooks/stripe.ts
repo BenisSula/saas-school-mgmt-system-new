@@ -85,7 +85,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
     // Check idempotency
     if (await isEventProcessed(client, event.id)) {
-      console.log(`[Stripe Webhook] Event ${event.id} already processed, skipping`);
+      // eslint-disable-next-line no-console
+      console.info(`[Stripe Webhook] Event ${event.id} already processed, skipping`);
       return res.json({ received: true, message: 'Event already processed' });
     }
 
@@ -120,18 +121,18 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         break;
 
       default:
-        console.log(`[Stripe Webhook] Unhandled event type: ${event.type}`);
+        console.warn(`[Stripe Webhook] Unhandled event type: ${event.type}`);
     }
 
     // Mark event as processed
     await markEventProcessed(client, event.id, event.type, event.data);
 
     res.json({ received: true });
-      return;
+    return;
   } catch (error) {
     console.error('[Stripe Webhook] Error processing webhook:', error);
     next(error);
-      return;
+    return;
   } finally {
     client.release();
   }

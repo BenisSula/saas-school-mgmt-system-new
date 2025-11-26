@@ -117,7 +117,6 @@ router.post('/', requirePermission('reports:view'), exportLimiter, async (req, r
         };
       });
     } else if (type === 'custom' && customData) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       data = customData as ExportDataRow[];
     } else {
       return res.status(400).json({ message: 'Invalid export type or missing data' });
@@ -126,7 +125,7 @@ router.post('/', requirePermission('reports:view'), exportLimiter, async (req, r
     // TODO: Implement export functions in exportService
     // For now, return error for PDF/Excel/CSV exports
     // Note: data variable is prepared but not used yet (will be used when export is implemented)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
     void data; // Suppress unused variable warning until export is implemented
     return res.status(501).json({
       message:

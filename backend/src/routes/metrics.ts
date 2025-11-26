@@ -29,7 +29,8 @@ router.post('/frontend', async (req: Request, res: Response) => {
     }
 
     // Log frontend metrics (can be extended to store in database or send to monitoring service)
-    console.log('[Frontend Metrics]', JSON.stringify(metrics, null, 2));
+    // eslint-disable-next-line no-console
+    console.info('[Frontend Metrics]', JSON.stringify(metrics, null, 2));
 
     // TODO: Store metrics in database or send to monitoring service
     // For now, just acknowledge receipt
