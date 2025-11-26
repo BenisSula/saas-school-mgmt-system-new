@@ -3,9 +3,8 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../../lib/api';
+import { api, extractApiData } from '../../../lib/api';
 import { toast } from 'sonner';
-import { unwrapApiResponse } from '../../../lib/apiResponseUtils';
 
 export interface Department {
   id: string;
@@ -30,7 +29,12 @@ export interface CreateDepartmentInput {
 export function useDepartments(includeCounts: boolean = true) {
   return useQuery({
     queryKey: ['admin', 'departments', includeCounts],
-    queryFn: () => api.admin.listDepartments(includeCounts),
+    queryFn: async () => {
+      const response = await api.admin.listDepartments(includeCounts);
+      // Backend returns { success: true, data: [...] }
+      const data = extractApiData(response);
+      return Array.isArray(data) ? data : [];
+    },
     staleTime: 60000, // 1 minute
   });
 }
@@ -41,7 +45,7 @@ export function useDepartment(id: string | undefined) {
     queryFn: async () => {
       if (!id) return null;
       const response = await api.admin.getDepartment(id);
-      return unwrapApiResponse(response);
+      return extractApiData(response);
     },
     enabled: !!id,
     staleTime: 60000,
