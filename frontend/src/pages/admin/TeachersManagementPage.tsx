@@ -26,6 +26,7 @@ import { AdvancedFilters, type AdvancedFilterField } from '../../components/admi
 import { ActivityLog } from '../../components/admin/ActivityLog';
 import { TeacherDetailView } from '../../components/admin/TeacherDetailView';
 import { useCSVImport } from '../../hooks/useCSVImport';
+import { usePermission } from '../../hooks/usePermission';
 import { Plus, Upload, Eye } from 'lucide-react';
 
 interface TeacherFilters {

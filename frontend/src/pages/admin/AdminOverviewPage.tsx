@@ -60,13 +60,17 @@ export default function AdminOverviewPage() {
   const { data: activeSessions, isLoading: sessionsLoading } = useActiveSessions();
   // classes is already included in useAdminOverview() data, no need to fetch separately
 
-  // Attendance trend data (last 14 days)
-  const fourteenDaysAgo = new Date();
-  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-  const { data: attendanceData } = useAttendance({
-    from: fourteenDaysAgo.toISOString().split('T')[0],
-    to: new Date().toISOString().split('T')[0],
-  });
+  // Attendance trend data (last 14 days) - memoized date calculation
+  const dateRange = useMemo(() => {
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+    return {
+      from: fourteenDaysAgo.toISOString().split('T')[0],
+      to: new Date().toISOString().split('T')[0],
+    };
+  }, []); // Only calculate once on mount
+
+  const { data: attendanceData } = useAttendance(dateRange);
 
   const isLoading =
     overviewLoading ||
