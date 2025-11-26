@@ -47,14 +47,19 @@
 - **Total Errors**: 0 ✅
 - **Total Warnings**: 33 ⚠️
 
-**Warning Categories** (Top 15):
-- Most warnings are non-critical style/preference issues
-- Common patterns: unused variables, prefer-const, etc.
+**Warning Categories**:
+- `no-console`: 29 occurrences (console.log statements)
+- `@typescript-eslint/no-unused-vars`: 4 occurrences (unused variables)
+- Total: 33 warnings across 3 unique rules
 
 **Files with Most Issues**:
-1. `src/__tests__/auth-flow.test.tsx` - 19 issues
+1. `src/__tests__/auth-flow.test.tsx` - 19 issues (mostly console.log in tests)
 2. `src/__tests__/a11y-comprehensive.test.tsx` - 2 issues
 3. Other files: 0-1 issues each
+
+**Warning Breakdown**:
+- 29 `no-console` warnings (console.log statements - acceptable in dev/test)
+- 4 `@typescript-eslint/no-unused-vars` warnings (unused variables)
 
 **Assessment**: 
 - ✅ No fatal ESLint errors
@@ -106,9 +111,14 @@ Most matches are **legitimate** HTML `placeholder` attributes in input fields:
 - `placeholder="••••••••"` - Password input placeholder
 - `placeholder="123 Main St, City"` - Address input placeholder
 
-**Files with Placeholder Text**:
-- `src/components/admin/AdminUserRegistrationModal.tsx` - Multiple input placeholders
-- Other form components with input fields
+**Files with Placeholder Text** (Top 10):
+1. `src/components/admin/AdminUserRegistrationModal.tsx` - 14 matches
+2. `src/components/auth/RegisterForm.tsx` - 12 matches
+3. `src/components/admin/CreateHODModal.tsx` - 10 matches
+4. `src/components/admin/AdvancedFilters.tsx` - 5 matches
+5. Other form components - 2-3 matches each
+
+**Total**: 12 files with placeholder text
 
 **Assessment**:
 - ✅ Most "placeholder" matches are legitimate HTML attributes
