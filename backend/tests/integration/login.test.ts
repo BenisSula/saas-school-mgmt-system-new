@@ -8,7 +8,7 @@
  */
 
 import request from 'supertest';
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, jest } from '@jest/globals';
 import type { Pool } from 'pg';
 import { getPool, closePool } from '../../src/db/connection';
 import { runMigrations } from '../../src/db/runMigrations';
