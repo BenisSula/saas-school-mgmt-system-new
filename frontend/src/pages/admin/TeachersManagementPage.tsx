@@ -92,6 +92,9 @@ export function TeachersManagementPage() {
   const updateTeacherMutation = useUpdateTeacher();
   const deleteTeacherMutation = useDeleteTeacher();
 
+  // RBAC: Check permissions for UI controls
+  const canManageTeachers = usePermission('teachers:manage');
+
   const loading = teachersLoading || classesLoading || subjectsLoading;
   const error = teachersError ? (teachersError as Error).message : null;
 
@@ -367,7 +370,7 @@ export function TeachersManagementPage() {
             Details
           </Button>
           <ViewButton onClick={() => handleViewProfile(row)} />
-          <AssignButton onClick={() => handleAssignClass(row)} />
+          {canManageTeachers && <AssignButton onClick={() => handleAssignClass(row)} />}
         </ActionButtonGroup>
       ),
     },
@@ -394,14 +397,18 @@ export function TeachersManagementPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => setShowCreateModal(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Create Teacher
-            </Button>
-            <Button variant="outline" onClick={() => setShowImportModal(true)} className="gap-2">
-              <Upload className="h-4 w-4" />
-              Import CSV
-            </Button>
+            {canManageTeachers && (
+              <Button onClick={() => setShowCreateModal(true)} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Create Teacher
+              </Button>
+            )}
+            {canManageTeachers && (
+              <Button variant="outline" onClick={() => setShowImportModal(true)} className="gap-2">
+                <Upload className="h-4 w-4" />
+                Import CSV
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => setShowActivityLog(!showActivityLog)}
@@ -414,7 +421,7 @@ export function TeachersManagementPage() {
               onExportPDF={handleExportPDF}
               onExportExcel={handleExportExcel}
             />
-            {selectedRows.size > 0 && (
+            {canManageTeachers && selectedRows.size > 0 && (
               <Button variant="outline" onClick={handleBulkDelete}>
                 Delete ({selectedRows.size})
               </Button>

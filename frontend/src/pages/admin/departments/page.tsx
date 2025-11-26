@@ -19,6 +19,7 @@ import {
   useUpdateDepartment,
   useDeleteDepartment,
 } from '../../../hooks/queries/admin/useDepartments';
+import { usePermission } from '../../../hooks/usePermission';
 
 interface Department {
   id: string;
@@ -48,6 +49,9 @@ export default function AdminDepartmentsPage() {
   const createMutation = useCreateDepartment();
   const updateMutation = useUpdateDepartment();
   const deleteMutation = useDeleteDepartment();
+
+  // RBAC: Check permissions for UI controls
+  const canManageSchool = usePermission('school:manage');
 
   const handleCreate = () => {
     createMutation.mutate(formData, {
@@ -111,23 +115,27 @@ export default function AdminDepartmentsPage() {
       header: 'Actions',
       render: (dept) => (
         <ActionButtonGroup>
-          <EditButton onClick={() => handleEdit(dept)} />
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => handleDelete(dept.id)}
-            leftIcon={<Trash2 className="h-4 w-4" />}
-          >
-            Delete
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            leftIcon={<UserPlus className="h-4 w-4" />}
-            onClick={() => handleAssignHOD(dept)}
-          >
-            Assign HOD
-          </Button>
+          {canManageSchool && <EditButton onClick={() => handleEdit(dept)} />}
+          {canManageSchool && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => handleDelete(dept.id)}
+              leftIcon={<Trash2 className="h-4 w-4" />}
+            >
+              Delete
+            </Button>
+          )}
+          {canManageSchool && (
+            <Button
+              size="sm"
+              variant="outline"
+              leftIcon={<UserPlus className="h-4 w-4" />}
+              onClick={() => handleAssignHOD(dept)}
+            >
+              Assign HOD
+            </Button>
+          )}
         </ActionButtonGroup>
       ),
     },
@@ -161,12 +169,14 @@ export default function AdminDepartmentsPage() {
             </h1>
             <p className="text-sm text-[var(--brand-muted)]">Manage departments and assign HODs</p>
           </div>
-          <Button
-            leftIcon={<Plus className="h-4 w-4" />}
-            onClick={() => setIsCreateModalOpen(true)}
-          >
-            Create Department
-          </Button>
+          {canManageSchool && (
+            <Button
+              leftIcon={<Plus className="h-4 w-4" />}
+              onClick={() => setIsCreateModalOpen(true)}
+            >
+              Create Department
+            </Button>
+          )}
         </header>
 
         <Table columns={columns} data={departments} emptyMessage="No departments found" />

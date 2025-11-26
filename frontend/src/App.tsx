@@ -207,6 +207,7 @@ function App() {
               element={
                 <ProtectedRoute
                   allowedRoles={['admin', 'superadmin']}
+                  allowedPermissions={['school:manage']}
                   fallback={
                     <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
                   }
@@ -222,6 +223,7 @@ function App() {
               element={
                 <ProtectedRoute
                   allowedRoles={['admin', 'superadmin']}
+                  allowedPermissions={['settings:classes']}
                   fallback={
                     <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
                   }
@@ -237,6 +239,7 @@ function App() {
               element={
                 <ProtectedRoute
                   allowedRoles={['admin', 'superadmin']}
+                  allowedPermissions={['users:manage']}
                   fallback={
                     <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
                   }
@@ -252,6 +255,7 @@ function App() {
               element={
                 <ProtectedRoute
                   allowedRoles={['admin', 'superadmin']}
+                  allowedPermissions={['reports:view']}
                   fallback={
                     <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
                   }
@@ -267,6 +271,7 @@ function App() {
               element={
                 <ProtectedRoute
                   allowedRoles={['admin', 'superadmin']}
+                  allowedPermissions={['announcements:manage']}
                   fallback={
                     <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
                   }
@@ -298,6 +303,7 @@ function App() {
               element={
                 <ProtectedRoute
                   allowedRoles={['admin', 'superadmin']}
+                  allowedPermissions={['settings:classes']}
                   fallback={
                     <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
                   }
@@ -324,6 +330,7 @@ function App() {
               element={
                 <ProtectedRoute
                   allowedRoles={['admin', 'superadmin']}
+                  allowedPermissions={['teachers:manage']}
                   fallback={
                     <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
                   }
@@ -339,6 +346,7 @@ function App() {
               element={
                 <ProtectedRoute
                   allowedRoles={['admin', 'superadmin']}
+                  allowedPermissions={['students:manage']}
                   fallback={
                     <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
                   }
@@ -354,6 +362,8 @@ function App() {
               element={
                 <ProtectedRoute
                   allowedRoles={['admin', 'superadmin']}
+                  allowedPermissions={['users:manage', 'teachers:manage']}
+                  requireAllPermissions={false}
                   fallback={
                     <Navigate to={getDefaultDashboardPath(user?.role, additionalRoles)} replace />
                   }

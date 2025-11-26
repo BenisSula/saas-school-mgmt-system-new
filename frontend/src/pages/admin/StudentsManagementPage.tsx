@@ -30,6 +30,7 @@ import { AdvancedFilters, type AdvancedFilterField } from '../../components/admi
 import { ActivityLog } from '../../components/admin/ActivityLog';
 import { StudentDetailView } from '../../components/admin/StudentDetailView';
 import { useCSVImport } from '../../hooks/useCSVImport';
+import { usePermission } from '../../hooks/usePermission';
 import { Plus, Upload, Eye } from 'lucide-react';
 
 interface StudentFilters {
@@ -93,6 +94,9 @@ export function StudentsManagementPage() {
     error: studentsError,
   } = useStudents(apiFilters);
   const { data: classes = [], isLoading: classesLoading } = useClasses();
+
+  // RBAC: Check permissions for UI controls
+  const canManageStudents = usePermission('students:manage');
 
   // Advanced filter fields (defined after classes is fetched)
   const advancedFilterFields: AdvancedFilterField[] = useMemo(
@@ -340,10 +344,14 @@ export function StudentsManagementPage() {
             Details
           </Button>
           <ViewButton onClick={() => handleViewProfile(row)} />
-          <AssignButton onClick={() => handleAssignClass(row)} label="Assign Class" />
-          <Button size="sm" variant="ghost" onClick={() => handleManageParent(row)}>
-            Parent
-          </Button>
+          {canManageStudents && (
+            <AssignButton onClick={() => handleAssignClass(row)} label="Assign Class" />
+          )}
+          {canManageStudents && (
+            <Button size="sm" variant="ghost" onClick={() => handleManageParent(row)}>
+              Parent
+            </Button>
+          )}
         </ActionButtonGroup>
       ),
     },
@@ -371,14 +379,18 @@ export function StudentsManagementPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => setShowCreateModal(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Create Student
-            </Button>
-            <Button variant="outline" onClick={() => setShowImportModal(true)} className="gap-2">
-              <Upload className="h-4 w-4" />
-              Import CSV
-            </Button>
+            {canManageStudents && (
+              <Button onClick={() => setShowCreateModal(true)} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Create Student
+              </Button>
+            )}
+            {canManageStudents && (
+              <Button variant="outline" onClick={() => setShowImportModal(true)} className="gap-2">
+                <Upload className="h-4 w-4" />
+                Import CSV
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => setShowActivityLog(!showActivityLog)}
@@ -391,7 +403,7 @@ export function StudentsManagementPage() {
               onExportPDF={handleExportPDF}
               onExportExcel={handleExportExcel}
             />
-            {selectedRows.size > 0 && (
+            {canManageStudents && selectedRows.size > 0 && (
               <Button variant="outline" onClick={handleBulkDelete}>
                 Delete ({selectedRows.size})
               </Button>
