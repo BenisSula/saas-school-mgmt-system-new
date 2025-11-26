@@ -79,7 +79,16 @@ export async function runTenantMigrations(pool: Pool, schemaName: string): Promi
   try {
     assertValidSchemaName(schemaName);
     await client.query(`SET search_path TO ${schemaName}, public`);
+    
+    if (files.length === 0) {
+      console.log(`  ℹ️  No tenant migration files found for schema: ${schemaName}`);
+      return;
+    }
+    
+    console.log(`  📋 Found ${files.length} tenant migration file(s) for ${schemaName}`);
+    
     for (const file of files) {
+      console.log(`  🔄 Running tenant migration: ${file}...`);
       const sql = await fs.promises.readFile(path.join(migrationsDir, file), 'utf-8');
       const renderedSql = sql.replace(/{{schema}}/g, schemaName);
 
@@ -92,14 +101,15 @@ export async function runTenantMigrations(pool: Pool, schemaName: string): Promi
           // Execute the entire file as a single statement
           // PostgreSQL can handle the entire DO block as one statement
           await client.query(renderedSql);
+          console.log(`  ✅ Tenant migration ${file} completed successfully`);
           continue;
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : String(error);
-          console.error(`[Migration Error] Failed to execute ${file}:`);
-          console.error(`[Migration Error] Error: ${errorMsg}`);
+          console.error(`  ❌ [Migration Error] Failed to execute ${file}:`);
+          console.error(`  ❌ [Migration Error] Error: ${errorMsg}`);
           // Log first 1000 chars of SQL for debugging (shows DO block start)
           const sqlPreview = renderedSql.substring(0, 1000).replace(/\n/g, '\\n');
-          console.error(`[Migration Error] SQL preview (first 1000 chars): ${sqlPreview}...`);
+          console.error(`  ❌ [Migration Error] SQL preview (first 1000 chars): ${sqlPreview}...`);
           throw new Error(`Migration failed in ${file}: ${errorMsg}`);
         }
       }
