@@ -130,110 +130,135 @@ export async function listDepartments(
 ): Promise<DepartmentRecord[]> {
   const pool = getPool();
 
-  if (includeCounts) {
-    const result = await pool.query<{
-      id: string;
-      school_id: string;
-      name: string;
-      slug: string;
-      contact_email: string | null;
-      contact_phone: string | null;
-      metadata: Record<string, unknown>;
-      created_at: Date;
-      updated_at: Date;
-      hod_count: string;
-      teacher_count: string;
-      hod_id: string | null;
-      hod_first_name: string | null;
-      hod_last_name: string | null;
-      hod_email: string | null;
-    }>(
-      `WITH department_counts AS (
+  try {
+    if (includeCounts) {
+      const result = await pool.query<{
+        id: string;
+        school_id: string;
+        name: string;
+        slug: string;
+        contact_email: string | null;
+        contact_phone: string | null;
+        metadata: Record<string, unknown>;
+        created_at: Date;
+        updated_at: Date;
+        hod_count: string;
+        teacher_count: string;
+        hod_id: string | null;
+        hod_full_name: string | null;
+        hod_email: string | null;
+      }>(
+        `WITH department_counts AS (
+           SELECT 
+             d.id, d.school_id, d.name, d.slug, d.contact_email, d.contact_phone,
+             d.metadata, d.created_at, d.updated_at,
+             COUNT(DISTINCT CASE WHEN ur.role_name = 'hod' THEN u.id END)::text as hod_count,
+             COUNT(DISTINCT CASE WHEN u.department_id = d.id AND u.role = 'teacher' THEN u.id END)::text as teacher_count
+           FROM shared.departments d
+           LEFT JOIN shared.users u ON u.department_id = d.id
+           LEFT JOIN shared.user_roles ur ON ur.user_id = u.id
+           WHERE d.school_id = $1
+           GROUP BY d.id, d.school_id, d.name, d.slug, d.contact_email, d.contact_phone, d.metadata, d.created_at, d.updated_at
+         ),
+         hod_details AS (
+           SELECT DISTINCT ON (u.department_id)
+             u.department_id,
+             u.id as hod_id,
+             u.full_name as hod_full_name,
+             u.email as hod_email
+           FROM shared.users u
+           INNER JOIN shared.user_roles ur ON ur.user_id = u.id
+           WHERE ur.role_name = 'hod' AND u.department_id IS NOT NULL
+           ORDER BY u.department_id, u.created_at
+         )
          SELECT 
-           d.id, d.school_id, d.name, d.slug, d.contact_email, d.contact_phone,
-           d.metadata, d.created_at, d.updated_at,
-           COUNT(DISTINCT CASE WHEN ur.role_name = 'hod' THEN u.id END)::text as hod_count,
-           COUNT(DISTINCT CASE WHEN u.department_id = d.id AND u.role = 'teacher' THEN u.id END)::text as teacher_count
-         FROM shared.departments d
-         LEFT JOIN shared.users u ON u.department_id = d.id
-         LEFT JOIN shared.user_roles ur ON ur.user_id = u.id
-         WHERE d.school_id = $1
-         GROUP BY d.id, d.school_id, d.name, d.slug, d.contact_email, d.contact_phone, d.metadata, d.created_at, d.updated_at
-       ),
-       hod_details AS (
-         SELECT DISTINCT ON (u.department_id)
-           u.department_id,
-           u.id as hod_id,
-           u.first_name as hod_first_name,
-           u.last_name as hod_last_name,
-           u.email as hod_email
-         FROM shared.users u
-         INNER JOIN shared.user_roles ur ON ur.user_id = u.id
-         WHERE ur.role_name = 'hod' AND u.department_id IS NOT NULL
-         ORDER BY u.department_id, u.created_at
-       )
-       SELECT 
-         dc.id, dc.school_id, dc.name, dc.slug, dc.contact_email, dc.contact_phone,
-         dc.metadata, dc.created_at, dc.updated_at,
-         dc.hod_count, dc.teacher_count,
-         hd.hod_id, hd.hod_first_name, hd.hod_last_name, hd.hod_email
-       FROM department_counts dc
-       LEFT JOIN hod_details hd ON hd.department_id = dc.id
-       ORDER BY dc.name`,
-      [schoolId]
-    );
+           dc.id, dc.school_id, dc.name, dc.slug, dc.contact_email, dc.contact_phone,
+           dc.metadata, dc.created_at, dc.updated_at,
+           dc.hod_count, dc.teacher_count,
+           hd.hod_id, hd.hod_full_name, hd.hod_email
+         FROM department_counts dc
+         LEFT JOIN hod_details hd ON hd.department_id = dc.id
+         ORDER BY dc.name`,
+        [schoolId]
+      );
 
-    return result.rows.map((row) => ({
-      id: row.id,
-      schoolId: row.school_id,
-      name: row.name,
-      slug: row.slug,
-      contactEmail: row.contact_email,
-      contactPhone: row.contact_phone,
-      metadata: row.metadata,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-      hodCount: Number(row.hod_count),
-      teacherCount: Number(row.teacher_count),
-      hod: row.hod_id
-        ? {
-            id: row.hod_id,
-            firstName: row.hod_first_name || '',
-            lastName: row.hod_last_name || '',
-            email: row.hod_email || '',
-          }
-        : undefined,
-    }));
-  } else {
-    const result = await pool.query<{
-      id: string;
-      school_id: string;
-      name: string;
-      slug: string;
-      contact_email: string | null;
-      contact_phone: string | null;
-      metadata: Record<string, unknown>;
-      created_at: Date;
-      updated_at: Date;
-    }>(
-      `SELECT id, school_id, name, slug, contact_email, contact_phone, metadata, created_at, updated_at
-       FROM shared.departments
-       WHERE school_id = $1
-       ORDER BY name`,
-      [schoolId]
-    );
+      if (!result || !result.rows) {
+        throw new Error('Invalid query result: missing rows');
+      }
 
-    return result.rows.map((row) => ({
-      id: row.id,
-      schoolId: row.school_id,
-      name: row.name,
-      slug: row.slug,
-      contactEmail: row.contact_email,
-      contactPhone: row.contact_phone,
-      metadata: row.metadata,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-    }));
+      return result.rows.map((row) => {
+        // Parse full_name into firstName and lastName
+        const fullName = row.hod_full_name || '';
+        const nameParts = fullName.trim().split(/\s+/);
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        return {
+          id: row.id,
+          schoolId: row.school_id,
+          name: row.name,
+          slug: row.slug,
+          contactEmail: row.contact_email,
+          contactPhone: row.contact_phone,
+          metadata: (row.metadata as Record<string, unknown>) || {},
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+          hodCount: Number(row.hod_count) || 0,
+          teacherCount: Number(row.teacher_count) || 0,
+          hod: row.hod_id && row.hod_email
+            ? {
+                id: row.hod_id,
+                firstName,
+                lastName,
+                email: row.hod_email,
+              }
+            : undefined,
+        };
+      });
+    } else {
+      const result = await pool.query<{
+        id: string;
+        school_id: string;
+        name: string;
+        slug: string;
+        contact_email: string | null;
+        contact_phone: string | null;
+        metadata: Record<string, unknown>;
+        created_at: Date;
+        updated_at: Date;
+      }>(
+        `SELECT id, school_id, name, slug, contact_email, contact_phone, metadata, created_at, updated_at
+         FROM shared.departments
+         WHERE school_id = $1
+         ORDER BY name`,
+        [schoolId]
+      );
+
+      if (!result || !result.rows) {
+        throw new Error('Invalid query result: missing rows');
+      }
+
+      return result.rows.map((row) => ({
+        id: row.id,
+        schoolId: row.school_id,
+        name: row.name,
+        slug: row.slug,
+        contactEmail: row.contact_email,
+        contactPhone: row.contact_phone,
+        metadata: (row.metadata as Record<string, unknown>) || {},
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }));
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[departmentService] Error listing departments:', {
+      error: errorMessage,
+      schoolId,
+      includeCounts,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    throw new Error(`Failed to list departments: ${errorMessage}`);
   }
 }
 

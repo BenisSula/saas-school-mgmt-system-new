@@ -96,10 +96,23 @@ router.get('/', async (req, res, next) => {
     }
 
     const includeCounts = req.query.includeCounts !== 'false';
-    const departments = await listDepartments(schoolId, includeCounts);
-
-    res.json(createSuccessResponse(departments));
-    return;
+    
+    try {
+      const departments = await listDepartments(schoolId, includeCounts);
+      res.json(createSuccessResponse(departments));
+      return;
+    } catch (serviceError) {
+      const errorMessage = serviceError instanceof Error ? serviceError.message : 'Unknown error';
+      console.error('[departments route] Error fetching departments:', {
+        error: errorMessage,
+        schoolId,
+        tenantId: req.tenant.id,
+        stack: serviceError instanceof Error ? serviceError.stack : undefined,
+      });
+      
+      // Re-throw to be handled by error handler middleware
+      throw serviceError;
+    }
   } catch (error) {
     next(error);
     return;
