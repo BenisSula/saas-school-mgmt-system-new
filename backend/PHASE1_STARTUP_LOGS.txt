@@ -1,0 +1,60 @@
+﻿
+> backend@1.0.0 dev
+> ts-node-dev --respawn --transpile-only --ignore-watch node_modules --ignore-watch dist src/server.ts
+
+[INFO] 03:22:06 ts-node-dev ver. 2.0.0 (using ts-node ver. 10.9.2, typescript ver. 5.9.3)
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ≡ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+node.exe : [ErrorTracking] DSN not provided, error tracking disabled
+At C:\Users\Administrator\AppData\Roaming\npm\npm.ps1:24 char:5
++     & "node$exe"  "$basedir/node_modules/npm/bin/npm-cli.js" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([ErrorTracking]...acking disabl 
+   ed:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+ΓÜá∩╕Å  Skipping migrations (SKIP_MIGRATIONS=true)
+[Migration Error] Failed to execute statement 2/12 in file 
+032_create_class_resources_table.sql:
+[Migration Error] Statement: -- Add constraint if column exists and 
+constraint doesn't exist
+-- Migration 033 will ensure proper constraints
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT FROM information_schema.columns 
+    WHERE ta...
+[Migration Error] Error: unterminated dollar-quoted string at or near "$$
+BEGIN
+  IF EXISTS (
+    SELECT FROM information_schema.columns 
+    WHERE table_schema = 'tenant_demo_academy' 
+    AND table_name = 'class_resources' 
+    AND column_name = 'resource_type'
+  ) AND NOT EXISTS (
+    SELECT FROM pg_constraint 
+    WHERE conname = 'check_resource_type' 
+    AND conrelid = 'tenant_demo_academy.class_resources'::regclass
+  ) THEN
+    ALTER TABLE tenant_demo_academy.class_resources
+      ADD CONSTRAINT check_resource_type 
+      CHECK (resource_type IN ('document', 'link', 'file', 'video'));"
+
+Γ¥î Failed to start server due to DB connection error
+
+Error details: Migration failed in 032_create_class_resources_table.sql at 
+statement 2: unterminated dollar-quoted string at or near "$$
+BEGIN
+  IF EXISTS (
+    SELECT FROM information_schema.columns 
+    WHERE table_schema = 'tenant_demo_academy' 
+    AND table_name = 'class_resources' 
+    AND column_name = 'resource_type'
+  ) AND NOT EXISTS (
+    SELECT FROM pg_constraint 
+    WHERE conname = 'check_resource_type' 
+    AND conrelid = 'tenant_demo_academy.class_resources'::regclass
+  ) THEN
+    ALTER TABLE tenant_demo_academy.class_resources
+      ADD CONSTRAINT check_resource_type 
+      CHECK (resource_type IN ('document', 'link', 'file', 'video'));"
+Statement: -- Add constraint if column exists and constraint doesn't exist
