@@ -83,6 +83,27 @@ export async function runTenantMigrations(pool: Pool, schemaName: string): Promi
       const sql = await fs.promises.readFile(path.join(migrationsDir, file), 'utf-8');
       const renderedSql = sql.replace(/{{schema}}/g, schemaName);
 
+      // If file contains DO blocks, execute as single statement to avoid parsing issues
+      // This is safer for complex nested DO blocks
+      // Check for DO blocks (case-insensitive, handle various whitespace)
+      const hasDoBlock = /DO\s+\$\$?/i.test(renderedSql);
+      if (hasDoBlock) {
+        try {
+          // Execute the entire file as a single statement
+          // PostgreSQL can handle the entire DO block as one statement
+          await client.query(renderedSql);
+          continue;
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          console.error(`[Migration Error] Failed to execute ${file}:`);
+          console.error(`[Migration Error] Error: ${errorMsg}`);
+          // Log first 1000 chars of SQL for debugging (shows DO block start)
+          const sqlPreview = renderedSql.substring(0, 1000).replace(/\n/g, '\\n');
+          console.error(`[Migration Error] SQL preview (first 1000 chars): ${sqlPreview}...`);
+          throw new Error(`Migration failed in ${file}: ${errorMsg}`);
+        }
+      }
+
       // Split SQL statements properly, handling:
       // - Comments (-- style)
       // - String literals (single quotes)
