@@ -1,7 +1,7 @@
 import type { PoolClient } from 'pg';
 import { TeacherInput } from '../validators/teacherValidator';
 import { getTableName, serializeJsonField } from '../lib/serviceUtils';
-import { listEntities, getEntityById, deleteEntityById } from '../lib/crudHelpers';
+import { getEntityById, deleteEntityById } from '../lib/crudHelpers';
 
 const table = 'teachers';
 

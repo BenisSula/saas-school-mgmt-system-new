@@ -74,7 +74,6 @@ router.get('/:userId', async (req, res, next) => {
     if (userResult.rowCount === 0) {
       return res.status(404).json({ message: 'User not found' });
     }
-
     const user = userResult.rows[0];
 
     // Get additional roles if tenant exists
@@ -92,8 +91,11 @@ router.get('/:userId', async (req, res, next) => {
       ...user,
       additionalRoles,
     });
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -111,12 +113,10 @@ router.get('/:userId/permissions', async (req, res, next) => {
     if (userResult.rowCount === 0) {
       return res.status(404).json({ message: 'User not found' });
     }
-
     const user = userResult.rows[0];
     if (!user.tenant_id) {
       return res.status(400).json({ message: 'User has no tenant assigned' });
     }
-
     const role = user.role as Role;
     const directPermissions = rolePermissions[role] || [];
 
@@ -167,8 +167,10 @@ router.get('/:userId/permissions', async (req, res, next) => {
         expiresAt: o.expiresAt,
       })),
     });
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -182,7 +184,6 @@ router.patch('/:userId/permissions', async (req, res, next) => {
     if (!parsed.success) {
       return res.status(400).json({ message: parsed.error.message });
     }
-
     const pool = getPool();
     const userResult = await pool.query(`SELECT tenant_id FROM shared.users WHERE id = $1`, [
       req.params.userId,
@@ -191,12 +192,10 @@ router.patch('/:userId/permissions', async (req, res, next) => {
     if (userResult.rowCount === 0) {
       return res.status(404).json({ message: 'User not found' });
     }
-
     const tenantId = userResult.rows[0].tenant_id;
     if (!tenantId) {
       return res.status(400).json({ message: 'User has no tenant assigned' });
     }
-
     const expiresAt = parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : undefined;
 
     // Get current effective permissions
@@ -262,8 +261,11 @@ router.patch('/:userId/permissions', async (req, res, next) => {
       userId: req.params.userId,
       permissionOverrides: updatedPermissions,
     });
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -277,7 +279,6 @@ router.post('/bulk/status', async (req, res, next) => {
     if (!parsed.success) {
       return res.status(400).json({ message: parsed.error.message });
     }
-
     const results = [];
     for (const userId of parsed.data.userIds) {
       try {
@@ -297,8 +298,11 @@ router.post('/bulk/status', async (req, res, next) => {
     }
 
     res.json({ results });
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -312,7 +316,6 @@ router.post('/bulk/reset-password', async (req, res, next) => {
     if (!parsed.success) {
       return res.status(400).json({ message: parsed.error.message });
     }
-
     const pool = getPool();
     const results = [];
     for (const userId of parsed.data.userIds) {
@@ -351,8 +354,11 @@ router.post('/bulk/reset-password', async (req, res, next) => {
     }
 
     res.json({ results });
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -366,7 +372,6 @@ router.post('/:userId/overrides', async (req, res, next) => {
     if (!parsed.success) {
       return res.status(400).json({ message: parsed.error.message });
     }
-
     const override = await createOverride(
       {
         overrideType: 'user_status',
@@ -380,8 +385,11 @@ router.post('/:userId/overrides', async (req, res, next) => {
     );
 
     res.status(201).json(override);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -400,8 +408,11 @@ router.get('/:userId/overrides', async (req, res, next) => {
     });
 
     res.json(overrides);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 

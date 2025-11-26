@@ -57,8 +57,11 @@ router.get('/sessions', async (req, res, next) => {
     const result = await getPlatformActiveSessions(pool, filters, req.user!.role as Role);
 
     res.json(result);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -96,8 +99,11 @@ router.get('/users/:userId/login-history', async (req, res, next) => {
     const result = await getLoginHistory(pool, filters, req.user!.role as Role, req.user!.id);
 
     res.json(result);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -119,8 +125,11 @@ router.get('/users/:userId/sessions', async (req, res, next) => {
     const sessions = await getActiveSessions(pool, userId, req.user!.role as Role, req.user!.id);
 
     res.json({ sessions });
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -142,8 +151,11 @@ router.post('/users/:userId/sessions/:sessionId/revoke', async (req, res, next) 
     await endSession(pool, sessionId);
 
     res.json({ message: 'Session revoked successfully' });
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -180,8 +192,11 @@ router.post('/users/:userId/sessions/revoke-all', async (req, res, next) => {
       message: 'Sessions revoked successfully',
       revokedCount,
     });
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 

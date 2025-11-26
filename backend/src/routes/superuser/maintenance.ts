@@ -61,6 +61,7 @@ router.post('/run-migrations', async (req, res, next) => {
         message: `Successfully ran migrations for ${result.migrationsRun} tenant(s)`,
         data: result,
       });
+      return;
     } else {
       res.status(207).json({
         // 207 Multi-Status for partial success
@@ -68,9 +69,11 @@ router.post('/run-migrations', async (req, res, next) => {
         message: `Migrations completed with errors for ${result.migrationsRun} tenant(s)`,
         data: result,
       });
+      return;
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -101,15 +104,18 @@ router.post('/clear-cache/:schoolId', async (req, res, next) => {
         message: `Successfully cleared ${result.clearedKeys} cache key(s)`,
         data: result,
       });
+      return;
     } else {
       res.status(500).json({
         success: false,
         message: 'Failed to clear cache',
         data: result,
       });
+      return;
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -146,8 +152,11 @@ router.get('/schema-health', async (req, res, next) => {
         unhealthy: results.filter((r) => r.status === 'unhealthy').length,
       },
     });
+    return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 

@@ -2,10 +2,8 @@
  * Class Resources Page Tests
  */
 
-import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
 import ClassResourcesPage from '../page';
 import { api } from '../../../../lib/api';
 import { renderWithProviders } from '../../../../__tests__/test-utils';
@@ -35,8 +33,6 @@ vi.mock('../../../../hooks/queries/useClasses', () => ({
 // renderWithProviders is imported from test-utils
 
 describe('ClassResourcesPage', () => {
-  let queryClient: ReturnType<typeof renderWithProviders>['queryClient'];
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -44,8 +40,7 @@ describe('ClassResourcesPage', () => {
   it('should render the page with title', async () => {
     (api.classResources.list as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
 
-    const result = renderWithProviders(<ClassResourcesPage />);
-    queryClient = result.queryClient;
+    renderWithProviders(<ClassResourcesPage />);
 
     await waitFor(() => {
       expect(screen.getByText('Class Resources')).toBeInTheDocument();

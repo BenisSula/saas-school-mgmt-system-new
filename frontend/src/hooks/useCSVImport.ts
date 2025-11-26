@@ -152,20 +152,20 @@ export function useCSVImport(options: CSVImportOptions) {
     },
     onSuccess: (result) => {
       // Invalidate relevant queries
-      const queriesToInvalidate = options.invalidateQueries || [];
+      const queriesToInvalidate: unknown[][] = [...(options.invalidateQueries || [])];
 
       // Default queries based on entity type
       if (!queriesToInvalidate.length) {
         switch (options.entityType) {
           case 'teachers':
-            queriesToInvalidate.push(queryKeys.admin.teachers());
+            queriesToInvalidate.push([...queryKeys.admin.teachers()]);
             break;
           case 'students':
-            queriesToInvalidate.push(queryKeys.admin.students());
+            queriesToInvalidate.push([...queryKeys.admin.students()]);
             break;
           case 'hods':
-            queriesToInvalidate.push(queryKeys.admin.hods());
-            queriesToInvalidate.push(queryKeys.admin.teachers());
+            queriesToInvalidate.push([...queryKeys.admin.hods()]);
+            queriesToInvalidate.push([...queryKeys.admin.teachers()]);
             break;
         }
       }

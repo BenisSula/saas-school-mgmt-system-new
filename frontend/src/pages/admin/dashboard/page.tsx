@@ -45,8 +45,7 @@ export default function AdminDashboardPage() {
   }
 
   // Handle both wrapped and unwrapped responses
-  const responseData = data?.data || data;
-  const stats = responseData || {
+  const stats = data || {
     users: { teachers: 0, students: 0, hods: 0, activeTeachers: 0, activeStudents: 0 },
     departments: 0,
     classes: 0,

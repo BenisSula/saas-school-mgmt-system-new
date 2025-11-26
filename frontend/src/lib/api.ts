@@ -4413,6 +4413,78 @@ export const api = {
       );
     },
   },
+  // Class Resources
+  classResources: {
+    list: () => apiFetch<ClassResource[]>('/class-resources'),
+    get: (id: string) => apiFetch<ClassResource>(`/class-resources/${id}`),
+    create: (payload: {
+      class_id: string;
+      title: string;
+      description?: string;
+      resource_type: 'document' | 'link' | 'file' | 'video';
+      resource_url: string;
+      file_name?: string;
+    }) =>
+      apiFetch<ClassResource>('/class-resources', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    update: (id: string, payload: Partial<{
+      class_id: string;
+      title: string;
+      description?: string;
+      resource_type: 'document' | 'link' | 'file' | 'video';
+      resource_url: string;
+      file_name?: string;
+    }>) =>
+      apiFetch<ClassResource>(`/class-resources/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      }),
+    delete: (id: string) =>
+      apiFetch<void>(`/class-resources/${id}`, {
+        method: 'DELETE',
+      }),
+  },
+  // Configuration namespace (for convenience)
+  configuration: {
+    getBranding: () => apiFetch<BrandingConfig | null>('/configuration/branding'),
+    updateBranding: (payload: Partial<BrandingConfig>) =>
+      apiFetch<BrandingConfig>('/configuration/branding', {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      }),
+    listTerms: () => apiFetch<AcademicTerm[]>('/configuration/terms'),
+    createTerm: (payload: { name: string; startsOn: string; endsOn: string }) =>
+      apiFetch<AcademicTerm>('/configuration/terms', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    updateTerm: (id: string, payload: { name: string; startsOn: string; endsOn: string }) =>
+      apiFetch<AcademicTerm>(`/configuration/terms/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      }),
+    deleteTerm: (id: string) =>
+      apiFetch<void>(`/configuration/terms/${id}`, {
+        method: 'DELETE',
+      }),
+    listClasses: () => apiFetch<SchoolClass[]>('/configuration/classes'),
+    createClass: (payload: { name: string; description?: string }) =>
+      apiFetch<SchoolClass>('/configuration/classes', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+    updateClass: (id: string, payload: { name: string; description?: string }) =>
+      apiFetch<SchoolClass>(`/configuration/classes/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      }),
+    deleteClass: (id: string) =>
+      apiFetch<void>(`/configuration/classes/${id}`, {
+        method: 'DELETE',
+      }),
+  },
 };
 
 export default api;
@@ -4545,6 +4617,20 @@ export interface CaseEvidence {
   addedBy: string;
   addedAt: string;
   metadata: Record<string, unknown>;
+}
+
+export interface ClassResource {
+  id: string;
+  class_id: string;
+  title: string;
+  description: string | null;
+  resource_type: 'document' | 'link' | 'file' | 'video';
+  resource_url: string;
+  file_name: string | null;
+  file_size: number | null;
+  mime_type: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AnomalyDetectionResult {

@@ -320,7 +320,7 @@ async function simulateLogins(
 }
 
 async function measureHttpEndpoint(
-  label: string,
+  _label: string,
   method: 'get' | 'post',
   url: string,
   session: SessionRecord,

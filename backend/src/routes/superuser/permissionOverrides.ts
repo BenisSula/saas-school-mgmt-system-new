@@ -45,8 +45,11 @@ router.post('/grant', async (req, res, next) => {
 
     const override = await grantPermissionOverride(input, req.user.id);
     res.status(201).json(override);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -64,8 +67,11 @@ router.post('/revoke', async (req, res, next) => {
 
     await revokePermissionOverride(parsed.data, req.user.id);
     res.status(204).send();
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -90,8 +96,11 @@ router.get('/', async (req, res, next) => {
 
     const overrides = await listPermissionOverrides(filters);
     res.json(overrides);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -100,8 +109,11 @@ router.get('/user/:userId', async (req, res, next) => {
   try {
     const overrides = await getPermissionOverridesForUser(req.params.userId);
     res.json(overrides);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 

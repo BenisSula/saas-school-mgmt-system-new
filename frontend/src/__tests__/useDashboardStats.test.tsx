@@ -188,9 +188,9 @@ describe('useDashboardStats hooks', () => {
     it('fetches and returns today attendance stats', async () => {
       // Mock the API calls that useTodayAttendance makes
       vi.mocked(api.getAttendanceAggregate).mockResolvedValue([
-        { status: 'present', count: 40 },
-        { status: 'absent', count: 5 },
-        { status: 'late', count: 3 },
+        { status: 'present', count: 40, attendance_date: new Date().toISOString(), class_id: 'class-1' },
+        { status: 'absent', count: 5, attendance_date: new Date().toISOString(), class_id: 'class-1' },
+        { status: 'late', count: 3, attendance_date: new Date().toISOString(), class_id: 'class-1' },
       ]);
 
       const { result } = renderHook(() => useTodayAttendance(), { wrapper });

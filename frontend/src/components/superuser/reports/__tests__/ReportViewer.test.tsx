@@ -45,11 +45,11 @@ describe('ReportViewer', () => {
     vi.clearAllMocks();
     mockWindowOpen.mockClear();
     // Ensure getBranding is always mocked
-    if (api.getBranding) {
+    if (typeof api.getBranding === 'function') {
       vi.spyOn(api, 'getBranding').mockResolvedValue({
-        primaryColor: '#000000',
-        secondaryColor: '#ffffff',
-        logoUrl: null,
+        primary_color: '#000000',
+        secondary_color: '#ffffff',
+        logo_url: null,
       });
     }
   });
@@ -75,8 +75,8 @@ describe('ReportViewer', () => {
         { id: '2', name: 'Jane Smith', score: 87 },
       ];
       const mockColumns = [
-        { name: 'name', label: 'Name' },
-        { name: 'score', label: 'Score' },
+        { name: 'name', label: 'Name', type: 'string' },
+        { name: 'score', label: 'Score', type: 'number' },
       ];
 
       vi.spyOn(api.reports, 'executeCustomReport').mockRejectedValue(new Error('Not custom'));
@@ -84,6 +84,8 @@ describe('ReportViewer', () => {
         executionId: 'exec-123',
         data: mockData,
         columns: mockColumns,
+        rowCount: mockData.length,
+        executionTimeMs: 100,
       });
 
       render(
@@ -144,7 +146,7 @@ describe('ReportViewer', () => {
   describe('Report Execution', () => {
     it('executes report definition with parameters', async () => {
       const mockData = [{ id: '1', value: 'test' }];
-      const mockColumns = [{ name: 'value', label: 'Value' }];
+      const mockColumns = [{ name: 'value', label: 'Value', type: 'string' }];
 
       // Mock custom report to fail first
       vi.spyOn(api.reports, 'executeCustomReport').mockRejectedValue(new Error('Not custom'));
@@ -153,6 +155,8 @@ describe('ReportViewer', () => {
         executionId: 'exec-123',
         data: mockData,
         columns: mockColumns,
+        rowCount: mockData.length,
+        executionTimeMs: 100,
       });
 
       render(
@@ -171,7 +175,7 @@ describe('ReportViewer', () => {
 
     it('tries custom report first, then falls back to report definition', async () => {
       const mockData = [{ id: '1', value: 'test' }];
-      const mockColumns = [{ name: 'value', label: 'Value' }];
+      const mockColumns = [{ name: 'value', label: 'Value', type: 'string' }];
 
       const executeCustomReportSpy = vi
         .spyOn(api.reports, 'executeCustomReport')
@@ -181,6 +185,8 @@ describe('ReportViewer', () => {
         executionId: 'exec-123',
         data: mockData,
         columns: mockColumns,
+        rowCount: mockData.length,
+        executionTimeMs: 100,
       });
 
       render(
@@ -197,7 +203,7 @@ describe('ReportViewer', () => {
 
     it('uses custom report result when available', async () => {
       const mockData = [{ id: '1', value: 'custom' }];
-      const mockColumns = [{ name: 'value', label: 'Value' }];
+      const mockColumns = [{ name: 'value', label: 'Value', type: 'string' }];
 
       const executeCustomReportSpy = vi
         .spyOn(api.reports, 'executeCustomReport')
@@ -205,6 +211,8 @@ describe('ReportViewer', () => {
           executionId: 'custom-exec-123',
           data: mockData,
           columns: mockColumns,
+          rowCount: mockData.length,
+          executionTimeMs: 100,
         });
 
       const executeReportSpy = vi.spyOn(api.reports, 'executeReport');
@@ -229,7 +237,7 @@ describe('ReportViewer', () => {
   describe('Export Functionality', () => {
     beforeEach(async () => {
       const mockData = [{ id: '1', name: 'Test' }];
-      const mockColumns = [{ name: 'name', label: 'Name' }];
+      const mockColumns = [{ name: 'name', label: 'Name', type: 'string' }];
 
       // Mock both custom and regular report execution
       vi.spyOn(api.reports, 'executeCustomReport').mockRejectedValue(new Error('Not custom'));
@@ -237,6 +245,8 @@ describe('ReportViewer', () => {
         executionId: 'exec-123',
         data: mockData,
         columns: mockColumns,
+        rowCount: mockData.length,
+        executionTimeMs: 100,
       });
     });
 
@@ -468,6 +478,8 @@ describe('ReportViewer', () => {
         executionId: null as unknown as string,
         data: [],
         columns: [],
+        rowCount: 0,
+        executionTimeMs: 0,
       });
 
       const exportSpy = vi.spyOn(api.reports, 'exportReport');
@@ -517,8 +529,8 @@ describe('ReportViewer', () => {
         { id: '2', name: 'Jane Smith', age: 30 },
       ];
       const mockColumns = [
-        { name: 'name', label: 'Name' },
-        { name: 'age', label: 'Age' },
+        { name: 'name', label: 'Name', type: 'string' },
+        { name: 'age', label: 'Age', type: 'number' },
       ];
 
       vi.spyOn(api.reports, 'executeCustomReport').mockRejectedValue(new Error('Not custom'));
@@ -526,6 +538,8 @@ describe('ReportViewer', () => {
         executionId: 'exec-123',
         data: mockData,
         columns: mockColumns,
+        rowCount: mockData.length,
+        executionTimeMs: 100,
       });
 
       render(
@@ -570,6 +584,8 @@ describe('ReportViewer', () => {
         executionId: 'exec-123',
         data: [],
         columns: [],
+        rowCount: 0,
+        executionTimeMs: 0,
       });
 
       render(

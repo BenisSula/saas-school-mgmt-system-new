@@ -144,27 +144,26 @@ export default function TeachersUnderHodPage() {
         {/* Filters */}
         <div className="flex flex-col gap-4 sm:flex-row">
           <div className="flex-1">
-            <Input
-              type="text"
-              placeholder="Search teachers by name or email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              leftIcon={<Search className="h-4 w-4" />}
-            />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--brand-muted)]" />
+              <Input
+                type="text"
+                placeholder="Search teachers by name or email..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </div>
           <div className="w-full sm:w-48">
             <Select
               value={subjectFilter}
               onChange={(e) => setSubjectFilter(e.target.value)}
-              placeholder="Filter by subject"
-            >
-              <option value="">All Subjects</option>
-              {uniqueSubjects.map((subject) => (
-                <option key={subject} value={subject}>
-                  {subject}
-                </option>
-              ))}
-            </Select>
+              options={[
+                { value: '', label: 'All Subjects' },
+                ...uniqueSubjects.map((subject) => ({ value: subject, label: subject })),
+              ]}
+            />
           </div>
         </div>
 

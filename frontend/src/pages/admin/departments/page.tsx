@@ -11,8 +11,8 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Modal } from '../../../components/ui/Modal';
 import { Table, type TableColumn } from '../../../components/ui/Table';
-import { Plus, UserPlus } from 'lucide-react';
-import { EditButton, DeleteButton, ActionButtonGroup } from '../../../components/table-actions';
+import { Plus, UserPlus, Trash2 } from 'lucide-react';
+import { EditButton, ActionButtonGroup } from '../../../components/table-actions';
 import {
   useDepartments,
   useCreateDepartment,
@@ -94,25 +94,32 @@ export default function AdminDepartmentsPage() {
   };
 
   const columns: TableColumn<Department>[] = [
-    { key: 'name', label: 'Name' },
-    { key: 'slug', label: 'Slug' },
+    { key: 'name', header: 'Name' },
+    { key: 'slug', header: 'Slug' },
     {
       key: 'hodCount',
-      label: 'HODs',
+      header: 'HODs',
       render: (dept) => dept.hodCount ?? 0,
     },
     {
       key: 'teacherCount',
-      label: 'Teachers',
+      header: 'Teachers',
       render: (dept) => dept.teacherCount ?? 0,
     },
     {
       key: 'actions',
-      label: 'Actions',
+      header: 'Actions',
       render: (dept) => (
         <ActionButtonGroup>
           <EditButton onClick={() => handleEdit(dept)} />
-          <DeleteButton onClick={() => handleDelete(dept.id)} />
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => handleDelete(dept.id)}
+            leftIcon={<Trash2 className="h-4 w-4" />}
+          >
+            Delete
+          </Button>
           <Button
             size="sm"
             variant="outline"
@@ -142,9 +149,7 @@ export default function AdminDepartmentsPage() {
     );
   }
 
-  const departments = (
-    Array.isArray(data) ? data : (data as { data?: Department[] })?.data || []
-  ) as Department[];
+  const departments = (Array.isArray(data) ? data : data || []) as Department[];
 
   return (
     <RouteMeta title="Departments">

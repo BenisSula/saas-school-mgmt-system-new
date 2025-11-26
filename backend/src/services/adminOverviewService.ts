@@ -8,7 +8,7 @@ import { getSchool } from './schoolService';
 import { listTeachers } from './teacherService';
 import { listStudents } from './studentService';
 import { listClasses } from './admin/classService';
-import { listTenantUsers, type TenantUser } from './userService';
+import { listTenantUsers } from './userService';
 
 export interface AdminOverviewData {
   school: {
@@ -70,7 +70,7 @@ export async function getAdminOverview(
 
   try {
     // OPTIMIZED: Execute independent queries in parallel to reduce total query time
-    const [school, users, teachers, students, classes, activeSessionsResult, failedLoginsResult] =
+    const [school, users, _teachers, students, classes, activeSessionsResult, failedLoginsResult] =
       await Promise.all([
         getSchool(tenantClient, schema),
         listTenantUsers(tenantId),

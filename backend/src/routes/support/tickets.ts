@@ -58,7 +58,6 @@ router.post('/', requirePermission('support:raise'), async (req, res, next) => {
     if (!parsed.success) {
       return res.status(400).json({ message: parsed.error.message });
     }
-
     const pool = getPool();
     const client = await pool.connect();
     try {
@@ -68,11 +67,15 @@ router.post('/', requirePermission('support:raise'), async (req, res, next) => {
         createdBy: req.user?.id || '',
       });
       res.status(201).json(ticket);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -93,11 +96,15 @@ router.get('/', requirePermission('support:view'), async (req, res, next) => {
         offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -121,18 +128,22 @@ router.get('/:id', requirePermission('support:view'), async (req, res, next) => 
           return res.status(404).json({ message: 'Ticket not found' });
         }
         res.json(ticket);
+        return;
       } else {
         const ticket = await getTicket(client, req.params.id, req.tenant?.id);
         if (!ticket) {
           return res.status(404).json({ message: 'Ticket not found' });
         }
         res.json(ticket);
+        return;
       }
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -143,17 +154,20 @@ router.patch('/:id', requirePermission('support:manage'), async (req, res, next)
     if (!parsed.success) {
       return res.status(400).json({ message: parsed.error.message });
     }
-
     const pool = getPool();
     const client = await pool.connect();
     try {
       const ticket = await updateTicket(client, req.params.id, parsed.data, req.user?.id);
       res.json(ticket);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -164,7 +178,6 @@ router.post('/:id/comments', requirePermission('support:view'), async (req, res,
     if (!parsed.success) {
       return res.status(400).json({ message: parsed.error.message });
     }
-
     const pool = getPool();
     const client = await pool.connect();
     try {
@@ -174,11 +187,15 @@ router.post('/:id/comments', requirePermission('support:view'), async (req, res,
         ...parsed.data,
       });
       res.status(201).json(comment);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -197,11 +214,15 @@ router.get('/:id/comments', requirePermission('support:view'), async (req, res, 
         req.user?.id
       );
       res.json({ comments });
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 

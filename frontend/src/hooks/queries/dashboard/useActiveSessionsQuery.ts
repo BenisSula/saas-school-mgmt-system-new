@@ -72,11 +72,16 @@ export function activeSessionsQueryOptions(tenantId: string | null) {
  */
 export function useActiveSessionsQuery() {
   const tenantId = useTenant();
-  const queryOptions = activeSessionsQueryOptions(tenantId);
+  const queryOptionsResult = activeSessionsQueryOptions(tenantId);
 
   return useQuery({
-    ...queryOptions,
-    select: (data): ActiveSessionsResponse => ({
+    queryKey: queryOptionsResult.queryKey,
+    queryFn: queryOptionsResult.queryFn,
+    enabled: queryOptionsResult.enabled,
+    staleTime: 60_000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+    select: (data: ActiveSessionsResponse): ActiveSessionsResponse => ({
       sessions: data.sessions,
       total: data.total,
     }),

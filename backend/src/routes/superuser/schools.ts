@@ -62,8 +62,11 @@ router.get('/:id', async (req, res, next) => {
       ...school,
       subscription,
     });
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -107,8 +110,11 @@ router.patch('/:id/subscription', async (req, res, next) => {
     );
 
     res.json(subscription);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -130,8 +136,11 @@ router.get('/:id/subscription/history', async (req, res, next) => {
 
     const history = await getSubscriptionHistory(subscription.id);
     res.json(history);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -171,11 +180,16 @@ router.get('/:id/audit-logs', async (req, res, next) => {
       );
 
       res.json(result);
+
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -208,8 +222,11 @@ router.post('/:id/overrides', async (req, res, next) => {
     );
 
     res.status(201).json(override);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -233,8 +250,11 @@ router.get('/:id/overrides', async (req, res, next) => {
     });
 
     res.json(overrides);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -246,8 +266,11 @@ router.delete('/:id/overrides/:overrideId', async (req, res, next) => {
   try {
     await revokeOverride(req.params.overrideId, req.user?.id ?? '');
     res.status(204).send();
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 

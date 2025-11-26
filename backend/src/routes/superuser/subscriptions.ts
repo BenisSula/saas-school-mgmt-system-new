@@ -89,8 +89,11 @@ router.post('/', async (req, res, next) => {
 
     const subscription = await createSubscription(input, req.user?.id ?? null);
     res.status(201).json(subscription);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -115,8 +118,11 @@ router.get('/', async (req, res, next) => {
 
     const subscriptions = await listSubscriptions(filters);
     res.json(subscriptions);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -128,8 +134,11 @@ router.get('/:id', async (req, res, next) => {
       return res.status(404).json({ message: 'Subscription not found' });
     }
     res.json(subscription);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -141,8 +150,11 @@ router.get('/tenant/:tenantId', async (req, res, next) => {
       return res.status(404).json({ message: 'Subscription not found' });
     }
     res.json(subscription);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -167,8 +179,11 @@ router.patch('/:id', async (req, res, next) => {
 
     const subscription = await updateSubscription(req.params.id, input, req.user?.id ?? null);
     res.json(subscription);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -181,8 +196,11 @@ router.post('/:id/suspend', async (req, res, next) => {
       req.user?.id ?? null
     );
     res.json(subscription);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -195,8 +213,11 @@ router.post('/:id/cancel', async (req, res, next) => {
       req.user?.id ?? null
     );
     res.json(subscription);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -206,8 +227,11 @@ router.get('/:id/history', async (req, res, next) => {
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
     const history = await getSubscriptionHistory(req.params.id, limit);
     res.json(history);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -216,8 +240,11 @@ router.get('/tiers/config', async (_req, res, next) => {
   try {
     const configs = await getSubscriptionTierConfigs();
     res.json(configs);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -254,8 +281,11 @@ router.put('/tiers/config', async (req, res, next) => {
 
     const updated = await updateSubscriptionTierConfigs(parsed.data.configs, req.user?.id ?? null);
     res.json(updated);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 

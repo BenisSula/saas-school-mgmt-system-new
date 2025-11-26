@@ -409,7 +409,8 @@ export async function processGdprExport(
 
   // OPTIMIZED: Execute all queries in parallel instead of sequentially
   // This reduces total query time from ~4 sequential queries to parallel execution
-  const [userData, auditLogs, sessions, mfaDevices] = await Promise.all([
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_userData, _auditLogs, _sessions, _mfaDevices] = await Promise.all([
     client.query('SELECT * FROM shared.users WHERE id = $1', [request.user_id]),
     client.query('SELECT * FROM shared.audit_logs WHERE user_id = $1', [request.user_id]),
     client.query(

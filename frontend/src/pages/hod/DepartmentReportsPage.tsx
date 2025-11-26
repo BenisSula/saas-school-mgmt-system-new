@@ -38,7 +38,22 @@ export default function DepartmentReportsPage() {
     queryClient.invalidateQueries({ queryKey: ['hod', 'department-report'] });
   };
 
-  const exportHandlers = createExportHandlers();
+  const exportHandlers = report
+    ? createExportHandlers(
+        [
+          {
+            Department: report.department.name,
+            Teachers: report.summary.teachers,
+            Classes: report.summary.classes,
+            Students: report.summary.students,
+            'Avg Score': report.performance.avgScore,
+            'Activity (7d)': report.activity.last7Days,
+            'Activity (30d)': report.activity.last30Days,
+          },
+        ],
+        'department-report'
+      )
+    : null;
 
   // Performance chart data
   const performanceData: BarChartData[] = useMemo(() => {
@@ -99,11 +114,10 @@ export default function DepartmentReportsPage() {
           </div>
           <div className="flex gap-2">
             <Button
-              onClick={() =>
-                exportHandlers.exportToCSV(report, `department-report-${Date.now()}.csv`)
-              }
+              onClick={() => exportHandlers?.exportCSV()}
               leftIcon={<Download className="h-4 w-4" />}
               variant="outline"
+              disabled={!exportHandlers}
             >
               Export CSV
             </Button>
@@ -119,13 +133,13 @@ export default function DepartmentReportsPage() {
             <Select
               value={filters.term || ''}
               onChange={(e) => setFilters({ ...filters, term: e.target.value || undefined })}
-              placeholder="Select term"
-            >
-              <option value="">All Terms</option>
-              <option value="term1">Term 1</option>
-              <option value="term2">Term 2</option>
-              <option value="term3">Term 3</option>
-            </Select>
+              options={[
+                { value: '', label: 'All Terms' },
+                { value: 'term1', label: 'Term 1' },
+                { value: 'term2', label: 'Term 2' },
+                { value: 'term3', label: 'Term 3' },
+              ]}
+            />
           </div>
           <div className="w-full sm:w-48">
             <Input

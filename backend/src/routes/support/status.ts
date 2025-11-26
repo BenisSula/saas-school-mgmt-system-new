@@ -28,11 +28,15 @@ router.get('/public', async (req, res, next) => {
     try {
       const summary = await getStatusPageSummary(client, tenantId);
       res.json(summary);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -75,11 +79,15 @@ router.get('/incidents', requirePermission('status:view'), async (req, res, next
         offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -94,11 +102,15 @@ router.get('/incidents/:id', requirePermission('status:view'), async (req, res, 
         return res.status(404).json({ message: 'Incident not found' });
       }
       res.json(incident);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -119,11 +131,15 @@ router.post('/incidents', requirePermission('status:manage'), async (req, res, n
         createdBy: req.user?.id,
       });
       res.status(201).json(incident);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -147,11 +163,15 @@ router.post(
           createdBy: req.user?.id,
         });
         res.status(201).json(update);
+
+        return;
       } finally {
         client.release();
       }
     } catch (error) {
       next(error);
+
+      return;
     }
   }
 );
@@ -170,11 +190,15 @@ router.get('/maintenance', requirePermission('status:view'), async (req, res, ne
         offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -197,11 +221,15 @@ router.post('/maintenance', requirePermission('status:manage'), async (req, res,
         createdBy: req.user?.id,
       });
       res.status(201).json(maintenance);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -230,11 +258,15 @@ router.patch('/maintenance/:id', requirePermission('status:manage'), async (req,
         parsed.data.actualEnd ? new Date(parsed.data.actualEnd) : undefined
       );
       res.json(maintenance);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -262,11 +294,15 @@ router.post('/uptime', requirePermission('status:manage'), async (req, res, next
         tenantId: req.tenant?.id,
       });
       res.json({ success: true });
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -282,11 +318,15 @@ router.get('/uptime', requirePermission('status:view'), async (req, res, next) =
         days: req.query.days ? parseInt(req.query.days as string, 10) : undefined,
       });
       res.json({ statistics: stats });
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 

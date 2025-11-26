@@ -152,11 +152,11 @@ export default function AdminUsersPage() {
   };
 
   const columns: TableColumn<AdminUser>[] = [
-    { key: 'email', label: 'Email' },
-    { key: 'role', label: 'Role' },
+    { key: 'email', header: 'Email' },
+    { key: 'role', header: 'Role' },
     {
       key: 'status',
-      label: 'Status',
+      header: 'Status',
       render: (user) => (
         <span
           className={
@@ -173,12 +173,12 @@ export default function AdminUsersPage() {
     },
     {
       key: 'isVerified',
-      label: 'Verified',
+      header: 'Verified',
       render: (user) => (user.isVerified ? 'Yes' : 'No'),
     },
     {
       key: 'actions',
-      label: 'Actions',
+      header: 'Actions',
       render: (user) => (
         <ActionButtonGroup>
           {user.status === 'active' ? (
@@ -221,10 +221,8 @@ export default function AdminUsersPage() {
     );
   }
 
-  const users = (
-    Array.isArray(usersData) ? usersData : (usersData as { data?: AdminUser[] })?.data || []
-  ) as AdminUser[];
-  const departments = (departmentsData?.data || []) as Array<{ id: string; name: string }>;
+  const users = (Array.isArray(usersData) ? usersData : usersData || []) as AdminUser[];
+  const departments = (Array.isArray(departmentsData) ? departmentsData : departmentsData || []) as Array<{ id: string; name: string }>;
   const classes = classesData || [];
 
   return (

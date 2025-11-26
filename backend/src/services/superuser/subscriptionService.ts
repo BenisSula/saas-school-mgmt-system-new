@@ -250,7 +250,7 @@ export async function updateSubscription(
  */
 export async function suspendSubscription(
   subscriptionId: string,
-  reason?: string,
+  _reason?: string,
   actorId?: string | null
 ): Promise<SubscriptionRecord> {
   return updateSubscription(subscriptionId, { status: 'suspended' }, actorId);
@@ -261,7 +261,7 @@ export async function suspendSubscription(
  */
 export async function cancelSubscription(
   subscriptionId: string,
-  reason?: string,
+  _reason?: string,
   actorId?: string | null
 ): Promise<SubscriptionRecord> {
   return updateSubscription(subscriptionId, { status: 'cancelled' }, actorId);

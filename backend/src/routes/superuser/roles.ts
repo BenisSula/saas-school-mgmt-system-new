@@ -23,8 +23,11 @@ const rolePermissionsUpdateSchema = z.object({
 router.get('/permissions', async (_req, res, next) => {
   try {
     res.json(rolePermissions);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -46,8 +49,11 @@ router.get('/permissions/propagation', async (_req, res, next) => {
       hierarchy,
       permissions: rolePermissions,
     });
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -88,8 +94,11 @@ router.get('/:role/permissions/impact', async (req, res, next) => {
       addedPermissions,
       removedPermissions,
     });
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -165,11 +174,16 @@ router.patch('/:role/permissions', async (req, res, next) => {
           removedPermissions,
         },
       });
+
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 

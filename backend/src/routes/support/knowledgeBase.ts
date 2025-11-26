@@ -65,11 +65,15 @@ router.get('/categories', async (req, res, next) => {
     try {
       const categories = await getKbCategories(client, req.tenant?.id);
       res.json({ categories });
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -90,11 +94,15 @@ router.post('/categories', requirePermission('kb:manage'), async (req, res, next
         slug: parsed.data.slug || parsed.data.name.toLowerCase().replace(/\s+/g, '-'),
       });
       res.status(201).json(category);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -120,11 +128,15 @@ router.get('/articles', async (req, res, next) => {
         offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -139,11 +151,15 @@ router.get('/articles/:slug', async (req, res, next) => {
         return res.status(404).json({ message: 'Article not found' });
       }
       res.json(article);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -165,11 +181,15 @@ router.post('/articles', requirePermission('kb:manage'), async (req, res, next) 
         slug: parsed.data.slug || parsed.data.title.toLowerCase().replace(/\s+/g, '-'),
       });
       res.status(201).json(article);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -186,11 +206,15 @@ router.patch('/articles/:id', requirePermission('kb:manage'), async (req, res, n
     try {
       const article = await updateKbArticle(client, req.params.id, parsed.data);
       res.json(article);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -213,11 +237,15 @@ router.post('/articles/:id/feedback', async (req, res, next) => {
         parsed.data.comment
       );
       res.json(feedback);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 

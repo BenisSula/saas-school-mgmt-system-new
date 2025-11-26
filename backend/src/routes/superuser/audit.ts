@@ -50,11 +50,13 @@ router.get('/audit-logs', async (req, res, next) => {
       const result = await getPlatformAuditLogs(client, filters, req.user!.role as Role);
 
       res.json(result);
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -93,16 +95,19 @@ router.get('/audit-logs/export', async (req, res, next) => {
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', 'attachment; filename="audit-logs.csv"');
         res.send(exportData);
+        return;
       } else {
         res.setHeader('Content-Type', 'application/json');
         res.setHeader('Content-Disposition', 'attachment; filename="audit-logs.json"');
         res.json(JSON.parse(exportData));
+        return;
       }
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -137,11 +142,13 @@ router.get('/audit-logs/school/:schoolId', async (req, res, next) => {
 
       const result = await getPlatformAuditLogs(client, filters, req.user!.role as Role);
       res.json(result);
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -217,11 +224,13 @@ router.get('/audit-logs/stats', async (req, res, next) => {
           endDate: endDate?.toISOString(),
         },
       });
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -276,8 +285,10 @@ router.get('/login-attempts', async (req, res, next) => {
     const result = await getLoginAttempts(pool, filters, req.user!.role as Role);
 
     res.json(result);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -336,11 +347,13 @@ router.get('/audit-logs/detail/:id', async (req, res, next) => {
       };
 
       res.json(auditLog);
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 

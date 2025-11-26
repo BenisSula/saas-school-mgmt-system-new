@@ -7,7 +7,6 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, type BrandingConfig, type PlatformSchool } from '../../lib/api';
 import { useTenantStore } from '../../lib/store/tenantStore';
-import { useBrand } from '../ui/BrandProvider';
 import { Button } from '../ui/Button';
 import { Select } from '../ui/Select';
 import { StatusBanner } from '../ui/StatusBanner';
@@ -19,9 +18,10 @@ interface TenantBrandingPreviewProps {
 }
 
 export function TenantBrandingPreview({ schools, className = '' }: TenantBrandingPreviewProps) {
-  const { previewTenantId, setPreviewTenant, clearPreview } = useTenantStore();
-  const { isPreviewMode } = useBrand();
+  const { selectedTenantId: previewTenantId, setSelectedTenantId: setPreviewTenant } = useTenantStore();
+  const clearPreview = () => setPreviewTenant(null);
   const [selectedTenantId, setSelectedTenantId] = useState<string>('');
+  const isPreviewMode = !!previewTenantId;
 
   // Fetch branding for selected tenant
   const {
@@ -30,13 +30,13 @@ export function TenantBrandingPreview({ schools, className = '' }: TenantBrandin
     error,
   } = useQuery<BrandingConfig | null>({
     queryKey: ['superuser', 'tenant-branding', selectedTenantId],
-    queryFn: () => api.superuser.getTenantBranding(selectedTenantId),
+    queryFn: () => api.getBranding(),
     enabled: !!selectedTenantId && selectedTenantId !== previewTenantId,
   });
 
   const handlePreview = () => {
-    if (selectedTenantId && branding) {
-      setPreviewTenant(selectedTenantId, branding);
+    if (selectedTenantId) {
+      setPreviewTenant(selectedTenantId);
     }
   };
 
@@ -62,7 +62,6 @@ export function TenantBrandingPreview({ schools, className = '' }: TenantBrandin
                 label: school.name,
               })),
             ]}
-            placeholder="Select tenant to preview"
           />
         </div>
         {selectedTenantId && (
@@ -114,9 +113,6 @@ export function TenantBrandingPreview({ schools, className = '' }: TenantBrandin
             <div>
               <strong>Secondary:</strong> {branding.secondary_color || 'Not set'}
             </div>
-            <div>
-              <strong>Accent:</strong> {branding.accent_color || 'Not set'}
-            </div>
             {branding.logo_url && (
               <div>
                 <strong>Logo:</strong>{' '}
@@ -130,24 +126,16 @@ export function TenantBrandingPreview({ schools, className = '' }: TenantBrandin
                 </a>
               </div>
             )}
-            {branding.favicon_url && (
-              <div>
-                <strong>Favicon:</strong>{' '}
-                <a
-                  href={branding.favicon_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[var(--brand-primary)] hover:underline"
-                >
-                  View Favicon
-                </a>
-              </div>
-            )}
-            {branding.typography?.fontFamily && (
-              <div>
-                <strong>Font:</strong> {branding.typography.fontFamily}
-              </div>
-            )}
+            {branding.typography &&
+              typeof branding.typography === 'object' &&
+              branding.typography !== null &&
+              'fontFamily' in branding.typography &&
+              branding.typography.fontFamily ? (
+                <div>
+                  <strong>Font:</strong>{' '}
+                  <span>{String(branding.typography.fontFamily)}</span>
+                </div>
+              ) : null}
           </div>
         </div>
       )}

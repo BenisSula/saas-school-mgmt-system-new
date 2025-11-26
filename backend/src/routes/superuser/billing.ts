@@ -62,11 +62,15 @@ router.post('/subscriptions', async (req, res, next) => {
     try {
       const result = await createSubscription(client, parsed.data, req.user?.id);
       res.status(201).json(result);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -80,11 +84,15 @@ router.get('/subscriptions/:tenantId', async (req, res, next) => {
         return res.status(404).json({ message: 'Subscription not found' });
       }
       res.json(subscription);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -105,11 +113,15 @@ router.patch('/subscriptions/:subscriptionId', async (req, res, next) => {
         req.user?.id
       );
       res.json(subscription);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -126,11 +138,15 @@ router.post('/subscriptions/:subscriptionId/cancel', async (req, res, next) => {
         req.user?.id
       );
       res.json(subscription);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -141,11 +157,15 @@ router.post('/subscriptions/:subscriptionId/renew', async (req, res, next) => {
     try {
       const subscription = await renewSubscription(client, req.params.subscriptionId, req.user?.id);
       res.json(subscription);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -156,11 +176,15 @@ router.get('/subscriptions/:subscriptionId/history', async (req, res, next) => {
     try {
       const history = await getSubscriptionHistory(client, req.params.subscriptionId);
       res.json(history);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -205,11 +229,15 @@ router.post('/invoices', async (req, res, next) => {
         parsed.data.lineItems
       );
       res.status(201).json(invoice);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -230,11 +258,15 @@ router.get('/invoices', async (req, res, next) => {
         offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -248,11 +280,15 @@ router.get('/invoices/:invoiceId', async (req, res, next) => {
         return res.status(404).json({ message: 'Invoice not found' });
       }
       res.json(invoice);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -263,11 +299,15 @@ router.get('/invoices/:invoiceId/pdf', async (req, res, next) => {
     try {
       const pdfUrl = await generateInvoicePdf(client, req.params.invoiceId);
       res.json({ pdfUrl });
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -284,11 +324,15 @@ router.post('/invoices/:invoiceId/payment-intent', async (req, res, next) => {
     try {
       const paymentIntent = await createPaymentIntent(client, req.params.invoiceId, tenantId);
       res.json(paymentIntent);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -309,11 +353,15 @@ router.get('/payments', async (req, res, next) => {
         offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -360,11 +408,16 @@ router.post('/payments/webhook', async (req, res, next) => {
       );
 
       res.json({ received: true });
+
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -376,11 +429,15 @@ router.post('/dunning/:invoiceId', async (req, res, next) => {
     try {
       const result = await processDunning(client, req.params.invoiceId, attemptNumber);
       res.json(result);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 

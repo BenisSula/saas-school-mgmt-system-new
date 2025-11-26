@@ -34,8 +34,10 @@ router.get('/subjects', async (req, res, next) => {
       req.user.id
     );
     res.json(subjects);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -53,8 +55,10 @@ router.post('/subjects/:subjectId/drop', async (req, res, next) => {
       typeof req.body?.reason === 'string' ? req.body.reason : undefined
     );
     res.status(202).json(result);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -65,8 +69,10 @@ router.get('/results/exams', async (req, res, next) => {
     }
     const exams = await listStudentExamSummaries(req.tenantClient, req.tenant.schema, req.user.id);
     res.json(exams);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -81,8 +87,10 @@ router.get('/results/latest-exam-id', async (req, res, next) => {
       req.user.id
     );
     res.json({ examId: latestExamId });
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -93,8 +101,10 @@ router.get('/profile', async (req, res, next) => {
     }
     const profile = await getStudentProfileDetail(req.tenantClient, req.tenant.schema, req.user.id);
     res.json(profile);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -109,8 +119,10 @@ router.patch('/profile', async (req, res, next) => {
       parentContacts: Array.isArray(req.body?.parentContacts) ? req.body.parentContacts : undefined,
     });
     res.json(profile);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -131,8 +143,10 @@ router.post('/promotion-requests', async (req, res, next) => {
       typeof req.body?.notes === 'string' ? req.body.notes : undefined
     );
     res.status(202).json({ status: 'pending' });
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -143,8 +157,10 @@ router.get('/messages', async (req, res, next) => {
     }
     const messages = await listStudentMessages(req.tenantClient, req.tenant.schema, req.user.id);
     res.json(messages);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -160,8 +176,10 @@ router.patch('/messages/:messageId/read', async (req, res, next) => {
       req.params.messageId
     );
     res.status(204).send();
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -172,8 +190,10 @@ router.get('/terms', async (req, res, next) => {
     }
     const terms = await listAcademicTermsForStudent(req.tenantClient, req.tenant.schema);
     res.json(terms);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -184,8 +204,10 @@ router.get('/reports', async (req, res, next) => {
     }
     const reports = await listStudentTermReports(req.tenantClient, req.tenant.schema, req.user.id);
     res.json(reports);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -205,8 +227,10 @@ router.post('/reports', async (req, res, next) => {
       termId
     );
     res.status(201).json({ reportId });
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -229,8 +253,10 @@ router.get('/reports/:reportId/pdf', async (req, res, next) => {
       .setHeader('Content-Type', 'application/pdf')
       .setHeader('Content-Disposition', 'attachment; filename="term-report.pdf"')
       .send(pdfBuffer);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -244,8 +270,10 @@ router.get('/roster', async (req, res, next) => {
       return res.status(404).json({ message: 'Student not found or not assigned to a class' });
     }
     res.json(roster);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 

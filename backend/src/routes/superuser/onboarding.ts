@@ -40,11 +40,15 @@ router.post('/invitations', async (req, res, next) => {
         invitedBy: req.user?.id || '',
       });
       res.status(201).json(result);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -71,11 +75,15 @@ router.post('/invitations/:id/accept', async (req, res, next) => {
         parsed.data.password
       );
       res.json(result);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -87,11 +95,15 @@ router.get('/progress/:tenantId', async (req, res, next) => {
     try {
       const progress = await getOnboardingProgress(client, req.params.tenantId);
       res.json(progress);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -103,11 +115,15 @@ router.post('/wizard/:tenantId/initialize', async (req, res, next) => {
     try {
       const wizard = await initializeOnboardingWizard(client, req.params.tenantId);
       res.json(wizard);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -131,11 +147,15 @@ router.patch('/wizard/:tenantId', async (req, res, next) => {
     try {
       const wizard = await updateOnboardingWizard(client, req.params.tenantId, parsed.data);
       res.json(wizard);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -159,11 +179,15 @@ router.post('/complete/:tenantId', async (req, res, next) => {
     try {
       await completeTenantOnboarding(client, req.params.tenantId, parsed.data);
       res.json({ success: true });
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 

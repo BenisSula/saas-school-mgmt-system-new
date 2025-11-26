@@ -77,8 +77,11 @@ router.get('/users/:userId/password-history', async (req, res, next) => {
     const result = await getPasswordHistory(pool, filters, req.user!.role as Role, req.user!.id);
 
     res.json(result);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 

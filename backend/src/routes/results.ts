@@ -27,8 +27,10 @@ router.get('/:examId/export', requirePermission('exams:manage'), async (req, res
     res.setHeader('Content-Type', exportData.contentType);
     res.setHeader('Content-Disposition', `attachment; filename="${exportData.filename}"`);
     res.send(exportData.buffer);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -54,8 +56,10 @@ router.get(
         examId
       );
       res.json(result);
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 );

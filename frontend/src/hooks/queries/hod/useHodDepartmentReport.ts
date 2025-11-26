@@ -38,7 +38,7 @@ export interface UseHodDepartmentReportFilters {
  * Hook to fetch department report
  */
 export function useHodDepartmentReport(filters?: UseHodDepartmentReportFilters) {
-  const { tenantId } = useTenant();
+  const tenantId = useTenant();
 
   return useQuery({
     queryKey: ['hod', 'department-report', tenantId, filters],

@@ -133,8 +133,10 @@ router.post(
       );
 
       res.status(201).json(session);
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 );
@@ -168,11 +170,13 @@ router.delete(
       );
 
       res.status(204).send();
+      return;
     } catch (error) {
       if (error instanceof Error && error.message === 'Exam not found') {
         return res.status(404).json({ message: error.message });
       }
       next(error);
+      return;
     }
   }
 );

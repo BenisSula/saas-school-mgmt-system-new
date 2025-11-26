@@ -88,11 +88,15 @@ router.post('/definitions', requirePermission('reports:manage'), async (req, res
         ]
       );
       res.status(201).json(result.rows[0]);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -120,11 +124,15 @@ router.get('/definitions', async (req, res, next) => {
         values
       );
       res.json({ reports: result.rows });
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -139,11 +147,15 @@ router.get('/definitions/:id', async (req, res, next) => {
         return res.status(404).json({ message: 'Report definition not found' });
       }
       res.json(report);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -192,11 +204,16 @@ router.post(
         );
 
         res.json(result);
+
+
+        return;
       } finally {
         client.release();
       }
     } catch (error) {
       next(error);
+
+      return;
     }
   }
 );
@@ -214,11 +231,15 @@ router.get('/definitions/:id/trends', requirePermission('reports:view'), async (
     try {
       const trends = await getHistoricalTrend(client, req.tenant.id, req.params.id, days);
       res.json({ trends });
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -272,11 +293,16 @@ router.post(
           current: currentResult,
           comparison,
         });
+
+
+        return;
       } finally {
         client.release();
       }
     } catch (error) {
       next(error);
+
+      return;
     }
   }
 );
@@ -317,11 +343,15 @@ router.post('/scheduled', requirePermission('reports:manage'), async (req, res, 
         createdBy: req.user?.id,
       });
       res.status(201).json(scheduledReport);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -352,6 +382,8 @@ router.get('/scheduled', requirePermission('reports:view'), async (req, res, nex
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -381,11 +413,15 @@ router.patch('/scheduled/:id', requirePermission('reports:manage'), async (req, 
     try {
       const scheduledReport = await updateScheduledReport(client, req.params.id, parsed.data);
       res.json(scheduledReport);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -400,11 +436,13 @@ router.delete('/scheduled/:id', requirePermission('reports:manage'), async (req,
     try {
       await deleteScheduledReport(client, req.params.id, req.tenant.id);
       res.status(204).send();
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -497,11 +535,16 @@ router.post('/scheduled/process', requirePermission('tenants:manage'), async (_r
       }
 
       res.json({ processed: results.length, results });
+
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -610,6 +653,7 @@ router.post('/custom', requirePermission('reports:manage'), async (req, res, nex
           ]
         );
         res.status(201).json(result.rows[0]);
+        return;
       } else {
         // Regular user or superuser with tenant context
         const customReport = await createCustomReport(req.tenantClient!, req.tenant!.schema, {
@@ -618,12 +662,14 @@ router.post('/custom', requirePermission('reports:manage'), async (req, res, nex
           createdBy: req.user?.id,
         });
         res.status(201).json(customReport);
+        return;
       }
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -637,6 +683,7 @@ router.get('/custom', requirePermission('reports:view'), async (req, res, next) 
       if (req.tenant) {
         const customReports = await getCustomReports(client, req.tenant.id, req.user?.id);
         res.json({ customReports });
+        return;
       } else {
         // Superuser view: get all custom reports across all tenants
         const result = await client.query(
@@ -648,12 +695,14 @@ router.get('/custom', requirePermission('reports:view'), async (req, res, next) 
           [req.user?.id || null]
         );
         res.json({ customReports: result.rows });
+        return;
       }
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -696,6 +745,7 @@ router.post('/custom/:id/execute', requirePermission('reports:view'), async (req
           rowCount: result.rowCount,
           executionTimeMs: 0,
         });
+        return;
       } else {
         // Platform-wide report (tenant_id is null) - superuser only
         if (!isSuperuser) {
@@ -729,12 +779,14 @@ router.post('/custom/:id/execute', requirePermission('reports:view'), async (req
           rowCount: result.rowCount,
           executionTimeMs: 0,
         });
+        return;
       }
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -794,11 +846,15 @@ router.patch('/custom/:id', requirePermission('reports:manage'), async (req, res
         parsed.data
       );
       res.json(customReport);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -813,11 +869,13 @@ router.delete('/custom/:id', requirePermission('reports:manage'), async (req, re
     try {
       await deleteCustomReport(client, req.params.id, req.tenant.id, req.user?.id);
       res.status(204).send();
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -844,11 +902,15 @@ router.post('/executions/:id/export', requirePermission('reports:view'), async (
         parsed.data.title
       );
       res.json(exportResult);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -882,11 +944,15 @@ router.post(
           req.tenant.id
         );
         res.json({ success: true });
+
+        return;
       } finally {
         client.release();
       }
     } catch (error) {
       next(error);
+
+      return;
     }
   }
 );

@@ -181,7 +181,8 @@ export async function generateAttendanceExcel(
     [options.classId]
   );
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const className = classResult.rows[0]?.name || options.classId;
+  // @ts-expect-error - Intentionally unused variable kept for future use
+  const _className = classResult.rows[0]?.name || options.classId;
 
   // Get attendance data (same as PDF)
   let attendanceData: Array<{
@@ -409,7 +410,8 @@ export async function generateGradesExcel(
     [options.classId]
   );
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const className = classResult.rows[0]?.name || options.classId;
+  // @ts-expect-error - Intentionally unused variable kept for future use
+  const _className = classResult.rows[0]?.name || options.classId;
 
   // Get grades data (same as PDF)
   const params: unknown[] = [options.classId];

@@ -50,7 +50,7 @@ export interface UseRBACReturn {
  * Comprehensive RBAC hook for role and permission checking
  * @param _options - Optional RBAC options (currently unused, reserved for future use)
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 export function useRBAC(_options?: UseRBACOptions): UseRBACReturn {
   const { user, isAuthenticated } = useAuth();
 

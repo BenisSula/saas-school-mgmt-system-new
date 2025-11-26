@@ -41,6 +41,7 @@ router.post('/send', requirePermission('notifications:send'), async (req, res, n
         scheduledAt: parsed.data.scheduledAt ? new Date(parsed.data.scheduledAt) : undefined,
       });
       res.json(result);
+      return;
     } finally {
       client.release();
     }
@@ -59,6 +60,7 @@ router.post('/process-queue', requirePermission('tenants:manage'), async (req, r
     try {
       const result = await processEmailQueue(client, batchSize);
       res.json(result);
+      return;
     } finally {
       client.release();
     }
@@ -80,6 +82,7 @@ router.get('/templates/:templateKey', async (req, res, next) => {
         return res.status(404).json({ message: 'Email template not found' });
       }
       res.json(template);
+      return;
     } finally {
       client.release();
     }
@@ -112,6 +115,7 @@ router.post('/templates', requirePermission('tenants:manage'), async (req, res, 
     try {
       const template = await upsertEmailTemplate(client, parsed.data);
       res.json(template);
+      return;
     } finally {
       client.release();
     }

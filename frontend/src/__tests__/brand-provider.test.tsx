@@ -69,7 +69,7 @@ describe('BrandProvider', () => {
       primary_color: '#FF0000',
       secondary_color: '#00FF00',
       accent_color: '#0000FF',
-    };
+    } as BrandingConfig;
 
     (api.api.getBranding as ReturnType<typeof vi.fn>).mockResolvedValue(branding);
 
@@ -112,7 +112,7 @@ describe('BrandProvider', () => {
   it('applies favicon when provided', async () => {
     const branding: BrandingConfig = {
       favicon_url: 'https://example.com/favicon.ico',
-    };
+    } as BrandingConfig;
 
     (api.api.getBranding as ReturnType<typeof vi.fn>).mockResolvedValue(branding);
 

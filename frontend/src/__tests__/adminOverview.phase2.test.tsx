@@ -85,7 +85,7 @@ describe('AdminOverviewPage - Phase 2', () => {
         byGender: { male: 25, female: 23, other: 2 },
       },
       isLoading: false,
-    } as ReturnType<typeof useDashboardStatsModule.useStudentStats>);
+    } as unknown as ReturnType<typeof useDashboardStatsModule.useStudentStats>);
 
     vi.mocked(useDashboardStatsModule.useClassStats).mockReturnValue({
       data: { total: 5, withStudents: 4, withTeachers: 3 },
@@ -105,12 +105,12 @@ describe('AdminOverviewPage - Phase 2', () => {
     vi.mocked(useDashboardStatsModule.useLoginAttempts).mockReturnValue({
       data: [],
       isLoading: false,
-    } as ReturnType<typeof useDashboardStatsModule.useLoginAttempts>);
+    } as unknown as ReturnType<typeof useDashboardStatsModule.useLoginAttempts>);
 
     vi.mocked(useDashboardStatsModule.useActiveSessions).mockReturnValue({
       data: [],
       isLoading: false,
-    } as ReturnType<typeof useDashboardStatsModule.useActiveSessions>);
+    } as unknown as ReturnType<typeof useDashboardStatsModule.useActiveSessions>);
   });
 
   afterEach(() => {
@@ -218,7 +218,7 @@ describe('AdminOverviewPage - Phase 2', () => {
     vi.mocked(useDashboardStatsModule.useTeacherStats).mockReturnValue({
       data: null,
       isLoading: true,
-    } as ReturnType<typeof useDashboardStatsModule.useTeacherStats>);
+    } as unknown as ReturnType<typeof useDashboardStatsModule.useTeacherStats>);
 
     renderPage();
 

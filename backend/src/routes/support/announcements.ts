@@ -56,11 +56,15 @@ router.get('/me', async (req, res, next) => {
         req.user?.role
       );
       res.json({ announcements });
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -72,11 +76,15 @@ router.post('/:id/view', async (req, res, next) => {
     try {
       await markAnnouncementAsViewed(client, req.params.id, req.user?.id || '');
       res.json({ success: true });
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -94,11 +102,15 @@ router.get('/', requirePermission('announcements:manage'), async (req, res, next
         offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -121,11 +133,15 @@ router.post('/', requirePermission('announcements:manage'), async (req, res, nex
         createdBy: req.user?.id,
       });
       res.status(201).json(announcement);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -146,11 +162,15 @@ router.patch('/:id', requirePermission('announcements:manage'), async (req, res,
         endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : undefined,
       });
       res.json(announcement);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -167,6 +187,8 @@ router.delete('/:id', requirePermission('announcements:manage'), async (req, res
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
