@@ -34,8 +34,10 @@ router.get('/branding', requirePermission('settings:branding'), async (req, res,
   try {
     const branding = await getBranding(context.tenantClient, context.tenant.schema);
     res.json(branding);
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 

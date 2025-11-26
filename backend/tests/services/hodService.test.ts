@@ -10,13 +10,17 @@ import {
   listTeachersUnderHOD,
   getDepartmentReport,
 } from '../../src/services/hodService';
-import { getUserWithAdditionalRoles } from '../../src/lib/roleUtils';
+import { getUserWithAdditionalRoles, type UserWithRoles } from '../../src/lib/roleUtils';
 
 // Mock dependencies
 jest.mock('../../src/db/connection');
 jest.mock('../../src/lib/roleUtils');
 jest.mock('../../src/services/shared/adminHelpers');
 jest.mock('../../src/services/audit/enhancedAuditService');
+
+const mockedGetUserWithAdditionalRoles = getUserWithAdditionalRoles as jest.MockedFunction<
+  typeof getUserWithAdditionalRoles
+>;
 
 describe('HOD Service', () => {
   let mockClient: Partial<PoolClient>;
@@ -26,13 +30,13 @@ describe('HOD Service', () => {
 
   beforeEach(() => {
     mockClient = {
-      query: jest.fn(),
-    };
+      query: jest.fn() as jest.MockedFunction<any>,
+    } as Partial<PoolClient>;
   });
 
   describe('getHodOverview', () => {
     it('should throw error if HOD user not found', async () => {
-      (getUserWithAdditionalRoles as jest.Mock).mockResolvedValue(null);
+      mockedGetUserWithAdditionalRoles.mockResolvedValue(null);
 
       await expect(
         getHodOverview(mockClient as PoolClient, tenantId, schema, hodUserId)
@@ -40,11 +44,11 @@ describe('HOD Service', () => {
     });
 
     it('should throw error if HOD not assigned to department', async () => {
-      (getUserWithAdditionalRoles as jest.Mock).mockResolvedValue({
+      mockedGetUserWithAdditionalRoles.mockResolvedValue({
         id: hodUserId,
         role: 'teacher',
         additional_roles: [], // No HOD role
-      });
+      } as UserWithRoles);
 
       await expect(
         getHodOverview(mockClient as PoolClient, tenantId, schema, hodUserId)
@@ -56,7 +60,7 @@ describe('HOD Service', () => {
 
   describe('listTeachersUnderHOD', () => {
     it('should throw error if HOD user not found', async () => {
-      (getUserWithAdditionalRoles as jest.Mock).mockResolvedValue(null);
+      mockedGetUserWithAdditionalRoles.mockResolvedValue(null);
 
       await expect(
         listTeachersUnderHOD(mockClient as PoolClient, tenantId, schema, hodUserId)
@@ -68,7 +72,7 @@ describe('HOD Service', () => {
 
   describe('getDepartmentReport', () => {
     it('should throw error if HOD user not found', async () => {
-      (getUserWithAdditionalRoles as jest.Mock).mockResolvedValue(null);
+      mockedGetUserWithAdditionalRoles.mockResolvedValue(null);
 
       await expect(
         getDepartmentReport(mockClient as PoolClient, tenantId, schema, hodUserId)

@@ -60,8 +60,10 @@ router.get('/', requirePermission('students:manage'), async (req, res, next) => 
     const response = createPaginatedResponse(paginated, allStudents.length, pagination);
 
     res.json(response);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -117,8 +119,10 @@ router.get('/me/dashboard', requirePermission('dashboard:view'), async (req, res
     }
 
     res.json(createSuccessResponse(dashboard, 'Dashboard data retrieved successfully'));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -160,8 +164,10 @@ router.get('/announcements', requirePermission('messages:receive'), async (req, 
     const announcements = await getClassAnnouncements(tenantClient, tenant.schema, classId);
 
     res.json(createSuccessResponse(announcements, 'Announcements retrieved successfully'));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -222,8 +228,10 @@ router.get('/resources', requirePermission('dashboard:view'), async (req, res, n
     }
 
     res.json(createSuccessResponse(resources, 'Resources retrieved successfully'));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -260,8 +268,10 @@ router.get('/attendance', requirePermission('attendance:view'), async (req, res,
     const summary = await getAttendanceSummary(tenantClient, tenant.schema, studentId);
 
     res.json(createSuccessResponse({ history, summary }, 'Attendance retrieved successfully'));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -311,8 +321,10 @@ router.get('/grades', requirePermission('exams:view'), async (req, res, next) =>
     const gradesResult = await tenantClient.query(query, params);
 
     res.json(createSuccessResponse(gradesResult.rows, 'Grades retrieved successfully'));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 

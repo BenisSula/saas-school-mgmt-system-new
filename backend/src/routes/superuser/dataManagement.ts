@@ -90,11 +90,15 @@ router.post('/backups', async (req, res, next) => {
         createdBy: req.user?.id,
       });
       res.status(201).json(backup);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -111,11 +115,15 @@ router.get('/backups', async (req, res, next) => {
         offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -136,11 +144,15 @@ router.post('/backup-schedules', async (req, res, next) => {
         createdBy: req.user?.id,
       });
       res.status(201).json(schedule);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -151,11 +163,15 @@ router.get('/backup-schedules', async (req, res, next) => {
     try {
       const schedules = await getBackupSchedules(client, req.tenant?.id);
       res.json({ schedules });
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -166,11 +182,15 @@ router.patch('/backup-schedules/:id', async (req, res, next) => {
     try {
       const schedule = await updateBackupSchedule(client, req.params.id, req.body);
       res.json(schedule);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -186,6 +206,8 @@ router.delete('/backup-schedules/:id', async (req, res, next) => {
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -205,11 +227,15 @@ router.post('/exports', async (req, res, next) => {
         requestedBy: req.user?.id,
       });
       res.status(201).json(job);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -226,11 +252,15 @@ router.get('/exports', async (req, res, next) => {
         offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -250,11 +280,15 @@ router.post('/imports', async (req, res, next) => {
         requestedBy: req.user?.id,
       });
       res.status(201).json(job);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -271,11 +305,15 @@ router.get('/imports', async (req, res, next) => {
         offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -295,11 +333,15 @@ router.post('/gdpr/requests', async (req, res, next) => {
         requestedBy: req.user?.id,
       });
       res.status(201).json(request);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -316,14 +358,18 @@ router.post('/gdpr/requests/:id/verify', async (req, res, next) => {
       const verified = await verifyGdprErasureRequest(client, req.params.id, verificationToken);
       if (verified) {
         res.json({ success: true });
+        return;
       } else {
         res.status(400).json({ message: 'Invalid verification token' });
+        return;
       }
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -337,11 +383,15 @@ router.post(
       try {
         const result = await processGdprErasure(client, req.params.id, req.user?.id || '');
         res.json(result);
+
+        return;
       } finally {
         client.release();
       }
     } catch (error) {
       next(error);
+
+      return;
     }
   }
 );
@@ -359,11 +409,15 @@ router.get('/gdpr/requests', async (req, res, next) => {
         offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -374,11 +428,15 @@ router.post('/gdpr/requests/:id/cancel', async (req, res, next) => {
     try {
       await cancelGdprErasureRequest(client, req.params.id);
       res.json({ success: true });
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 

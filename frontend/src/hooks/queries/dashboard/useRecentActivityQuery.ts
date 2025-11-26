@@ -44,13 +44,13 @@ export function recentActivityQueryOptions(tenantId: string | null, limit: numbe
       const activities: RecentActivity[] = logs.map((log: AuditLogEntry) => ({
         id: log.id,
         action: log.action,
-        resourceType: log.resourceType || log.entityType,
-        resourceId: log.resourceId || log.entityId,
-        userAgent: log.userAgent || null,
+        resourceType: log.resourceType || log.entityType || undefined,
+        resourceId: log.resourceId || log.entityId || null,
+        userAgent: log.userAgent || undefined,
         tags: log.tags || [],
         requestId: log.requestId || undefined,
         details: log.details || null,
-        createdAt: log.createdAt || log.timestamp,
+        createdAt: log.createdAt || log.timestamp || undefined,
       }));
 
       return {

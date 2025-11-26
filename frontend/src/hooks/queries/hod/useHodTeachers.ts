@@ -26,7 +26,7 @@ export interface UseHodTeachersFilters {
  * Hook to fetch teachers under HOD's department
  */
 export function useHodTeachers(filters?: UseHodTeachersFilters) {
-  const { tenantId } = useTenant();
+  const tenantId = useTenant();
 
   return useQuery({
     queryKey: ['hod', 'teachers', tenantId, filters],

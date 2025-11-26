@@ -45,7 +45,7 @@ export default function StudentResourcesPage() {
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Class Resources</h1>
 
-        {isLoading && <StatusBanner status="loading" message="Loading resources..." />}
+        {isLoading && <StatusBanner status="info" message="Loading resources..." />}
 
         {resources && (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

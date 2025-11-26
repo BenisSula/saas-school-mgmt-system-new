@@ -53,12 +53,14 @@ router.use(async (req, res, next) => {
           'Access restricted to teacher accounts. Please contact an administrator for assistance.',
       });
     }
-
     req.teacherRecord = teacher;
     next();
+
+    return;
   } catch (error) {
     console.error('Error in teacher route middleware:', error);
     next(error);
+      return;
   }
 });
 
@@ -67,8 +69,10 @@ router.get('/overview', async (req, res, next) => {
     const teacher = req.teacherRecord!;
     const overview = await getTeacherOverview(req.tenantClient!, req.tenant!.schema, teacher);
     res.json(overview);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -77,8 +81,10 @@ router.get('/classes', async (req, res, next) => {
     const teacher = req.teacherRecord!;
     const classes = await listTeacherClasses(req.tenantClient!, req.tenant!.schema, teacher.id);
     res.json(classes);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -98,6 +104,7 @@ router.get(
         req.params.classId
       );
       res.json(roster);
+      return;
     } catch (error) {
       // Service-level check throws error if teacher not assigned (defense-in-depth)
       if ((error as Error).message === 'Teacher is not assigned to this class') {
@@ -119,7 +126,9 @@ router.get(
           message: 'Failed to retrieve class roster',
           error: (error as Error).message,
         });
+        return;
       }
+      return;
     }
   }
 );
@@ -141,8 +150,10 @@ router.post('/assignments/:assignmentId/drop', async (req, res, next) => {
       return res.status(404).json({ message: 'Assignment not found' });
     }
     res.status(200).json(updated);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -174,6 +185,7 @@ router.get(
         });
       }
       res.json(report);
+      return;
     } catch (error) {
       console.error('Error in /reports/class/:classId:', error);
       // Don't call next(error) if we've already sent a response
@@ -182,7 +194,9 @@ router.get(
           message: 'Failed to generate class report',
           error: (error as Error).message,
         });
+        return;
       }
+      return;
     }
   }
 );
@@ -211,7 +225,6 @@ router.get(
           message: 'You are not assigned to this class. Thank you for your understanding.',
         });
       }
-
       const pdfBuffer = await createClassReportPdf(report, teacher.name);
       res
         .status(200)
@@ -221,8 +234,10 @@ router.get(
           `attachment; filename="class-report-${report.class.name.replace(/\s+/g, '-').toLowerCase()}.pdf"`
         )
         .send(pdfBuffer);
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 );
@@ -232,8 +247,10 @@ router.get('/messages', async (req, res, next) => {
     const teacher = req.teacherRecord!;
     const messages = await listTeacherMessages(req.tenantClient!, req.tenant!.schema, teacher);
     res.json(messages);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -242,8 +259,10 @@ router.get('/profile', async (req, res, next) => {
     const teacher = req.teacherRecord!;
     const profile = await getTeacherProfileDetail(req.tenantClient!, req.tenant!.schema, teacher);
     res.json(profile);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 

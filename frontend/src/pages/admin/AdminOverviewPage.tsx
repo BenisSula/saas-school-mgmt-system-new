@@ -34,7 +34,6 @@ import { ActivityLog } from '../../components/admin/ActivityLog';
 import { QuickActionPanel } from '../../components/admin/QuickActionPanel';
 import { SystemAlerts } from '../../components/admin/SystemAlerts';
 import { useAttendance } from '../../hooks/queries/useAdminQueries';
-import { useClasses } from '../../hooks/queries/useAdminQueries';
 
 export default function AdminOverviewPage() {
   const queryClient = useQueryClient();
@@ -86,7 +85,11 @@ export default function AdminOverviewPage() {
     if (data?.totals?.pending !== undefined) {
       return data.totals.pending;
     }
-    return users.filter((u) => u.status === 'pending' || !u.is_verified).length;
+    return users.filter((u) => {
+      const status = 'status' in u ? u.status : null;
+      const isVerified = 'is_verified' in u ? u.is_verified : 'isVerified' in u ? u.isVerified : false;
+      return status === 'pending' || !isVerified;
+    }).length;
   }, [users, data?.totals]);
 
   // Student Growth Chart (monthly - last 6 months)
@@ -268,7 +271,7 @@ export default function AdminOverviewPage() {
         {/* System Alerts */}
         <SystemAlerts
           showExpiredPasswords={false}
-          showUnauthorizedAttempts={loginAttempts?.failed ? loginAttempts.failed > 5 : false}
+          showUnauthorizedAttempts={(loginAttempts?.filter((a) => !a.success).length || 0) > 5}
           showTenantErrors={false}
           showSyncFailures={false}
           showTermWarnings={false}
@@ -320,9 +323,9 @@ export default function AdminOverviewPage() {
           />
           <StatCard
             title="Login Attempts"
-            value={(loginAttempts?.successful || 0) + (loginAttempts?.failed || 0)}
+            value={loginAttempts?.length || 0}
             icon={<TrendingUp className="h-5 w-5" />}
-            description={`${loginAttempts?.failed || 0} failed today`}
+            description={`${loginAttempts?.filter((a) => !a.success).length || 0} failed today`}
           />
         </section>
 
@@ -389,13 +392,13 @@ export default function AdminOverviewPage() {
                 <div className="flex items-center justify-between rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface)]/50 p-4">
                   <span className="text-sm text-[var(--brand-muted)]">Successful</span>
                   <span className="text-lg font-semibold text-emerald-500">
-                    {loginAttempts?.successful || 0}
+                    {loginAttempts?.filter((a) => a.success).length || 0}
                   </span>
                 </div>
                 <div className="flex items-center justify-between rounded-lg border border-[var(--brand-border)] bg-[var(--brand-surface)]/50 p-4">
                   <span className="text-sm text-[var(--brand-muted)]">Failed</span>
                   <span className="text-lg font-semibold text-red-500">
-                    {loginAttempts?.failed || 0}
+                    {loginAttempts?.filter((a) => !a.success).length || 0}
                   </span>
                 </div>
               </div>

@@ -47,8 +47,10 @@ router.get('/overview', async (_req, res, next) => {
   try {
     const overview = await getPlatformOverview();
     res.json(overview);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -56,8 +58,10 @@ router.get('/schools', async (_req, res, next) => {
   try {
     const schools = await listSchools();
     res.json(schools);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -73,8 +77,10 @@ router.post('/schools', async (req, res, next) => {
     }
     const school = await createSchool(parsed.data, req.user?.id ?? null);
     res.status(201).json(school);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -93,8 +99,10 @@ router.patch('/schools/:id', async (req, res, next) => {
       return res.status(404).json({ message: 'School not found' });
     }
     res.json(updated);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -102,8 +110,10 @@ router.delete('/schools/:id', async (req, res, next) => {
   try {
     await softDeleteSchool(req.params.id, req.user?.id ?? null);
     res.status(204).send();
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -119,8 +129,10 @@ router.post('/schools/:id/admins', async (req, res, next) => {
     }
     const admin = await createAdminForSchool(req.params.id, parsed.data, req.user?.id ?? null);
     res.status(201).json(admin);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -128,8 +140,10 @@ router.get('/users', async (_req, res, next) => {
   try {
     const users = await listAllPlatformUsers();
     res.json(users);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -144,8 +158,10 @@ router.post('/notifications', async (req, res, next) => {
       actorId: req.user?.id ?? null,
     });
     res.status(201).json(result);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -153,8 +169,10 @@ router.get('/analytics/tenant/:tenantId', async (req, res, next) => {
   try {
     const analytics = await getTenantAnalytics(req.params.tenantId);
     res.json(analytics);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -163,8 +181,10 @@ router.get('/usage', async (req, res, next) => {
     const tenantId = req.query.tenantId as string | undefined;
     const usage = tenantId ? await getUsageMonitoring(tenantId) : await getUsageMonitoring();
     res.json(usage);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -180,8 +200,10 @@ router.patch('/users/:userId/status', async (req, res, next) => {
       return res.status(404).json({ message: 'User not found' });
     }
     res.json(updated);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -194,8 +216,10 @@ router.post('/reports', async (req, res, next) => {
     const { generatePlatformReport } = await import('../services/platformMonitoringService');
     const result = await generatePlatformReport(type, req.user?.id ?? null);
     res.status(201).json(result);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -204,8 +228,10 @@ router.put('/settings', async (req, res, next) => {
     const { updatePlatformSettings } = await import('../services/platformMonitoringService');
     await updatePlatformSettings(req.body, req.user?.id ?? null);
     res.json({ success: true });
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -295,8 +321,10 @@ router.put('/subscription-tiers', async (req, res, next) => {
 
     const updated = await updateSubscriptionTierConfigs(parsed.data.configs, req.user?.id ?? null);
     res.json(updated);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 

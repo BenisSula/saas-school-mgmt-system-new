@@ -40,7 +40,8 @@ function generateBackupFilename(tenantId: string | null, backupType: string): st
  * Not currently used but kept for future implementation
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function executePgDump(
+// @ts-expect-error - Intentionally unused function kept for future use
+async function _executePgDump(
   tenantId: string | null,
   backupType: string,
   outputPath: string,

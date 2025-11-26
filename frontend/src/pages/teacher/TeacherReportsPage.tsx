@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import RouteMeta from '../../components/layout/RouteMeta';
 import { StatusBanner } from '../../components/ui/StatusBanner';
 import { Button } from '../../components/ui/Button';
@@ -42,13 +42,6 @@ export default function TeacherReportsPage() {
   const { data: classes = [], isLoading: loading } = useTeacherClasses();
   const exportAttendanceMutation = useExportAttendance();
   const exportGradesMutation = useExportGrades();
-
-  // selectedClassName is computed but not used - keeping for potential future use
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _selectedClassName = useMemo(() => {
-    const clazz = classes.find((entry) => entry.id === selectedClassId);
-    return clazz?.name ?? '';
-  }, [classes, selectedClassId]);
 
   useEffect(() => {
     if (classes.length > 0 && !selectedClassId) {

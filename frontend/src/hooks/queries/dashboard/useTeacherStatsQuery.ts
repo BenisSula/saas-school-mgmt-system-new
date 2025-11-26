@@ -38,7 +38,7 @@ export function teacherStatsQueryOptions(tenantId: string | null) {
       const teachers = await api.listTeachers();
 
       const totalTeachers = teachers.length;
-      const activeTeachers = teachers.filter((t) => t.status === 'active' || !t.status).length;
+      const activeTeachers = teachers.length; // All teachers are considered active (no status field in TeacherProfile)
 
       // Group by department (assuming teachers have a department field)
       const departmentMap = new Map<string, number>();

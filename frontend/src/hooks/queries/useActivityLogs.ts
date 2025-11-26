@@ -45,16 +45,16 @@ export function useActivityLogs(filters?: ActivityLogFilters) {
       }
 
       // Transform to ActivityLogEntry format
-      return filteredLogs.map((log) => ({
+      return filteredLogs.map((log): ActivityLogEntry => ({
         id: log.id,
         action: log.action,
-        description: `${log.action} on ${log.entityType}`,
-        entityType: log.entityType,
-        entityId: log.entityId,
-        userId: log.userId,
-        userEmail: log.userEmail,
-        timestamp: log.timestamp,
-        metadata: log.details,
+        description: `${log.action} on ${log.entityType || 'resource'}`,
+        entityType: log.entityType || '',
+        entityId: log.entityId || '',
+        userId: log.userId || '',
+        userEmail: log.userEmail || null,
+        timestamp: log.timestamp || log.createdAt?.toString() || new Date().toISOString(),
+        metadata: log.details || undefined,
       }));
     },
     staleTime: 30000, // 30 seconds

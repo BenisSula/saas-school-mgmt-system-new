@@ -39,7 +39,6 @@ router.post(
       if (!req.user || !req.tenant || !req.tenantClient) {
         return res.status(500).json({ message: 'User or tenant context missing' });
       }
-
       const result = await adminCreateUser(
         req.tenant.id,
         req.tenantClient,
@@ -49,12 +48,14 @@ router.post(
       );
 
       res.status(201).json(result);
+      return;
     } catch (error) {
       console.error('[users] Admin user creation error:', error);
       if (error instanceof Error && error.message.includes('already exists')) {
         return res.status(409).json({ message: 'User with this email already exists' });
       }
       next(error);
+      return;
     }
   }
 );
@@ -80,6 +81,7 @@ router.get('/', requirePermission('users:manage'), async (req, res, next) => {
     const response = createPaginatedResponse(paginated, allUsers.length, pagination);
 
     res.json(response);
+    return;
   } catch (error) {
     console.error('Error in /users route:', error);
     if (!res.headersSent) {
@@ -87,8 +89,10 @@ router.get('/', requirePermission('users:manage'), async (req, res, next) => {
         message: 'Failed to list users',
         error: (error as Error).message,
       });
+      return;
     } else {
       next(error);
+      return;
     }
   }
 });
@@ -102,7 +106,6 @@ router.patch(
       if (!req.user) {
         return res.status(500).json({ message: 'User context missing' });
       }
-
       const updated = await updateTenantUserRole(
         req.tenant!.id,
         req.params.userId,
@@ -113,10 +116,11 @@ router.patch(
       if (!updated) {
         return res.status(404).json({ message: 'User not found for tenant' });
       }
-
       res.json(updated);
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 );
@@ -126,7 +130,6 @@ router.patch('/:userId/approve', requirePermission('users:manage'), async (req, 
     if (!req.user || !req.tenant || !req.tenantClient) {
       return res.status(500).json({ message: 'User or tenant context missing' });
     }
-
     // Get user info before updating status (to check for pending profile data)
     const pool = getPool();
     const mainClient = await pool.connect();
@@ -150,7 +153,6 @@ router.patch('/:userId/approve', requirePermission('users:manage'), async (req, 
     if (!updated) {
       return res.status(404).json({ message: 'User not found for tenant' });
     }
-
     // Process pending profile data if exists (create student/teacher records)
     if (userInfo && userInfo.pending_profile_data) {
       try {
@@ -172,8 +174,10 @@ router.patch('/:userId/approve', requirePermission('users:manage'), async (req, 
     }
 
     res.json(updated);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -182,7 +186,6 @@ router.patch('/:userId/reject', requirePermission('users:manage'), async (req, r
     if (!req.user || !req.tenant) {
       return res.status(500).json({ message: 'User or tenant context missing' });
     }
-
     // Get user info before updating status (to check for pending profile data)
     const pool = getPool();
     const mainClient = await pool.connect();
@@ -211,7 +214,6 @@ router.patch('/:userId/reject', requirePermission('users:manage'), async (req, r
     if (!updated) {
       return res.status(404).json({ message: 'User not found for tenant' });
     }
-
     // Clean up pending profile data (automatically dropped on rejection)
     if (hasPendingProfile) {
       try {
@@ -227,8 +229,10 @@ router.patch('/:userId/reject', requirePermission('users:manage'), async (req, r
     }
 
     res.json(updated);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -246,10 +250,10 @@ router.put(
       if (!req.user || !req.tenant) {
         return res.status(500).json({ message: 'User or tenant context missing' });
       }
-
       await updateHODDepartment(req.params.userId, req.body.department, req.tenant.id, req.user.id);
 
       res.json({ message: 'Department assigned successfully' });
+      return;
     } catch (error) {
       if (error instanceof Error) {
         if (error.message.includes('does not have HOD role')) {
@@ -260,6 +264,7 @@ router.put(
         }
       }
       next(error);
+      return;
     }
   }
 );
@@ -278,7 +283,6 @@ router.delete(
       if (!req.user || !req.tenant) {
         return res.status(500).json({ message: 'User or tenant context missing' });
       }
-
       const { userIds } = req.body;
       const { removed, failed } = await bulkRemoveHODRoles(userIds, req.tenant.id, req.user.id);
 
@@ -287,11 +291,13 @@ router.delete(
         removed,
         failed,
       });
+      return;
     } catch (error) {
       if (error instanceof Error && error.message.includes('does not exist')) {
         return res.status(500).json({ message: error.message });
       }
       next(error);
+      return;
     }
   }
 );

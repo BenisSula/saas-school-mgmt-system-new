@@ -127,9 +127,11 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     await markEventProcessed(client, event.id, event.type, event.data);
 
     res.json({ received: true });
+      return;
   } catch (error) {
     console.error('[Stripe Webhook] Error processing webhook:', error);
     next(error);
+      return;
   } finally {
     client.release();
   }

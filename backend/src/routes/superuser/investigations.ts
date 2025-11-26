@@ -51,8 +51,11 @@ router.post('/cases', async (req, res, next) => {
     );
 
     res.status(201).json(case_);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -72,8 +75,11 @@ router.get('/cases', async (req, res, next) => {
     const result = await getInvestigationCases(pool, queryResult.data, req.user!.role as Role);
 
     res.json(result);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -89,8 +95,11 @@ router.get('/cases/:caseId', async (req, res, next) => {
     const result = await getInvestigationCase(pool, caseId, req.user!.role as Role);
 
     res.json(result);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -119,8 +128,11 @@ router.patch('/cases/:caseId/status', async (req, res, next) => {
     );
 
     res.json(case_);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -149,8 +161,11 @@ router.post('/cases/:caseId/notes', async (req, res, next) => {
     );
 
     res.status(201).json(note);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -181,8 +196,11 @@ router.post('/cases/:caseId/evidence', async (req, res, next) => {
     );
 
     res.status(201).json(evidence);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -202,8 +220,11 @@ router.get('/anomalies', async (req, res, next) => {
     const anomalies = await detectAnomalies(pool, queryResult.data, req.user!.role as Role);
 
     res.json({ anomalies });
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -224,8 +245,11 @@ router.get('/users/:userId/actions', async (req, res, next) => {
     const result = await getUserActions(pool, userId, queryResult.data, req.user!.role as Role);
 
     res.json(result);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -253,8 +277,11 @@ router.get('/cases/:caseId/export', async (req, res, next) => {
     res.setHeader('Content-Type', exportData.mimeType);
     res.setHeader('Content-Disposition', `attachment; filename="${exportData.filename}"`);
     res.send(exportData.data);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 

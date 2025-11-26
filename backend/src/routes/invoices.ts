@@ -58,6 +58,7 @@ router.get('/', requirePermission('fees:view'), async (req, res, next) => {
     }
 
     res.json(invoices);
+    return;
   } catch (error) {
     next(error);
     return;
@@ -79,6 +80,7 @@ router.post('/', requirePermission('fees:manage'), async (req, res, next) => {
     );
 
     res.status(201).json(invoice);
+    return;
   } catch (error) {
     next(error);
     return;
@@ -98,6 +100,7 @@ router.get('/:studentId', requirePermission('fees:view'), async (req, res, next)
 
     const invoices = await getInvoicesForStudent(req.tenantClient!, req.tenant!.schema, studentId);
     res.json(invoices);
+    return;
   } catch (error) {
     next(error);
     return;

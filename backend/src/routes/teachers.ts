@@ -196,8 +196,10 @@ router.put(
       }
 
       res.json(createSuccessResponse(teacher, 'Teacher updated successfully'));
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   })
 );
@@ -228,8 +230,10 @@ router.get('/me', requirePermission('dashboard:view'), async (req, res, next) =>
     }
 
     res.json(createSuccessResponse(teacher, 'Teacher profile retrieved successfully'));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -314,8 +318,10 @@ router.get('/me/classes', requirePermission('dashboard:view'), async (req, res, 
     }));
 
     res.json(createSuccessResponse(classes, 'Teacher classes retrieved successfully'));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -324,7 +330,6 @@ router.get('/me/students', requirePermission('students:view_own_class'), async (
     if (!req.user || !req.tenantClient || !req.tenant) {
       return res.status(500).json({ message: 'User context missing' });
     }
-
     const { classId } = req.query;
     const pagination = req.pagination!;
 
@@ -334,7 +339,6 @@ router.get('/me/students', requirePermission('students:view_own_class'), async (
     if (!teacher) {
       return res.status(404).json({ message: 'Teacher profile not found' });
     }
-
     const assignedClasses = teacher.assigned_classes || [];
 
     if (classId && typeof classId === 'string') {
@@ -342,7 +346,6 @@ router.get('/me/students', requirePermission('students:view_own_class'), async (
       if (!assignedClasses.includes(classId)) {
         return res.status(403).json({ message: 'You are not assigned to this class' });
       }
-
       // Get students for this specific class
       const allStudents = (await listStudents(req.tenantClient, req.tenant.schema)) as Array<{
         class_uuid?: string | null;
@@ -370,7 +373,6 @@ router.get('/me/students', requirePermission('students:view_own_class'), async (
 
       return res.json(response);
     }
-
     // Get students from all assigned classes
     const allStudents = (await listStudents(req.tenantClient, req.tenant.schema)) as Array<{
       class_uuid?: string | null;
@@ -399,8 +401,10 @@ router.get('/me/students', requirePermission('students:view_own_class'), async (
     );
 
     res.json(response);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -457,8 +461,10 @@ router.post('/attendance/mark', requirePermission('attendance:mark'), async (req
     );
 
     res.status(200).json(createSuccessResponse(null, 'Attendance marked successfully'));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -488,8 +494,10 @@ router.get(
       });
 
       res.json(createSuccessResponse(attendance, 'Attendance retrieved successfully'));
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 );
@@ -529,8 +537,10 @@ router.post('/attendance/bulk', requirePermission('attendance:mark'), async (req
     );
 
     res.status(200).json(createSuccessResponse(null, 'Attendance marked successfully'));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -574,8 +584,10 @@ router.post('/grades/submit', requirePermission('grades:enter'), async (req, res
     );
 
     res.status(200).json(createSuccessResponse(result, 'Grades submitted successfully'));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -611,8 +623,10 @@ router.put('/grades/:gradeId', requirePermission('grades:edit'), async (req, res
     }
 
     res.json(createSuccessResponse(result, 'Grade updated successfully'));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -639,8 +653,10 @@ router.get('/grades', requirePermission('grades:view_own_class'), async (req, re
     });
 
     res.json(createSuccessResponse(grades, 'Grades retrieved successfully'));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -688,10 +704,12 @@ router.post(
         user.id
       );
 
-      res.status(201).json(createSuccessResponse(resource, 'Resource uploaded successfully'));
-    } catch (error) {
-      next(error);
-    }
+    res.status(201).json(createSuccessResponse(resource, 'Resource uploaded successfully'));
+    return;
+  } catch (error) {
+    next(error);
+    return;
+  }
   }
 );
 
@@ -718,8 +736,10 @@ router.get('/resources', requirePermission('resources:upload'), async (req, res,
     const resources = await getClassResources(tenantClient, tenant.schema, classId, teacherId);
 
     res.json(createSuccessResponse(resources, 'Resources retrieved successfully'));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -754,8 +774,10 @@ router.delete(
       }
 
       res.json(createSuccessResponse(null, 'Resource deleted successfully'));
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 );
@@ -791,8 +813,10 @@ router.post('/announcements', requirePermission('announcements:post'), async (re
     );
 
     res.status(201).json(createSuccessResponse(announcement, 'Announcement posted successfully'));
+    return;
   } catch (error) {
     next(error);
+    return;
   }
 });
 
@@ -846,8 +870,10 @@ router.get(
       res.setHeader('Content-Type', contentType);
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(buffer);
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 );
@@ -897,8 +923,10 @@ router.get('/export/grades', requirePermission('grades:view_own_class'), async (
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.send(buffer);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 

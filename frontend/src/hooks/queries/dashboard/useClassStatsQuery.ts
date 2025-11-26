@@ -69,11 +69,16 @@ export function classStatsQueryOptions(tenantId: string | null) {
  */
 export function useClassStatsQuery() {
   const tenantId = useTenant();
-  const queryOptions = classStatsQueryOptions(tenantId);
+  const queryOptionsResult = classStatsQueryOptions(tenantId);
 
   return useQuery({
-    ...queryOptions,
-    select: (data): ClassStats => ({
+    queryKey: queryOptionsResult.queryKey,
+    queryFn: queryOptionsResult.queryFn,
+    enabled: queryOptionsResult.enabled,
+    staleTime: 60_000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+    select: (data: ClassStats): ClassStats => ({
       totalClasses: data.totalClasses,
       activeClasses: data.activeClasses,
       classesByLevel: data.classesByLevel,

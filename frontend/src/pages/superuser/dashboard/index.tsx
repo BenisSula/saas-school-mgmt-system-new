@@ -521,7 +521,6 @@ export default function SuperuserDashboardPage() {
             {quickActions.map((action) => (
               <Card
                 key={action.id}
-                hoverable
                 onClick={action.onClick}
                 padding="md"
                 className="transition-all hover:shadow-md"

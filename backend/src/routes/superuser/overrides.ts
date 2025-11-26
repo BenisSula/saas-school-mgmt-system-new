@@ -52,8 +52,11 @@ router.post('/', async (req, res, next) => {
 
     const override = await createOverride(input, req.user.id);
     res.status(201).json(override);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -82,8 +85,11 @@ router.get('/', async (req, res, next) => {
 
     const overrides = await listOverrides(filters);
     res.json(overrides);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -95,8 +101,11 @@ router.get('/:id', async (req, res, next) => {
       return res.status(404).json({ message: 'Override not found' });
     }
     res.json(override);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -125,8 +134,11 @@ router.get('/target/:overrideType/:targetId', async (req, res, next) => {
       req.params.targetId
     );
     res.json(overrides);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -135,8 +147,11 @@ router.post('/:id/revoke', async (req, res, next) => {
   try {
     const override = await revokeOverride(req.params.id, req.body.reason, req.user?.id ?? null);
     res.json(override);
+      return;
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 

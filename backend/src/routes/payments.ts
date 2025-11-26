@@ -15,6 +15,7 @@ router.post('/', tenantResolver(), async (req, res, next) => {
     const event = await provider.handleWebhook(req.body, signature);
     await recordPaymentEvent(req.tenantClient, req.tenant.schema, event);
     res.status(200).json({ received: true });
+    return;
   } catch (error) {
     next(error);
     return;

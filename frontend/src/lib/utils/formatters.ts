@@ -42,7 +42,7 @@ export function formatDate(
  * Uses Intl.NumberFormat for consistent locale-aware formatting
  * Note: options parameter reserved for future use
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 export function formatNumber(
   value: number | null | undefined,
   _options?: Intl.NumberFormatOptions
@@ -59,7 +59,7 @@ export function formatNumber(
 export function formatCurrency(
   amount: number | null | undefined,
   currency: string = 'USD',
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   _options?: Intl.NumberFormatOptions
 ): string {
   if (amount === null || amount === undefined) return '—';

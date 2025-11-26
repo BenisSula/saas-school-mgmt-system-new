@@ -59,11 +59,15 @@ router.get('/', async (req, res, next) => {
         offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       });
       res.json(result);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -84,11 +88,15 @@ router.post('/', requirePermission('messages:send'), async (req, res, next) => {
         senderId: req.user?.id || '',
       });
       res.status(201).json(message);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -100,11 +108,15 @@ router.post('/:id/read', async (req, res, next) => {
     try {
       await markMessageAsRead(client, req.params.id, req.user?.id || '');
       res.json({ success: true });
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -116,11 +128,15 @@ router.post('/:id/archive', async (req, res, next) => {
     try {
       await archiveMessage(client, req.params.id, req.user?.id || '');
       res.json({ success: true });
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -135,11 +151,15 @@ router.get('/threads/:id', async (req, res, next) => {
         return res.status(404).json({ message: 'Thread not found' });
       }
       res.json(thread);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 

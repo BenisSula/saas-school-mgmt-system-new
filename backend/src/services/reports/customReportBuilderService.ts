@@ -270,6 +270,7 @@ export async function executeCustomReport(
   const result = await client.query(query);
   // Execution time calculated but not used yet - kept for future performance tracking
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // @ts-expect-error - Intentionally unused variable kept for future use
   const _executionTimeMs = Date.now() - startTime;
 
   // Build columns metadata from selectedColumns
@@ -324,7 +325,7 @@ export async function getCustomReports(
  */
 export async function updateCustomReport(
   client: PoolClient,
-  tenantSchema: string,
+  _tenantSchema: string,
   customReportId: string,
   updates: Partial<CustomReportInput>
 ): Promise<unknown> {

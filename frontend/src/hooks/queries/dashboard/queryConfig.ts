@@ -1,5 +1,4 @@
 import { keepPreviousData } from '@tanstack/react-query';
-import type { QueryOptions } from '@tanstack/react-query';
 
 /**
  * Shared query configuration for dashboard queries
@@ -10,7 +9,7 @@ export const dashboardQueryConfig = {
   staleTime: 60_000, // 60 seconds
   refetchOnWindowFocus: false,
   placeholderData: keepPreviousData,
-} as const satisfies Partial<QueryOptions<unknown, Error, unknown, unknown>>;
+} as const;
 
 /**
  * Creates base query options with shared dashboard configuration
@@ -20,7 +19,7 @@ export const dashboardQueryConfig = {
  */
 export function createDashboardQueryOptions<TData>(
   tenantId: string | null,
-  queryKey: readonly unknown[],
+  queryKey: unknown[],
   queryFn: () => Promise<TData>
 ) {
   return {

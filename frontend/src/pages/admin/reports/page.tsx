@@ -84,22 +84,22 @@ export default function AdminReportsPage() {
   }
 
   const activityColumns: TableColumn<ActivityLog>[] = [
-    { key: 'action', label: 'Action' },
-    { key: 'resourceType', label: 'Resource Type' },
-    { key: 'userId', label: 'User ID' },
+    { key: 'action', header: 'Action' },
+    { key: 'resourceType', header: 'Resource Type' },
+    { key: 'userId', header: 'User ID' },
     {
       key: 'createdAt',
-      label: 'Date',
+      header: 'Date',
       render: (log) => new Date(log.createdAt).toLocaleString(),
     },
   ];
 
   const loginColumns: TableColumn<LoginLog>[] = [
-    { key: 'userId', label: 'User ID' },
-    { key: 'ipAddress', label: 'IP Address' },
+    { key: 'userId', header: 'User ID' },
+    { key: 'ipAddress', header: 'IP Address' },
     {
       key: 'success',
-      label: 'Status',
+      header: 'Status',
       render: (log) => (
         <span className={log.success ? 'text-emerald-500' : 'text-red-500'}>
           {log.success ? 'Success' : 'Failed'}
@@ -108,18 +108,18 @@ export default function AdminReportsPage() {
     },
     {
       key: 'loginAt',
-      label: 'Date',
+      header: 'Date',
       render: (log) => new Date(log.loginAt).toLocaleString(),
     },
   ];
 
   const performanceColumns: TableColumn<PerformanceData>[] = [
-    { key: 'class_name', label: 'Class' },
-    { key: 'subject', label: 'Subject' },
-    { key: 'exam_count', label: 'Exams' },
-    { key: 'avg_score', label: 'Avg Score' },
-    { key: 'min_score', label: 'Min Score' },
-    { key: 'max_score', label: 'Max Score' },
+    { key: 'class_name', header: 'Class' },
+    { key: 'subject', header: 'Subject' },
+    { key: 'exam_count', header: 'Exams' },
+    { key: 'avg_score', header: 'Avg Score' },
+    { key: 'min_score', header: 'Min Score' },
+    { key: 'max_score', header: 'Max Score' },
   ];
 
   const isLoading = activityLoading || loginLoading || performanceLoading;

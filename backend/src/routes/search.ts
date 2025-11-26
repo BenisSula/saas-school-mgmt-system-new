@@ -44,8 +44,10 @@ router.get(
       });
 
       res.json({ results });
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 );

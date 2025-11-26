@@ -32,7 +32,7 @@ export interface HODDashboardData {
  * Hook to fetch HOD dashboard overview
  */
 export function useHodDashboard() {
-  const { tenantId } = useTenant();
+  const tenantId = useTenant();
 
   return useQuery({
     queryKey: ['hod', 'dashboard', tenantId],

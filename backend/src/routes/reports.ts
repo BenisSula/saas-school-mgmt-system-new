@@ -25,6 +25,7 @@ router.get('/attendance', requirePermission('attendance:manage'), async (req, re
       classId,
     });
     res.json(summary);
+    return;
   } catch (error) {
     next(error);
     return;
@@ -42,6 +43,7 @@ router.get('/grades', requirePermission('exams:view'), async (req, res, next) =>
     }
     const distribution = await getGradeDistribution(req.tenantClient, req.tenant.schema, examId);
     res.json(distribution);
+    return;
   } catch (error) {
     next(error);
     return;
@@ -56,6 +58,7 @@ router.get('/fees', requirePermission('fees:manage'), async (req, res, next) => 
     const { status } = req.query as Record<string, string | undefined>;
     const fees = await getFeeOutstanding(req.tenantClient, req.tenant.schema, status);
     res.json(fees);
+    return;
   } catch (error) {
     next(error);
     return;
@@ -77,8 +80,10 @@ router.get(
         departmentId
       );
       res.json(analytics);
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 );

@@ -1,6 +1,6 @@
 /**
  * Frontend Performance Metrics
- * 
+ *
  * Collects and reports frontend performance metrics to backend
  */
 
@@ -36,7 +36,9 @@ class PerformanceMonitor {
         });
 
         // Resource timing
-        const resources = window.performance.getEntriesByType('resource') as PerformanceResourceTiming[];
+        const resources = window.performance.getEntriesByType(
+          'resource'
+        ) as PerformanceResourceTiming[];
         resources.forEach((resource) => {
           this.recordMetric('resource_load_time', resource.duration, {
             type: resource.initiatorType,
@@ -216,7 +218,10 @@ class PerformanceMonitor {
 export const performanceMonitor = typeof window !== 'undefined' ? new PerformanceMonitor() : null;
 
 // Export for manual metric recording
-export function recordPerformanceMetric(name: string, value: number, tags?: Record<string, string>): void {
+export function recordPerformanceMetric(
+  name: string,
+  value: number,
+  tags?: Record<string, string>
+): void {
   performanceMonitor?.recordMetric(name, value, tags);
 }
-

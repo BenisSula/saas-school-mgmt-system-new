@@ -46,11 +46,15 @@ router.post('/', async (req, res, next) => {
     try {
       const flag = await createFeatureFlag(client, parsed.data, req.user?.id);
       res.status(201).json(flag);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -62,11 +66,15 @@ router.get('/', async (_req, res, next) => {
     try {
       const flags = await getAllFeatureFlags(client);
       res.json({ flags });
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -81,11 +89,15 @@ router.get('/:flagKey', async (req, res, next) => {
         return res.status(404).json({ message: 'Feature flag not found' });
       }
       res.json(flag);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -98,11 +110,15 @@ router.get('/:flagKey/check', async (req, res, next) => {
     try {
       const enabled = await isFeatureEnabled(client, req.params.flagKey, tenantId);
       res.json({ enabled, flagKey: req.params.flagKey, tenantId });
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -119,11 +135,15 @@ router.patch('/:flagKey', async (req, res, next) => {
     try {
       const flag = await updateFeatureFlag(client, req.params.flagKey, parsed.data, req.user?.id);
       res.json(flag);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 
@@ -150,11 +170,15 @@ router.post('/:flagKey/tenants/:tenantId', async (req, res, next) => {
         req.user?.id
       );
       res.json(result);
+
+      return;
     } finally {
       client.release();
     }
   } catch (error) {
     next(error);
+
+    return;
   }
 });
 

@@ -37,7 +37,7 @@ export interface DepartmentRecord {
  */
 export async function createDepartment(
   client: PoolClient,
-  tenantId: string,
+  _tenantId: string,
   schoolId: string,
   input: DepartmentInput,
   actorId: string

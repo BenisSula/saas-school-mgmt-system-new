@@ -35,7 +35,7 @@ export default function StudentAnnouncementsPage() {
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Class Announcements</h1>
 
-        {isLoading && <StatusBanner status="loading" message="Loading announcements..." />}
+        {isLoading && <StatusBanner status="info" message="Loading announcements..." />}
 
         {announcements && (
           <div className="space-y-4">

@@ -43,6 +43,7 @@ export default function UserActivityPage() {
   const { data: sessionsData, isLoading: sessionsLoading } = useQuery({
     queryKey: ['superuser', 'sessions', userId],
     queryFn: async () => {
+      if (!userId) throw new Error('User ID is required');
       return await api.superuser.getSessions(userId);
     },
     enabled: !!userId,

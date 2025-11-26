@@ -12,8 +12,8 @@ import { Input } from '../../../components/ui/Input';
 import { Select } from '../../../components/ui/Select';
 import { Modal } from '../../../components/ui/Modal';
 import { Table, type TableColumn } from '../../../components/ui/Table';
-import { Plus, UserPlus, Users } from 'lucide-react';
-import { EditButton, DeleteButton, ActionButtonGroup } from '../../../components/table-actions';
+import { Plus, UserPlus, Users, Trash2 } from 'lucide-react';
+import { EditButton, ActionButtonGroup } from '../../../components/table-actions';
 import {
   useAdminClasses,
   useCreateAdminClass,
@@ -156,26 +156,33 @@ export default function AdminClassesPage() {
   };
 
   const columns: TableColumn<AdminClass>[] = [
-    { key: 'name', label: 'Name' },
-    { key: 'gradeLevel', label: 'Grade Level' },
-    { key: 'section', label: 'Section' },
+    { key: 'name', header: 'Name' },
+    { key: 'gradeLevel', header: 'Grade Level' },
+    { key: 'section', header: 'Section' },
     {
       key: 'studentCount',
-      label: 'Students',
+      header: 'Students',
       render: (classItem) => classItem.studentCount ?? 0,
     },
     {
       key: 'teacherName',
-      label: 'Class Teacher',
+      header: 'Class Teacher',
       render: (classItem) => classItem.teacherName || 'Not assigned',
     },
     {
       key: 'actions',
-      label: 'Actions',
+      header: 'Actions',
       render: (classItem) => (
         <ActionButtonGroup>
           <EditButton onClick={() => handleEdit(classItem)} />
-          <DeleteButton onClick={() => handleDelete(classItem.id)} />
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => handleDelete(classItem.id)}
+            leftIcon={<Trash2 className="h-4 w-4" />}
+          >
+            Delete
+          </Button>
           <Button
             size="sm"
             variant="outline"
@@ -213,9 +220,7 @@ export default function AdminClassesPage() {
     );
   }
 
-  const classes = (
-    Array.isArray(classesData) ? classesData : (classesData as { data?: AdminClass[] })?.data || []
-  ) as AdminClass[];
+  const classes = (Array.isArray(classesData) ? classesData : classesData || []) as AdminClass[];
   const teachers = teachersData || [];
   const students = studentsData || [];
 
@@ -397,7 +402,7 @@ export default function AdminClassesPage() {
                     }}
                   />
                   <span>
-                    {student.full_name || student.first_name} {student.last_name}
+                    {student.first_name} {student.last_name}
                   </span>
                 </label>
               ))}

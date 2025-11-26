@@ -78,6 +78,7 @@ router.post('/', fileUploadLimiter, async (req, res, next) => {
     });
 
     res.status(201).json(result);
+      return;
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes('exceeds maximum')) {
@@ -88,6 +89,7 @@ router.post('/', fileUploadLimiter, async (req, res, next) => {
       }
     }
     next(error);
+      return;
   }
 });
 
@@ -100,8 +102,10 @@ router.get('/', async (req, res, next) => {
 
     const uploads = await getUserFileUploads(req.user.id, req.tenant.id);
     res.json(uploads);
+      return;
   } catch (error) {
     next(error);
+      return;
   }
 });
 
@@ -114,6 +118,7 @@ router.delete('/:id', mutationRateLimiter, async (req, res, next) => {
 
     await deleteFileUpload(req.params.id, req.user.id, req.tenant.id);
     res.status(204).send();
+      return;
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'File not found') {
@@ -124,6 +129,7 @@ router.delete('/:id', mutationRateLimiter, async (req, res, next) => {
       }
     }
     next(error);
+      return;
   }
 });
 

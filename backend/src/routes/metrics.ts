@@ -12,8 +12,10 @@ router.get('/', async (_req: Request, res: Response) => {
   try {
     res.set('Content-Type', getMetricsContentType());
     res.end(await getMetrics());
+    return;
   } catch {
     res.status(500).json({ error: 'Failed to generate metrics' });
+    return;
   }
 });
 
@@ -33,9 +35,11 @@ router.post('/frontend', async (req: Request, res: Response) => {
     // For now, just acknowledge receipt
 
     res.json({ success: true, received: metrics.length });
+    return;
   } catch (error) {
     console.error('[Frontend Metrics] Error:', error);
     res.status(500).json({ error: 'Failed to process metrics' });
+    return;
   }
 });
 

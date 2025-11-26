@@ -52,17 +52,14 @@ export default function TeacherAnnouncementsPage() {
             value={selectedClassId}
             onChange={(e) => setSelectedClassId(e.target.value)}
             className="w-64"
-          >
-            <option value="">Select a class</option>
-            {classes?.map((cls) => (
-              <option key={cls.id} value={cls.id}>
-                {cls.name}
-              </option>
-            ))}
-          </Select>
+            options={[
+              { value: '', label: 'Select a class' },
+              ...(classes?.map((cls) => ({ value: cls.id, label: cls.name })) || []),
+            ]}
+          />
         </div>
 
-        {loadingClasses && <StatusBanner status="loading" message="Loading classes..." />}
+        {loadingClasses && <StatusBanner status="info" message="Loading classes..." />}
 
         {showForm && selectedClassId && (
           <div className="border border-gray-200 rounded-lg p-6 bg-white">

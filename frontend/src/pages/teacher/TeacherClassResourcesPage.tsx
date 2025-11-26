@@ -81,18 +81,15 @@ export default function TeacherClassResourcesPage() {
             value={selectedClassId}
             onChange={(e) => setSelectedClassId(e.target.value)}
             className="w-64"
-          >
-            <option value="">Select a class</option>
-            {classes?.map((cls) => (
-              <option key={cls.id} value={cls.id}>
-                {cls.name}
-              </option>
-            ))}
-          </Select>
+            options={[
+              { value: '', label: 'Select a class' },
+              ...(classes?.map((cls) => ({ value: cls.id, label: cls.name })) || []),
+            ]}
+          />
         </div>
 
-        {loadingClasses && <StatusBanner status="loading" message="Loading classes..." />}
-        {loadingResources && <StatusBanner status="loading" message="Loading resources..." />}
+        {loadingClasses && <StatusBanner status="info" message="Loading classes..." />}
+        {loadingResources && <StatusBanner status="info" message="Loading resources..." />}
 
         {selectedClassId && resources && (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

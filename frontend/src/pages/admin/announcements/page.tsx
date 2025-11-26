@@ -80,20 +80,20 @@ export default function AdminAnnouncementsPage() {
   };
 
   const columns: TableColumn<Announcement>[] = [
-    { key: 'title', label: 'Title' },
+    { key: 'title', header: 'Title' },
     {
       key: 'content',
-      label: 'Content',
+      header: 'Content',
       render: (announcement) => <div className="max-w-md truncate">{announcement.content}</div>,
     },
     {
       key: 'targetRoles',
-      label: 'Target Roles',
+      header: 'Target Roles',
       render: (announcement) => announcement.targetRoles.join(', '),
     },
     {
       key: 'priority',
-      label: 'Priority',
+      header: 'Priority',
       render: (announcement) => (
         <span
           className={
@@ -112,12 +112,12 @@ export default function AdminAnnouncementsPage() {
     },
     {
       key: 'createdAt',
-      label: 'Created',
+      header: 'Created',
       render: (announcement) => new Date(announcement.createdAt).toLocaleString(),
     },
     {
       key: 'expiresAt',
-      label: 'Expires',
+      header: 'Expires',
       render: (announcement) =>
         announcement.expiresAt ? new Date(announcement.expiresAt).toLocaleString() : 'Never',
     },
