@@ -480,7 +480,24 @@ export async function assignHODToDepartment(
     throw new Error('User not found');
   }
 
-  // Check if user already has HOD role
+  // Check if user is already HOD of another department
+  const existingHODCheck = await pool.query<{ name: string }>(
+    `SELECT d.name 
+     FROM shared.users u
+     INNER JOIN shared.user_roles ur ON ur.user_id = u.id
+     INNER JOIN shared.departments d ON d.id = u.department_id
+     WHERE u.id = $1 AND ur.role_name = 'hod' AND u.department_id IS NOT NULL AND u.department_id != $2`,
+    [userId, departmentId]
+  );
+
+  if (existingHODCheck.rows.length > 0) {
+    const existingDept = existingHODCheck.rows[0].name;
+    throw new Error(
+      `User is already HOD of department "${existingDept}". Please remove them from that department first or assign them to this department instead.`
+    );
+  }
+
+  // Check if user already has HOD role (for this or no department)
   const hodRoleCheck = await pool.query(
     `SELECT user_id FROM shared.user_roles WHERE user_id = $1 AND role_name = 'hod'`,
     [userId]
