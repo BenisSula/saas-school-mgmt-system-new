@@ -30,6 +30,12 @@ export interface DepartmentRecord {
   updatedAt: Date;
   hodCount?: number;
   teacherCount?: number;
+  hod?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
 }
 
 /**
@@ -137,12 +143,32 @@ export async function listDepartments(
       updated_at: Date;
       hod_count: string;
       teacher_count: string;
+      hod_id: string | null;
+      hod_first_name: string | null;
+      hod_last_name: string | null;
+      hod_email: string | null;
     }>(
       `SELECT 
         d.id, d.school_id, d.name, d.slug, d.contact_email, d.contact_phone,
         d.metadata, d.created_at, d.updated_at,
         COUNT(DISTINCT CASE WHEN ur.role_name = 'hod' THEN u.id END)::text as hod_count,
-        COUNT(DISTINCT CASE WHEN u.department_id = d.id AND u.role = 'teacher' THEN u.id END)::text as teacher_count
+        COUNT(DISTINCT CASE WHEN u.department_id = d.id AND u.role = 'teacher' THEN u.id END)::text as teacher_count,
+        (SELECT u2.id FROM shared.users u2 
+         INNER JOIN shared.user_roles ur2 ON ur2.user_id = u2.id 
+         WHERE u2.department_id = d.id AND ur2.role_name = 'hod' 
+         LIMIT 1) as hod_id,
+        (SELECT u2.first_name FROM shared.users u2 
+         INNER JOIN shared.user_roles ur2 ON ur2.user_id = u2.id 
+         WHERE u2.department_id = d.id AND ur2.role_name = 'hod' 
+         LIMIT 1) as hod_first_name,
+        (SELECT u2.last_name FROM shared.users u2 
+         INNER JOIN shared.user_roles ur2 ON ur2.user_id = u2.id 
+         WHERE u2.department_id = d.id AND ur2.role_name = 'hod' 
+         LIMIT 1) as hod_last_name,
+        (SELECT u2.email FROM shared.users u2 
+         INNER JOIN shared.user_roles ur2 ON ur2.user_id = u2.id 
+         WHERE u2.department_id = d.id AND ur2.role_name = 'hod' 
+         LIMIT 1) as hod_email
        FROM shared.departments d
        LEFT JOIN shared.users u ON u.department_id = d.id
        LEFT JOIN shared.user_roles ur ON ur.user_id = u.id
@@ -164,6 +190,14 @@ export async function listDepartments(
       updatedAt: row.updated_at,
       hodCount: Number(row.hod_count),
       teacherCount: Number(row.teacher_count),
+      hod: row.hod_id
+        ? {
+            id: row.hod_id,
+            firstName: row.hod_first_name || '',
+            lastName: row.hod_last_name || '',
+            email: row.hod_email || '',
+          }
+        : undefined,
     }));
   } else {
     const result = await pool.query<{

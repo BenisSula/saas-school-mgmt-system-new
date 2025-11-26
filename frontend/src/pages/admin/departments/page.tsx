@@ -30,6 +30,12 @@ interface Department {
   contactPhone: string | null;
   hodCount?: number;
   teacherCount?: number;
+  hod?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -102,9 +108,37 @@ export default function AdminDepartmentsPage() {
     { key: 'name', header: 'Name' },
     { key: 'slug', header: 'Slug' },
     {
-      key: 'hodCount',
-      header: 'HODs',
-      render: (dept) => dept.hodCount ?? 0,
+      key: 'hod',
+      header: 'HOD',
+      render: (dept) => (
+        <div className="flex items-center gap-3">
+          <div className="text-sm flex-1">
+            {dept.hod?.firstName ? (
+              <>
+                <div className="font-medium">
+                  {`${dept.hod.firstName} ${dept.hod.lastName ?? ''}`.trim()}
+                </div>
+                {dept.hod.email && (
+                  <div className="text-xs text-[var(--brand-muted)]">{dept.hod.email}</div>
+                )}
+              </>
+            ) : (
+              <div className="text-sm text-[var(--brand-muted)]">No HOD assigned</div>
+            )}
+          </div>
+          {canManageSchool && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => handleAssignHOD(dept)}
+              aria-label={`Assign HOD for ${dept.name}`}
+              leftIcon={<UserPlus className="h-3 w-3" />}
+            >
+              {dept.hod ? 'Change' : 'Assign'}
+            </Button>
+          )}
+        </div>
+      ),
     },
     {
       key: 'teacherCount',

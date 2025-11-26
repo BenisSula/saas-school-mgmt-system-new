@@ -14,6 +14,12 @@ export interface Department {
   contactPhone: string | null;
   hodCount?: number;
   teacherCount?: number;
+  hod?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
