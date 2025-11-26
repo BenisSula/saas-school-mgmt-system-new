@@ -1,0 +1,442 @@
+{
+  "scan_date": "2025-11-26",
+  "summary": {
+    "total_routes_analyzed": 25,
+    "routes_protected": 25,
+    "routes_with_role_check": 24,
+    "routes_with_permission_check": 2,
+    "ui_controls_with_rbac": 0,
+    "status": "PARTIAL",
+    "critical_issues": 1,
+    "medium_issues": 3,
+    "low_issues": 0
+  },
+  "rbac_implementation": {
+    "route_protection": {
+      "component": "ProtectedRoute",
+      "location": "frontend/src/components/ProtectedRoute.tsx",
+      "status": "IMPLEMENTED",
+      "features": [
+        "Role-based access control (allowedRoles)",
+        "Permission-based access control (allowedPermissions)",
+        "Support for additional roles (HOD)",
+        "Automatic redirect to /not-authorized",
+        "Loading states",
+        "User status checks (active/pending)"
+      ],
+      "strengths": [
+        "Centralized protection component",
+        "Supports both role and permission checks",
+        "Handles HOD special case (teacher with hod additional role)",
+        "Proper redirect handling",
+        "User status validation"
+      ]
+    },
+    "permission_system": {
+      "config_file": "frontend/src/config/permissions.ts",
+      "status": "IMPLEMENTED",
+      "roles": ["student", "teacher", "hod", "admin", "superadmin"],
+      "permissions_count": 56,
+      "permission_categories": [
+        "dashboard:view",
+        "attendance:manage",
+        "attendance:view",
+        "attendance:mark",
+        "exams:manage",
+        "exams:view",
+        "grades:manage",
+        "grades:enter",
+        "grades:edit",
+        "fees:manage",
+        "fees:view",
+        "users:invite",
+        "users:manage",
+        "tenants:manage",
+        "settings:branding",
+        "settings:terms",
+        "settings:classes",
+        "students:manage",
+        "students:view_own_class",
+        "students:view_self",
+        "teachers:manage",
+        "school:manage",
+        "department-analytics",
+        "reports:view",
+        "reports:manage",
+        "performance:charts",
+        "performance:generate",
+        "messages:send",
+        "messages:receive",
+        "fees:view_self",
+        "profile:view_self",
+        "support:raise",
+        "support:view",
+        "support:manage",
+        "announcements:manage",
+        "kb:manage",
+        "status:view",
+        "status:manage",
+        "notifications:send",
+        "subscriptions:manage",
+        "subscriptions:view",
+        "subscriptions:update",
+        "overrides:manage",
+        "overrides:view",
+        "overrides:create",
+        "overrides:revoke",
+        "permission_overrides:manage",
+        "permission_overrides:view",
+        "billing:view",
+        "billing:manage"
+      ],
+      "hasPermission_function": true,
+      "supports_additional_roles": true
+    },
+    "rbac_hooks": {
+      "usePermission": {
+        "location": "frontend/src/hooks/usePermission.ts",
+        "status": "IMPLEMENTED",
+        "description": "Check if user has a specific permission"
+      },
+      "useAnyPermission": {
+        "location": "frontend/src/hooks/usePermission.ts",
+        "status": "IMPLEMENTED",
+        "description": "Check if user has any of the specified permissions"
+      },
+      "useAllPermissions": {
+        "location": "frontend/src/hooks/usePermission.ts",
+        "status": "IMPLEMENTED",
+        "description": "Check if user has all of the specified permissions"
+      },
+      "useRBAC": {
+        "location": "frontend/src/lib/rbac/useRBAC.ts",
+        "status": "IMPLEMENTED",
+        "description": "Comprehensive RBAC hook with role checks (isAdmin, isSuperAdmin, etc.)"
+      }
+    },
+    "sidebar_filtering": {
+      "location": "frontend/src/lib/rbac/filterSidebarLinks.ts",
+      "status": "IMPLEMENTED",
+      "description": "Sidebar links are filtered based on user permissions",
+      "function": "filterSidebarLinksByPermission()"
+    }
+  },
+  "route_analysis": [
+    {
+      "route": "/dashboard/overview",
+      "component": "AdminOverviewPage",
+      "required_roles": ["admin", "superadmin"],
+      "required_permissions": ["dashboard:view"],
+      "enforcement_method": "ProtectedRoute with allowedRoles and allowedPermissions",
+      "status": "PROTECTED",
+      "severity": "NONE"
+    },
+    {
+      "route": "/dashboard/users",
+      "component": "AdminRoleManagementPage",
+      "required_roles": ["admin", "superadmin"],
+      "required_permissions": [],
+      "enforcement_method": "ProtectedRoute with allowedRoles",
+      "status": "PROTECTED",
+      "severity": "LOW",
+      "suggestion": "Consider adding permission check: ['users:manage']"
+    },
+    {
+      "route": "/dashboard/departments",
+      "component": "AdminDepartmentsPage",
+      "required_roles": ["admin", "superadmin"],
+      "required_permissions": [],
+      "enforcement_method": "ProtectedRoute with allowedRoles",
+      "status": "PROTECTED",
+      "severity": "LOW",
+      "suggestion": "Consider adding permission check: ['school:manage']"
+    },
+    {
+      "route": "/dashboard/classes-management",
+      "component": "AdminClassesPage",
+      "required_roles": ["admin", "superadmin"],
+      "required_permissions": [],
+      "enforcement_method": "ProtectedRoute with allowedRoles",
+      "status": "PROTECTED",
+      "severity": "LOW",
+      "suggestion": "Consider adding permission check: ['settings:classes']"
+    },
+    {
+      "route": "/dashboard/users-management",
+      "component": "AdminUsersPage",
+      "required_roles": ["admin", "superadmin"],
+      "required_permissions": [],
+      "enforcement_method": "ProtectedRoute with allowedRoles",
+      "status": "PROTECTED",
+      "severity": "MEDIUM",
+      "suggestion": "Should add permission check: ['users:manage'] - this is a critical user management route"
+    },
+    {
+      "route": "/dashboard/reports-admin",
+      "component": "AdminReportsPageNew",
+      "required_roles": ["admin", "superadmin"],
+      "required_permissions": [],
+      "enforcement_method": "ProtectedRoute with allowedRoles",
+      "status": "PROTECTED",
+      "severity": "LOW",
+      "suggestion": "Consider adding permission check: ['reports:view']"
+    },
+    {
+      "route": "/dashboard/announcements",
+      "component": "AdminAnnouncementsPage",
+      "required_roles": ["admin", "superadmin"],
+      "required_permissions": [],
+      "enforcement_method": "ProtectedRoute with allowedRoles",
+      "status": "PROTECTED",
+      "severity": "LOW",
+      "suggestion": "Consider adding permission check: ['announcements:manage']"
+    },
+    {
+      "route": "/dashboard/billing",
+      "component": "AdminBillingPage",
+      "required_roles": ["admin", "superadmin"],
+      "required_permissions": ["billing:view"],
+      "enforcement_method": "ProtectedRoute with allowedRoles and allowedPermissions",
+      "status": "PROTECTED",
+      "severity": "NONE"
+    },
+    {
+      "route": "/dashboard/classes",
+      "component": "AdminClassesSubjectsPage",
+      "required_roles": ["admin", "superadmin"],
+      "required_permissions": [],
+      "enforcement_method": "ProtectedRoute with allowedRoles",
+      "status": "PROTECTED",
+      "severity": "LOW",
+      "suggestion": "Consider adding permission check: ['settings:classes']"
+    }
+  ],
+  "ui_controls_analysis": [
+    {
+      "component": "AdminUsersPage",
+      "location": "frontend/src/pages/admin/users/page.tsx",
+      "ui_controls": [
+        "Create HOD button",
+        "Create Teacher button",
+        "Create Student button",
+        "Enable/Disable user buttons"
+      ],
+      "rbac_enforcement": "NONE",
+      "status": "MISSING",
+      "severity": "CRITICAL",
+      "suggestion": "Buttons should be conditionally rendered based on permissions:\n- Create HOD: ['users:manage', 'teachers:manage']\n- Create Teacher: ['users:manage', 'teachers:manage']\n- Create Student: ['users:manage', 'students:manage']\n- Enable/Disable: ['users:manage']"
+    },
+    {
+      "component": "AdminClassesPage",
+      "location": "frontend/src/pages/admin/classes/page.tsx",
+      "ui_controls": [
+        "Create Class button",
+        "Edit button",
+        "Delete button",
+        "Assign Teacher button",
+        "Assign Students button"
+      ],
+      "rbac_enforcement": "NONE",
+      "status": "MISSING",
+      "severity": "CRITICAL",
+      "suggestion": "Buttons should be conditionally rendered based on permissions:\n- Create/Edit/Delete: ['settings:classes']\n- Assign Teacher: ['settings:classes', 'teachers:manage']\n- Assign Students: ['settings:classes', 'students:manage']"
+    },
+    {
+      "component": "AdminDepartmentsPage",
+      "location": "frontend/src/pages/admin/departments/page.tsx",
+      "ui_controls": [
+        "Create Department button",
+        "Edit button",
+        "Delete button"
+      ],
+      "rbac_enforcement": "NONE",
+      "status": "MISSING",
+      "severity": "MEDIUM",
+      "suggestion": "Buttons should be conditionally rendered based on permissions:\n- Create/Edit/Delete: ['school:manage']"
+    },
+    {
+      "component": "StudentsManagementPage",
+      "location": "frontend/src/pages/admin/StudentsManagementPage.tsx",
+      "ui_controls": [
+        "Create Student button",
+        "Import CSV button",
+        "Export buttons",
+        "Bulk Delete button",
+        "Edit/Delete actions"
+      ],
+      "rbac_enforcement": "NONE",
+      "status": "MISSING",
+      "severity": "CRITICAL",
+      "suggestion": "Buttons should be conditionally rendered based on permissions:\n- Create/Edit/Delete: ['students:manage']\n- Import/Export: ['students:manage']"
+    },
+    {
+      "component": "TeachersManagementPage",
+      "location": "frontend/src/pages/admin/TeachersManagementPage.tsx",
+      "ui_controls": [
+        "Create Teacher button",
+        "Import CSV button",
+        "Export buttons",
+        "Bulk Delete button",
+        "Edit/Delete actions"
+      ],
+      "rbac_enforcement": "NONE",
+      "status": "MISSING",
+      "severity": "CRITICAL",
+      "suggestion": "Buttons should be conditionally rendered based on permissions:\n- Create/Edit/Delete: ['teachers:manage']\n- Import/Export: ['teachers:manage']"
+    },
+    {
+      "component": "HODsManagementPage",
+      "location": "frontend/src/pages/admin/HODsManagementPage.tsx",
+      "ui_controls": [
+        "Create HOD button",
+        "Import CSV button",
+        "Export buttons",
+        "Remove HOD button"
+      ],
+      "rbac_enforcement": "NONE",
+      "status": "MISSING",
+      "severity": "MEDIUM",
+      "suggestion": "Buttons should be conditionally rendered based on permissions:\n- Create/Remove HOD: ['users:manage', 'teachers:manage']"
+    }
+  ],
+  "findings": {
+    "critical": [
+      {
+        "issue": "UI controls (buttons) are not protected by RBAC",
+        "description": "Admin pages show all action buttons (Create, Edit, Delete) to all admin users without checking permissions. This means any admin user can see and potentially attempt to use actions they shouldn't have access to.",
+        "affected_components": [
+          "AdminUsersPage",
+          "AdminClassesPage",
+          "StudentsManagementPage",
+          "TeachersManagementPage"
+        ],
+        "recommendation": "Implement conditional rendering of UI controls based on permissions using usePermission() or useRBAC() hooks. Example:\n```tsx\nconst canManageUsers = usePermission('users:manage');\n{canManageUsers && <Button>Create User</Button>}\n```"
+      }
+    ],
+    "medium": [
+      {
+        "issue": "Some routes lack permission checks",
+        "description": "Several admin routes only check roles but not specific permissions. While role-based protection is good, permission-based checks provide finer-grained control.",
+        "affected_routes": [
+          "/dashboard/users-management",
+          "/dashboard/departments",
+          "/dashboard/classes-management",
+          "/dashboard/classes",
+          "/dashboard/reports-admin",
+          "/dashboard/announcements"
+        ],
+        "recommendation": "Add allowedPermissions to ProtectedRoute components for these routes to enforce permission-based access control."
+      },
+      {
+        "issue": "HODsManagementPage lacks RBAC on UI controls",
+        "description": "HOD management page shows all action buttons without permission checks.",
+        "affected_components": ["HODsManagementPage"],
+        "recommendation": "Add permission checks for Create/Remove HOD buttons."
+      },
+      {
+        "issue": "AdminDepartmentsPage lacks RBAC on UI controls",
+        "description": "Department management page shows all action buttons without permission checks.",
+        "affected_components": ["AdminDepartmentsPage"],
+        "recommendation": "Add permission checks for Create/Edit/Delete department buttons."
+      }
+    ],
+    "low": [
+      {
+        "issue": "Route protection could be more granular",
+        "description": "Some routes could benefit from additional permission checks for better security.",
+        "recommendation": "Consider adding permission checks to routes that currently only check roles."
+      }
+    ]
+  },
+  "recommendations": {
+    "immediate_actions": [
+      {
+        "action": "Add RBAC to UI controls in admin pages",
+        "priority": "CRITICAL",
+        "description": "Implement conditional rendering of buttons/actions based on user permissions using usePermission() or useRBAC() hooks.",
+        "example": "```tsx\nimport { usePermission } from '../../../hooks/usePermission';\n\nconst canManageUsers = usePermission('users:manage');\nconst canManageStudents = usePermission('students:manage');\n\n{canManageUsers && (\n  <Button onClick={() => setShowCreateModal(true)}>\n    Create User\n  </Button>\n)}\n```"
+      },
+      {
+        "action": "Add permission checks to critical routes",
+        "priority": "MEDIUM",
+        "description": "Add allowedPermissions to ProtectedRoute components for routes that manage sensitive resources.",
+        "example": "```tsx\n<ProtectedRoute\n  allowedRoles={['admin', 'superadmin']}\n  allowedPermissions={['users:manage']}\n>\n  <AdminUsersPage />\n</ProtectedRoute>\n```"
+      }
+    ],
+    "optional_improvements": [
+      {
+        "action": "Create centralized permissions map",
+        "priority": "LOW",
+        "description": "Create a centralized permissions map for routes and UI controls to make RBAC management easier.",
+        "example": "```tsx\nconst routePermissions = {\n  '/dashboard/users-management': ['users:manage'],\n  '/dashboard/classes': ['settings:classes'],\n  // ...\n};\n\nconst uiControlPermissions = {\n  'create-user': ['users:manage'],\n  'delete-user': ['users:manage'],\n  // ...\n};\n```"
+      },
+      {
+        "action": "Add RBAC testing",
+        "priority": "LOW",
+        "description": "Add integration tests to verify RBAC enforcement for routes and UI controls."
+      }
+    ]
+  },
+  "manual_testing_notes": {
+    "test_users_required": [
+      {
+        "role": "admin",
+        "permissions": ["users:manage", "students:manage", "teachers:manage", "settings:classes", "school:manage"]
+      },
+      {
+        "role": "admin",
+        "permissions": ["dashboard:view", "attendance:view"],
+        "description": "Limited admin user for testing permission restrictions"
+      },
+      {
+        "role": "teacher",
+        "permissions": ["attendance:mark", "grades:enter"]
+      },
+      {
+        "role": "student",
+        "permissions": ["dashboard:view", "attendance:view"]
+      }
+    ],
+    "test_scenarios": [
+      {
+        "scenario": "Admin user with limited permissions",
+        "steps": [
+          "Login as admin user with only 'dashboard:view' permission",
+          "Navigate to /dashboard/users-management",
+          "Verify: Should see 403 or redirect to not-authorized",
+          "Verify: Should NOT see Create/Edit/Delete buttons if route is accessible"
+        ],
+        "expected": "User should be blocked from accessing routes and UI controls they don't have permission for"
+      },
+      {
+        "scenario": "Teacher accessing admin routes",
+        "steps": [
+          "Login as teacher",
+          "Try to navigate to /dashboard/users-management",
+          "Verify: Should be redirected to /not-authorized"
+        ],
+        "expected": "Teacher should not be able to access admin routes"
+      },
+      {
+        "scenario": "Student accessing admin routes",
+        "steps": [
+          "Login as student",
+          "Try to navigate to /dashboard/users-management",
+          "Verify: Should be redirected to /not-authorized"
+        ],
+        "expected": "Student should not be able to access admin routes"
+      }
+    ]
+  },
+  "conclusion": {
+    "status": "PARTIAL",
+    "summary": "RBAC is well-implemented at the route level with ProtectedRoute component and permission system. However, UI controls (buttons, actions) are not protected by RBAC, which is a critical security gap. All admin users can see all action buttons regardless of their permissions.",
+    "next_steps": [
+      "Implement RBAC on UI controls in all admin pages",
+      "Add permission checks to critical routes",
+      "Test RBAC enforcement with different user roles and permission levels",
+      "Consider creating a centralized permissions map for easier management"
+    ]
+  }
+}
+
