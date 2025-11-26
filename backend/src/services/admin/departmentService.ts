@@ -148,33 +148,38 @@ export async function listDepartments(
       hod_last_name: string | null;
       hod_email: string | null;
     }>(
-      `SELECT 
-        d.id, d.school_id, d.name, d.slug, d.contact_email, d.contact_phone,
-        d.metadata, d.created_at, d.updated_at,
-        COUNT(DISTINCT CASE WHEN ur.role_name = 'hod' THEN u.id END)::text as hod_count,
-        COUNT(DISTINCT CASE WHEN u.department_id = d.id AND u.role = 'teacher' THEN u.id END)::text as teacher_count,
-        (SELECT u2.id FROM shared.users u2 
-         INNER JOIN shared.user_roles ur2 ON ur2.user_id = u2.id 
-         WHERE u2.department_id = d.id AND ur2.role_name = 'hod' 
-         LIMIT 1) as hod_id,
-        (SELECT u2.first_name FROM shared.users u2 
-         INNER JOIN shared.user_roles ur2 ON ur2.user_id = u2.id 
-         WHERE u2.department_id = d.id AND ur2.role_name = 'hod' 
-         LIMIT 1) as hod_first_name,
-        (SELECT u2.last_name FROM shared.users u2 
-         INNER JOIN shared.user_roles ur2 ON ur2.user_id = u2.id 
-         WHERE u2.department_id = d.id AND ur2.role_name = 'hod' 
-         LIMIT 1) as hod_last_name,
-        (SELECT u2.email FROM shared.users u2 
-         INNER JOIN shared.user_roles ur2 ON ur2.user_id = u2.id 
-         WHERE u2.department_id = d.id AND ur2.role_name = 'hod' 
-         LIMIT 1) as hod_email
-       FROM shared.departments d
-       LEFT JOIN shared.users u ON u.department_id = d.id
-       LEFT JOIN shared.user_roles ur ON ur.user_id = u.id
-       WHERE d.school_id = $1
-       GROUP BY d.id, d.school_id, d.name, d.slug, d.contact_email, d.contact_phone, d.metadata, d.created_at, d.updated_at
-       ORDER BY d.name`,
+      `WITH department_counts AS (
+         SELECT 
+           d.id, d.school_id, d.name, d.slug, d.contact_email, d.contact_phone,
+           d.metadata, d.created_at, d.updated_at,
+           COUNT(DISTINCT CASE WHEN ur.role_name = 'hod' THEN u.id END)::text as hod_count,
+           COUNT(DISTINCT CASE WHEN u.department_id = d.id AND u.role = 'teacher' THEN u.id END)::text as teacher_count
+         FROM shared.departments d
+         LEFT JOIN shared.users u ON u.department_id = d.id
+         LEFT JOIN shared.user_roles ur ON ur.user_id = u.id
+         WHERE d.school_id = $1
+         GROUP BY d.id, d.school_id, d.name, d.slug, d.contact_email, d.contact_phone, d.metadata, d.created_at, d.updated_at
+       ),
+       hod_details AS (
+         SELECT DISTINCT ON (u.department_id)
+           u.department_id,
+           u.id as hod_id,
+           u.first_name as hod_first_name,
+           u.last_name as hod_last_name,
+           u.email as hod_email
+         FROM shared.users u
+         INNER JOIN shared.user_roles ur ON ur.user_id = u.id
+         WHERE ur.role_name = 'hod' AND u.department_id IS NOT NULL
+         ORDER BY u.department_id, u.created_at
+       )
+       SELECT 
+         dc.id, dc.school_id, dc.name, dc.slug, dc.contact_email, dc.contact_phone,
+         dc.metadata, dc.created_at, dc.updated_at,
+         dc.hod_count, dc.teacher_count,
+         hd.hod_id, hd.hod_first_name, hd.hod_last_name, hd.hod_email
+       FROM department_counts dc
+       LEFT JOIN hod_details hd ON hd.department_id = dc.id
+       ORDER BY dc.name`,
       [schoolId]
     );
 
