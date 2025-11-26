@@ -86,12 +86,15 @@ export async function runTenantMigrations(pool: Pool, schemaName: string): Promi
       // Split SQL statements properly, handling:
       // - Comments (-- style)
       // - String literals (single quotes)
+      // - Dollar-quoted strings ($$ ... $$)
       // - Parentheses (for CHECK constraints, function calls, etc.)
       // - Semicolons that are actual statement terminators
       const statements: string[] = [];
       let currentStatement = '';
       let inString = false;
       let inComment = false;
+      let inDollarQuote = false;
+      let dollarQuoteTag = '';
       let parenDepth = 0;
 
       for (let i = 0; i < renderedSql.length; i++) {
@@ -100,7 +103,7 @@ export async function runTenantMigrations(pool: Pool, schemaName: string): Promi
         const prevChar = renderedSql[i - 1] || '';
 
         // Handle comments
-        if (!inString && char === '-' && nextChar === '-') {
+        if (!inString && !inDollarQuote && char === '-' && nextChar === '-') {
           inComment = true;
           currentStatement += char;
           continue;
@@ -114,7 +117,36 @@ export async function runTenantMigrations(pool: Pool, schemaName: string): Promi
           continue;
         }
 
-        // Handle string literals
+        // Handle dollar-quoted strings ($$ ... $$, $tag$ ... $tag$, etc.)
+        if (!inString && !inDollarQuote && char === '$') {
+          // Check if this is the start of a dollar quote
+          let tagEnd = i + 1;
+          while (tagEnd < renderedSql.length && renderedSql[tagEnd] !== '$') {
+            tagEnd++;
+          }
+          if (tagEnd < renderedSql.length) {
+            dollarQuoteTag = renderedSql.substring(i, tagEnd + 1);
+            inDollarQuote = true;
+            currentStatement += dollarQuoteTag;
+            i = tagEnd; // Skip the tag
+            continue;
+          }
+        }
+
+        // Check for end of dollar quote
+        if (inDollarQuote) {
+          if (char === '$' && renderedSql.substring(i, i + dollarQuoteTag.length) === dollarQuoteTag) {
+            currentStatement += dollarQuoteTag;
+            i += dollarQuoteTag.length - 1; // Skip the tag
+            inDollarQuote = false;
+            dollarQuoteTag = '';
+            continue;
+          }
+          currentStatement += char;
+          continue;
+        }
+
+        // Handle string literals (only if not in dollar quote)
         if (char === "'" && prevChar !== '\\') {
           inString = !inString;
           currentStatement += char;
@@ -139,8 +171,8 @@ export async function runTenantMigrations(pool: Pool, schemaName: string): Promi
           continue;
         }
 
-        // Only split on semicolon if we're not in a string, comment, or nested parentheses
-        if (char === ';' && parenDepth === 0 && !inString && !inComment) {
+        // Only split on semicolon if we're not in a string, comment, dollar quote, or nested parentheses
+        if (char === ';' && parenDepth === 0 && !inString && !inComment && !inDollarQuote) {
           currentStatement += char;
           const trimmed = currentStatement.trim();
           // Filter out empty statements and comments-only statements
