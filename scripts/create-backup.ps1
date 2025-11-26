@@ -31,24 +31,17 @@ if ($tarAvailable) {
     $backendName = Split-Path $backendDir -Leaf
     
     Push-Location $parentDir
-    try {
-        tar -czf $backupFile $backendName
-        if ($LASTEXITCODE -eq 0) {
-            $fileSize = (Get-Item $backupFile).Length / 1MB
-            Write-Host "✓ Backup created successfully: $backupFile"
-            Write-Host "  Size: $([math]::Round($fileSize, 2)) MB"
-        } else {
-            Write-Error "tar command failed with exit code: $LASTEXITCODE"
-            exit 1
-        }
-    }
-    catch {
-        Write-Error "Error creating backup: $_"
+    tar -czf $backupFile $backendName
+    if ($LASTEXITCODE -eq 0) {
+        $fileSize = (Get-Item $backupFile).Length / 1MB
+        Write-Host "✓ Backup created successfully: $backupFile"
+        Write-Host "  Size: $([math]::Round($fileSize, 2)) MB"
+    } else {
+        Write-Error "tar command failed with exit code: $LASTEXITCODE"
+        Pop-Location
         exit 1
     }
-    finally {
-        Pop-Location
-    }
+    Pop-Location
 } else {
     Write-Host "tar not available, creating ZIP backup instead..."
     $zipFile = $backupFile -replace '\.tar\.gz$', '.zip'
@@ -65,4 +58,3 @@ if ($tarAvailable) {
 Write-Host ""
 Write-Host "Backup location: $backupDir"
 Write-Host "Backup file: $(Split-Path $backupFile -Leaf)"
-
