@@ -1,0 +1,444 @@
+{
+  "timestamp": "2025-11-26T07:33:07.644Z",
+  "summary": {
+    "totalPages": 5,
+    "ok": 3,
+    "drift": 2,
+    "fail": 0,
+    "notes": "DRIFT status indicates extra fields (createdAt, updatedAt) which are harmless - UI doesn't use them but backend returns them"
+  },
+  "pages": [
+    {
+      "page": "Users Management",
+      "component": "frontend/src/pages/admin/users/page.tsx",
+      "hook": "useAdminUsers",
+      "endpoint": "/admin/users",
+      "method": "GET",
+      "backendRoute": "backend/src/routes/admin/userManagement.ts",
+      "apiHandler": "api.admin.listUsers",
+      "expectedResponseType": "AdminUser[]",
+      "uiExpectedFields": [
+        "id",
+        "email",
+        "role",
+        "status",
+        "isVerified",
+        "createdAt"
+      ],
+      "backendFields": [
+        "id",
+        "email",
+        "role",
+        "status",
+        "isVerified",
+        "createdAt"
+      ],
+      "missingFields": [],
+      "extraFields": [],
+      "status": "OK",
+      "notes": "No schema drift detected. UI and backend are in sync.",
+      "backendImplementation": {
+        "route": "GET /admin/users",
+        "handler": "listTenantUsers",
+        "service": "backend/src/services/userService.ts",
+        "responseFormat": "StandardizedApiResponse<AdminUser[]>",
+        "filters": ["role", "status"],
+        "permissions": ["users:manage"]
+      },
+      "uiUsage": {
+        "displayFields": ["email", "role", "status", "isVerified"],
+        "actions": ["Create HOD", "Create Teacher", "Create Student", "Enable/Disable"],
+        "mutations": ["useCreateHOD", "useCreateTeacher", "useCreateStudent", "useDisableUser", "useEnableUser"]
+      },
+      "liveDataTest": {
+        "scenario": "Create a new user via UI, then query API to verify persistence",
+        "steps": [
+          "1. Login as admin",
+          "2. Navigate to /dashboard/users-management",
+          "3. Click 'Create HOD' button",
+          "4. Fill form and submit",
+          "5. Verify success toast appears",
+          "6. Query GET /admin/users via curl/Postman",
+          "7. Verify new user appears in response"
+        ],
+        "expectedResult": "New user should appear in API response immediately after creation"
+      }
+    },
+    {
+      "page": "Students Management",
+      "component": "frontend/src/pages/admin/StudentsManagementPage.tsx",
+      "hook": "useStudents",
+      "endpoint": "/students",
+      "method": "GET",
+      "backendRoute": "backend/src/routes/students.ts",
+      "apiHandler": "api.listStudents",
+      "expectedResponseType": "StudentRecord[]",
+      "uiExpectedFields": [
+        "id",
+        "first_name",
+        "last_name",
+        "email",
+        "admission_number",
+        "class_id",
+        "enrollment_status",
+        "parentContacts"
+      ],
+      "backendFields": [
+        "id",
+        "first_name",
+        "last_name",
+        "email",
+        "admission_number",
+        "class_id",
+        "enrollment_status",
+        "parentContacts"
+      ],
+      "missingFields": [],
+      "extraFields": [],
+      "status": "OK",
+      "notes": "No schema drift detected. UI and backend are in sync.",
+      "backendImplementation": {
+        "route": "GET /students",
+        "handler": "listStudents",
+        "service": "backend/src/services/studentService.ts",
+        "responseFormat": "PaginatedResponse<StudentRecord>",
+        "filters": ["classId", "enrollmentStatus", "search"],
+        "permissions": ["students:manage"],
+        "pagination": true
+      },
+      "uiUsage": {
+        "displayFields": ["first_name", "last_name", "admission_number", "class_id", "enrollment_status"],
+        "actions": ["Create Student", "Import CSV", "Assign Class", "Manage Parent", "Bulk Delete"],
+        "mutations": ["useCreateStudent", "useUpdateStudent", "useBulkDeleteStudents"]
+      },
+      "liveDataTest": {
+        "scenario": "Create a new student via UI, then query API to verify persistence",
+        "steps": [
+          "1. Login as admin",
+          "2. Navigate to /dashboard/students",
+          "3. Click 'Create Student' button",
+          "4. Fill form (firstName, lastName, email, etc.) and submit",
+          "5. Verify success toast appears",
+          "6. Query GET /students via curl/Postman",
+          "7. Verify new student appears in response with correct fields"
+        ],
+        "expectedResult": "New student should appear in API response with all fields populated correctly"
+      }
+    },
+    {
+      "page": "Teachers Management",
+      "component": "frontend/src/pages/admin/TeachersManagementPage.tsx",
+      "hook": "useTeachers",
+      "endpoint": "/teachers",
+      "method": "GET",
+      "backendRoute": "backend/src/routes/teachers.ts",
+      "apiHandler": "api.listTeachers",
+      "expectedResponseType": "TeacherProfile[]",
+      "uiExpectedFields": [
+        "id",
+        "name",
+        "email",
+        "subjects",
+        "assigned_classes"
+      ],
+      "backendFields": [
+        "id",
+        "name",
+        "email",
+        "subjects",
+        "assigned_classes"
+      ],
+      "missingFields": [],
+      "extraFields": [],
+      "status": "OK",
+      "notes": "No schema drift detected. UI and backend are in sync.",
+      "backendImplementation": {
+        "route": "GET /teachers",
+        "handler": "listTeachers",
+        "service": "backend/src/services/teacherService.ts",
+        "responseFormat": "PaginatedResponse<TeacherProfile>",
+        "filters": ["search (client-side)"],
+        "permissions": ["teachers:manage"],
+        "pagination": true,
+        "note": "Backend doesn't support filters yet - filtering is done client-side"
+      },
+      "uiUsage": {
+        "displayFields": ["name", "email", "subjects", "assigned_classes"],
+        "actions": ["Create Teacher", "Import CSV", "Assign Class", "Bulk Delete"],
+        "mutations": ["useCreateTeacher", "useUpdateTeacher", "useDeleteTeacher"]
+      },
+      "liveDataTest": {
+        "scenario": "Create a new teacher via UI, then query API to verify persistence",
+        "steps": [
+          "1. Login as admin",
+          "2. Navigate to /dashboard/teachers",
+          "3. Click 'Create Teacher' button",
+          "4. Fill form (name, email, subjects, etc.) and submit",
+          "5. Verify success toast appears",
+          "6. Query GET /teachers via curl/Postman",
+          "7. Verify new teacher appears in response with correct fields"
+        ],
+        "expectedResult": "New teacher should appear in API response with all fields populated correctly"
+      }
+    },
+    {
+      "page": "Classes Management",
+      "component": "frontend/src/pages/admin/classes/page.tsx",
+      "hook": "useAdminClasses",
+      "endpoint": "/admin/classes",
+      "method": "GET",
+      "backendRoute": "backend/src/routes/admin/classes.ts",
+      "apiHandler": "api.admin.listClasses",
+      "expectedResponseType": "AdminClass[]",
+      "uiExpectedFields": [
+        "id",
+        "name",
+        "description",
+        "gradeLevel",
+        "section",
+        "departmentId",
+        "classTeacherId",
+        "capacity",
+        "academicYear",
+        "studentCount",
+        "teacherName"
+      ],
+      "backendFields": [
+        "id",
+        "name",
+        "description",
+        "gradeLevel",
+        "section",
+        "departmentId",
+        "classTeacherId",
+        "capacity",
+        "academicYear",
+        "studentCount",
+        "teacherName",
+        "createdAt",
+        "updatedAt"
+      ],
+      "missingFields": [],
+      "extraFields": [
+        "createdAt",
+        "updatedAt"
+      ],
+      "status": "DRIFT",
+      "notes": "Schema drift detected: Extra fields (createdAt, updatedAt) are returned by backend but not used by UI. This is harmless - UI ignores these fields. No action required.",
+      "backendImplementation": {
+        "route": "GET /admin/classes",
+        "handler": "listClasses",
+        "service": "backend/src/services/admin/classService.ts",
+        "responseFormat": "StandardizedApiResponse<AdminClass[]>",
+        "filters": ["includeCounts (query param)"],
+        "permissions": ["settings:classes"],
+        "queryParams": {
+          "includeCounts": "boolean (default: true) - includes studentCount and teacherName"
+        }
+      },
+      "uiUsage": {
+        "displayFields": ["name", "gradeLevel", "section", "studentCount", "teacherName"],
+        "actions": ["Create Class", "Edit Class", "Delete Class", "Assign Teacher", "Assign Students"],
+        "mutations": ["useCreateAdminClass", "useUpdateAdminClass", "useDeleteAdminClass", "useAssignClassTeacher", "useAssignStudentsToClass"]
+      },
+      "liveDataTest": {
+        "scenario": "Create a new class via UI, then query API to verify persistence",
+        "steps": [
+          "1. Login as admin",
+          "2. Navigate to /dashboard/classes-management",
+          "3. Click 'Create Class' button",
+          "4. Fill form (name, gradeLevel, section, etc.) and submit",
+          "5. Verify success toast appears",
+          "6. Query GET /admin/classes?includeCounts=true via curl/Postman",
+          "7. Verify new class appears in response with correct fields"
+        ],
+        "expectedResult": "New class should appear in API response with all fields populated correctly, including createdAt and updatedAt"
+      },
+      "suggestedFix": {
+        "severity": "low",
+        "action": "No action required - extra fields are harmless",
+        "alternative": "If desired, UI could display createdAt/updatedAt in a details view"
+      }
+    },
+    {
+      "page": "Departments",
+      "component": "frontend/src/pages/admin/departments/page.tsx",
+      "hook": "useDepartments",
+      "endpoint": "/admin/departments",
+      "method": "GET",
+      "backendRoute": "backend/src/routes/admin/departments.ts",
+      "apiHandler": "api.admin.listDepartments",
+      "expectedResponseType": "Department[]",
+      "uiExpectedFields": [
+        "id",
+        "name",
+        "slug",
+        "contactEmail",
+        "contactPhone",
+        "hodCount",
+        "teacherCount"
+      ],
+      "backendFields": [
+        "id",
+        "name",
+        "slug",
+        "contactEmail",
+        "contactPhone",
+        "hodCount",
+        "teacherCount",
+        "createdAt",
+        "updatedAt"
+      ],
+      "missingFields": [],
+      "extraFields": [
+        "createdAt",
+        "updatedAt"
+      ],
+      "status": "DRIFT",
+      "notes": "Schema drift detected: Extra fields (createdAt, updatedAt) are returned by backend but not used by UI. This is harmless - UI ignores these fields. No action required.",
+      "backendImplementation": {
+        "route": "GET /admin/departments",
+        "handler": "listDepartments",
+        "service": "backend/src/services/admin/departmentService.ts",
+        "responseFormat": "StandardizedApiResponse<Department[]>",
+        "filters": ["includeCounts (query param)"],
+        "permissions": ["school:manage"],
+        "queryParams": {
+          "includeCounts": "boolean (default: true) - includes hodCount and teacherCount"
+        }
+      },
+      "uiUsage": {
+        "displayFields": ["name", "slug", "hodCount", "teacherCount"],
+        "actions": ["Create Department", "Edit Department", "Delete Department", "Assign HOD"],
+        "mutations": ["useCreateDepartment", "useUpdateDepartment", "useDeleteDepartment"]
+      },
+      "liveDataTest": {
+        "scenario": "Create a new department via UI, then query API to verify persistence",
+        "steps": [
+          "1. Login as admin",
+          "2. Navigate to /dashboard/departments",
+          "3. Click 'Create Department' button",
+          "4. Fill form (name, slug, contactEmail, etc.) and submit",
+          "5. Verify success toast appears",
+          "6. Query GET /admin/departments?includeCounts=true via curl/Postman",
+          "7. Verify new department appears in response with correct fields"
+        ],
+        "expectedResult": "New department should appear in API response with all fields populated correctly, including createdAt and updatedAt"
+      },
+      "suggestedFix": {
+        "severity": "low",
+        "action": "No action required - extra fields are harmless",
+        "alternative": "If desired, UI could display createdAt/updatedAt in a details view"
+      }
+    }
+  ],
+  "apiEndpointMapping": {
+    "/admin/users": {
+      "method": "GET",
+      "frontendHandler": "api.admin.listUsers",
+      "backendRoute": "backend/src/routes/admin/userManagement.ts",
+      "backendHandler": "listTenantUsers",
+      "responseWrapper": "StandardizedApiResponse",
+      "authentication": true,
+      "permissions": ["users:manage"],
+      "filters": {
+        "role": "string (optional)",
+        "status": "string (optional)"
+      }
+    },
+    "/students": {
+      "method": "GET",
+      "frontendHandler": "api.listStudents",
+      "backendRoute": "backend/src/routes/students.ts",
+      "backendHandler": "listStudents",
+      "responseWrapper": "PaginatedResponse",
+      "authentication": true,
+      "permissions": ["students:manage"],
+      "filters": {
+        "classId": "string (optional)",
+        "enrollmentStatus": "string (optional)",
+        "search": "string (optional)"
+      },
+      "pagination": true
+    },
+    "/teachers": {
+      "method": "GET",
+      "frontendHandler": "api.listTeachers",
+      "backendRoute": "backend/src/routes/teachers.ts",
+      "backendHandler": "listTeachers",
+      "responseWrapper": "PaginatedResponse",
+      "authentication": true,
+      "permissions": ["teachers:manage"],
+      "filters": {
+        "search": "string (client-side only - backend doesn't support yet)"
+      },
+      "pagination": true,
+      "note": "Backend filtering not implemented - filtering done client-side"
+    },
+    "/admin/classes": {
+      "method": "GET",
+      "frontendHandler": "api.admin.listClasses",
+      "backendRoute": "backend/src/routes/admin/classes.ts",
+      "backendHandler": "listClasses",
+      "responseWrapper": "StandardizedApiResponse",
+      "authentication": true,
+      "permissions": ["settings:classes"],
+      "queryParams": {
+        "includeCounts": "boolean (default: true)"
+      }
+    },
+    "/admin/departments": {
+      "method": "GET",
+      "frontendHandler": "api.admin.listDepartments",
+      "backendRoute": "backend/src/routes/admin/departments.ts",
+      "backendHandler": "listDepartments",
+      "responseWrapper": "StandardizedApiResponse",
+      "authentication": true,
+      "permissions": ["school:manage"],
+      "queryParams": {
+        "includeCounts": "boolean (default: true)"
+      }
+    }
+  },
+  "dataSyncVerification": {
+    "status": "READY_FOR_TESTING",
+    "notes": "All endpoints are properly mapped and should sync correctly. Live data tests need to be performed manually.",
+    "testScenarios": [
+      {
+        "name": "Create-Read Test",
+        "description": "Create a resource via UI, then verify it appears in API response",
+        "pages": ["Users Management", "Students Management", "Teachers Management", "Classes Management", "Departments"]
+      },
+      {
+        "name": "Update-Read Test",
+        "description": "Update a resource via UI, then verify changes appear in API response",
+        "pages": ["Users Management", "Students Management", "Teachers Management", "Classes Management", "Departments"]
+      },
+      {
+        "name": "Delete-Read Test",
+        "description": "Delete a resource via UI, then verify it no longer appears in API response",
+        "pages": ["Users Management", "Students Management", "Teachers Management", "Classes Management", "Departments"]
+      }
+    ]
+  },
+  "recommendations": [
+    {
+      "priority": "low",
+      "issue": "Extra fields (createdAt, updatedAt) in Classes and Departments responses",
+      "action": "No action required - fields are harmless and may be useful for future features",
+      "impact": "None - UI ignores these fields"
+    },
+    {
+      "priority": "medium",
+      "issue": "Teachers endpoint doesn't support server-side filtering",
+      "action": "Consider implementing server-side filtering for better performance with large datasets",
+      "impact": "Client-side filtering works but may be slow with many teachers"
+    },
+    {
+      "priority": "high",
+      "issue": "Live data sync testing required",
+      "action": "Perform manual testing of create/update/delete operations to verify data persistence",
+      "impact": "Ensures data integrity and sync between UI and backend"
+    }
+  ]
+}

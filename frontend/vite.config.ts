@@ -1,28 +1,71 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    visualizer({
+      open: false,
+      filename: 'dist/stats.html',
+      gzipSize: true,
+      brotliSize: true,
+    }),
+  ],
   build: {
     // Enable code splitting for faster builds and smaller bundles
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Vendor chunks
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'query-vendor': ['@tanstack/react-query'],
-          'ui-vendor': ['framer-motion', 'lucide-react', 'sonner'],
-          'utils-vendor': ['zod', 'zustand', 'clsx', 'tailwind-merge']
-        }
-      }
+        manualChunks: (id) => {
+          // Vendor chunks - split by library type
+          if (id.includes('node_modules')) {
+            // React core
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'react-vendor';
+            }
+            // React Query
+            if (id.includes('@tanstack/react-query')) {
+              return 'query-vendor';
+            }
+            // UI libraries
+            if (id.includes('framer-motion') || id.includes('lucide-react') || id.includes('sonner')) {
+              return 'ui-vendor';
+            }
+            // Utilities
+            if (id.includes('zod') || id.includes('zustand') || id.includes('clsx') || id.includes('tailwind-merge')) {
+              return 'utils-vendor';
+            }
+            // Other node_modules
+            return 'vendor';
+          }
+          // Route-based code splitting for admin pages
+          if (id.includes('/pages/admin/')) {
+            return 'admin-pages';
+          }
+          if (id.includes('/pages/superuser/')) {
+            return 'superuser-pages';
+          }
+          if (id.includes('/pages/teacher/')) {
+            return 'teacher-pages';
+          }
+          if (id.includes('/pages/student/')) {
+            return 'student-pages';
+          }
+          if (id.includes('/pages/hod/')) {
+            return 'hod-pages';
+          }
+        },
+      },
     },
     // Optimize chunk size
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 500, // Reduced from 1000 to catch more issues
     // Enable source maps for better debugging
     sourcemap: true,
     // Minify for production
-    minify: 'esbuild'
+    minify: 'esbuild',
+    // Enable tree-shaking
+    treeshake: true,
   },
   server: {
     port: 5173,

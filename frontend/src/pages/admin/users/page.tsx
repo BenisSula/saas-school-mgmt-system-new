@@ -25,6 +25,7 @@ import {
 } from '../../../hooks/queries/admin/useAdminUsers';
 import { useDepartments } from '../../../hooks/queries/admin/useDepartments';
 import { useClasses } from '../../../hooks/queries/useClasses';
+import { usePermission } from '../../../hooks/usePermission';
 
 export default function AdminUsersPage() {
   const [isCreateHODModalOpen, setIsCreateHODModalOpen] = useState(false);
@@ -72,6 +73,11 @@ export default function AdminUsersPage() {
   const createStudentMutation = useCreateStudent();
   const disableUserMutation = useDisableUser();
   const enableUserMutation = useEnableUser();
+
+  // RBAC: Check permissions for UI controls
+  const canManageUsers = usePermission('users:manage');
+  const canManageTeachers = usePermission('teachers:manage');
+  const canManageStudents = usePermission('students:manage');
 
   const handleCreateHOD = () => {
     createHODMutation.mutate(
@@ -181,25 +187,26 @@ export default function AdminUsersPage() {
       header: 'Actions',
       render: (user) => (
         <ActionButtonGroup>
-          {user.status === 'active' ? (
-            <Button
-              size="sm"
-              variant="outline"
-              leftIcon={<UserX className="h-4 w-4" />}
-              onClick={() => handleDisable(user.id)}
-            >
-              Disable
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              leftIcon={<UserCheck className="h-4 w-4" />}
-              onClick={() => handleEnable(user.id)}
-            >
-              Enable
-            </Button>
-          )}
+          {canManageUsers &&
+            (user.status === 'active' ? (
+              <Button
+                size="sm"
+                variant="outline"
+                leftIcon={<UserX className="h-4 w-4" />}
+                onClick={() => handleDisable(user.id)}
+              >
+                Disable
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                leftIcon={<UserCheck className="h-4 w-4" />}
+                onClick={() => handleEnable(user.id)}
+              >
+                Enable
+              </Button>
+            ))}
         </ActionButtonGroup>
       ),
     },
@@ -238,26 +245,32 @@ export default function AdminUsersPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              leftIcon={<Plus className="h-4 w-4" />}
-              onClick={() => setIsCreateHODModalOpen(true)}
-            >
-              Create HOD
-            </Button>
-            <Button
-              variant="outline"
-              leftIcon={<Plus className="h-4 w-4" />}
-              onClick={() => setIsCreateTeacherModalOpen(true)}
-            >
-              Create Teacher
-            </Button>
-            <Button
-              leftIcon={<Plus className="h-4 w-4" />}
-              onClick={() => setIsCreateStudentModalOpen(true)}
-            >
-              Create Student
-            </Button>
+            {canManageUsers && canManageTeachers && (
+              <Button
+                variant="outline"
+                leftIcon={<Plus className="h-4 w-4" />}
+                onClick={() => setIsCreateHODModalOpen(true)}
+              >
+                Create HOD
+              </Button>
+            )}
+            {canManageUsers && canManageTeachers && (
+              <Button
+                variant="outline"
+                leftIcon={<Plus className="h-4 w-4" />}
+                onClick={() => setIsCreateTeacherModalOpen(true)}
+              >
+                Create Teacher
+              </Button>
+            )}
+            {canManageUsers && canManageStudents && (
+              <Button
+                leftIcon={<Plus className="h-4 w-4" />}
+                onClick={() => setIsCreateStudentModalOpen(true)}
+              >
+                Create Student
+              </Button>
+            )}
           </div>
         </header>
 

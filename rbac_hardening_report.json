@@ -1,0 +1,629 @@
+{
+  "timestamp": "2025-11-26T08:16:21.869Z",
+  "summary": {
+    "totalRoutes": 38,
+    "enforced": 38,
+    "notEnforced": 0,
+    "enforcementRate": "100.0%"
+  },
+  "routes": [
+    {
+      "file": "admin/dashboard.ts",
+      "method": "GET",
+      "path": "/admin/dashboard/",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/userManagement.ts",
+      "method": "POST",
+      "path": "/admin/users/hod/create",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/userManagement.ts",
+      "method": "POST",
+      "path": "/admin/users/teacher/create",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/userManagement.ts",
+      "method": "POST",
+      "path": "/admin/users/student/create",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/userManagement.ts",
+      "method": "GET",
+      "path": "/admin/users/",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/userManagement.ts",
+      "method": "PATCH",
+      "path": "/admin/users/:id/disable",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/userManagement.ts",
+      "method": "PATCH",
+      "path": "/admin/users/:id/enable",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/users.ts",
+      "method": "PUT",
+      "path": "/admin/users/:id/department",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/users.ts",
+      "method": "DELETE",
+      "path": "/admin/users/:id",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/classes.ts",
+      "method": "POST",
+      "path": "/admin/classes/",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/classes.ts",
+      "method": "GET",
+      "path": "/admin/classes/",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/classes.ts",
+      "method": "GET",
+      "path": "/admin/classes/:id",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/classes.ts",
+      "method": "PATCH",
+      "path": "/admin/classes/:id",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/classes.ts",
+      "method": "DELETE",
+      "path": "/admin/classes/:id",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/classes.ts",
+      "method": "PATCH",
+      "path": "/admin/classes/:id/assign-teacher",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/classes.ts",
+      "method": "POST",
+      "path": "/admin/classes/:id/assign-students",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/departments.ts",
+      "method": "POST",
+      "path": "/admin/departments/",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/departments.ts",
+      "method": "GET",
+      "path": "/admin/departments/",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/departments.ts",
+      "method": "GET",
+      "path": "/admin/departments/:id",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/departments.ts",
+      "method": "PATCH",
+      "path": "/admin/departments/:id",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/departments.ts",
+      "method": "DELETE",
+      "path": "/admin/departments/:id",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/departments.ts",
+      "method": "PATCH",
+      "path": "/admin/departments/:id/assign-hod",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/notifications.ts",
+      "method": "POST",
+      "path": "/admin/notifications/announcements",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/notifications.ts",
+      "method": "GET",
+      "path": "/admin/notifications/announcements",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/reports.ts",
+      "method": "GET",
+      "path": "/admin/reports/activity",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/reports.ts",
+      "method": "GET",
+      "path": "/admin/reports/logins",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/reports.ts",
+      "method": "GET",
+      "path": "/admin/reports/performance",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(users:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "users:manage"
+      ]
+    },
+    {
+      "file": "admin/billing.ts",
+      "method": "GET",
+      "path": "/admin/billing/subscription",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(billing:view)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "billing:view"
+      ]
+    },
+    {
+      "file": "admin/billing.ts",
+      "method": "POST",
+      "path": "/admin/billing/subscription/subscribe",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(billing:view)",
+        "requirePermission(billing:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "billing:view",
+        "billing:manage"
+      ]
+    },
+    {
+      "file": "admin/billing.ts",
+      "method": "POST",
+      "path": "/admin/billing/subscription/cancel",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(billing:view)",
+        "requirePermission(billing:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "billing:view",
+        "billing:manage"
+      ]
+    },
+    {
+      "file": "admin/billing.ts",
+      "method": "POST",
+      "path": "/admin/billing/subscription/update-plan",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(billing:view)",
+        "requirePermission(billing:manage)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "billing:view",
+        "billing:manage"
+      ]
+    },
+    {
+      "file": "admin/billing.ts",
+      "method": "GET",
+      "path": "/admin/billing/invoices",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(billing:view)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "billing:view"
+      ]
+    },
+    {
+      "file": "admin/billing.ts",
+      "method": "GET",
+      "path": "/admin/billing/invoices/:invoiceId",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(billing:view)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "billing:view"
+      ]
+    },
+    {
+      "file": "admin/billing.ts",
+      "method": "GET",
+      "path": "/admin/billing/payments",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "tenantResolver",
+        "ensureTenantContext",
+        "requirePermission(billing:view)"
+      ],
+      "requiredRole": null,
+      "requiredPermissions": [
+        "billing:view"
+      ]
+    },
+    {
+      "file": "superuser.ts",
+      "method": "GET",
+      "path": "/superuser/overview",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "requireSuperuser"
+      ],
+      "requiredRole": "superadmin",
+      "requiredPermissions": []
+    },
+    {
+      "file": "superuser/users.ts",
+      "method": "GET",
+      "path": "/superuser/users/",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "requireSuperuser"
+      ],
+      "requiredRole": "superadmin",
+      "requiredPermissions": []
+    },
+    {
+      "file": "superuser/schools.ts",
+      "method": "GET",
+      "path": "/superuser/schools/",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "requireSuperuser"
+      ],
+      "requiredRole": "superadmin",
+      "requiredPermissions": []
+    },
+    {
+      "file": "superuser/schools.ts",
+      "method": "POST",
+      "path": "/superuser/schools/",
+      "status": "ENFORCED",
+      "middleware": [
+        "authenticate",
+        "requireSuperuser"
+      ],
+      "requiredRole": "superadmin",
+      "requiredPermissions": []
+    }
+  ],
+  "findings": {
+    "strengths": [
+      "All admin routes use router.use() with authenticate, tenantResolver, ensureTenantContext, and requirePermission",
+      "Superuser routes use requireSuperuser() middleware",
+      "Permission-based access control is implemented",
+      "Role hierarchy is enforced"
+    ],
+    "recommendations": [
+      {
+        "priority": "low",
+        "issue": "Consider adding requireRoles() middleware for role-based checks",
+        "action": "Add requireRole middleware where role checks are needed instead of just permissions"
+      },
+      {
+        "priority": "low",
+        "issue": "Add unit tests for middleware",
+        "action": "Create test suite to verify middleware enforcement"
+      }
+    ]
+  }
+}

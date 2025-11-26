@@ -28,6 +28,7 @@ import { AdvancedFilters, type AdvancedFilterField } from '../../components/admi
 import { ActivityLog } from '../../components/admin/ActivityLog';
 import { HODDetailView } from '../../components/admin/HODDetailView';
 import { useCSVImport } from '../../hooks/useCSVImport';
+import { usePermission } from '../../hooks/usePermission';
 import { ViewButton, ActionButtonGroup } from '../../components/table-actions';
 import { Plus, Upload, Eye } from 'lucide-react';
 
@@ -99,6 +100,10 @@ export function HODsManagementPage() {
   // Mutations
   const assignDepartmentMutation = useAssignHODDepartment();
   const bulkRemoveMutation = useBulkRemoveHODRoles();
+
+  // RBAC: Check permissions for UI controls
+  const canManageUsers = usePermission('users:manage');
+  const canManageTeachers = usePermission('teachers:manage');
 
   const loading = hodsLoading || subjectsLoading;
   const error = hodsError ? (hodsError as Error).message : null;
@@ -379,14 +384,18 @@ export function HODsManagementPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => setShowCreateModal(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Create HOD
-            </Button>
-            <Button variant="outline" onClick={() => setShowImportModal(true)} className="gap-2">
-              <Upload className="h-4 w-4" />
-              Import CSV
-            </Button>
+            {canManageUsers && canManageTeachers && (
+              <Button onClick={() => setShowCreateModal(true)} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Create HOD
+              </Button>
+            )}
+            {canManageUsers && canManageTeachers && (
+              <Button variant="outline" onClick={() => setShowImportModal(true)} className="gap-2">
+                <Upload className="h-4 w-4" />
+                Import CSV
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => setShowActivityLog(!showActivityLog)}
@@ -399,7 +408,7 @@ export function HODsManagementPage() {
               onExportPDF={handleExportPDF}
               onExportExcel={handleExportExcel}
             />
-            {selectedRows.size > 0 && (
+            {canManageUsers && canManageTeachers && selectedRows.size > 0 && (
               <Button variant="outline" onClick={handleBulkDelete}>
                 Remove HOD ({selectedRows.size})
               </Button>

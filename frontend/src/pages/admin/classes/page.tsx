@@ -25,6 +25,7 @@ import {
 } from '../../../hooks/queries/admin/useAdminClasses';
 import { useTeachers } from '../../../hooks/queries/useTeachers';
 import { useStudents } from '../../../hooks/queries/useStudents';
+import { usePermission } from '../../../hooks/usePermission';
 
 export default function AdminClassesPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -52,6 +53,11 @@ export default function AdminClassesPage() {
   const deleteMutation = useDeleteAdminClass();
   const assignTeacherMutation = useAssignClassTeacher();
   const assignStudentsMutation = useAssignStudentsToClass();
+
+  // RBAC: Check permissions for UI controls
+  const canManageClasses = usePermission('settings:classes');
+  const canManageTeachers = usePermission('teachers:manage');
+  const canManageStudents = usePermission('students:manage');
 
   const handleCreate = () => {
     createMutation.mutate(
@@ -174,31 +180,37 @@ export default function AdminClassesPage() {
       header: 'Actions',
       render: (classItem) => (
         <ActionButtonGroup>
-          <EditButton onClick={() => handleEdit(classItem)} />
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => handleDelete(classItem.id)}
-            leftIcon={<Trash2 className="h-4 w-4" />}
-          >
-            Delete
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            leftIcon={<UserPlus className="h-4 w-4" />}
-            onClick={() => handleAssignTeacher(classItem)}
-          >
-            Assign Teacher
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            leftIcon={<Users className="h-4 w-4" />}
-            onClick={() => handleAssignStudents(classItem)}
-          >
-            Assign Students
-          </Button>
+          {canManageClasses && <EditButton onClick={() => handleEdit(classItem)} />}
+          {canManageClasses && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => handleDelete(classItem.id)}
+              leftIcon={<Trash2 className="h-4 w-4" />}
+            >
+              Delete
+            </Button>
+          )}
+          {canManageClasses && canManageTeachers && (
+            <Button
+              size="sm"
+              variant="outline"
+              leftIcon={<UserPlus className="h-4 w-4" />}
+              onClick={() => handleAssignTeacher(classItem)}
+            >
+              Assign Teacher
+            </Button>
+          )}
+          {canManageClasses && canManageStudents && (
+            <Button
+              size="sm"
+              variant="outline"
+              leftIcon={<Users className="h-4 w-4" />}
+              onClick={() => handleAssignStudents(classItem)}
+            >
+              Assign Students
+            </Button>
+          )}
         </ActionButtonGroup>
       ),
     },
@@ -236,12 +248,14 @@ export default function AdminClassesPage() {
               Manage classes, assign teachers, and enroll students
             </p>
           </div>
-          <Button
-            leftIcon={<Plus className="h-4 w-4" />}
-            onClick={() => setIsCreateModalOpen(true)}
-          >
-            Create Class
-          </Button>
+          {canManageClasses && (
+            <Button
+              leftIcon={<Plus className="h-4 w-4" />}
+              onClick={() => setIsCreateModalOpen(true)}
+            >
+              Create Class
+            </Button>
+          )}
         </header>
 
         <Table columns={columns} data={classes} emptyMessage="No classes found" />
