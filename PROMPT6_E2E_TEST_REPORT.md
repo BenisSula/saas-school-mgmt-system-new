@@ -153,39 +153,88 @@ Tests use demo credentials from `README.md`:
 
 ## Running Tests
 
-### Run All E2E Tests
+### Quick Start (Recommended)
+
+**Using the test execution script** (easiest way):
+
+```powershell
+# Windows PowerShell
+.\scripts\run-e2e-tests.ps1
+
+# Linux/Mac Bash
+./scripts/run-e2e-tests.sh
+```
+
+**Script options**:
+- `.\scripts\run-e2e-tests.ps1 -AdminFlows` - Run only admin flows (default)
+- `.\scripts/run-e2e-tests.ps1 -All` - Run all E2E tests
+- `.\scripts/run-e2e-tests.ps1 -UI` - Run in interactive UI mode
+- `.\scripts/run-e2e-tests.ps1 -Headed` - Run with visible browser
+- `.\scripts/run-e2e-tests.ps1 -Verbose` - Show detailed output
+
+---
+
+### Manual Execution
+
+#### Prerequisites
+
+1. **Backend must be running** on `http://localhost:3001`
+   ```bash
+   cd backend
+   npm run dev
+   ```
+
+2. **Test credentials must exist** in database:
+   - Admin: `admin.demo@academy.test` / `AdminDemo#2025`
+   - Student: `student.demo@academy.test` / `StudentDemo#2025`
+
+#### Run All E2E Tests
 
 ```bash
 cd frontend
 npm run test:e2e
 ```
 
-### Run Only Admin Flows Tests
+#### Run Only Admin Flows Tests
 
 ```bash
 cd frontend
 npx playwright test e2e/admin-flows.spec.ts
 ```
 
-### Run in UI Mode (Interactive)
+#### Run in UI Mode (Interactive)
 
 ```bash
 cd frontend
 npm run test:e2e:ui
 ```
 
-### Run in Headed Mode (See Browser)
+#### Run in Headed Mode (See Browser)
 
 ```bash
 cd frontend
 npm run test:e2e:headed
 ```
 
-### Run Specific Test
+#### Run Specific Test
 
 ```bash
 cd frontend
 npx playwright test e2e/admin-flows.spec.ts -g "Login as admin"
+```
+
+#### Run with List Reporter (Verbose)
+
+```bash
+cd frontend
+npx playwright test e2e/admin-flows.spec.ts --reporter=list
+```
+
+#### Run and Generate Reports Only
+
+```bash
+cd frontend
+npx playwright test e2e/admin-flows.spec.ts --reporter=junit,json
 ```
 
 ---
@@ -309,12 +358,86 @@ npx playwright test e2e/admin-flows.spec.ts -g "Login as admin"
 
 ---
 
+## Test Execution
+
+### Automated Execution Script
+
+Two execution scripts are provided:
+
+1. **PowerShell** (`scripts/run-e2e-tests.ps1`) - For Windows
+2. **Bash** (`scripts/run-e2e-tests.sh`) - For Linux/Mac
+
+**Features**:
+- ✅ Checks backend status before running
+- ✅ Provides clear error messages
+- ✅ Shows test results location
+- ✅ Supports multiple run modes (UI, headed, headless)
+- ✅ Handles missing backend gracefully
+
+**Usage Examples**:
+
+```powershell
+# Windows - Run admin flows tests
+.\scripts\run-e2e-tests.ps1
+
+# Windows - Run in UI mode
+.\scripts\run-e2e-tests.ps1 -UI
+
+# Windows - Run all E2E tests
+.\scripts\run-e2e-tests.ps1 -All
+
+# Linux/Mac - Run admin flows tests
+./scripts/run-e2e-tests.sh
+
+# Linux/Mac - Run in UI mode
+./scripts/run-e2e-tests.sh --ui
+```
+
+### Manual Execution Steps
+
+1. **Start Backend** (if not running):
+   ```bash
+   cd backend
+   npm run dev
+   ```
+
+2. **Verify Backend Health**:
+   ```bash
+   curl http://localhost:3001/health
+   ```
+
+3. **Run Tests**:
+   ```bash
+   cd frontend
+   npm run test:e2e
+   ```
+
+4. **View Results**:
+   ```bash
+   npx playwright show-report
+   ```
+
+### Expected Test Duration
+
+- **All 5 tests**: ~2-5 minutes (depending on network speed)
+- **Individual test**: ~30-60 seconds each
+
+### Test Execution Flow
+
+1. Playwright starts frontend dev server automatically
+2. Tests run in headless Chromium browser
+3. Screenshots captured on failure
+4. Videos captured on failure
+5. Reports generated in `test-results/` and `playwright-report/`
+
 ## Next Steps
 
 1. ✅ **Tests Created**: All 5 required scenarios implemented
-2. ⏳ **Manual Verification**: Run tests to verify they work with actual backend
-3. ⏳ **CI Integration**: Add to CI/CD pipeline
-4. ⏳ **Expand Coverage**: Add more edge cases and error scenarios
+2. ✅ **Execution Scripts**: PowerShell and Bash scripts created
+3. ✅ **Documentation**: Complete manual execution guide
+4. ⏳ **Manual Verification**: Run tests to verify they work with actual backend
+5. ⏳ **CI Integration**: Add to CI/CD pipeline
+6. ⏳ **Expand Coverage**: Add more edge cases and error scenarios
 
 ---
 
