@@ -1,0 +1,122 @@
+{
+  "mockData": [],
+  "placeholders": [
+    {
+      "file": "frontend\\src\\pages\\admin\\AdminClassesSubjectsPage.tsx",
+      "line": 338,
+      "content": "placeholder=\"e.g. MATH\""
+    },
+    {
+      "file": "frontend\\src\\pages\\admin\\classResources\\page.tsx",
+      "line": 195,
+      "content": "toast.info('CSV export coming soon');"
+    },
+    {
+      "file": "frontend\\src\\pages\\admin\\ConfigurationPage.tsx",
+      "line": 450,
+      "content": "placeholder=\"https://cdn.school/logo.svg\""
+    },
+    {
+      "file": "frontend\\src\\pages\\admin\\ConfigurationPage.tsx",
+      "line": 459,
+      "content": "placeholder=\"#1d4ed8\""
+    },
+    {
+      "file": "frontend\\src\\pages\\admin\\ConfigurationPage.tsx",
+      "line": 468,
+      "content": "placeholder=\"#0f172a\""
+    },
+    {
+      "file": "frontend\\src\\pages\\admin\\ConfigurationPage.tsx",
+      "line": 507,
+      "content": "placeholder=\"e.g. Spring 2025\""
+    },
+    {
+      "file": "frontend\\src\\pages\\admin\\ConfigurationPage.tsx",
+      "line": 558,
+      "content": "placeholder=\"Grade 9\""
+    },
+    {
+      "file": "frontend\\src\\pages\\admin\\ConfigurationPage.tsx",
+      "line": 566,
+      "content": "placeholder=\"Lower senior\""
+    },
+    {
+      "file": "frontend\\src\\pages\\admin\\ConfigurationPage.tsx",
+      "line": 684,
+      "content": "placeholder=\"e.g. Lower senior\""
+    },
+    {
+      "file": "frontend\\src\\pages\\admin\\departments\\page.tsx",
+      "line": 236,
+      "content": "placeholder=\"auto-generated if empty\""
+    },
+    {
+      "file": "frontend\\src\\pages\\admin\\HODsManagementPage.tsx",
+      "line": 439,
+      "content": "searchPlaceholder=\"Search by name, email, department...\""
+    },
+    {
+      "file": "frontend\\src\\pages\\admin\\InvoicePage.tsx",
+      "line": 251,
+      "content": "placeholder=\"e.g. Tuition Fee\""
+    },
+    {
+      "file": "frontend\\src\\pages\\admin\\InvoicePage.tsx",
+      "line": 267,
+      "content": "placeholder=\"0.00\""
+    },
+    {
+      "file": "frontend\\src\\pages\\admin\\ReportsPage.tsx",
+      "line": 249,
+      "content": "placeholder=\"e.g. grade-10\""
+    },
+    {
+      "file": "frontend\\src\\pages\\admin\\ReportsPage.tsx",
+      "line": 288,
+      "content": "placeholder=\"exam-123\""
+    },
+    {
+      "file": "frontend\\src\\pages\\admin\\StudentsManagementPage.tsx",
+      "line": 436,
+      "content": "searchPlaceholder=\"Search by name, admission number, class...\""
+    },
+    {
+      "file": "frontend\\src\\pages\\admin\\StudentsManagementPage.tsx",
+      "line": 622,
+      "content": "placeholder=\"Phone or email\""
+    },
+    {
+      "file": "frontend\\src\\pages\\admin\\TeachersManagementPage.tsx",
+      "line": 455,
+      "content": "searchPlaceholder=\"Search by name, email, subject, class...\""
+    }
+  ],
+  "hardcodedArrays": [],
+  "todos": [],
+  "files": [
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\AdminAttendancePage.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\AdminBillingPage.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\AdminClassAssignmentPage.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\AdminClassesSubjectsPage.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\AdminDepartmentAnalyticsPage.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\AdminExamConfigPage.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\AdminOverviewPage.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\AdminReportsPage.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\announcements\\page.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\classes\\page.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\classResources\\page.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\classResources\\__tests__\\page.test.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\ConfigurationPage.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\dashboard\\page.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\departments\\page.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\HODsManagementPage.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\InvoicePage.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\reports\\page.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\ReportsPage.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\RoleManagementPage.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\StudentsManagementPage.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\TeachersManagementPage.tsx",
+    "C:\\sumano\\saas-school-mgmt-system\\frontend\\src\\pages\\admin\\users\\page.tsx"
+  ]
+}
